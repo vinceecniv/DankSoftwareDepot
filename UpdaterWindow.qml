@@ -540,6 +540,11 @@ FloatingWindow {
     color: Theme.surface
     visible: false
 
+    // A compositor-side close (Super+Q) kills the toplevel without updating
+    // our visible flag, so the next `visible = true` becomes a no-op and the
+    // window can never reopen. Resync on close.
+    onClosed: visible = false
+
     function toggle() {
         visible = !visible;
     }

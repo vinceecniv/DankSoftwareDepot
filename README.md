@@ -1,4 +1,4 @@
-# Dank Software Depot
+# <picture><source media="(prefers-color-scheme: dark)" srcset="assets/icons/dank-software-depot-dark.svg"><img src="assets/icons/dank-software-depot-light.svg" alt="" width="42"></picture> Dank Software Depot
 
 **Beta** · **Fedora-based distros only (for now)** · English / Nederlands / Deutsch / Français
 
