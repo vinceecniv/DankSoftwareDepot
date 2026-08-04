@@ -1,0 +1,16 @@
+singleton Tr 1.0 Tr.qml
+singleton Ui 1.0 Ui.qml
+UpdaterWidget 1.0 UpdaterWidget.qml
+UpdaterWindow 1.0 UpdaterWindow.qml
+UpdaterSettings 1.0 UpdaterSettings.qml
+UpdateEngine 1.0 UpdateEngine.qml
+UpdateCard 1.0 UpdateCard.qml
+MetadataStore 1.0 MetadataStore.qml
+ActionLog 1.0 ActionLog.qml
+FirmwareService 1.0 FirmwareService.qml
+PhaseIndicator 1.0 PhaseIndicator.qml
+InstalledView 1.0 InstalledView.qml
+InstallView 1.0 InstallView.qml
+FirmwareView 1.0 FirmwareView.qml
+LogView 1.0 LogView.qml
+AppDetailsDialog 1.0 AppDetailsDialog.qml

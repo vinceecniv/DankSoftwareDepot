@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Dank Software Depot — symbolic, updates pending</title>
+  <rect x="52" y="52" width="182" height="408" rx="54" fill="currentColor"></rect>
+  <rect x="278" y="52" width="182" height="182" rx="54" fill="currentColor"></rect>
+  <path d="M369 278 A91 91 0 1 1 369 460 A91 91 0 1 1 369 278 Z M369 330 A39 39 0 1 0 369 408 A39 39 0 1 0 369 330 Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>

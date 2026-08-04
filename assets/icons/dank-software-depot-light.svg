@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Dank Software Depot — light</title>
+  <rect width="512" height="512" rx="112" fill="#E7DFF0"></rect>
+  <rect x="56" y="56" width="176" height="400" rx="52" fill="#5D3A66"></rect>
+  <rect x="280" y="56" width="176" height="176" rx="52" fill="#7C5488"></rect>
+  <rect x="280" y="280" width="176" height="176" rx="88" fill="#E8A852"></rect>
+</svg>

@@ -1,0 +1,992 @@
+import QtQuick
+import QtQuick.Layouts
+import Quickshell.Io
+import qs.Common
+import qs.Services
+import qs.Widgets
+
+// Installed software tab: all Flatpak apps and rpm packages, live-searchable,
+// with per-app actions (uninstall, hold, restore previous version).
+// Loaded lazily on first tab activation.
+Item {
+    id: view
+
+    required property var store
+    required property var engine
+    property var logger: null
+
+    // Bumped by the window when software was installed/updated elsewhere
+    // (Install tab, update run) so this list stays current.
+    property int refreshSerial: 0
+
+    onRefreshSerialChanged: reload()
+
+    // Fired after a successful uninstall/restore so other views can refresh
+    signal softwareMutated()
+
+    function focusSearch() {
+        searchField.forceActiveFocus();
+    }
+
+    // ── App details popup ────────────────────────────────────────────────────
+    function openDetails(rowData) {
+        detailsDialog.entry = rowData;
+        if (rowData.kind === "flatpak") {
+            loadDowngradeLog(rowData.id, rowData.origin);
+        } else if (rowData.kind === "appimage") {
+        } else {
+            store.fetchChangelog(rowData.id);
+            loadRpmVersions(rowData.id, rowData.version);
+        }
+        detailsDialog.open({
+            id: rowData.id,
+            name: rowData.name,
+            summary: rowData.summary || "",
+            iconPath: (rowData.info && rowData.info.icon) || "",
+            homepage: (rowData.info && rowData.info.homepage) || "",
+            held: isHeldName(rowData.id),
+            versionLabel: rowData.version || "",
+            origin: rowData.origin || "",
+            isFlatpak: rowData.kind === "flatpak",
+            sources: rowData.kind === "flatpak" ? [{
+                source: rowData.origin || "flathub",
+                kind: "flatpak",
+                ref: rowData.id
+            }] : (rowData.kind === "appimage" ? [] : [{
+                source: "fedora",
+                kind: "dnf",
+                ref: rowData.id
+            }])
+        });
+    }
+
+    // Reparented into the window's overlay layer so the dim covers everything
+    property var overlayParent: null
+
+    AppDetailsDialog {
+        id: detailsDialog
+
+        parent: view.overlayParent || view
+
+        property var entry: null
+        readonly property string entryId: entry ? entry.id : ""
+        readonly property bool entryIsFlatpak: entry ? entry.kind === "flatpak" : false
+        readonly property bool entryIsAppimage: entry ? entry.kind === "appimage" : false
+
+        showHoldToggle: !entryIsAppimage
+        showUninstall: true
+        showOpenButton: entryIsFlatpak || entryIsAppimage
+        openCommand: entryIsAppimage && entry.file ? [entry.file] : []
+        showUpdateSource: entryIsAppimage
+        updateSourceRepo: entryIsAppimage ? (entry.repo || "") : ""
+        busy: entryId !== "" && view.busyAction.endsWith(":" + entryId)
+        busyDetail: view.mutationProgress
+        busyFraction: view.mutationFraction
+        releases: (entryIsFlatpak && entry.info && entry.info.releases) ? entry.info.releases.slice(0, 3) : []
+        changelogLoading: entry !== null && !entryIsFlatpak && !entryIsAppimage && view.store.changelogs[entryId] === undefined
+        changelog: (entry !== null && !entryIsFlatpak && !entryIsAppimage) ? (view.store.changelogs[entryId] || "") : ""
+        versionsLoading: {
+            if (!entry || entryIsAppimage)
+                return false;
+            return entryIsFlatpak ? view.downgradeLogs[entryId] === "loading" : view.rpmVersions[entryId] === "loading";
+        }
+        previousVersions: {
+            if (!entry || entryIsAppimage)
+                return [];
+            if (entryIsFlatpak) {
+                const log = view.downgradeLogs[entryId];
+                return (log && log !== "loading") ? log.map(c => ({
+                    label: c.date || c.commit.substring(0, 8),
+                    payload: c.commit
+                })) : [];
+            }
+            const versions = view.rpmVersions[entryId];
+            return Array.isArray(versions) ? versions.map(v => ({
+                label: v,
+                payload: v
+            })) : [];
+        }
+        noOlderVersions: entry !== null && !entryIsFlatpak && !entryIsAppimage && Array.isArray(view.rpmVersions[entryId]) && view.rpmVersions[entryId].length === 0
+
+        onHoldToggleRequested: {
+            view.toggleHold(entryId);
+            app = Object.assign({}, app, {
+                held: view.isHeldName(entryId)
+            });
+        }
+
+        onUpdateSourceSaveRequested: link => {
+            updateSourceStatus = "saving";
+            appimageRepoProcess.command = ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--set-repo", entryId, link];
+            appimageRepoProcess.running = true;
+        }
+
+        onUninstallRequested: {
+            const target = entry;
+            close();
+            if (target.kind === "appimage")
+                view.uninstallAppimage(target.id, target.name);
+            else if (target.kind === "flatpak")
+                view.uninstallFlatpak(target.id);
+            else
+                view.uninstallRpm(target.id, target.name);
+        }
+
+        onRestoreRequested: payload => {
+            const target = entry;
+            close();
+            if (target.kind === "flatpak")
+                view.downgradeTo(target.id, payload);
+            else
+                view.downgradeRpm(target.id, payload);
+        }
+    }
+
+    property var flatpakApps: []     // {id, version, origin, installation}
+    property var rpmPackages: []     // {name, version}
+    property var meta: ({})          // "flatpak/<id>" -> enrichment info
+    property bool loading: true
+    property string searchText: ""
+    property int sourceFilter: 0     // 0 all, 1 flatpak, 2 system
+    property string busyAction: ""   // "<action>:<id>" while a mutation runs
+    property string mutationProgress: ""  // live phase/percent line while mutationProcess runs
+    property real mutationFraction: 0     // 0..1 overall progress estimate
+    property var downgradeLogs: ({}) // id -> [{commit, date}] | "loading"
+    property var rpmVersions: ({})   // name -> [version strings older than installed] | "loading"
+
+    Component.onCompleted: {
+        reload();
+        Ui.steadyCursorFor(searchField);
+        Ui.softenScrollbar(installedList);
+    }
+
+    property var appimageApps: []    // records from scripts/appimage.py --list
+
+    // Enrich both flatpaks and rpm packages (icons + friendly names); the
+    // catalog scan is cached, so only the first pass after a catalog change
+    // is expensive.
+    function _requestEnrich() {
+        const request = {
+            rpm: rpmPackages.map(pkg => ({
+                        name: pkg.name,
+                        from: ""
+                    })),
+            flatpak: flatpakApps.map(app => ({
+                        name: app.id,
+                        from: ""
+                    }))
+        };
+        if (request.rpm.length === 0 && request.flatpak.length === 0)
+            return;
+        if (enrichProcess.running) {
+            _enrichPending = true;
+            return;
+        }
+        enrichProcess.command = ["python3", Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), JSON.stringify(request)];
+        enrichProcess.running = true;
+    }
+
+    property bool _enrichPending: false
+
+    function reload() {
+        loading = true;
+        flatpakListProcess.running = true;
+        rpmListProcess.running = true;
+        appimageListProcess.running = true;
+    }
+
+    Process {
+        id: appimageListProcess
+        command: ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--list"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    view.appimageApps = JSON.parse(text);
+                } catch (e) {
+                    view.appimageApps = [];
+                }
+            }
+        }
+    }
+
+    Process {
+        id: appimageMutationProcess
+
+        property string _logTitle: ""
+        property var _logItem: null
+
+        stdout: StdioCollector {
+            onStreamFinished: {}
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            view.busyAction = "";
+            if (exitCode === 0) {
+                if (view.logger && _logItem) {
+                    _logItem.status = "done";
+                    view.logger.record("uninstall", _logTitle, [_logItem]);
+                }
+                view.softwareMutated();
+            }
+            _logItem = null;
+            view.reload();
+        }
+    }
+
+    // Save the GitHub update source chosen in the details popup
+    Process {
+        id: appimageRepoProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let result = null;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                }
+                if (result && result.ok === true) {
+                    if (detailsDialog.entry && detailsDialog.entry.kind === "appimage")
+                        detailsDialog.entry = Object.assign({}, detailsDialog.entry, {
+                            repo: result.repo
+                        });
+                    detailsDialog.updateSourceStatus = "done";
+                    view.softwareMutated();
+                } else {
+                    detailsDialog.updateSourceStatus = "error:" + ((result && result.error) || Tr.t("script failed"));
+                }
+            }
+        }
+    }
+
+    function uninstallAppimage(id, name) {
+        busyAction = "uninstall:" + id;
+        appimageMutationProcess._logTitle = Tr.t("Uninstalled %1").arg(name);
+        appimageMutationProcess._logItem = {
+            name: name,
+            from: "",
+            to: "",
+            source: "AppImage"
+        };
+        appimageMutationProcess.command = ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--uninstall", id];
+        appimageMutationProcess.running = true;
+    }
+
+    readonly property var filteredItems: {
+        const needle = searchText.toLowerCase();
+        const rows = [];
+        if (sourceFilter === 0 || sourceFilter === 1) {
+            for (const app of flatpakApps) {
+                const info = meta["flatpak/" + app.id] || null;
+                const name = (info && info.name) ? info.name : app.id;
+                const summary = info ? (info.summary || "") : "";
+                if (needle && !Ui.matchesWords((name + " " + app.id + " " + summary).toLowerCase(), needle))
+                    continue;
+                rows.push({
+                    kind: "flatpak",
+                    id: app.id,
+                    name: name,
+                    summary: summary,
+                    version: app.version,
+                    origin: app.origin,
+                    sizeBytes: app.sizeBytes || 0,
+                    updatedTs: app.updatedTs || 0,
+                    info: info
+                });
+            }
+        }
+        if (sourceFilter === 0 || sourceFilter === 3) {
+            for (const rec of appimageApps) {
+                if (needle && !Ui.matchesWords((rec.name + " " + rec.id).toLowerCase(), needle))
+                    continue;
+                rows.push({
+                    kind: "appimage",
+                    id: rec.id,
+                    name: rec.name,
+                    summary: "AppImage",
+                    version: rec.tag || "",
+                    origin: "appimage",
+                    sizeBytes: rec.sizeBytes || 0,
+                    updatedTs: rec.installedAt || 0,
+                    file: rec.file || "",
+                    repo: rec.repo || "",
+                    info: {
+                        name: rec.name,
+                        summary: "",
+                        homepage: rec.repo ? ("https://github.com/" + rec.repo) : "",
+                        icon: rec.icon || "",
+                        releases: []
+                    }
+                });
+            }
+        }
+        if (sourceFilter === 0 || sourceFilter === 2) {
+            for (const pkg of rpmPackages) {
+                const info = meta["system/" + pkg.name] || null;
+                const name = (info && info.name) ? info.name : pkg.name;
+                const summary = info ? (info.summary || "") : "";
+                if (needle && !Ui.matchesWords((name + " " + pkg.name + " " + summary).toLowerCase(), needle))
+                    continue;
+                rows.push({
+                    kind: "system",
+                    id: pkg.name,
+                    name: name,
+                    summary: summary,
+                    version: pkg.version,
+                    origin: "fedora",
+                    sizeBytes: pkg.sizeBytes || 0,
+                    updatedTs: pkg.updatedTs || 0,
+                    info: info
+                });
+            }
+        }
+        switch (sortMode) {
+        case "Largest":
+            rows.sort((a, b) => (b.sizeBytes - a.sizeBytes) || a.name.localeCompare(b.name));
+            break;
+        case "Recently updated":
+            rows.sort((a, b) => (b.updatedTs - a.updatedTs) || a.name.localeCompare(b.name));
+            break;
+        default:
+            const kindRank = kind => kind === "flatpak" ? 0 : (kind === "appimage" ? 1 : 2);
+            rows.sort((a, b) => {
+                if (kindRank(a.kind) !== kindRank(b.kind))
+                    return kindRank(a.kind) - kindRank(b.kind);
+                return a.name.localeCompare(b.name);
+            });
+            break;
+        }
+        return rows;
+    }
+
+    // Sort order for the list
+    property string sortMode: "Name"
+    readonly property var sortOptions: ["Name", "Recently updated", "Largest"]
+
+    function formatSize(bytes) {
+        if (bytes >= 1e9)
+            return (bytes / 1e9).toFixed(1) + " GB";
+        if (bytes >= 1e6)
+            return Math.round(bytes / 1e6) + " MB";
+        if (bytes >= 1e3)
+            return Math.max(1, Math.round(bytes / 1e3)) + " kB";
+        return bytes > 0 ? bytes + " B" : "";
+    }
+
+    function isHeldName(name) {
+        return (SettingsData.updaterIgnoredPackages || []).indexOf(name) !== -1;
+    }
+
+    function toggleHold(name) {
+        if (isHeldName(name)) {
+            SystemUpdateService.unignorePackage(name);
+        } else {
+            SystemUpdateService.ignorePackage(name);
+        }
+    }
+
+    function _flatpakDisplayName(id) {
+        const info = meta["flatpak/" + id] || null;
+        return (info && info.name) ? info.name : id;
+    }
+
+    function _flatpakInstalledVersion(id) {
+        for (const app of flatpakApps) {
+            if (app.id === id)
+                return app.version || "";
+        }
+        return "";
+    }
+
+    function uninstallFlatpak(id) {
+        busyAction = "uninstall:" + id;
+        mutationProgress = Tr.t("Starting…");
+        mutationFraction = 0.02;
+        mutationProcess._logType = "uninstall";
+        mutationProcess._logTitle = Tr.t("Uninstalled %1").arg(_flatpakDisplayName(id));
+        mutationProcess._logItem = {
+            name: _flatpakDisplayName(id),
+            from: _flatpakInstalledVersion(id),
+            to: "",
+            source: "Flatpak"
+        };
+        mutationProcess.command = ["flatpak", "uninstall", "-y", "--noninteractive", id];
+        mutationProcess.running = true;
+    }
+
+    function loadDowngradeLog(id, origin) {
+        if (downgradeLogs[id] !== undefined)
+            return;
+        const updated = Object.assign({}, downgradeLogs);
+        updated[id] = "loading";
+        downgradeLogs = updated;
+        logProcess._target = id;
+        logProcess.command = ["sh", "-c", "LC_ALL=C flatpak remote-info --log " + origin + " " + id + " 2>/dev/null | grep -E '^\\s*(Commit|Date):' | head -20"];
+        logProcess.running = true;
+    }
+
+    function downgradeTo(id, commit) {
+        busyAction = "downgrade:" + id;
+        mutationProgress = Tr.t("Waiting for authorization…");
+        mutationFraction = 0.02;
+        mutationProcess._logType = "downgrade";
+        mutationProcess._logTitle = Tr.t("Restored previous version of %1").arg(_flatpakDisplayName(id));
+        mutationProcess._logItem = {
+            name: _flatpakDisplayName(id),
+            from: _flatpakInstalledVersion(id),
+            to: Tr.t("commit %1").arg(commit.substring(0, 8)),
+            source: "Flatpak"
+        };
+        mutationProcess.command = ["pkexec", "flatpak", "update", "--noninteractive", "--commit=" + commit, id];
+        mutationProcess.running = true;
+    }
+
+    function loadRpmVersions(name, installedVersion) {
+        if (rpmVersions[name] !== undefined)
+            return;
+        const updated = Object.assign({}, rpmVersions);
+        updated[name] = "loading";
+        rpmVersions = updated;
+        rpmVersionsProcess._target = name;
+        rpmVersionsProcess._installed = installedVersion;
+        rpmVersionsProcess.command = ["sh", "-c", "LC_ALL=C dnf -Cq repoquery --qf '%{version}-%{release}\\n' " + name + " 2>/dev/null | sort -uV"];
+        rpmVersionsProcess.running = true;
+    }
+
+    function uninstallRpm(name, displayName) {
+        busyAction = "uninstall:" + name;
+        mutationProgress = Tr.t("Waiting for authorization…");
+        mutationFraction = 0.02;
+        mutationProcess._logType = "uninstall";
+        mutationProcess._logTitle = Tr.t("Uninstalled %1").arg(displayName || name);
+        mutationProcess._logItem = {
+            name: displayName || name,
+            from: "",
+            to: "",
+            source: "System"
+        };
+        mutationProcess.command = ["pkexec", "dnf5", "remove", "-y", name];
+        mutationProcess.running = true;
+    }
+
+    function downgradeRpm(name, version) {
+        busyAction = "downgrade:" + name;
+        mutationProgress = Tr.t("Waiting for authorization…");
+        mutationFraction = 0.02;
+        mutationProcess._logType = "downgrade";
+        mutationProcess._logTitle = Tr.t("Downgraded %1").arg(name);
+        mutationProcess._logItem = {
+            name: name,
+            from: "",
+            to: version,
+            source: "System"
+        };
+        mutationProcess.command = ["pkexec", "dnf5", "downgrade", "-y", name + "-" + version];
+        mutationProcess.running = true;
+    }
+
+    // ── Data collection ──────────────────────────────────────────────────────
+    Process {
+        id: flatpakListProcess
+        // size column is human readable; the deploy dir mtime gives the last
+        // install/update moment
+        command: ["sh", "-c", "LC_ALL=C flatpak list --app --columns=application,version,origin,installation,size 2>/dev/null | while IFS=$'\\t' read -r id ver origin inst size; do base=/var/lib/flatpak; [ \"$inst\" = user ] && base=\"$HOME/.local/share/flatpak\"; ts=$(stat -c %Y \"$base/app/$id/current/active\" 2>/dev/null || echo 0); printf '%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' \"$id\" \"$ver\" \"$origin\" \"$inst\" \"$size\" \"$ts\"; done"]
+
+        function parseSize(text) {
+            const match = /^([\d.,]+)\s*(kB|MB|GB|B)?/.exec((text || "").replace(",", "."));
+            if (!match)
+                return 0;
+            const value = parseFloat(match[1]) || 0;
+            switch (match[2]) {
+            case "GB":
+                return value * 1e9;
+            case "MB":
+                return value * 1e6;
+            case "kB":
+                return value * 1e3;
+            default:
+                return value;
+            }
+        }
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const apps = [];
+                const ids = [];
+                for (const line of text.trim().split("\n")) {
+                    const parts = line.split("\t");
+                    if (parts.length >= 3 && parts[0]) {
+                        apps.push({
+                            id: parts[0],
+                            version: parts[1] || "",
+                            origin: parts[2] || "",
+                            installation: parts[3] || "system",
+                            sizeBytes: flatpakListProcess.parseSize(parts[4]),
+                            updatedTs: parseInt(parts[5], 10) || 0
+                        });
+                        ids.push(parts[0]);
+                    }
+                }
+                view.flatpakApps = apps;
+                view._requestEnrich();
+            }
+        }
+    }
+
+    Process {
+        id: rpmListProcess
+        command: ["sh", "-c", "rpm -qa --qf '%{NAME}\\t%{VERSION}-%{RELEASE}\\t%{SIZE}\\t%{INSTALLTIME}\\n' 2>/dev/null | sort"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const pkgs = [];
+                for (const line of text.trim().split("\n")) {
+                    const parts = line.split("\t");
+                    if (parts.length >= 2 && parts[0])
+                        pkgs.push({
+                            name: parts[0],
+                            version: parts[1],
+                            sizeBytes: parseInt(parts[2], 10) || 0,
+                            updatedTs: parseInt(parts[3], 10) || 0
+                        });
+                }
+                view.rpmPackages = pkgs;
+                view._requestEnrich();
+                view.loading = false;
+            }
+        }
+    }
+
+    Process {
+        id: enrichProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(text);
+                    const merged = {};
+                    for (const name in (data.flatpak || {}))
+                        merged["flatpak/" + name] = data.flatpak[name];
+                    for (const name in (data.rpm || {}))
+                        merged["system/" + name] = data.rpm[name];
+                    view.meta = merged;
+                } catch (e) {
+                }
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            if (view._enrichPending) {
+                view._enrichPending = false;
+                view._requestEnrich();
+            }
+        }
+    }
+
+    // Short progress message from a raw dnf5/flatpak output line, with labels
+    // that fit removals and downgrades alike. dnf5 piped output: "Updating and
+    // loading repositories:", "Repositories loaded.", then
+    // "[x/y] <package or transaction step> … NN% | speed | size | time".
+    function _mutationLine(raw) {
+        const line = raw.trim();
+        if (line === "")
+            return;
+        if (line.indexOf("Updating and loading repositories") === 0) {
+            mutationFraction = 0.1;
+            mutationProgress = Tr.t("Loading repositories…");
+            return;
+        }
+        if (line.indexOf("Repositories loaded") === 0) {
+            mutationFraction = 0.3;
+            mutationProgress = Tr.t("Resolving dependencies…");
+            return;
+        }
+        if (line.indexOf("Running transaction") === 0) {
+            mutationFraction = Math.max(mutationFraction, 0.5);
+            mutationProgress = Tr.t("Applying changes…");
+            return;
+        }
+        // Uninstalls download nothing, so a step line that isn't a recognized
+        // transaction keyword is still removal work — never label it Downloading.
+        const removing = mutationProcess._logType === "uninstall";
+        const step = /^\[\s*(\d+)\s*\/\s*(\d+)\s*\]\s*(.*)/.exec(line);
+        if (step) {
+            const x = parseInt(step[1], 10);
+            const y = Math.max(1, parseInt(step[2], 10));
+            const rest = step[3] || "";
+            const transaction = removing || /^(Verify|Prepare|Installing|Upgrading|Reinstalling|Downgrading|Running|Cleanup|Removing|Erasing)/.test(rest);
+            const pct = /(\d{1,3})%/.exec(rest);
+            const part = Math.min(1, (x - 1 + (pct ? Math.min(100, parseInt(pct[1], 10)) / 100 : 0)) / y);
+            mutationFraction = transaction ? 0.5 + 0.5 * part : 0.3 + 0.2 * part;
+            // Stage-wide percentage — the per-item percent reads oddly ("16/24 · 100%")
+            const label = removing ? Tr.t("Removing") : (transaction ? Tr.t("Applying") : Tr.t("Downloading"));
+            mutationProgress = label + " " + x + "/" + y + " · " + Math.round(part * 100) + "%";
+            return;
+        }
+        const pct = /(\d{1,3})%/.exec(line);
+        if (pct) {
+            const part = Math.min(100, parseInt(pct[1], 10)) / 100;
+            mutationFraction = 0.3 + 0.6 * part;
+            mutationProgress = (removing ? Tr.t("Removing") : Tr.t("Downloading")) + " · " + pct[1] + "%";
+        } else if (line.indexOf("Uninstalling") === 0) {
+            mutationFraction = Math.max(mutationFraction, 0.5);
+            mutationProgress = Tr.t("Applying changes…");
+        }
+    }
+
+    Process {
+        id: mutationProcess
+
+        property string _logType: ""
+        property string _logTitle: ""
+        property var _logItem: null
+
+        stdout: SplitParser {
+            onRead: line => view._mutationLine(line)
+        }
+
+        stderr: SplitParser {
+            onRead: line => view._mutationLine(line)
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            view.busyAction = "";
+            view.mutationProgress = "";
+            view.mutationFraction = 0;
+            view.downgradeLogs = {};
+            if (exitCode === 0) {
+                if (view.logger && _logType !== "") {
+                    _logItem.status = "done";
+                    view.logger.record(_logType, _logTitle, [_logItem]);
+                }
+                // The serial bump this triggers reloads our own list too
+                view.softwareMutated();
+            } else {
+                view.reload();
+            }
+            _logType = "";
+            SystemUpdateService.checkForUpdates();
+        }
+    }
+
+    Process {
+        id: rpmVersionsProcess
+
+        property string _target: ""
+        property string _installed: ""
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const versions = [];
+                for (const line of text.trim().split("\n")) {
+                    const version = line.trim();
+                    // Keep only versions different from (and listed before)
+                    // the installed one — sort -V put them in ascending order
+                    if (version && version !== rpmVersionsProcess._installed)
+                        versions.push(version);
+                    else if (version === rpmVersionsProcess._installed)
+                        break;
+                }
+                const updated = Object.assign({}, view.rpmVersions);
+                updated[rpmVersionsProcess._target] = versions.slice(-3).reverse();
+                view.rpmVersions = updated;
+            }
+        }
+    }
+
+    Process {
+        id: logProcess
+
+        property string _target: ""
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const entries = [];
+                let current = {};
+                for (const line of text.split("\n")) {
+                    const commitMatch = /Commit:\s*([0-9a-f]+)/.exec(line);
+                    const dateMatch = /Date:\s*(.+)/.exec(line);
+                    if (commitMatch) {
+                        current = {
+                            commit: commitMatch[1]
+                        };
+                    } else if (dateMatch && current.commit) {
+                        current.date = dateMatch[1].trim().split(" ")[0];
+                        entries.push(current);
+                        current = {};
+                    }
+                }
+                const updated = Object.assign({}, view.downgradeLogs);
+                // First entry is the newest (usually what's installed) — offer
+                // the ones after it as "previous versions".
+                updated[logProcess._target] = entries.slice(1, 4);
+                view.downgradeLogs = updated;
+            }
+        }
+    }
+
+    // ── UI ───────────────────────────────────────────────────────────────────
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: Theme.spacingM
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spacingM
+
+            DankTextField {
+                id: searchField
+                Layout.fillWidth: true
+                placeholderText: Tr.t("Search installed software…")
+                leftIconName: "search"
+                showClearButton: true
+                onTextChanged: view.searchText = text
+                Keys.onEscapePressed: event => {
+                    if (text !== "") {
+                        clear();
+                    } else {
+                        event.accepted = false;
+                    }
+                }
+
+                // The Keys handler above only sees Esc while the field has
+                // focus; after e.g. an uninstall the focus is elsewhere.
+                // Catch Esc window-wide as long as the popup doesn't need it.
+                Shortcut {
+                    sequence: "Escape"
+                    enabled: view.visible && searchField.text !== "" && !detailsDialog.visible
+                    onActivated: searchField.clear()
+                }
+            }
+
+        }
+
+        // Second toolbar row: source filter + sorting (wraps cleanly at
+        // narrow window widths)
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spacingM
+
+            DankButtonGroup {
+                id: filterGroup
+                model: [Tr.t("All"), "Flatpak", Tr.t("System"), "AppImage"]
+                currentIndex: view.sourceFilter
+                onSelectionChanged: (index, selected) => {
+                    if (selected)
+                        view.sourceFilter = index;
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            DankDropdown {
+                dropdownWidth: 170
+                alignPopupRight: true
+                options: view.sortOptions.map(o => Tr.t(o))
+                currentValue: Tr.t(view.sortMode)
+                onValueChanged: value => {
+                    for (const option of view.sortOptions) {
+                        if (Tr.t(option) === value) {
+                            view.sortMode = option;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            visible: !view.loading
+            text: {
+                const total = view.filteredItems.length;
+                const flatpakCount = view.flatpakApps.length;
+                const rpmCount = view.rpmPackages.length;
+                return Tr.t("%1 shown · %2 Flatpak apps · %3 system packages").arg(total).arg(flatpakCount).arg(rpmCount);
+            }
+            font.pixelSize: Theme.fontSizeSmall - 1
+            color: Theme.surfaceVariantText
+        }
+
+        DankListView {
+            id: installedList
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            spacing: Theme.spacingXS
+            model: view.filteredItems
+            visible: !view.loading
+
+            delegate: Rectangle {
+                id: row
+
+                required property var modelData
+
+                readonly property bool isFlatpak: modelData.kind === "flatpak"
+                readonly property bool held: view.isHeldName(modelData.id)
+                readonly property bool busy: view.busyAction.endsWith(":" + modelData.id)
+
+                width: installedList.width
+                implicitHeight: rowContent.implicitHeight + Theme.spacingS * 2
+                radius: Theme.cornerRadius
+                color: rowHover.hovered ? Theme.surfaceContainerHigh : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+
+                HoverHandler {
+                    id: rowHover
+                }
+
+                // Click opens the details popup with all info and actions
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: view.openDetails(row.modelData)
+                }
+
+                ColumnLayout {
+                    id: rowContent
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.leftMargin: Theme.spacingS
+                    anchors.rightMargin: Theme.spacingS
+                    spacing: Theme.spacingS
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spacingM
+
+                        Item {
+                            Layout.preferredWidth: 32
+                            Layout.preferredHeight: 32
+
+                            Image {
+                                id: rowLogo
+                                anchors.fill: parent
+                                source: (row.modelData.info && row.modelData.info.icon) ? "file://" + row.modelData.info.icon : ""
+                                sourceSize.width: 64
+                                sourceSize.height: 64
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                visible: status === Image.Ready
+                            }
+
+                            DankIcon {
+                                anchors.centerIn: parent
+                                visible: rowLogo.status !== Image.Ready
+                                name: row.modelData.kind === "system" ? "memory" : "apps"
+                                size: 20
+                                color: Theme.surfaceVariantText
+                            }
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 0
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+
+                                StyledText {
+                                    text: row.modelData.name
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Medium
+                                    color: Theme.surfaceText
+                                    elide: Text.ElideRight
+                                    Layout.maximumWidth: 380
+                                }
+
+                                Rectangle {
+                                    visible: row.held
+                                    Layout.preferredWidth: heldMark.implicitWidth + 12
+                                    Layout.preferredHeight: 16
+                                    radius: 8
+                                    color: Theme.withAlpha(Theme.warning, 0.18)
+
+                                    StyledText {
+                                        id: heldMark
+                                        anchors.centerIn: parent
+                                        text: Tr.t("Held")
+                                        font.pixelSize: Theme.fontSizeSmall - 2
+                                        color: Theme.warning
+                                    }
+                                }
+
+                                Item {
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                visible: text !== ""
+                                text: {
+                                    const parts = [];
+                                    if (row.modelData.version)
+                                        parts.push(row.modelData.version);
+                                    if (view.sortMode === "Largest" && row.modelData.sizeBytes > 0)
+                                        parts.push(view.formatSize(row.modelData.sizeBytes));
+                                    if (view.sortMode === "Recently updated" && row.modelData.updatedTs > 0)
+                                        parts.push(new Date(row.modelData.updatedTs * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat));
+                                    if (row.modelData.summary)
+                                        parts.push(row.modelData.summary);
+                                    return parts.join(" · ");
+                                }
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.surfaceVariantText
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        StyledText {
+                            visible: row.busy && view.mutationProgress !== ""
+                            text: view.mutationProgress
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.Medium
+                            color: Theme.primary
+                        }
+
+                        M3WaveProgress {
+                            visible: row.busy && view.mutationFraction > 0
+                            Layout.preferredWidth: 90
+                            Layout.preferredHeight: 16
+                            value: view.mutationFraction
+                            isPlaying: visible
+                        }
+
+                        DankSpinner {
+                            visible: row.busy && view.mutationFraction <= 0
+                            size: 22
+                        }
+                    }
+                }
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: view.loading
+
+            Column {
+                anchors.centerIn: parent
+                spacing: Theme.spacingM
+
+                DankSpinner {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    size: 40
+                }
+
+                StyledText {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: Tr.t("Loading installed software…")
+                    font.pixelSize: Theme.fontSizeMedium
+                    color: Theme.surfaceVariantText
+                }
+            }
+        }
+    }
+
+}

@@ -1,0 +1,1600 @@
+#!/usr/bin/env python3
+"""Metadata enrichment for the dankSoftwareDepot DMS plugin.
+
+Reads a JSON request on stdin:
+  {"rpm":    [{"name": "freerdp-libs", "from": "3.24.2-1.fc44", "to": "2:3.30.0-1.fc44"}, ...],
+   "flatpak":[{"name": "md.obsidian.Obsidian", "from": "1.12.7", "to": ""}, ...]}
+
+Writes a JSON response on stdout:
+  {"rpm": {"freerdp-libs": {...info...}}, "flatpak": {"md.obsidian.Obsidian": {...info...}}}
+
+info = {name, summary, developer, homepage, icon, releases: [{version, date, notesHtml, newer}]}
+
+Data sources: AppStream catalogs (distro + flatpak remotes), with a `dnf repoquery`
+fallback for rpm packages that have no AppStream component.
+
+Alternate mode:  enrich.py --changelog <pkg>   → plain-text rpm changelog (top entries).
+"""
+
+import glob
+import gzip
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
+
+CACHE_DIR = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "dankSoftwareDepot")
+CACHE_FILE = os.path.join(CACHE_DIR, "enrich-cache.json")
+MAX_RELEASES = 8
+
+
+def catalog_paths():
+    paths = []
+    paths += glob.glob("/usr/share/swcatalog/xml/*.xml")
+    paths += glob.glob("/usr/share/swcatalog/xml/*.xml.gz")
+    for base in ("/var/lib/flatpak/appstream", os.path.expanduser("~/.local/share/flatpak/appstream")):
+        paths += glob.glob(os.path.join(base, "*", "*", "active", "appstream.xml.gz"))
+        paths += glob.glob(os.path.join(base, "*", "*", "active", "appstream.xml"))
+    return sorted(set(paths))
+
+
+_locale_langs_cache = None
+
+
+def get_locale_langs():
+    global _locale_langs_cache
+    if _locale_langs_cache is None:
+        _locale_langs_cache = locale_langs()
+    return _locale_langs_cache
+
+
+def text_locale(elem, name):
+    """Child <name> text preferring the active locale, then untranslated."""
+    langs = get_locale_langs()
+    best = ""
+    best_rank = 99
+    for child in elem:
+        if localname(child.tag) != name:
+            continue
+        value = (child.text or "").strip()
+        if not value:
+            continue
+        lang = child_lang(child)
+        rank = langs.index(lang) if lang in langs else (50 if lang == "" else 99)
+        if rank < best_rank:
+            best = value
+            best_rank = rank
+    return best
+
+
+def fingerprint(paths):
+    h = hashlib.md5()
+    h.update(("locale:" + ",".join(get_locale_langs())).encode())
+    for p in paths:
+        try:
+            st = os.stat(p)
+            h.update(f"{p}:{st.st_mtime_ns}:{st.st_size};".encode())
+        except OSError:
+            continue
+    return h.hexdigest()
+
+
+def load_cache(fp):
+    try:
+        with open(CACHE_FILE) as f:
+            cache = json.load(f)
+        if cache.get("fingerprint") == fp:
+            return cache
+    except (OSError, ValueError):
+        pass
+    return {"fingerprint": fp, "rpm": {}, "flatpak": {}}
+
+
+def save_cache(cache):
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        tmp = CACHE_FILE + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(cache, f)
+        os.replace(tmp, CACHE_FILE)
+    except OSError:
+        pass
+
+
+def open_catalog(path):
+    if path.endswith(".gz"):
+        return gzip.open(path, "rb")
+    return open(path, "rb")
+
+
+def localname(tag):
+    return tag.rsplit("}", 1)[-1]
+
+
+def text_no_lang(elem, name):
+    """First child <name> without xml:lang attribute."""
+    for child in elem:
+        if localname(child.tag) == name and not any(k.endswith("lang") for k in child.attrib):
+            return (child.text or "").strip()
+    return ""
+
+
+def description_html(elem):
+    """Serialize an AppStream <description>-style element to a safe HTML subset.
+
+    Only <p>, <ul>, <ol>, <li> structure survives; all text content is
+    HTML-escaped so untrusted upstream release notes can never inject markup
+    (links, images, etc.) into the Qt rich-text renderer.
+    """
+    import html as htmlmod
+
+    def safe_text(e):
+        return htmlmod.escape(" ".join("".join(e.itertext()).split()))
+
+    parts = []
+    for child in elem:
+        if any(k.endswith("lang") for k in child.attrib):
+            continue
+        tag = localname(child.tag)
+        if tag == "p":
+            parts.append("<p>" + safe_text(child) + "</p>")
+        elif tag in ("ul", "ol"):
+            items = []
+            for li in child:
+                if localname(li.tag) == "li" and not any(k.endswith("lang") for k in li.attrib):
+                    items.append("<li>" + safe_text(li) + "</li>")
+            parts.append(f"<{tag}>" + "".join(items) + f"</{tag}>")
+    return "".join(parts)
+
+
+def normalize_date(value):
+    """Return unix epoch seconds (int) for a timestamp or ISO date string, else 0."""
+    if not value:
+        return 0
+    if value.isdigit():
+        return int(value)
+    try:
+        import datetime
+        return int(datetime.datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp())
+    except ValueError:
+        return 0
+
+
+def parse_component(elem):
+    comp = {
+        "id": text_no_lang(elem, "id"),
+        "pkgname": text_no_lang(elem, "pkgname"),
+        "name": text_locale(elem, "name"),
+        "summary": text_locale(elem, "summary"),
+        "developer": "",
+        "homepage": "",
+        "icon_cached": "",
+        "icon_stock": "",
+        "releases": [],
+    }
+    for child in elem:
+        tag = localname(child.tag)
+        if tag == "url" and child.attrib.get("type") == "homepage":
+            comp["homepage"] = (child.text or "").strip()
+        elif tag == "developer_name":
+            comp["developer"] = (child.text or "").strip()
+        elif tag == "developer":
+            comp["developer"] = text_no_lang(child, "name") or comp["developer"]
+        elif tag == "icon":
+            itype = child.attrib.get("type")
+            if itype == "cached" and not comp["icon_cached"]:
+                comp["icon_cached"] = (child.text or "").strip()
+            elif itype == "stock" and not comp["icon_stock"]:
+                comp["icon_stock"] = (child.text or "").strip()
+        elif tag == "releases":
+            for rel in list(child)[:MAX_RELEASES]:
+                if localname(rel.tag) != "release":
+                    continue
+                notes = ""
+                for rc in rel:
+                    if localname(rc.tag) == "description" and not any(k.endswith("lang") for k in rc.attrib):
+                        notes = description_html(rc)
+                        break
+                comp["releases"].append({
+                    "version": rel.attrib.get("version", ""),
+                    "date": normalize_date(rel.attrib.get("timestamp", "") or rel.attrib.get("date", "")),
+                    "notesHtml": notes,
+                })
+    return comp
+
+
+def resolve_icon(comp, catalog_path):
+    name = comp.get("icon_cached")
+    if name:
+        catalog_dir = os.path.dirname(catalog_path)
+        candidates = []
+        for size in ("128x128", "64x64", "48x48"):
+            candidates.append(os.path.join(catalog_dir, "icons", size, name))
+            candidates += glob.glob(os.path.join("/usr/share/swcatalog/icons", "*", size, name))
+            candidates += glob.glob(os.path.join("/usr/share/app-info/icons", "*", size, name))
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
+    # Exported / themed icons by component id or stock name
+    comp_id = comp.get("id", "")
+    stock = comp.get("icon_stock", "")
+    for icon_name in filter(None, (comp_id, stock)):
+        for base in ("/var/lib/flatpak/exports/share/icons/hicolor",
+                     os.path.expanduser("~/.local/share/flatpak/exports/share/icons/hicolor"),
+                     "/usr/share/icons/hicolor"):
+            for size in ("128x128", "scalable", "64x64", "48x48"):
+                for ext in ("png", "svg"):
+                    p = os.path.join(base, size, "apps", f"{icon_name}.{ext}")
+                    if os.path.isfile(p):
+                        return p
+    return ""
+
+
+def resolve_theme_icon(icon_name):
+    """Resolve a themed icon name (from a desktop file) to an image path."""
+    if not icon_name:
+        return ""
+    if os.path.isabs(icon_name):
+        return icon_name if os.path.isfile(icon_name) else ""
+    bases = (
+        "/usr/share/icons/hicolor",
+        os.path.expanduser("~/.local/share/icons/hicolor"),
+        os.path.expanduser("~/.local/share/icons"),
+        "/usr/share/pixmaps",
+    )
+    for base in bases:
+        for size in ("128x128", "256x256", "scalable", "64x64", "48x48", ""):
+            for ext in ("png", "svg", "xpm"):
+                path = os.path.join(base, size, "apps", f"{icon_name}.{ext}") if size else os.path.join(base, f"{icon_name}.{ext}")
+                if os.path.isfile(path):
+                    return path
+    return ""
+
+
+def icon_for_installed_pkg(pkg_name):
+    """Best-effort icon for an installed rpm without AppStream data, via its
+    desktop file (e.g. COPR packages like zen-browser)."""
+    for candidate in (f"/usr/share/applications/{pkg_name}.desktop",
+                      os.path.expanduser(f"~/.local/share/applications/{pkg_name}.desktop")):
+        try:
+            with open(candidate, errors="replace") as f:
+                for line in f:
+                    if line.startswith("Icon="):
+                        resolved = resolve_theme_icon(line.strip()[5:])
+                        if resolved:
+                            return resolved
+                        break
+        except OSError:
+            continue
+    return resolve_theme_icon(pkg_name)
+
+
+VERSION_SPLIT = re.compile(r"[^a-zA-Z0-9]+")
+
+
+def version_key(v):
+    v = re.sub(r"^\d+:", "", v or "")  # strip epoch
+    parts = []
+    for tok in VERSION_SPLIT.split(v):
+        if not tok:
+            continue
+        parts.append((0, int(tok)) if tok.isdigit() else (1, tok))
+    return parts
+
+
+def version_newer(candidate, installed):
+    """True if candidate > installed (loose comparison)."""
+    if not candidate or not installed:
+        return False
+    try:
+        return version_key(candidate) > version_key(installed)
+    except TypeError:
+        return False
+
+
+def scan_catalogs(wanted_rpm, wanted_flatpak):
+    """Single pass over all catalogs, picking out wanted components."""
+    rpm_found, flatpak_found = {}, {}
+    for path in catalog_paths():
+        # Entries without a name are stubs (e.g. org.gnome.App-list.xml carries
+        # bare ids) — keep looking for a richer component in later catalogs.
+        need_rpm = {n for n in wanted_rpm if n not in rpm_found or not rpm_found[n].get("name")}
+        need_flat = {n for n in wanted_flatpak if n not in flatpak_found or not flatpak_found[n].get("name")}
+        if not need_rpm and not need_flat:
+            break
+        try:
+            with open_catalog(path) as f:
+                for _, elem in ET.iterparse(f, events=("end",)):
+                    if localname(elem.tag) != "component":
+                        continue
+                    cid = text_no_lang(elem, "id")
+                    pkg = text_no_lang(elem, "pkgname")
+                    cid_base = re.sub(r"\.desktop$", "", cid)
+                    hit_rpm = pkg in need_rpm
+                    hit_flat = cid in need_flat or cid_base in need_flat
+                    if hit_rpm or hit_flat:
+                        comp = parse_component(elem)
+                        comp["icon"] = resolve_icon(comp, path)
+                        if hit_rpm and (pkg not in rpm_found or not rpm_found[pkg].get("name")):
+                            rpm_found[pkg] = comp
+                        if hit_flat:
+                            key = cid if cid in need_flat else cid_base
+                            if key not in flatpak_found or not flatpak_found[key].get("name"):
+                                flatpak_found[key] = comp
+                    elem.clear()
+        except (OSError, ET.ParseError):
+            continue
+    return rpm_found, flatpak_found
+
+
+def dnf_fallback(names):
+    """Batch-resolve homepage/summary for rpm packages via dnf repoquery (cache only)."""
+    if not names:
+        return {}
+    out = {}
+    try:
+        res = subprocess.run(
+            ["dnf", "-Cq", "repoquery", "--qf", "%{name}\t%{url}\t%{summary}\n"] + sorted(names),
+            capture_output=True, text=True, timeout=60,
+            env={**os.environ, "LC_ALL": "C"})
+        for line in res.stdout.splitlines():
+            fields = line.split("\t")
+            if len(fields) >= 3 and fields[0]:
+                out[fields[0]] = {"homepage": fields[1].strip(), "summary": fields[2].strip()}
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return out
+
+
+def read_dnf_holds():
+    """Collect package holds: excludepkgs globs and versionlock entries."""
+    excludes = []
+    locked = []
+    conf_paths = ["/etc/dnf/dnf.conf"] + glob.glob("/etc/dnf/libdnf5.conf.d/*.conf")
+    for path in conf_paths:
+        try:
+            with open(path) as f:
+                for line in f:
+                    m = re.match(r"\s*(excludepkgs|exclude)\s*=\s*(.+)", line)
+                    if m:
+                        excludes += [t for t in re.split(r"[,\s]+", m.group(2).strip()) if t]
+        except OSError:
+            continue
+    try:
+        with open("/etc/dnf/versionlock.toml") as f:
+            for line in f:
+                m = re.match(r"\s*name\s*=\s*\"([^\"]+)\"", line)
+                if m:
+                    locked.append(m.group(1))
+    except OSError:
+        pass
+    return excludes, locked
+
+
+def source_names(names):
+    """pkgname -> source package name via dnf repoquery (cache only)."""
+    if not names:
+        return {}
+    out = {}
+    try:
+        res = subprocess.run(
+            ["dnf", "-Cq", "repoquery", "--qf", "%{name}\t%{source_name}\n"] + sorted(set(names)),
+            capture_output=True, text=True, timeout=60,
+            env={**os.environ, "LC_ALL": "C"})
+        for line in res.stdout.splitlines():
+            fields = line.split("\t")
+            if len(fields) >= 2 and fields[0]:
+                out[fields[0]] = fields[1].strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return out
+
+
+def compute_holds(rpm_names):
+    """Return {pkgname: reason} for packages held back by dnf config.
+
+    A package is held when its name matches an exclude glob or versionlock
+    entry, or when it is built from the same source package as a locked
+    package (locking freerdp effectively holds freerdp-libs/libwinpr too).
+    """
+    import fnmatch
+    excludes, locked = read_dnf_holds()
+    if not excludes and not locked:
+        return {}
+    srcs = source_names(list(rpm_names) + locked)
+    locked_sources = {srcs.get(name, name) for name in locked}
+    held = {}
+    for name in rpm_names:
+        if name in locked:
+            held[name] = "versionlock"
+        elif any(fnmatch.fnmatch(name, pat) for pat in excludes):
+            held[name] = "excluded"
+        elif srcs.get(name) in locked_sources:
+            held[name] = "versionlock (via " + srcs.get(name, "?") + ")"
+    return held
+
+
+def comp_to_info(comp, installed_version):
+    releases = []
+    for rel in comp.get("releases", []):
+        releases.append({**rel, "newer": version_newer(rel.get("version"), installed_version)})
+    return {
+        "name": comp.get("name", ""),
+        "summary": comp.get("summary", ""),
+        "developer": comp.get("developer", ""),
+        "homepage": comp.get("homepage", ""),
+        "icon": comp.get("icon", ""),
+        "releases": releases,
+    }
+
+
+def strip_arch(name):
+    return re.sub(r"\.(x86_64|i686|noarch|aarch64|armv7hl|ppc64le|s390x)$", "", name)
+
+
+def run_changelog(pkg):
+    try:
+        res = subprocess.run(
+            ["dnf", "-Cq", "repoquery", "--changelogs", "--available", "--latest-limit=1", strip_arch(pkg)],
+            capture_output=True, text=True, timeout=60,
+            env={**os.environ, "LC_ALL": "C"})
+        text = res.stdout.strip()
+        if not text:
+            res = subprocess.run(
+                ["rpm", "-q", "--changelog", strip_arch(pkg)],
+                capture_output=True, text=True, timeout=30,
+                env={**os.environ, "LC_ALL": "C"})
+            text = res.stdout.strip()
+        # Keep only the first few entries ("* <date> <author>" headers)
+        entries = re.split(r"\n(?=\* )", text)
+        print("\n\n".join(entries[:4]))
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"(changelog unavailable: {exc})", file=sys.stderr)
+        sys.exit(1)
+
+
+APPSTREAM_MAX_AGE = 24 * 3600
+
+
+def refresh_appstream_if_stale():
+    """Kick off a flatpak appstream refresh when catalogs are older than a day.
+
+    Runs detached: the enrichment response must never wait on the network
+    (that showed as icons appearing a minute late after a fresh boot) —
+    refreshed catalogs are simply picked up by the next call."""
+    stamps = []
+    for base in ("/var/lib/flatpak/appstream", os.path.expanduser("~/.local/share/flatpak/appstream")):
+        for p in glob.glob(os.path.join(base, "*", "*", "active", "appstream.xml.gz")):
+            try:
+                stamps.append(os.stat(p).st_mtime)
+            except OSError:
+                pass
+    import time
+    if stamps and time.time() - max(stamps) < APPSTREAM_MAX_AGE:
+        return
+    stamp = os.path.join(CACHE_DIR, "appstream-refresh.stamp")
+    try:
+        if time.time() - os.stat(stamp).st_mtime < 3600:
+            return
+    except OSError:
+        pass
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(stamp, "w"):
+            pass
+        subprocess.Popen(["flatpak", "update", "--appstream"],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
+    except OSError:
+        pass
+
+
+SEARCH_INDEX_FILE = os.path.join(CACHE_DIR, "search-index.json")
+ODRS_CACHE_FILE = os.path.join(CACHE_DIR, "odrs-ratings.json")
+ODRS_URL = "https://odrs.gnome.org/1.0/reviews/api/ratings"
+ODRS_MAX_AGE = 24 * 3600
+
+
+def catalog_source(path):
+    """Human source label for a catalog path."""
+    if "/flatpak/appstream/" in path:
+        parts = path.split("/flatpak/appstream/")[1].split("/")
+        return parts[0] if parts else "flatpak"
+    return "fedora"
+
+
+SEARCH_INDEX_VERSION = 4
+
+
+def build_search_index(paths, fp):
+    try:
+        with open(SEARCH_INDEX_FILE) as f:
+            cached = json.load(f)
+        if cached.get("fingerprint") == fp and cached.get("version") == SEARCH_INDEX_VERSION:
+            return cached["entries"]
+    except (OSError, ValueError):
+        pass
+
+    entries = []
+    for path in paths:
+        source = catalog_source(path)
+        try:
+            with open_catalog(path) as f:
+                for _, elem in ET.iterparse(f, events=("end",)):
+                    if localname(elem.tag) != "component":
+                        continue
+                    ctype = elem.attrib.get("type", "")
+                    if ctype not in ("desktop", "desktop-application", "console-application", ""):
+                        elem.clear()
+                        continue
+                    cid = re.sub(r"\.desktop$", "", text_no_lang(elem, "id"))
+                    name = text_locale(elem, "name")
+                    if not cid or not name:
+                        elem.clear()
+                        continue
+                    comp = {
+                        "id": cid,
+                        "name": name,
+                        "name_en": text_no_lang(elem, "name"),
+                        "summary": text_locale(elem, "summary"),
+                        "summary_en": text_no_lang(elem, "summary"),
+                        "pkgname": text_no_lang(elem, "pkgname"),
+                        "source": source,
+                    }
+                    for child in elem:
+                        tag = localname(child.tag)
+                        if tag == "url" and child.attrib.get("type") == "homepage":
+                            comp["homepage"] = (child.text or "").strip()
+                        elif tag == "icon" and child.attrib.get("type") == "cached" and "icon_cached" not in comp:
+                            comp["icon_cached"] = (child.text or "").strip()
+                        elif tag == "categories":
+                            comp["categories"] = [(c.text or "").strip() for c in child if localname(c.tag) == "category" and c.text]
+                        elif tag == "releases":
+                            latest = 0
+                            for rel in child:
+                                if localname(rel.tag) == "release":
+                                    latest = max(latest, normalize_date(rel.attrib.get("timestamp", "") or rel.attrib.get("date", "")))
+                            if latest:
+                                comp["updated"] = latest
+                    comp["icon"] = resolve_icon({
+                        "id": cid,
+                        "icon_cached": comp.pop("icon_cached", ""),
+                        "icon_stock": ""
+                    }, path)
+                    entries.append(comp)
+                    elem.clear()
+        except (OSError, ET.ParseError):
+            continue
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(SEARCH_INDEX_FILE, "w") as f:
+            json.dump({"fingerprint": fp, "version": SEARCH_INDEX_VERSION, "entries": entries}, f)
+    except OSError:
+        pass
+    return entries
+
+
+def load_odrs_ratings():
+    """Star ratings from the Open Desktop Ratings Service (cached daily)."""
+    import time
+    try:
+        st = os.stat(ODRS_CACHE_FILE)
+        if time.time() - st.st_mtime < ODRS_MAX_AGE:
+            with open(ODRS_CACHE_FILE) as f:
+                return json.load(f)
+    except (OSError, ValueError):
+        pass
+    try:
+        import urllib.request
+        req = urllib.request.Request(ODRS_URL, headers={"User-Agent": "dankSoftwareDepot/0.1"})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.load(resp)
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(ODRS_CACHE_FILE, "w") as f:
+            json.dump(data, f)
+        return data
+    except Exception:
+        try:
+            with open(ODRS_CACHE_FILE) as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return {}
+
+
+def rating_for(ratings, cid):
+    entry = ratings.get(cid) or ratings.get(cid + ".desktop")
+    if not entry:
+        return None
+    total = sum(entry.get("star%d" % i, 0) for i in range(6))
+    if total == 0:
+        return None
+    score = sum(entry.get("star%d" % i, 0) * i for i in range(6)) / total
+    return {"stars": round(score, 1), "count": total}
+
+
+def dnf_name_search(query):
+    """Match rpm packages by name via cache-only repoquery.
+
+    Covers command-line tools without AppStream metadata (e.g. playerctl)
+    that `dnf search` finds but the catalog index does not."""
+    if not re.match(r"^[\w.+-]+$", query):
+        return []
+    try:
+        res = subprocess.run(
+            ["dnf", "-Cq", "repoquery", "--qf", "%{name}\t%{url}\t%{summary}\n", f"*{query}*"],
+            capture_output=True, text=True, timeout=20,
+            env={**os.environ, "LC_ALL": "C"})
+    except (OSError, subprocess.SubprocessError):
+        return []
+    seen = {}
+    for line in res.stdout.splitlines():
+        fields = line.split("\t")
+        if len(fields) < 3 or not fields[0]:
+            continue
+        name = fields[0]
+        if re.search(r"-(debuginfo|debugsource)$", name):
+            continue
+        seen[name] = {"name": name, "homepage": fields[1].strip(), "summary": fields[2].strip()}
+    return list(seen.values())
+
+
+def run_search(query):
+    paths = catalog_paths()
+    fp = fingerprint(paths)
+    entries = build_search_index(paths, fp)
+    needle = query.lower()
+
+    def score(entry):
+        name = entry["name"].lower()
+        cid = entry["id"].lower()
+        if name == needle or cid == needle:
+            return 0
+        if name.startswith(needle):
+            return 1
+        if needle in name or needle in cid or needle in entry.get("pkgname", "").lower():
+            return 2
+        if needle in entry.get("summary", "").lower():
+            return 3
+        return -1
+
+    merged = {}
+    for entry in entries:
+        s = score(entry)
+        if s < 0:
+            continue
+        cid = entry["id"].lower()
+        if cid not in merged:
+            merged[cid] = {
+                "id": entry["id"],
+                "name": entry["name"],
+                "summary": entry.get("summary", ""),
+                "homepage": entry.get("homepage", ""),
+                "icon": entry.get("icon", ""),
+                "updated": entry.get("updated", 0),
+                "score": s,
+                "sources": [],
+            }
+        item = merged[cid]
+        item["score"] = min(item["score"], s)
+        item["updated"] = max(item.get("updated", 0), entry.get("updated", 0))
+        if not item["icon"] and entry.get("icon"):
+            item["icon"] = entry["icon"]
+        source = entry["source"]
+        kind = "dnf" if source == "fedora" else "flatpak"
+        ref = entry.get("pkgname") if kind == "dnf" else entry["id"]
+        if ref and not any(s_["source"] == source for s_ in item["sources"]):
+            item["sources"].append({"source": source, "kind": kind, "ref": ref})
+
+    covered = {s_["ref"] for item in merged.values() for s_ in item["sources"] if s_["kind"] == "dnf"}
+    for pkg in dnf_name_search(query):
+        if pkg["name"] in covered or ("pkg:" + pkg["name"].lower()) in merged:
+            continue
+        lower = pkg["name"].lower()
+        merged["pkg:" + lower] = {
+            "id": pkg["name"],
+            "name": pkg["name"],
+            "summary": pkg["summary"],
+            "homepage": pkg["homepage"],
+            "icon": "",
+            "updated": 0,
+            "score": 0 if lower == needle else (1 if lower.startswith(needle) else 2),
+            "sources": [{"source": "fedora", "kind": "dnf", "ref": pkg["name"]}],
+        }
+
+    ratings = load_odrs_ratings()
+    results = []
+    for item in merged.values():
+        if not item["sources"]:
+            continue
+        item["rating"] = rating_for(ratings, item["id"])
+        results.append(item)
+    results.sort(key=lambda r: (r["score"], -(r["rating"]["count"] if r["rating"] else 0), r["name"].lower()))
+    json.dump(results[:40], sys.stdout)
+
+
+APPINFO_CACHE_FILE = os.path.join(CACHE_DIR, "appinfo-cache.json")
+REVIEWS_URL = "https://odrs.gnome.org/1.0/reviews/api/fetch"
+
+
+def locale_langs():
+    """Preferred description languages from the active locale, most specific
+    first — e.g. ["nl_NL", "nl"]. English (untranslated) is the fallback."""
+    lang = (os.environ.get("LC_ALL") or os.environ.get("LC_MESSAGES") or os.environ.get("LANG") or "").split(".")[0]
+    if not lang or lang.lower() in ("c", "posix") or lang.startswith("en"):
+        return []
+    langs = [lang]
+    if "_" in lang:
+        langs.append(lang.split("_")[0])
+    return langs
+
+
+def child_lang(child):
+    for key, value in child.attrib.items():
+        if key.endswith("lang"):
+            return value
+    return ""
+
+
+def find_component_details(app_id):
+    """Full component details (description, screenshots, developer, license)
+    for one AppStream id, scanned from all catalogs. Descriptions prefer the
+    active locale, falling back to the untranslated (English) text."""
+    target = re.sub(r"\.desktop$", "", app_id).lower()
+    langs = locale_langs()
+    result = {}
+    desc_rank = 99  # lower is better: 0.. = locale match, 50 = untranslated
+    for path in catalog_paths():
+        found_here = False
+        try:
+            with open_catalog(path) as f:
+                for _, elem in ET.iterparse(f, events=("end",)):
+                    if localname(elem.tag) != "component":
+                        continue
+                    cid = re.sub(r"\.desktop$", "", text_no_lang(elem, "id")).lower()
+                    if cid != target:
+                        elem.clear()
+                        continue
+                    for child in elem:
+                        tag = localname(child.tag)
+                        has_lang = any(k.endswith("lang") for k in child.attrib)
+                        if tag == "description":
+                            lang = child_lang(child)
+                            rank = langs.index(lang) if lang in langs else (50 if lang == "" else 99)
+                            if rank < desc_rank:
+                                html = description_html(child)
+                                if html:
+                                    result["descriptionHtml"] = html
+                                    desc_rank = rank
+                        elif tag == "project_license" and not result.get("license"):
+                            result["license"] = (child.text or "").strip()
+                        elif tag == "developer_name" and not has_lang and not result.get("developer"):
+                            result["developer"] = (child.text or "").strip()
+                        elif tag == "developer" and not result.get("developer"):
+                            result["developer"] = text_no_lang(child, "name")
+                        elif tag == "screenshots" and not result.get("screenshots"):
+                            shots = []
+                            for shot in child:
+                                if localname(shot.tag) != "screenshot":
+                                    continue
+                                best = ""
+                                source_url = ""
+                                for image in shot:
+                                    if localname(image.tag) != "image":
+                                        continue
+                                    url = (image.text or "").strip()
+                                    if not url.startswith("http"):
+                                        continue
+                                    itype = image.attrib.get("type", "")
+                                    width = image.attrib.get("width", "")
+                                    if itype == "source":
+                                        source_url = url
+                                    elif width in ("624", "752"):
+                                        best = best or url
+                                if best or source_url:
+                                    shots.append(best or source_url)
+                            if shots:
+                                result["screenshots"] = shots[:8]
+                    found_here = True
+                    elem.clear()
+                    break
+        except (OSError, ET.ParseError):
+            continue
+        if found_here and result.get("descriptionHtml") and result.get("screenshots"):
+            break
+    return result
+
+
+SCREENSHOT_CACHE_DIR = os.path.join(CACHE_DIR, "screenshots")
+SCREENSHOT_MAX_AGE = 30 * 24 * 3600
+
+
+def cache_screenshots(urls):
+    """Download screenshot images into the local cache and return file paths.
+
+    Files are kept for 30 days (well beyond the 24h appinfo cache), so
+    reopening a popup never re-downloads images. Failed downloads fall back
+    to the remote URL."""
+    import time
+    import hashlib
+    from concurrent.futures import ThreadPoolExecutor
+    try:
+        os.makedirs(SCREENSHOT_CACHE_DIR, exist_ok=True)
+        now = time.time()
+        for name in os.listdir(SCREENSHOT_CACHE_DIR):
+            path = os.path.join(SCREENSHOT_CACHE_DIR, name)
+            try:
+                if now - os.stat(path).st_mtime > SCREENSHOT_MAX_AGE:
+                    os.unlink(path)
+            except OSError:
+                pass
+    except OSError:
+        return urls
+
+    def fetch(url):
+        ext = os.path.splitext(url.split("?")[0])[1][:5] or ".img"
+        path = os.path.join(SCREENSHOT_CACHE_DIR, hashlib.sha1(url.encode()).hexdigest() + ext)
+        if os.path.exists(path):
+            return path
+        try:
+            import urllib.request
+            req = urllib.request.Request(url, headers={"User-Agent": "dankSoftwareDepot/0.1"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = resp.read()
+            tmp = path + ".tmp"
+            with open(tmp, "wb") as f:
+                f.write(data)
+            os.replace(tmp, path)
+            return path
+        except Exception:
+            return url
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        return list(pool.map(fetch, urls))
+
+
+def rpm_repoquery_info(pkg):
+    """Description, license and sizes for an rpm via cache-only repoquery."""
+    try:
+        res = subprocess.run(
+            ["dnf", "-Cq", "repoquery", "--info", "--latest-limit=1", "--arch=x86_64,noarch", pkg],
+            capture_output=True, text=True, timeout=25,
+            env={**os.environ, "LC_ALL": "C"})
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    import html as htmlmod
+    out = {}
+    desc_lines = []
+    in_desc = False
+    for line in res.stdout.splitlines():
+        m = re.match(r"^([A-Z][A-Za-z ]+?)\s*:\s*(.*)$", line)
+        if m:
+            field, value = m.group(1).strip(), m.group(2).strip()
+            in_desc = field == "Description"
+            if in_desc:
+                desc_lines.append(value)
+            elif field == "License":
+                out["license"] = value
+            elif field == "Download size":
+                out["download"] = value
+            elif field == "Installed size":
+                out["installed"] = value
+        elif in_desc and re.match(r"^\s*:\s?", line):
+            desc_lines.append(re.sub(r"^\s*:\s?", "", line))
+    if desc_lines:
+        out["descriptionHtml"] = "<p>" + htmlmod.escape(" ".join(desc_lines)) + "</p>"
+    return out
+
+
+def flatpak_remote_sizes(remote, ref):
+    """Download/installed size from flatpak remote metadata."""
+    try:
+        res = subprocess.run(
+            ["flatpak", "remote-info", remote, ref],
+            capture_output=True, text=True, timeout=20,
+            env={**os.environ, "LC_ALL": "C"})
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    out = {}
+    for line in res.stdout.splitlines():
+        m = re.match(r"^\s*(Download|Installed):?\s*(?:Size:?\s*)?(.+)$", line.replace("Download Size", "Download").replace("Installed Size", "Installed"))
+        if m:
+            out[m.group(1).lower()] = m.group(2).strip()
+    return out
+
+
+def fetch_flathub_stats(app_ref):
+    """Install statistics from the Flathub API (installs/month etc.)."""
+    try:
+        import urllib.request
+        req = urllib.request.Request("https://flathub.org/api/v2/stats/" + app_ref,
+                                     headers={"User-Agent": "dankSoftwareDepot/0.1"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.load(resp)
+    except Exception:
+        return None
+    out = {}
+    for src, dst in (("installs_total", "total"), ("installs_last_month", "month"), ("installs_last_7_days", "week")):
+        if isinstance(data.get(src), int):
+            out[dst] = data[src]
+    return out or None
+
+
+def fetch_reviews(app_id):
+    """Review texts from the Open Desktop Ratings Service (cached daily)."""
+    import time
+    import hashlib
+    cache_file = os.path.join(CACHE_DIR, "reviews-cache.json")
+    try:
+        with open(cache_file) as f:
+            cache = json.load(f)
+    except (OSError, ValueError):
+        cache = {}
+    key = app_id.lower()
+    entry = cache.get(key)
+    if entry and time.time() - entry.get("ts", 0) < ODRS_MAX_AGE:
+        return entry["reviews"]
+
+    def query(odrs_id):
+        body = {
+            "user_hash": hashlib.sha1(b"dankSoftwareDepot").hexdigest(),
+            "app_id": odrs_id,
+            "locale": "en",
+            "distro": "Fedora",
+            "version": "unknown",
+            "limit": 50,
+        }
+        import urllib.request
+        req = urllib.request.Request(REVIEWS_URL, data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json", "User-Agent": "dankSoftwareDepot/0.1"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.load(resp)
+
+    reviews = []
+    try:
+        raw = query(app_id + ".desktop")
+        if not any(r.get("description") for r in raw):
+            raw = query(app_id)
+        for r in raw:
+            if not r.get("description") or r.get("reported", 0) >= 2:
+                continue
+            reviews.append({
+                "user": r.get("user_display") or "Anonymous",
+                "stars": max(0, min(5, round((r.get("rating") or 0) / 20))),
+                "date": int(r.get("date_created") or 0),
+                "summary": (r.get("summary") or "").strip(),
+                "text": (r.get("description") or "").strip(),
+            })
+    except Exception:
+        return entry["reviews"] if entry else []
+    reviews = reviews[:40]
+    cache[key] = {"ts": time.time(), "reviews": reviews}
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(cache_file, "w") as f:
+            json.dump(cache, f)
+    except OSError:
+        pass
+    return reviews
+
+
+def run_appinfo(arg):
+    """Detail-popup payload: description, screenshots, sizes, reviews."""
+    import time
+    try:
+        request = json.loads(arg)
+    except ValueError:
+        print("{}")
+        return
+    app_id = request.get("id", "")
+    sources = request.get("sources", [])
+    key = app_id.lower()
+
+    try:
+        with open(APPINFO_CACHE_FILE) as f:
+            cache = json.load(f)
+    except (OSError, ValueError):
+        cache = {}
+    entry = cache.get(key)
+    loc = ",".join(get_locale_langs())
+    if entry and entry.get("v") == 6 and entry.get("loc") == loc and time.time() - entry.get("ts", 0) < ODRS_MAX_AGE:
+        json.dump(entry["info"], sys.stdout)
+        return
+
+    info = find_component_details(app_id)
+    if info.get("screenshots"):
+        info["screenshots"] = cache_screenshots(info["screenshots"])
+    sizes = []
+    rpm_ref = next((s["ref"] for s in sources if s.get("kind") == "dnf"), "")
+    if rpm_ref:
+        rpm = rpm_repoquery_info(rpm_ref)
+        if not info.get("descriptionHtml") and rpm.get("descriptionHtml"):
+            info["descriptionHtml"] = rpm["descriptionHtml"]
+        if not info.get("license") and rpm.get("license"):
+            info["license"] = rpm["license"]
+        if rpm.get("download") or rpm.get("installed"):
+            sizes.append({"source": "Fedora", "download": rpm.get("download", ""), "installed": rpm.get("installed", "")})
+    for s in sources:
+        if s.get("kind") == "flatpak":
+            fs = flatpak_remote_sizes(s.get("source", "flathub"), s["ref"])
+            if fs:
+                sizes.append({"source": s.get("source", "flathub").capitalize(), "download": fs.get("download", ""), "installed": fs.get("installed", "")})
+    info["sizes"] = sizes
+    flathub_ref = next((s["ref"] for s in sources if s.get("kind") == "flatpak"), "")
+    if flathub_ref:
+        info["installStats"] = fetch_flathub_stats(flathub_ref)
+        info["flathub"] = fetch_flathub_summary(flathub_ref)
+    info["reviews"] = fetch_reviews(app_id)
+    info["rating"] = rating_for(load_odrs_ratings(), app_id)
+
+    cache[key] = {"ts": time.time(), "v": 6, "loc": loc, "info": info}
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(APPINFO_CACHE_FILE, "w") as f:
+            json.dump(cache, f)
+    except OSError:
+        pass
+    json.dump(info, sys.stdout)
+
+
+def run_qml_index():
+    """Full merged search index for in-QML type-to-filter searching.
+
+    Emits every installable app once (sources merged, ODRS rating attached)
+    with precomputed lowercase fields so QML can filter instantly per
+    keystroke without spawning a process."""
+    paths = catalog_paths()
+    fp = fingerprint(paths)
+    entries = build_search_index(paths, fp)
+    ratings = load_odrs_ratings()
+    merged = {}
+    for entry in entries:
+        cid = entry["id"].lower()
+        if cid not in merged:
+            merged[cid] = {
+                "id": entry["id"],
+                "name": entry["name"],
+                "name_en": entry.get("name_en", ""),
+                "summary": entry.get("summary", ""),
+                "summary_en": entry.get("summary_en", ""),
+                "homepage": entry.get("homepage", ""),
+                "icon": entry.get("icon", ""),
+                "updated": entry.get("updated", 0),
+                "sources": [],
+            }
+        item = merged[cid]
+        item["updated"] = max(item.get("updated", 0), entry.get("updated", 0))
+        if not item["icon"] and entry.get("icon"):
+            item["icon"] = entry["icon"]
+        source = entry["source"]
+        kind = "dnf" if source == "fedora" else "flatpak"
+        ref = entry.get("pkgname") if kind == "dnf" else entry["id"]
+        if ref and not any(s_["source"] == source for s_ in item["sources"]):
+            item["sources"].append({"source": source, "kind": kind, "ref": ref})
+
+    out = []
+    for item in merged.values():
+        if not item["sources"]:
+            continue
+        item["rating"] = rating_for(ratings, item["id"])
+        item["nl"] = item["name"].lower()
+        item["ne"] = (item.get("name_en") or "").lower()
+        item["il"] = item["id"].lower()
+        item["pl"] = " ".join((s_.get("ref") or "").lower() for s_ in item["sources"] if s_["kind"] == "dnf")
+        # Searchable summary covers both the locale and the English text
+        item["sl"] = ((item.get("summary") or "") + " " + (item.get("summary_en") or "")).lower()
+        item.pop("name_en", None)
+        item.pop("summary_en", None)
+        out.append(item)
+    json.dump(out, sys.stdout)
+
+
+def run_search_dnf(query):
+    """Async extras for the QML search: rpm packages matched by name that
+    have no AppStream entry (e.g. playerctl)."""
+    needle = query.lower()
+    out = []
+    for pkg in dnf_name_search(query):
+        lower = pkg["name"].lower()
+        out.append({
+            "id": pkg["name"],
+            "name": pkg["name"],
+            "summary": pkg["summary"],
+            "homepage": pkg["homepage"],
+            "icon": icon_for_installed_pkg(pkg["name"]),
+            "updated": 0,
+            "rating": None,
+            "score": 0 if lower == needle else (1 if lower.startswith(needle) else 2),
+            "sources": [{"source": "fedora", "kind": "dnf", "ref": pkg["name"]}],
+        })
+    json.dump(out, sys.stdout)
+
+
+
+FLATHUB_SUMMARY_CACHE = os.path.join(CACHE_DIR, "flathub-summary.json")
+
+
+def _load_daily_cache(path):
+    import time
+    try:
+        with open(path) as f:
+            cache = json.load(f)
+        if time.time() - cache.get("ts", 0) < 24 * 3600:
+            return cache
+    except (OSError, ValueError):
+        pass
+    return {"ts": 0, "data": {}}
+
+
+def _http_json(url, payload=None, timeout=15):
+    import urllib.request
+    data = json.dumps(payload).encode() if payload is not None else None
+    headers = {"User-Agent": "dankSoftwareDepot/0.1"}
+    if data is not None:
+        headers["Content-Type"] = "application/json"
+    req = urllib.request.Request(url, data=data, headers=headers)
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.load(resp)
+
+
+def fetch_flathub_summary(ref):
+    """Sizes, sandbox permissions and verification for a Flathub app (cached daily)."""
+    import time
+    cache = _load_daily_cache(FLATHUB_SUMMARY_CACHE)
+    if ref in cache["data"]:
+        return cache["data"][ref]
+    out = None
+    try:
+        summary = _http_json("https://flathub.org/api/v2/summary/" + ref)
+        perms = (summary.get("metadata") or {}).get("permissions") or {}
+        tokens = []
+        for shared in perms.get("shared") or []:
+            tokens.append(shared)                      # network, ipc
+        for sock in perms.get("sockets") or []:
+            tokens.append(sock)                        # wayland, x11, pulseaudio…
+        devices = perms.get("devices") or []
+        if devices:
+            tokens.append("devices:all" if "all" in devices else "devices")
+        for fs in perms.get("filesystems") or []:
+            tokens.append("fs:" + fs)
+        bus = perms.get("session-bus") or {}
+        if bus.get("talk"):
+            tokens.append("dbus-talk")
+        if (perms.get("system-bus") or {}).get("talk"):
+            tokens.append("system-dbus")
+        out = {
+            "downloadSize": summary.get("download_size") or 0,
+            "installedSize": summary.get("installed_size") or 0,
+            "permissions": tokens,
+        }
+        try:
+            ver = _http_json("https://flathub.org/api/v2/verification/" + ref + "/status")
+            out["verified"] = bool(ver.get("verified"))
+        except Exception:
+            out["verified"] = None
+    except Exception:
+        out = None
+    if not cache["ts"]:
+        cache["ts"] = time.time()
+    cache["data"][ref] = out
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(FLATHUB_SUMMARY_CACHE, "w") as f:
+            json.dump(cache, f)
+    except OSError:
+        pass
+    return out
+
+
+def parse_human_size(text):
+    m = re.match(r"([\d.,]+)\s*([KMGT]i?B|B)?", (text or "").replace(",", "."))
+    if not m:
+        return 0
+    value = float(m.group(1) or 0)
+    unit = (m.group(2) or "B").rstrip("B").rstrip("i")
+    factor = {"": 1, "K": 1024, "M": 1024 ** 2, "G": 1024 ** 3, "T": 1024 ** 4}.get(unit, 1)
+    return int(value * factor)
+
+
+def run_update_sizes(arg):
+    """Estimated total download size for pending updates.
+
+    Flatpak sizes come from the Flathub summary API (exact), rpm sizes from a
+    batched cache-only `dnf repoquery --info`."""
+    try:
+        request = json.loads(arg)
+    except ValueError:
+        print("{}")
+        return
+    flatpak_bytes = 0
+    flatpak_known = 0
+    flatpak_ids = request.get("flatpak") or []
+    for ref in flatpak_ids:
+        summary = fetch_flathub_summary(ref)
+        if summary and summary.get("downloadSize"):
+            flatpak_bytes += summary["downloadSize"]
+            flatpak_known += 1
+    rpm_bytes = 0
+    rpm_known = 0
+    rpm_names = [n for n in (request.get("rpm") or []) if re.match(r"^[\w.+-]+$", n)]
+    if rpm_names:
+        try:
+            res = subprocess.run(
+                ["dnf", "-Cq", "repoquery", "--info", "--latest-limit=1", "--arch=x86_64,noarch"] + rpm_names,
+                capture_output=True, text=True, timeout=30,
+                env={**os.environ, "LC_ALL": "C"})
+            for line in res.stdout.splitlines():
+                m = re.match(r"^Download size\s*:\s*(.+)$", line)
+                if m:
+                    rpm_bytes += parse_human_size(m.group(1))
+                    rpm_known += 1
+        except (OSError, subprocess.SubprocessError):
+            pass
+    json.dump({
+        "flatpakBytes": flatpak_bytes,
+        "rpmBytes": rpm_bytes,
+        "totalBytes": flatpak_bytes + rpm_bytes,
+        "knownCount": flatpak_known + rpm_known,
+        "requestedCount": len(flatpak_ids) + len(rpm_names),
+    }, sys.stdout)
+
+
+DISTRO_UPGRADE_CACHE = os.path.join(CACHE_DIR, "distro-upgrade.json")
+
+
+def run_distro_upgrade():
+    """Is a newer Fedora release available? (Bodhi, cached daily)"""
+    import time
+    current = 0
+    try:
+        with open("/etc/os-release") as f:
+            for line in f:
+                m = re.match(r"VERSION_ID=(\d+)", line.strip())
+                if m:
+                    current = int(m.group(1))
+    except OSError:
+        pass
+    cache = _load_daily_cache(DISTRO_UPGRADE_CACHE)
+    latest = cache["data"].get("latest")
+    if latest is None:
+        try:
+            data = _http_json("https://bodhi.fedoraproject.org/releases/?state=current&rows_per_page=60", timeout=20)
+            versions = [int(r["version"]) for r in data.get("releases", [])
+                        if r.get("id_prefix") == "FEDORA" and str(r.get("version", "")).isdigit()]
+            latest = max(versions) if versions else 0
+            cache["ts"] = time.time()
+            cache["data"]["latest"] = latest
+            os.makedirs(CACHE_DIR, exist_ok=True)
+            with open(DISTRO_UPGRADE_CACHE, "w") as f:
+                json.dump(cache, f)
+        except Exception:
+            latest = 0
+    json.dump({"current": current, "latest": latest or 0, "available": bool(latest and current and latest > current)}, sys.stdout)
+
+
+def run_submit_review(arg):
+    """Submit a review to the Open Desktop Ratings Service."""
+    import hashlib
+    try:
+        request = json.loads(arg)
+    except ValueError:
+        json.dump({"ok": False, "error": "bad request"}, sys.stdout)
+        return
+    try:
+        with open("/etc/machine-id") as f:
+            machine_id = f.read().strip()
+    except OSError:
+        machine_id = "unknown"
+    user = os.environ.get("USER") or "user"
+    user_hash = hashlib.sha1((user + ":" + machine_id).encode()).hexdigest()
+    app_id = request.get("app_id", "")
+    payload = {
+        "user_hash": user_hash,
+        "user_skey": hashlib.sha1((user_hash + app_id + ".desktop").encode()).hexdigest(),
+        "app_id": app_id + ".desktop",
+        "locale": (get_locale_langs() or ["en"])[0],
+        "distro": "Fedora",
+        "version": request.get("version") or "unknown",
+        "user_display": request.get("user_display") or user,
+        "summary": (request.get("summary") or "").strip()[:70],
+        "description": (request.get("description") or "").strip()[:3000],
+        "rating": max(20, min(100, int(request.get("rating", 3)) * 20)),
+    }
+    try:
+        result = _http_json("https://odrs.gnome.org/1.0/reviews/api/submit", payload, timeout=20)
+        ok = bool(result.get("success", True)) if isinstance(result, dict) else True
+        # Drop the cached reviews for this app so the new one shows up
+        try:
+            cache_file = os.path.join(CACHE_DIR, "reviews-cache.json")
+            with open(cache_file) as f:
+                cache = json.load(f)
+            cache.pop(app_id.lower(), None)
+            with open(cache_file, "w") as f:
+                json.dump(cache, f)
+        except (OSError, ValueError):
+            pass
+        json.dump({"ok": ok, "error": (result or {}).get("msg", "") if isinstance(result, dict) else ""}, sys.stdout)
+    except Exception as exc:
+        json.dump({"ok": False, "error": str(exc)}, sys.stdout)
+
+
+def run_dashboard():
+    """Data for the up-to-date dashboard: per-source install counts, recently
+    updated apps and basic system info."""
+    import platform
+    import time
+    out = {}
+    recent = []
+
+    # rpm counts + recent installs
+    rpm_lines = []
+    try:
+        res = subprocess.run(["rpm", "-qa", "--qf", "%{NAME}\t%{INSTALLTIME}\n"],
+                             capture_output=True, text=True, timeout=20)
+        rpm_lines = [l.split("\t") for l in res.stdout.strip().split("\n") if l]
+    except (OSError, subprocess.SubprocessError):
+        pass
+    out["rpmTotal"] = len(rpm_lines)
+    for name, ts in sorted(((l[0], int(l[1])) for l in rpm_lines if len(l) > 1 and l[1].isdigit()),
+                           key=lambda x: -x[1])[:8]:
+        recent.append({"name": name, "source": "System", "ts": ts})
+
+    # copr-installed count
+    copr = 0
+    try:
+        res = subprocess.run(["dnf", "-Cq", "repoquery", "--installed", "--qf", "%{from_repo}\n"],
+                             capture_output=True, text=True, timeout=30,
+                             env={**os.environ, "LC_ALL": "C"})
+        for repo in res.stdout.split():
+            if repo.startswith("copr"):
+                copr += 1
+    except (OSError, subprocess.SubprocessError):
+        pass
+    out["coprCount"] = copr
+
+    # flatpaks + their deploy times; use cached friendly names when known
+    names_cache = {}
+    try:
+        with open(CACHE_FILE) as f:
+            names_cache = json.load(f).get("flatpak", {})
+    except (OSError, ValueError):
+        pass
+    flatpak_count = 0
+    try:
+        res = subprocess.run(["flatpak", "list", "--app", "--columns=application,installation"],
+                             capture_output=True, text=True, timeout=15,
+                             env={**os.environ, "LC_ALL": "C"})
+        for line in res.stdout.strip().split("\n"):
+            parts = line.split("\t")
+            if not parts or not parts[0].strip():
+                continue
+            flatpak_count += 1
+            app_id = parts[0].strip()
+            base = os.path.expanduser("~/.local/share/flatpak") if (len(parts) > 1 and parts[1].strip() == "user") else "/var/lib/flatpak"
+            try:
+                ts = int(os.stat(os.path.join(base, "app", app_id, "current", "active")).st_mtime)
+            except OSError:
+                continue
+            display = (names_cache.get(app_id) or {}).get("name") or app_id.split(".")[-1]
+            recent.append({"name": display, "source": "Flatpak", "ts": ts})
+    except (OSError, subprocess.SubprocessError):
+        pass
+    out["flatpakCount"] = flatpak_count
+
+    # appimages (managed records + files in the app folders)
+    appimage_files = set()
+    try:
+        with open(os.path.join(os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")), "dankSoftwareDepot", "appimages.json")) as f:
+            for record in json.load(f):
+                if os.path.isfile(record.get("file", "")):
+                    appimage_files.add(record["file"])
+                    recent.append({"name": record.get("name") or record["id"], "source": "AppImage", "ts": record.get("installedAt") or 0})
+    except (OSError, ValueError):
+        pass
+    for directory in (os.path.expanduser("~/AppImages"), os.path.expanduser("~/Applications")):
+        for path in glob.glob(os.path.join(directory, "*.[Aa]pp[Ii]mage")):
+            if path not in appimage_files:
+                appimage_files.add(path)
+                stem = re.sub(r"\.appimage$", "", os.path.basename(path), flags=re.I)
+                try:
+                    recent.append({"name": stem, "source": "AppImage", "ts": int(os.stat(path).st_mtime)})
+                except OSError:
+                    pass
+    out["appimageCount"] = len(appimage_files)
+
+    recent.sort(key=lambda r: -r["ts"])
+    out["recent"] = recent[:6]
+
+    # system info
+    out["hostname"] = platform.node()
+    out["kernel"] = platform.release()
+    try:
+        with open("/proc/uptime") as f:
+            out["uptimeSecs"] = int(float(f.read().split()[0]))
+    except (OSError, ValueError):
+        out["uptimeSecs"] = 0
+    pretty = ""
+    try:
+        with open("/etc/os-release") as f:
+            for line in f:
+                m = re.match(r'PRETTY_NAME="?([^"]+)"?', line.strip())
+                if m:
+                    pretty = m.group(1)
+    except OSError:
+        pass
+    out["osPretty"] = pretty
+
+    # Dank logo from the running shell (path changes per shell version)
+    runtime = os.environ.get("XDG_RUNTIME_DIR", "/run/user/1000")
+    logos = glob.glob(os.path.join(runtime, "danklinux-shell", "*", "assets", "danklogo.svg"))
+    out["dankLogo"] = logos[0] if logos else ""
+
+    json.dump(out, sys.stdout)
+
+
+# Freedesktop menu categories → storefront groups, in display order
+CATEGORY_GROUPS = [
+    ("Browsers", {"WebBrowser"}),
+    ("Office", {"Office", "WordProcessor", "Spreadsheet", "Presentation", "Finance"}),
+    ("Communication", {"InstantMessaging", "Chat", "Email", "VideoConference", "Telephony"}),
+    ("Media", {"AudioVideo", "Audio", "Video", "Player", "Music", "TV"}),
+    ("Graphics & Photo", {"Graphics", "Photography", "RasterGraphics", "VectorGraphics"}),
+    ("Games", {"Game"}),
+    ("Development", {"Development", "IDE", "TextEditor"}),
+    ("Utilities", {"Utility", "System", "FileTools", "Archiving"}),
+]
+
+
+def run_featured():
+    """Most-popular software (by ODRS review volume) grouped by category —
+    shown in the Install tab before the user types a search."""
+    paths = catalog_paths()
+    fp = fingerprint(paths)
+    entries = build_search_index(paths, fp)
+    ratings = load_odrs_ratings()
+
+    merged = {}
+    for entry in entries:
+        cid = entry["id"].lower()
+        if cid not in merged:
+            merged[cid] = {
+                "id": entry["id"],
+                "name": entry["name"],
+                "summary": entry.get("summary", ""),
+                "homepage": entry.get("homepage", ""),
+                "icon": entry.get("icon", ""),
+                "sources": [],
+                "_cats": set(),
+            }
+        item = merged[cid]
+        if not item["icon"] and entry.get("icon"):
+            item["icon"] = entry["icon"]
+        item["_cats"].update(entry.get("categories", []))
+        source = entry["source"]
+        kind = "dnf" if source == "fedora" else "flatpak"
+        ref = entry.get("pkgname") if kind == "dnf" else entry["id"]
+        if ref and not any(s_["source"] == source for s_ in item["sources"]):
+            item["sources"].append({"source": source, "kind": kind, "ref": ref})
+
+    for item in merged.values():
+        item["rating"] = rating_for(ratings, item["id"])
+
+    groups = []
+    used = set()
+
+    # Overall chart first: the most-reviewed apps regardless of category
+    # (they may also appear in their own category below)
+    chart = [item for item in merged.values() if item["sources"] and item["rating"]]
+    chart.sort(key=lambda it: -it["rating"]["count"])
+    top_chart = chart[:8]
+    if top_chart:
+        groups.append({
+            "category": "Most popular",
+            "items": [{k: v for k, v in item.items() if k != "_cats"} for item in top_chart],
+        })
+
+    for label, cats in CATEGORY_GROUPS:
+        candidates = [item for key, item in merged.items()
+                      if key not in used and item["sources"] and item["rating"]
+                      and item["rating"]["count"] >= 50 and item["_cats"] & cats]
+        candidates.sort(key=lambda it: -it["rating"]["count"])
+        top = candidates[:6]
+        if not top:
+            continue
+        for item in top:
+            used.add(item["id"].lower())
+        groups.append({
+            "category": label,
+            "items": [{k: v for k, v in item.items() if k != "_cats"} for item in top],
+        })
+    json.dump(groups, sys.stdout)
+
+
+def main():
+    if len(sys.argv) >= 3 and sys.argv[1] == "--changelog":
+        run_changelog(sys.argv[2])
+        return
+    if len(sys.argv) >= 3 and sys.argv[1] == "--search":
+        run_search(sys.argv[2])
+        return
+    if len(sys.argv) >= 2 and sys.argv[1] == "--featured":
+        run_featured()
+        return
+    if len(sys.argv) >= 2 and sys.argv[1] == "--qml-index":
+        run_qml_index()
+        return
+    if len(sys.argv) >= 3 and sys.argv[1] == "--search-dnf":
+        run_search_dnf(sys.argv[2])
+        return
+    if len(sys.argv) >= 3 and sys.argv[1] == "--update-sizes":
+        run_update_sizes(sys.argv[2])
+        return
+    if len(sys.argv) >= 2 and sys.argv[1] == "--dashboard":
+        run_dashboard()
+        return
+    if len(sys.argv) >= 2 and sys.argv[1] == "--distro-upgrade":
+        run_distro_upgrade()
+        return
+    if len(sys.argv) >= 3 and sys.argv[1] == "--submit-review":
+        run_submit_review(sys.argv[2])
+        return
+    if len(sys.argv) >= 3 and sys.argv[1] == "--appinfo":
+        run_appinfo(sys.argv[2])
+        return
+
+    try:
+        if len(sys.argv) >= 2 and sys.argv[1].strip().startswith("{"):
+            request = json.loads(sys.argv[1])
+        else:
+            request = json.load(sys.stdin)
+    except ValueError:
+        print("{}")
+        return
+
+    rpm_items = request.get("rpm", [])
+    flatpak_items = request.get("flatpak", [])
+    if flatpak_items:
+        refresh_appstream_if_stale()
+    rpm_from = {strip_arch(i["name"]): i.get("from", "") for i in rpm_items}
+    flatpak_from = {i["name"]: i.get("from", "") for i in flatpak_items}
+
+    paths = catalog_paths()
+    fp = fingerprint(paths)
+    cache = load_cache(fp)
+
+    need_rpm = {n for n in rpm_from if n not in cache["rpm"]}
+    need_flat = {n for n in flatpak_from if n not in cache["flatpak"]}
+
+    if need_rpm or need_flat:
+        rpm_found, flatpak_found = scan_catalogs(need_rpm, need_flat)
+        missing_rpm = need_rpm - set(rpm_found)
+        dnf_info = dnf_fallback(missing_rpm)
+        for name in need_rpm:
+            if name in rpm_found:
+                comp = rpm_found[name]
+            else:
+                extra = dnf_info.get(name, {})
+                comp = {"name": "", "summary": extra.get("summary", ""),
+                        "homepage": extra.get("homepage", ""),
+                        "icon": icon_for_installed_pkg(name), "releases": []}
+            cache["rpm"][name] = comp
+        for name in need_flat:
+            cache["flatpak"][name] = flatpak_found.get(name, {"name": "", "summary": "", "homepage": "", "icon": "", "releases": []})
+        save_cache(cache)
+
+    held = compute_holds(set(rpm_from))
+    result = {
+        "rpm": {n: comp_to_info(cache["rpm"].get(n, {}), rpm_from[n]) for n in rpm_from},
+        "flatpak": {n: comp_to_info(cache["flatpak"].get(n, {}), flatpak_from[n]) for n in flatpak_from},
+    }
+    for name, reason in held.items():
+        if name in result["rpm"]:
+            result["rpm"][name]["held"] = True
+            result["rpm"][name]["holdReason"] = reason
+    json.dump(result, sys.stdout)
+
+
+if __name__ == "__main__":
+    main()

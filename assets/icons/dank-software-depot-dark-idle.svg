@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Dank Software Depot — dark, up to date</title>
+  <rect width="512" height="512" rx="112" fill="#2A1F31"></rect>
+  <rect x="56" y="56" width="176" height="400" rx="52" fill="#EBDDF5"></rect>
+  <rect x="280" y="56" width="176" height="176" rx="52" fill="#BFA3D2"></rect>
+  <rect x="280" y="280" width="176" height="176" rx="88" fill="#BFA3D2"></rect>
+</svg>
