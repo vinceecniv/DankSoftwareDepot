@@ -733,7 +733,8 @@ FloatingWindow {
         const secs = delayedRemaining[key] || 0;
         if (secs <= 0)
             return "";
-        if (secs < 24 * 3600)
+        // <= so a fresh 1-day delay (clamped to exactly 24h) reads as hours
+        if (secs <= 24 * 3600)
             return Tr.t("installs in %1h").arg(Math.max(1, Math.ceil(secs / 3600)));
         const days = Math.ceil(secs / 86400);
         return days === 1 ? Tr.t("installs in 1 day") : Tr.t("installs in %1 days").arg(days);
