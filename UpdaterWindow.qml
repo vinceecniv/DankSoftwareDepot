@@ -498,6 +498,60 @@ FloatingWindow {
                     wrapMode: Text.WordWrap
                 }
 
+                // Update notice: About is opened deliberately, so this shows
+                // whenever a newer version exists — also after the banner in
+                // the Updates tab was dismissed
+                Rectangle {
+                    Layout.fillWidth: true
+                    visible: win.selfUpdateVersion !== ""
+                    implicitHeight: aboutUpdateColumn.implicitHeight + Theme.spacingM * 2
+                    radius: Theme.cornerRadius
+                    color: Theme.withAlpha(Theme.primary, 0.10)
+                    border.width: 1
+                    border.color: Theme.withAlpha(Theme.primary, 0.30)
+
+                    ColumnLayout {
+                        id: aboutUpdateColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: Theme.spacingM
+                        anchors.rightMargin: Theme.spacingM
+                        spacing: Theme.spacingS
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            textFormat: Text.StyledText
+                            text: Tr.t("Dank Software Depot %1 is available").arg("<b>" + win.selfUpdateVersion + "</b>")
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.Medium
+                            color: Theme.surfaceText
+                            wrapMode: Text.WordWrap
+                        }
+
+                        Item {
+                            Layout.preferredWidth: aboutUpdateButton.width
+                            Layout.preferredHeight: aboutUpdateButton.height
+
+                            DankButton {
+                                id: aboutUpdateButton
+                                buttonHeight: 30
+                                iconName: "download"
+                                iconSize: 14
+                                horizontalPadding: Theme.spacingM
+                                enabled: !win.selfUpdateBusy
+                                text: win.selfUpdateBusy ? Tr.t("Updating…") : Tr.t("Update and reload shell")
+                                backgroundColor: Theme.buttonBg
+                                textColor: Theme.buttonText
+                                onClicked: {
+                                    win.selfUpdateBusy = true;
+                                    Quickshell.execDetached(["sh", "-c", "dms plugins update dankSoftwareDepot && dms restart"]);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 StyledText {
                     text: Tr.t("By %1 · MIT license").arg(win.pluginManifest.author || "") + " · " + Tr.t("requires DMS %1").arg(win.pluginManifest.requires_dms || "")
                     font.pixelSize: Theme.fontSizeSmall
