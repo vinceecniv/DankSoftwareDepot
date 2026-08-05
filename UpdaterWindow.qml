@@ -320,6 +320,81 @@ FloatingWindow {
             aboutFocus.forceActiveFocus();
     }
 
+    // ── Self-update: offer a newer plugin release published on GitHub ───────
+    // Compares the version in main's plugin.json with the installed one and
+    // shows a banner with the CHANGELOG section for the new version. The
+    // update itself runs detached (`dms plugins update` + shell reload)
+    // because the reload kills this process tree.
+    property string selfUpdateVersion: ""
+    property string selfUpdateNotes: ""
+    property bool selfUpdateBusy: false
+
+    function _versionNewer(remote, local) {
+        const a = String(remote).split(".").map(n => parseInt(n, 10) || 0);
+        const b = String(local).split(".").map(n => parseInt(n, 10) || 0);
+        for (let i = 0; i < Math.max(a.length, b.length); i++) {
+            const d = (a[i] || 0) - (b[i] || 0);
+            if (d !== 0)
+                return d > 0;
+        }
+        return false;
+    }
+
+    function _changelogSection(md, version) {
+        const lines = md.split("\n");
+        const out = [];
+        let inSection = false;
+        for (const line of lines) {
+            if (line.indexOf("## ") === 0) {
+                if (inSection)
+                    break;
+                inSection = line.indexOf(version) !== -1;
+                continue;
+            }
+            if (inSection)
+                out.push(line);
+        }
+        return out.join("\n").trim();
+    }
+
+    Timer {
+        interval: 30 * 1000
+        running: true
+        onTriggered: selfUpdateProcess.running = true
+    }
+
+    Timer {
+        interval: 24 * 3600 * 1000
+        running: true
+        repeat: true
+        onTriggered: selfUpdateProcess.running = true
+    }
+
+    Process {
+        id: selfUpdateProcess
+
+        // Exit 3 on a symlinked (development) install: never self-update a
+        // working copy.
+        command: ["sh", "-c", "dir=\"$HOME/.config/DankMaterialShell/plugins/dankSoftwareDepot\"; [ -L \"$dir\" ] && exit 3; curl -sf --max-time 15 " + win.githubUrl.replace("github.com", "raw.githubusercontent.com") + "/main/plugin.json; echo; echo ---NOTES---; curl -sf --max-time 15 " + win.githubUrl.replace("github.com", "raw.githubusercontent.com") + "/main/CHANGELOG.md"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const parts = text.split("---NOTES---");
+                let remote = null;
+                try {
+                    remote = JSON.parse(parts[0]);
+                } catch (e) {
+                    return;
+                }
+                const localVersion = win.pluginManifest.version || "0";
+                if (!remote || !remote.version || !win._versionNewer(remote.version, localVersion))
+                    return;
+                win.selfUpdateVersion = remote.version;
+                win.selfUpdateNotes = win._changelogSection(parts[1] || "", remote.version);
+            }
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         visible: win.aboutOpen
@@ -401,7 +476,7 @@ FloatingWindow {
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: win.pluginManifest.description || ""
+                    text: win.pluginManifest.description ? Tr.t(win.pluginManifest.description) : ""
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.surfaceText
                     wrapMode: Text.WordWrap
@@ -419,15 +494,23 @@ FloatingWindow {
                     color: Theme.surfaceVariantText
                 }
 
-                DankButton {
-                    buttonHeight: 32
-                    iconName: "open_in_new"
-                    iconSize: 15
-                    horizontalPadding: Theme.spacingM
-                    text: Tr.t("Open GitHub page")
-                    backgroundColor: Theme.buttonBg
-                    textColor: Theme.buttonText
-                    onClicked: Qt.openUrlExternally(win.githubUrl)
+                // Wrapper Item: DankButton sizes itself via `width`, which a
+                // ColumnLayout ignores — anchoring keeps its natural width.
+                Item {
+                    Layout.fillWidth: true
+                    implicitHeight: 32
+
+                    DankButton {
+                        anchors.left: parent.left
+                        buttonHeight: 32
+                        iconName: "open_in_new"
+                        iconSize: 15
+                        horizontalPadding: Theme.spacingM
+                        text: Tr.t("Open GitHub page")
+                        backgroundColor: Theme.buttonBg
+                        textColor: Theme.buttonText
+                        onClicked: Qt.openUrlExternally(win.githubUrl)
+                    }
                 }
             }
         }
@@ -1222,6 +1305,79 @@ FloatingWindow {
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.surfaceText
                     wrapMode: Text.WordWrap
+                }
+            }
+        }
+
+        // ── Plugin self-update banner ───────────────────────────────────────
+        Rectangle {
+            Layout.fillWidth: true
+            visible: tabs.currentIndex === 0 && win.selfUpdateVersion !== ""
+            implicitHeight: selfUpdateColumn.implicitHeight + Theme.spacingM * 2
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.primary, 0.10)
+            border.width: 1
+            border.color: Theme.withAlpha(Theme.primary, 0.30)
+
+            ColumnLayout {
+                id: selfUpdateColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingM
+                spacing: Theme.spacingS
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingM
+
+                    Image {
+                        Layout.preferredWidth: 22
+                        Layout.preferredHeight: 22
+                        source: win.appIconSource
+                        sourceSize.width: 44
+                        sourceSize.height: 44
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: Tr.t("Dank Software Depot %1 is available").arg(win.selfUpdateVersion)
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.weight: Font.Medium
+                        color: Theme.surfaceText
+                        elide: Text.ElideRight
+                    }
+
+                    DankButton {
+                        buttonHeight: 30
+                        iconName: "download"
+                        iconSize: 14
+                        horizontalPadding: Theme.spacingM
+                        enabled: !win.selfUpdateBusy
+                        text: win.selfUpdateBusy ? Tr.t("Updating…") : Tr.t("Update and reload shell")
+                        backgroundColor: Theme.buttonBg
+                        textColor: Theme.buttonText
+                        onClicked: {
+                            win.selfUpdateBusy = true;
+                            // Detached: the shell reload below kills our own
+                            // process tree mid-flight otherwise
+                            Quickshell.execDetached(["sh", "-c", "dms plugins update dankSoftwareDepot && dms restart"]);
+                        }
+                    }
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    visible: win.selfUpdateNotes !== ""
+                    text: win.selfUpdateNotes
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceVariantText
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 10
+                    elide: Text.ElideRight
                 }
             }
         }

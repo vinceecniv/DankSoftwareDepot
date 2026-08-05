@@ -260,5 +260,9 @@
     "By %1 · MIT license": "Von %1 · MIT-Lizenz",
     "requires DMS %1": "benötigt DMS %1",
     "Developed with Claude Code": "Entwickelt mit Claude Code",
-    "Open GitHub page": "GitHub-Seite öffnen"
+    "Open GitHub page": "GitHub-Seite öffnen",
+    "Dank Software Depot %1 is available": "Dank Software Depot %1 ist verfügbar",
+    "Update and reload shell": "Aktualisieren und Shell neu laden",
+    "Updating…": "Aktualisiere…",
+    "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.": "Softwarecenter für DMS: Updates mit Fortschritt, Release Notes, App-Store mit Bewertungen, Verwaltung installierter Software, Firmware und ein Aktionsprotokoll."
 }

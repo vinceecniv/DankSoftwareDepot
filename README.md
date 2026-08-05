@@ -5,7 +5,7 @@
 A full software & updates center plugin for
 [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell):
 everything the built-in updater does, plus app logos, release notes, reviews,
-honest progress with a real ETA, an app store, AppImage management, firmware
+progress with a real ETA, an app store, AppImage management, firmware
 support and an action log — and no terminal output anywhere.
 
 ![screenshot](screenshot.png)
@@ -98,7 +98,7 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - Bar pill with the effective update count (held and delayed excluded);
   spinning refresh icon while checking, live percentage during a run,
   restart icon when a reboot is recommended
-- Compact popout: enriched update list, Update All, phase stepper, honest
+- Compact popout: enriched update list, Update All, phase stepper,
   progress bar with time remaining
 - Optional: hide the pill when up to date, click opens the window directly
 

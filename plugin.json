@@ -2,7 +2,7 @@
     "$schema": "https://github.com/AvengeMedia/DankMaterialShell/raw/refs/heads/master/PLUGINS/plugin-schema.json",
     "id": "dankSoftwareDepot",
     "name": "Dank Software Depot",
-    "description": "Software center for DMS: updates with honest progress, release notes, app store with reviews, installed-software management, firmware and an action log.",
+    "description": "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.",
     "version": "0.1.0",
     "author": "Vincent Blok",
     "license": "MIT",
