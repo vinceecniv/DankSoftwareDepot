@@ -425,6 +425,19 @@ FloatingWindow {
                 anchors.fill: parent
             }
 
+            // Anchored to the card so it is always in the top-right corner,
+            // independent of how the header row lays out
+            DankActionButton {
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.margins: Theme.spacingS
+                buttonSize: 30
+                iconName: "close"
+                iconSize: 18
+                iconColor: Theme.surfaceVariantText
+                onClicked: win.aboutOpen = false
+            }
+
             ColumnLayout {
                 id: aboutColumn
                 anchors.left: parent.left
@@ -464,19 +477,19 @@ FloatingWindow {
                             color: Theme.surfaceVariantText
                         }
                     }
-
-                    DankActionButton {
-                        buttonSize: 30
-                        iconName: "close"
-                        iconSize: 18
-                        iconColor: Theme.surfaceVariantText
-                        onClicked: win.aboutOpen = false
-                    }
                 }
 
                 StyledText {
                     Layout.fillWidth: true
                     text: win.pluginManifest.description ? Tr.t(win.pluginManifest.description) : ""
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceText
+                    wrapMode: Text.WordWrap
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: Tr.t("Supports Fedora packages (rpm/dnf), Flatpak and AppImage.")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.surfaceText
                     wrapMode: Text.WordWrap
