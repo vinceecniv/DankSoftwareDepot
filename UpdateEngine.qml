@@ -510,6 +510,18 @@ Item {
         _dnfStageX = 0;
         _dnfStageY = 0;
         _dnfSawUpgrading = false;
+        _daemonAttempts = 0;
+        _sendDaemonUpgrade();
+    }
+
+    // The daemon can silently refuse an upgrade command fired right after
+    // the previous pass finished (it is still winding down). Retry with a
+    // short delay until it reports upgrading; give up visibly instead of
+    // hanging on a phase that never starts.
+    property int _daemonAttempts: 0
+
+    function _sendDaemonUpgrade() {
+        const kind = _daemonKind;
         // Delayed rpms stay excluded in every daemon pass; shell packages
         // additionally sit out the first pass and run in the final one.
         let extraIgnored = _delayedRpmNames || [];
@@ -518,6 +530,8 @@ Item {
         } else if (_wantShell) {
             extraIgnored = extraIgnored.concat(_shellNames);
         }
+        _daemonAttempts++;
+        daemonRetryTimer.restart();
         if (extraIgnored.length > 0) {
             DMSService.sysupdateUpgrade({
                 includeFlatpak: false,
@@ -527,6 +541,43 @@ Item {
             SystemUpdateService.runUpdates({
                 includeFlatpak: false
             });
+        }
+    }
+
+    Timer {
+        id: daemonRetryTimer
+        interval: 5000
+
+        onTriggered: {
+            if (!engine.running || engine._dnfSawUpgrading || SystemUpdateService.isUpgrading)
+                return;
+            if (engine._daemonAttempts < 4) {
+                engine._sendDaemonUpgrade();
+                return;
+            }
+            // Daemon never picked the pass up: fail it visibly
+            const map = engine._daemonKind === "shell" ? engine._shellNameToKey : engine._dnfNameToKey;
+            for (const base in map)
+                engine._setItem(map[base], {
+                    status: "error",
+                    detail: Tr.t("failed")
+                });
+            if (engine._daemonKind === "shell") {
+                engine._shellDone = true;
+                engine.failedCount += engine._shellCount;
+                engine._finish("failed");
+            } else {
+                engine._dnfDone = true;
+                engine.failedCount += engine._dnfCount;
+                if (engine._wantFlatpak)
+                    engine._startFlatpak();
+                else if (engine._wantAppimage)
+                    engine._startAppimage();
+                else if (engine._wantFirmware)
+                    engine._startFirmware();
+                else
+                    engine._finish("failed");
+            }
         }
     }
 
@@ -556,6 +607,7 @@ Item {
 
     function cancel() {
         _deferredOpts = null;
+        daemonRetryTimer.stop();
         if (!running)
             return;
         if (!_dnfDone || (_daemonKind === "shell" && !_shellDone)) {
@@ -710,6 +762,7 @@ Item {
         function onIsUpgradingChanged() {
             if (SystemUpdateService.isUpgrading) {
                 engine._dnfSawUpgrading = true;
+                daemonRetryTimer.stop();
                 if (engine.phase === "starting")
                     engine.phase = "dnf-download";
                 return;
