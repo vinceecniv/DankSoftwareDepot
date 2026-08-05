@@ -109,6 +109,11 @@ Item {
     property int reviewStars: 5
     property string reviewStatus: ""   // "" | sending | done | error:<msg>
 
+    // Reviews live on ODRS, keyed by the AppStream/package id. AppImages only
+    // have a plugin-local id (no shared identity anyone else could look up),
+    // so reading and writing reviews is disabled for them.
+    readonly property bool reviewable: (appData.sources || []).some(s => s.kind === "flatpak" || s.kind === "dnf")
+
     // Prefill the reviewer name from the remembered value, falling back to
     // the login name (which the backend would otherwise use anyway)
     onReviewFormOpenChanged: {
@@ -1031,7 +1036,7 @@ Item {
                     // Reviews
                     RowLayout {
                         width: parent.width
-                        visible: (dialog.info.reviews || []).length > 0 || dialog.installedChipVisible || dialog.showOpenButton
+                        visible: dialog.reviewable && ((dialog.info.reviews || []).length > 0 || dialog.installedChipVisible || dialog.showOpenButton)
 
                         StyledText {
                             text: Tr.t("Reviews")
