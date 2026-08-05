@@ -528,6 +528,7 @@ PluginComponent {
         id: engine
         heldKeys: root.heldSystemKeys
         delayedKeys: root.delayedKeys
+        pendingUpdates: root.pendingUpdates
         firmwareService: root.includeFirmware ? firmware : null
         appimageUpdates: root.appimageUpdates
 

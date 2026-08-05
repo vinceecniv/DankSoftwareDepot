@@ -66,6 +66,11 @@ Item {
     // Keys ("system/<basename>") of packages held back by dnf config
     // (versionlock/excludepkgs); they are skipped in runs. Bound by the widget.
     property var heldKeys: []
+    // Effective pending-update list from the host (live daemon data, or the
+    // persisted snapshot right after a restart) — start() must not read the
+    // service directly or a run from snapshot state sees an empty list and
+    // loses the delayed/held exclusions.
+    property var pendingUpdates: []
 
     // Keys of updates still inside the configured delay window (maturity
     // period); excluded from runs unless explicitly selected. Bound by the
@@ -254,7 +259,7 @@ Item {
         const options = opts || {};
         const held = new Set(heldKeys || []);
         const delayed = new Set(delayedKeys || []);
-        const updates = SystemUpdateService.availableUpdates || [];
+        const updates = pendingUpdates || [];
         const explicitFlatpak = (options.flatpakIds || []).length > 0;
         const dnfLive = updates.filter(p => p.repo !== "flatpak" && !held.has("system/" + _stripArch(p.name)));
         const dnfAll = dnfLive.filter(p => !delayed.has("system/" + _stripArch(p.name)));
@@ -584,7 +589,7 @@ Item {
             return 0;
         if (_flatpakPlanKnown)
             return Math.max(_flatpakPlannedBytes, _flatpakOpCount * 1024 * 1024);
-        const guess = _flatpakIds.length > 0 ? _flatpakIds.length : (SystemUpdateService.availableUpdates || []).filter(p => p.repo === "flatpak").length;
+        const guess = _flatpakIds.length > 0 ? _flatpakIds.length : (pendingUpdates || []).filter(p => p.repo === "flatpak").length;
         return Math.max(1, guess) * flatpakFallbackOpWeight;
     }
 

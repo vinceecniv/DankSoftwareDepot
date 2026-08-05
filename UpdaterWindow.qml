@@ -136,7 +136,7 @@ FloatingWindow {
     function _daemonUpgradeOnly(rawNames) {
         const wanted = new Set(rawNames);
         const ignored = (SettingsData.updaterIgnoredPackages || []).slice();
-        for (const pkg of SystemUpdateService.availableUpdates || []) {
+        for (const pkg of win.pendingUpdates) {
             if (pkg.repo !== "flatpak" && !wanted.has(pkg.name))
                 ignored.push(pkg.name);
         }
