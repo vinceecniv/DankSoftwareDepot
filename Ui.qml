@@ -6,6 +6,11 @@ import qs.Common
 Item {
     id: ui
 
+    // Failure color that stays readable everywhere: some palettes leave
+    // Theme.error on the light M3 tone in light mode, which washes out to
+    // an unreadable salmon on light surfaces.
+    readonly property color failColor: (Theme.isLightMode && Theme.error.hslLightness > 0.55) ? Qt.darker(Theme.error, 1.8) : Theme.error
+
     // Search-field caret: hidden while the field is empty (focus is already
     // visible through the field border); once text is entered a normally
     // blinking caret appears. Custom cursorDelegates don't blink by

@@ -259,7 +259,7 @@ Rectangle {
                             }
                         }
                         font.pixelSize: Theme.fontSizeSmall
-                        color: card.status === "error" ? Theme.error : (card.status === "done" ? Theme.success : Theme.surfaceVariantText)
+                        color: card.status === "error" ? Ui.failColor : (card.status === "done" ? Theme.success : Theme.surfaceVariantText)
                     }
 
                     // Hold reason, e.g. "versionlock (via freerdp)"
@@ -376,7 +376,7 @@ Rectangle {
             visible: card.status === "error" && card.itemState && (card.itemState.detail || "") !== ""
             text: card.itemState ? card.itemState.detail : ""
             font.pixelSize: Theme.fontSizeSmall - 1
-            color: Theme.error
+            color: Ui.failColor
             wrapMode: Text.WordWrap
             maximumLineCount: 3
             elide: Text.ElideRight

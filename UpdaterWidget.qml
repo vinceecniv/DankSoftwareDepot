@@ -741,7 +741,7 @@ PluginComponent {
     readonly property bool _busy: SystemUpdateService.isChecking || engine.running
     readonly property string _pillText: {
         if (engine.running)
-            return Math.round(engine.overallFraction * 100) + "%";
+            return engine.plannedCount > 0 ? engine.completedCount + "/" + engine.plannedCount : "";
         if (SystemUpdateService.isChecking)
             return "";
         return root.effectiveCount.toString();
@@ -1041,22 +1041,15 @@ PluginComponent {
                         compact: true
                     }
 
-                    M3WaveProgress {
-                        width: parent.width
-                        height: 18
-                        visible: engine.running
-                        value: engine.overallFraction
-                        isPlaying: visible
-                    }
-
+                    // No overall bar/percentage: an aggregate fraction over
+                    // parallel downloads and mixed phases misleads more than
+                    // it informs — per-item rows carry the progress.
                     StyledText {
                         width: parent.width
                         text: {
                             if (engine.running) {
-                                const pct = Math.round(engine.overallFraction * 100) + "%";
-                                const eta = engine.formatEta(engine.etaSeconds);
-                                const current = engine.currentItem ? store.prettyId(engine.currentItem) + " · " : "";
-                                return current + pct + (eta ? " · " + eta : "");
+                                const current = engine.currentItem ? " · " + store.prettyId(engine.currentItem) : "";
+                                return engine.phaseLabel + current;
                             }
                             if (engine.phase === "done")
                                 return Tr.t("%1 updated").arg(engine.completedCount) + (engine.failedCount > 0 ? ", " + Tr.t("%1 failed").arg(engine.failedCount) : "");
@@ -1200,7 +1193,7 @@ PluginComponent {
                                 visible: compactRow.itemState && compactRow.itemState.status === "error"
                                 name: "error"
                                 size: 16
-                                color: Theme.error
+                                color: Ui.failColor
                             }
                         }
                     }

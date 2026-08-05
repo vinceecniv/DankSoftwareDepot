@@ -551,16 +551,24 @@ Item {
         onTriggered: {
             if (!engine.running || engine._dnfSawUpgrading || SystemUpdateService.isUpgrading)
                 return;
-            if (engine._daemonAttempts < 4) {
+            // The daemon runs its own refresh after an upgrade pass and
+            // refuses commands meanwhile — wait it out without burning
+            // attempts
+            if (SystemUpdateService.isChecking) {
+                daemonRetryTimer.restart();
+                return;
+            }
+            if (engine._daemonAttempts < 6) {
                 engine._sendDaemonUpgrade();
                 return;
             }
-            // Daemon never picked the pass up: fail it visibly
+            // Daemon never picked the pass up: fail it visibly, with the why
+            const reason = SystemUpdateService.errorMessage || Tr.t("the update service did not start this pass — try again");
             const map = engine._daemonKind === "shell" ? engine._shellNameToKey : engine._dnfNameToKey;
             for (const base in map)
                 engine._setItem(map[base], {
                     status: "error",
-                    detail: Tr.t("failed")
+                    detail: reason
                 });
             if (engine._daemonKind === "shell") {
                 engine._shellDone = true;

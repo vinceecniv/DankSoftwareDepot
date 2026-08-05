@@ -1860,14 +1860,9 @@ FloatingWindow {
                     failed: win.engine.failedCount > 0
                 }
 
-                M3WaveProgress {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 22
-                    visible: win.engine.running
-                    value: win.engine.overallFraction
-                    isPlaying: visible
-                }
-
+                // No overall progress bar: with parallel downloads and mixed
+                // phases an aggregate fraction is more misleading than
+                // helpful — the per-package rows below carry the progress.
                 RowLayout {
                     Layout.fillWidth: true
 
@@ -1885,23 +1880,11 @@ FloatingWindow {
                     }
 
                     StyledText {
-                        visible: win.engine.running
-                        text: {
-                            const pct = Math.round(win.engine.overallFraction * 100) + "%";
-                            const eta = win.engine.formatEta(win.engine.etaSeconds);
-                            return eta ? pct + " · " + eta : pct;
-                        }
-                        font.pixelSize: Theme.fontSizeSmall
-                        font.weight: Font.Medium
-                        color: Theme.primary
-                    }
-
-                    StyledText {
                         visible: !win.engine.running && win.engine.phase === "done"
                         text: Tr.t("%1 updated").arg(win.engine.completedCount) + (win.engine.failedCount > 0 ? " · " + Tr.t("%1 failed").arg(win.engine.failedCount) : "")
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.Medium
-                        color: win.engine.failedCount > 0 ? Theme.error : Theme.success
+                        color: win.engine.failedCount > 0 ? Ui.failColor : Theme.success
                     }
 
                     DankActionButton {
