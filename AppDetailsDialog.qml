@@ -1264,23 +1264,27 @@ Item {
                                     }
                                 }
 
+                                // Summary as a clear title, body text muted
+                                // underneath so the two read differently
                                 StyledText {
                                     Layout.fillWidth: true
                                     visible: (modelData.summary || "") !== ""
                                     text: modelData.summary
                                     textFormat: Text.PlainText
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    font.weight: Font.Medium
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.DemiBold
                                     color: Theme.surfaceText
                                     wrapMode: Text.WordWrap
                                 }
 
                                 StyledText {
                                     Layout.fillWidth: true
+                                    Layout.topMargin: 2
+                                    visible: (modelData.text || "") !== ""
                                     text: modelData.text || ""
                                     textFormat: Text.PlainText
                                     font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.surfaceText
+                                    color: Theme.surfaceVariantText
                                     wrapMode: Text.WordWrap
                                 }
                             }
