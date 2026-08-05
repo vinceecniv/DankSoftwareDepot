@@ -252,13 +252,19 @@ Item {
     Process {
         id: infoProcess
 
-        stdout: StdioCollector {
-            onStreamFinished: {
+        // NDJSON: the local part ({"partial": true}) arrives first so the
+        // description shows immediately; the network extras (screenshots,
+        // sizes, reviews) merge in when the second line lands.
+        stdout: SplitParser {
+            onRead: line => {
+                let data = null;
                 try {
-                    dialog.info = JSON.parse(text) || {};
+                    data = JSON.parse(line);
                 } catch (e) {
-                    dialog.info = {};
+                    return;
                 }
+                delete data.partial;
+                dialog.info = Object.assign({}, dialog.info, data);
                 dialog.loading = false;
             }
         }

@@ -981,8 +981,14 @@ def fetch_reviews(app_id):
 
 
 def run_appinfo(arg):
-    """Detail-popup payload: description, screenshots, sizes, reviews."""
+    """Detail-popup payload: description, screenshots, sizes, reviews.
+
+    Emits NDJSON in up to two lines so the popup renders fast: first the
+    local part (description/license, marked {"partial": true}), then the
+    full payload once the network extras — fetched in parallel — are in.
+    A cache hit emits the full payload as a single line."""
     import time
+    from concurrent.futures import ThreadPoolExecutor
     try:
         request = json.loads(arg)
     except ValueError:
@@ -999,37 +1005,76 @@ def run_appinfo(arg):
         cache = {}
     entry = cache.get(key)
     loc = ",".join(get_locale_langs())
-    if entry and entry.get("v") == 6 and entry.get("loc") == loc and time.time() - entry.get("ts", 0) < ODRS_MAX_AGE:
+    if entry and entry.get("v") == 7 and entry.get("loc") == loc and time.time() - entry.get("ts", 0) < ODRS_MAX_AGE:
         json.dump(entry["info"], sys.stdout)
         return
 
-    info = find_component_details(app_id)
-    if info.get("screenshots"):
-        info["screenshots"] = cache_screenshots(info["screenshots"])
-    sizes = []
-    rpm_ref = next((s["ref"] for s in sources if s.get("kind") == "dnf"), "")
-    if rpm_ref:
-        rpm = rpm_repoquery_info(rpm_ref)
-        if not info.get("descriptionHtml") and rpm.get("descriptionHtml"):
-            info["descriptionHtml"] = rpm["descriptionHtml"]
-        if not info.get("license") and rpm.get("license"):
-            info["license"] = rpm["license"]
-        if rpm.get("download") or rpm.get("installed"):
-            sizes.append({"source": "Fedora", "download": rpm.get("download", ""), "installed": rpm.get("installed", "")})
-    for s in sources:
-        if s.get("kind") == "flatpak":
-            fs = flatpak_remote_sizes(s.get("source", "flathub"), s["ref"])
-            if fs:
-                sizes.append({"source": s.get("source", "flathub").capitalize(), "download": fs.get("download", ""), "installed": fs.get("installed", "")})
-    info["sizes"] = sizes
-    flathub_ref = next((s["ref"] for s in sources if s.get("kind") == "flatpak"), "")
-    if flathub_ref:
-        info["installStats"] = fetch_flathub_stats(flathub_ref)
-        info["flathub"] = fetch_flathub_summary(flathub_ref)
-    info["reviews"] = fetch_reviews(app_id)
-    info["rating"] = rating_for(load_odrs_ratings(), app_id)
+    def safe(fut, default=None):
+        try:
+            return fut.result()
+        except Exception:
+            return default
 
-    cache[key] = {"ts": time.time(), "v": 6, "loc": loc, "info": info}
+    rpm_ref = next((s["ref"] for s in sources if s.get("kind") == "dnf"), "")
+    flathub_ref = next((s["ref"] for s in sources if s.get("kind") == "flatpak"), "")
+
+    pool = ThreadPoolExecutor(max_workers=6)
+    rpm_fut = pool.submit(rpm_repoquery_info, rpm_ref) if rpm_ref else None
+
+    # Scanning every AppStream catalog for an id that is not in them is the
+    # slowest possible path (several seconds of XML parsing for nothing) —
+    # the cached search index knows which ids exist, so skip the scan for
+    # plain rpm packages.
+    in_catalogs = True
+    try:
+        paths = catalog_paths()
+        known = build_search_index(paths, fingerprint(paths))
+        target = re.sub(r"\.desktop$", "", app_id).lower()
+        in_catalogs = any(re.sub(r"\.desktop$", "", e["id"]).lower() == target for e in known)
+    except Exception:
+        pass
+    info = find_component_details(app_id) if in_catalogs else {}
+
+    rpm = safe(rpm_fut, {}) if rpm_fut else {}
+    if not info.get("descriptionHtml") and rpm.get("descriptionHtml"):
+        info["descriptionHtml"] = rpm["descriptionHtml"]
+    if not info.get("license") and rpm.get("license"):
+        info["license"] = rpm["license"]
+
+    # Local part is complete: let the popup render it now
+    info["partial"] = True
+    json.dump(info, sys.stdout)
+    sys.stdout.write("\n")
+    sys.stdout.flush()
+    info.pop("partial", None)
+
+    # Network extras, all in parallel
+    shots_fut = pool.submit(cache_screenshots, info["screenshots"]) if info.get("screenshots") else None
+    flatpak_size_futs = [(s, pool.submit(flatpak_remote_sizes, s.get("source", "flathub"), s["ref"]))
+                         for s in sources if s.get("kind") == "flatpak"]
+    stats_fut = pool.submit(fetch_flathub_stats, flathub_ref) if flathub_ref else None
+    summary_fut = pool.submit(fetch_flathub_summary, flathub_ref) if flathub_ref else None
+    reviews_fut = pool.submit(fetch_reviews, app_id)
+    ratings_fut = pool.submit(load_odrs_ratings)
+
+    if shots_fut:
+        info["screenshots"] = safe(shots_fut, info.get("screenshots"))
+    sizes = []
+    if rpm.get("download") or rpm.get("installed"):
+        sizes.append({"source": "Fedora", "download": rpm.get("download", ""), "installed": rpm.get("installed", "")})
+    for s, fut in flatpak_size_futs:
+        fs = safe(fut, {}) or {}
+        if fs:
+            sizes.append({"source": s.get("source", "flathub").capitalize(), "download": fs.get("download", ""), "installed": fs.get("installed", "")})
+    info["sizes"] = sizes
+    if flathub_ref:
+        info["installStats"] = safe(stats_fut)
+        info["flathub"] = safe(summary_fut)
+    info["reviews"] = safe(reviews_fut, [])
+    info["rating"] = rating_for(safe(ratings_fut, {}) or {}, app_id)
+    pool.shutdown(wait=False)
+
+    cache[key] = {"ts": time.time(), "v": 7, "loc": loc, "info": info}
     try:
         os.makedirs(CACHE_DIR, exist_ok=True)
         with open(APPINFO_CACHE_FILE, "w") as f:
@@ -1037,6 +1082,7 @@ def run_appinfo(arg):
     except OSError:
         pass
     json.dump(info, sys.stdout)
+    sys.stdout.write("\n")
 
 
 def run_qml_index():
