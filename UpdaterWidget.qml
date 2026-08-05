@@ -113,6 +113,41 @@ PluginComponent {
             PluginService.savePluginData("dankSoftwareDepot", "updateFirstSeen", map);
     }
 
+    // Arch-stripped rpm name -> source package base name, so system updates
+    // can be grouped into srpm families (kernel + kernel-core + …)
+    property var rpmSourceMap: ({})
+
+    function _refreshSourceMap() {
+        const names = [];
+        for (const pkg of pendingUpdates) {
+            if (pkg.repo !== "flatpak")
+                names.push(store.stripArch(pkg.name));
+        }
+        if (names.length === 0)
+            return;
+        sourceMapProcess.command = ["rpm", "-q", "--qf", "%{NAME}\\t%{SOURCERPM}\\n"].concat(names);
+        sourceMapProcess.running = true;
+    }
+
+    Process {
+        id: sourceMapProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const mapping = {};
+                for (const line of text.split("\n")) {
+                    const parts = line.split("\t");
+                    if (parts.length !== 2)
+                        continue;
+                    const src = /^(.+)-[^-]+-[^-]+\.src\.rpm$/.exec(parts[1].trim());
+                    if (src)
+                        mapping[parts[0].trim()] = src[1];
+                }
+                root.rpmSourceMap = mapping;
+            }
+        }
+    }
+
     // {keys: ["system/foo", ...], remaining: {"system/foo": daysLeft}}
     readonly property var delayedInfo: {
         const result = {
@@ -124,8 +159,7 @@ PluginComponent {
         const map = pluginData.updateFirstSeen || {};
         const windowSecs = updateDelayDays * 86400;
         const now = delayNowUnix;
-        const push = (engineKey, mapKey) => {
-            const seen = map[mapKey] || now;
+        const push = (engineKey, seen) => {
             if (now - seen < windowSecs) {
                 result.keys.push(engineKey);
                 // delayNowUnix ticks every 15 min, so a just-seen update can
@@ -134,18 +168,32 @@ PluginComponent {
                 result.remaining[engineKey] = Math.max(60, Math.min(windowSecs, seen + windowSecs - now));
             }
         };
+        // System packages mature and release as complete srpm families: dnf
+        // cannot upgrade half a family (excluded members block the rest), so
+        // every member follows the newest first-seen within its family.
+        const famSeen = {};
+        for (const pkg of pendingUpdates) {
+            if (pkg.repo === "flatpak" || store.isHeld(pkg))
+                continue;
+            const base = store.stripArch(pkg.name);
+            const fam = rpmSourceMap[base] || base;
+            const seen = map[_delayMapKey("system", pkg.name, pkg.toVersion)] || now;
+            famSeen[fam] = Math.max(famSeen[fam] || 0, seen);
+        }
         for (const pkg of pendingUpdates) {
             if (store.isHeld(pkg))
                 continue;
-            if (pkg.repo === "flatpak")
-                push("flatpak/" + pkg.name, _delayMapKey("flatpak", pkg.name, pkg.toVersion));
-            else
-                push("system/" + store.stripArch(pkg.name), _delayMapKey("system", pkg.name, pkg.toVersion));
+            if (pkg.repo === "flatpak") {
+                push("flatpak/" + pkg.name, map[_delayMapKey("flatpak", pkg.name, pkg.toVersion)] || now);
+            } else {
+                const base = store.stripArch(pkg.name);
+                push("system/" + base, famSeen[rpmSourceMap[base] || base] || now);
+            }
         }
         for (const fw of (includeFirmware ? firmware.updates : []) || [])
-            push("firmware/" + fw.name, _delayMapKey("firmware", fw.name, fw.next));
+            push("firmware/" + fw.name, map[_delayMapKey("firmware", fw.name, fw.next)] || now);
         for (const ai of appimageUpdates || [])
-            push("appimage/" + ai.id, _delayMapKey("appimage", ai.id, ai.latest));
+            push("appimage/" + ai.id, map[_delayMapKey("appimage", ai.id, ai.latest)] || now);
         return result;
     }
     readonly property var delayedKeys: delayedInfo.keys
@@ -635,15 +683,18 @@ PluginComponent {
         if (pendingUpdates.length > 0) {
             store.refresh(pendingUpdates);
             root._trackFirstSeen();
+            _refreshSourceMap();
         }
     }
 
     // pluginData (and with it the persisted snapshot) loads after component
     // completion, so run enrichment (names, icons) whenever the restored
-    // list actually lands — otherwise snapshot rows show generic icons
+    // list actually lands — otherwise snapshot rows show generic icons.
+    // The srpm-family map follows the list in both live and snapshot mode.
     onPendingUpdatesChanged: {
         if (!_serviceHasState && pendingUpdates.length > 0)
             store.refresh(pendingUpdates);
+        _refreshSourceMap();
     }
 
     // The daemon already knows the update list but only pushes state on
