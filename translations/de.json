@@ -110,8 +110,6 @@
     "Check interval and ignored packages are managed in DMS Settings → System Updater.": "Prüfintervall und ignorierte Pakete werden in den DMS-Einstellungen → Systemupdater verwaltet.",
     "Open DMS System Updater settings": "DMS-Systemupdater-Einstellungen öffnen",
     "Visual updater built on the DMS system update service. Check interval and ignored packages are managed in Settings → System Updater.": "Visueller Updater auf Basis des DMS-Systemupdatedienstes. Prüfintervall und ignorierte Pakete werden in Einstellungen → Systemupdater verwaltet.",
-    "installs in 1 day": "Installation in 1 Tag",
-    "installs in %1 days": "Installation in %1 Tagen",
     "held by you": "von Ihnen zurückgehalten",
     "What's new": "Was ist neu",
     "Release notes": "Versionshinweise",
@@ -224,7 +222,6 @@
     "No longer maintained (end-of-life): %1": "Wird nicht mehr gepflegt (End-of-Life): %1",
     "A new Fedora release is available: Fedora %1.": "Eine neue Fedora-Version ist verfügbar: Fedora %1.",
     "Learn more": "Mehr erfahren",
-    "installs in %1h": "Installation in %1 Std.",
     "Install all now": "Alle jetzt installieren",
     "Installing updates…": "Updates werden installiert…",
     "Updating AppImages…": "AppImages werden aktualisiert…",
@@ -254,5 +251,14 @@
     "Downloading": "Herunterladen",
     "Applying changes…": "Änderungen werden angewendet…",
     "Applying": "Anwenden",
-    "Removing": "Entfernen"
+    "Removing": "Entfernen",
+    "released for install in %1h": "Freigabe zur Installation in %1 Std.",
+    "released for install in 1 day": "Freigabe zur Installation in 1 Tag",
+    "released for install in %1 days": "Freigabe zur Installation in %1 Tagen",
+    "About": "Über",
+    "Version %1 (beta)": "Version %1 (Beta)",
+    "By %1 · MIT license": "Von %1 · MIT-Lizenz",
+    "requires DMS %1": "benötigt DMS %1",
+    "Developed with Claude Code": "Entwickelt mit Claude Code",
+    "Open GitHub page": "GitHub-Seite öffnen"
 }

@@ -110,8 +110,6 @@
     "Check interval and ignored packages are managed in DMS Settings → System Updater.": "L'intervalle de vérification et les paquets ignorés se gèrent dans Réglages DMS → Mises à jour système.",
     "Open DMS System Updater settings": "Ouvrir les réglages DMS de mise à jour",
     "Visual updater built on the DMS system update service. Check interval and ignored packages are managed in Settings → System Updater.": "Outil visuel de mise à jour basé sur le service DMS. L'intervalle de vérification et les paquets ignorés se gèrent dans Réglages → Mises à jour système.",
-    "installs in 1 day": "installation dans 1 jour",
-    "installs in %1 days": "installation dans %1 jours",
     "held by you": "bloqué par vous",
     "What's new": "Nouveautés",
     "Release notes": "Notes de version",
@@ -224,7 +222,6 @@
     "No longer maintained (end-of-life): %1": "N'est plus maintenu (fin de vie) : %1",
     "A new Fedora release is available: Fedora %1.": "Une nouvelle version de Fedora est disponible : Fedora %1.",
     "Learn more": "En savoir plus",
-    "installs in %1h": "installation dans %1 h",
     "Install all now": "Tout installer maintenant",
     "Installing updates…": "Installation des mises à jour…",
     "Updating AppImages…": "Mise à jour des AppImages…",
@@ -254,5 +251,14 @@
     "Downloading": "Téléchargement",
     "Applying changes…": "Application des modifications…",
     "Applying": "Application",
-    "Removing": "Suppression"
+    "Removing": "Suppression",
+    "released for install in %1h": "disponible à l'installation dans %1 h",
+    "released for install in 1 day": "disponible à l'installation dans 1 jour",
+    "released for install in %1 days": "disponible à l'installation dans %1 jours",
+    "About": "À propos",
+    "Version %1 (beta)": "Version %1 (bêta)",
+    "By %1 · MIT license": "Par %1 · licence MIT",
+    "requires DMS %1": "nécessite DMS %1",
+    "Developed with Claude Code": "Développé avec Claude Code",
+    "Open GitHub page": "Ouvrir la page GitHub"
 }

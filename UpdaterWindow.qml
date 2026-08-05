@@ -299,6 +299,140 @@ FloatingWindow {
         z: 150
     }
 
+    // ── About popup (info icon in the header) ───────────────────────────────
+    property bool aboutOpen: false
+    property var pluginManifest: ({})
+    readonly property string githubUrl: "https://github.com/vinceecniv/DankSoftwareDepot"
+
+    FileView {
+        path: Qt.resolvedUrl("plugin.json")
+
+        onLoaded: {
+            try {
+                win.pluginManifest = JSON.parse(text());
+            } catch (e) {
+            }
+        }
+    }
+
+    onAboutOpenChanged: {
+        if (aboutOpen)
+            aboutFocus.forceActiveFocus();
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        visible: win.aboutOpen
+        z: 90
+        color: Qt.rgba(0, 0, 0, 0.45)
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: win.aboutOpen = false
+            onWheel: wheel => wheel.accepted = true
+        }
+
+        Item {
+            id: aboutFocus
+            Keys.onEscapePressed: win.aboutOpen = false
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: Math.min(420, parent.width - Theme.spacingL * 2)
+            height: aboutColumn.implicitHeight + Theme.spacingL * 2
+            radius: Theme.cornerRadius
+            color: Theme.surfaceContainer
+            border.width: 1
+            border.color: Theme.withAlpha(Theme.surfaceVariantText, 0.25)
+
+            MouseArea {
+                anchors.fill: parent
+            }
+
+            ColumnLayout {
+                id: aboutColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.margins: Theme.spacingL
+                spacing: Theme.spacingM
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingM
+
+                    Image {
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
+                        source: win.appIconSource
+                        sourceSize.width: 80
+                        sourceSize.height: 80
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        StyledText {
+                            text: "Dank Software Depot"
+                            font.pixelSize: Theme.fontSizeLarge
+                            font.weight: Font.Medium
+                            color: Theme.surfaceText
+                        }
+
+                        StyledText {
+                            text: Tr.t("Version %1 (beta)").arg(win.pluginManifest.version || "?")
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceVariantText
+                        }
+                    }
+
+                    DankActionButton {
+                        buttonSize: 30
+                        iconName: "close"
+                        iconSize: 18
+                        iconColor: Theme.surfaceVariantText
+                        onClicked: win.aboutOpen = false
+                    }
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: win.pluginManifest.description || ""
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceText
+                    wrapMode: Text.WordWrap
+                }
+
+                StyledText {
+                    text: Tr.t("By %1 · MIT license").arg(win.pluginManifest.author || "") + " · " + Tr.t("requires DMS %1").arg(win.pluginManifest.requires_dms || "")
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceVariantText
+                }
+
+                StyledText {
+                    text: Tr.t("Developed with Claude Code")
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceVariantText
+                }
+
+                DankButton {
+                    buttonHeight: 32
+                    iconName: "open_in_new"
+                    iconSize: 15
+                    horizontalPadding: Theme.spacingM
+                    text: Tr.t("Open GitHub page")
+                    backgroundColor: Theme.buttonBg
+                    textColor: Theme.buttonText
+                    onClicked: Qt.openUrlExternally(win.githubUrl)
+                }
+            }
+        }
+    }
+
     // ── Plugin settings popup (gear icon in the header) ─────────────────────
     property bool settingsOpen: false
 
@@ -633,6 +767,11 @@ FloatingWindow {
         if (visible) {
             tabs.currentIndex = 0;
             refreshDashboard();
+            // Delay countdowns recompute against this clock; refresh it so
+            // they are current the moment the window shows (the widget's
+            // 15-minute timer covers the time in between).
+            if (widgetRoot)
+                widgetRoot.delayNowUnix = Math.floor(Date.now() / 1000);
         }
     }
 
@@ -735,9 +874,9 @@ FloatingWindow {
             return "";
         // <= so a fresh 1-day delay (clamped to exactly 24h) reads as hours
         if (secs <= 24 * 3600)
-            return Tr.t("installs in %1h").arg(Math.max(1, Math.ceil(secs / 3600)));
+            return Tr.t("released for install in %1h").arg(Math.max(1, Math.ceil(secs / 3600)));
         const days = Math.ceil(secs / 86400);
-        return days === 1 ? Tr.t("installs in 1 day") : Tr.t("installs in %1 days").arg(days);
+        return days === 1 ? Tr.t("released for install in 1 day") : Tr.t("released for install in %1 days").arg(days);
     }
 
     // Live list of pending updates (idle view)
@@ -1021,6 +1160,15 @@ FloatingWindow {
                                 windowRefreshButton.rotation = 0;
                         }
                     }
+                }
+
+                DankActionButton {
+                    buttonSize: 36
+                    iconName: "info"
+                    iconSize: 20
+                    iconColor: Theme.surfaceText
+                    tooltipText: Tr.t("About")
+                    onClicked: win.aboutOpen = true
                 }
 
                 DankActionButton {

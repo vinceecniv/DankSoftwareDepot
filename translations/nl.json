@@ -110,8 +110,6 @@
     "Check interval and ignored packages are managed in DMS Settings → System Updater.": "Controle-interval en genegeerde pakketten beheer je in DMS-instellingen → Systeemupdater.",
     "Open DMS System Updater settings": "DMS Systeemupdater-instellingen openen",
     "Visual updater built on the DMS system update service. Check interval and ignored packages are managed in Settings → System Updater.": "Visuele updater gebouwd op de DMS-systeemupdateservice. Controle-interval en genegeerde pakketten beheer je in Instellingen → Systeemupdater.",
-    "installs in 1 day": "installatie over 1 dag",
-    "installs in %1 days": "installatie over %1 dagen",
     "held by you": "door jou vastgezet",
     "What's new": "Wat is er nieuw",
     "Release notes": "Release notes",
@@ -224,7 +222,6 @@
     "No longer maintained (end-of-life): %1": "Niet langer onderhouden (end-of-life): %1",
     "A new Fedora release is available: Fedora %1.": "Er is een nieuwe Fedora-uitgave beschikbaar: Fedora %1.",
     "Learn more": "Meer info",
-    "installs in %1h": "installatie over %1 u",
     "Install all now": "Alles nu installeren",
     "Installing updates…": "Updates installeren…",
     "Updating AppImages…": "AppImages bijwerken…",
@@ -254,5 +251,14 @@
     "Downloading": "Downloaden",
     "Applying changes…": "Wijzigingen doorvoeren…",
     "Applying": "Doorvoeren",
-    "Removing": "Verwijderen"
+    "Removing": "Verwijderen",
+    "released for install in %1h": "vrijgave voor installatie over %1 u",
+    "released for install in 1 day": "vrijgave voor installatie over 1 dag",
+    "released for install in %1 days": "vrijgave voor installatie over %1 dagen",
+    "About": "Over",
+    "Version %1 (beta)": "Versie %1 (beta)",
+    "By %1 · MIT license": "Door %1 · MIT-licentie",
+    "requires DMS %1": "vereist DMS %1",
+    "Developed with Claude Code": "Ontwikkeld met Claude Code",
+    "Open GitHub page": "GitHub-pagina openen"
 }

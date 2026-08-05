@@ -83,8 +83,21 @@ PluginComponent {
                 changed = true;
             }
         }
+        // Prune per source, and only when that source actually has data:
+        // a daemon reconnect briefly publishes an empty update list, and
+        // wiping then would restart every delay clock (they must survive
+        // shell and computer restarts). Stale entries are harmless — if the
+        // same name@version reappears, keeping the original first-seen is
+        // exactly right — so a 60-day age cap is the only hard cleanup.
+        const haveSystem = (SystemUpdateService.availableUpdates || []).length > 0;
+        const haveFirmware = ((includeFirmware ? firmware.updates : []) || []).length > 0;
+        const haveAppimage = (appimageUpdates || []).length > 0;
         for (const key in map) {
-            if (!live.has(key)) {
+            if (live.has(key))
+                continue;
+            const src = key.split("/")[0];
+            const sourceLoaded = src === "firmware" ? haveFirmware : (src === "appimage" ? haveAppimage : haveSystem);
+            if (sourceLoaded || now - map[key] > 60 * 86400) {
                 delete map[key];
                 changed = true;
             }
