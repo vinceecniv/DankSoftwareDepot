@@ -13,7 +13,7 @@
     ],
     "component": "./UpdaterWidget.qml",
     "settings": "./UpdaterSettings.qml",
-    "requires_dms": ">=1.6.0",
+    "requires_dms": ">=1.5.0",
     "permissions": [
         "settings_read",
         "settings_write",

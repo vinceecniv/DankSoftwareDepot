@@ -113,7 +113,7 @@ language by dropping a new `translations/<lang>.json` next to the others.
 ## Requirements
 
 - A Fedora-based distribution
-- DMS ≥ 1.6 with the `sysupdate` daemon capability
+- DMS ≥ 1.5 with the `sysupdate` daemon capability
 - `python3`, `python3-gobject` + libflatpak GIR (standard on Fedora)
 - `flatpak`, `dnf5`, optionally `fwupd`
 
