@@ -328,6 +328,9 @@ FloatingWindow {
     property string selfUpdateVersion: ""
     property string selfUpdateNotes: ""
     property bool selfUpdateBusy: false
+    // Dismissed via the banner's X: stays hidden until a yet newer version
+    // appears (persisted in pluginData)
+    readonly property string selfUpdateDismissedVersion: (widgetRoot && widgetRoot.pluginData) ? (widgetRoot.pluginData.selfUpdateDismissedVersion || "") : ""
 
     function _versionNewer(remote, local) {
         const a = String(remote).split(".").map(n => parseInt(n, 10) || 0);
@@ -1325,7 +1328,7 @@ FloatingWindow {
         // ── Plugin self-update banner ───────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0 && win.selfUpdateVersion !== ""
+            visible: tabs.currentIndex === 0 && win.selfUpdateVersion !== "" && win.selfUpdateVersion !== win.selfUpdateDismissedVersion
             implicitHeight: selfUpdateColumn.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.primary, 0.10)
@@ -1379,6 +1382,15 @@ FloatingWindow {
                             // process tree mid-flight otherwise
                             Quickshell.execDetached(["sh", "-c", "dms plugins update dankSoftwareDepot && dms restart"]);
                         }
+                    }
+
+                    DankActionButton {
+                        buttonSize: 28
+                        iconName: "close"
+                        iconSize: 16
+                        iconColor: Theme.surfaceVariantText
+                        tooltipText: Tr.t("Dismiss")
+                        onClicked: PluginService.savePluginData("dankSoftwareDepot", "selfUpdateDismissedVersion", win.selfUpdateVersion)
                     }
                 }
 
