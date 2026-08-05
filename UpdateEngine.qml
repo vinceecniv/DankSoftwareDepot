@@ -252,11 +252,37 @@ Item {
         itemStates = updated;
     }
 
+    // A run requested while the daemon has no package state (right after its
+    // restart) would be a silent no-op: the upgrade command needs a check
+    // first. Defer the run, trigger the check (the UI shows its spinner) and
+    // start for real when it lands.
+    property var _deferredOpts: null
+
+    Connections {
+        target: SystemUpdateService
+        enabled: engine._deferredOpts !== null
+
+        function onIsCheckingChanged() {
+            if (SystemUpdateService.isChecking)
+                return;
+            const opts = engine._deferredOpts;
+            engine._deferredOpts = null;
+            if (!SystemUpdateService.hasError)
+                Qt.callLater(() => engine.start(opts));
+        }
+    }
+
     // ── Run control ──────────────────────────────────────────────────────────
     function start(opts) {
         if (running)
             return;
         const options = opts || {};
+        const daemonHasState = SystemUpdateService.lastCheckUnix > 0 || (SystemUpdateService.availableUpdates || []).length > 0;
+        if (!daemonHasState && options.dnf !== false && (pendingUpdates || []).some(p => p.repo !== "flatpak")) {
+            _deferredOpts = options;
+            SystemUpdateService.checkForUpdates();
+            return;
+        }
         const held = new Set(heldKeys || []);
         const delayed = new Set(delayedKeys || []);
         const updates = pendingUpdates || [];
@@ -524,6 +550,7 @@ Item {
     }
 
     function cancel() {
+        _deferredOpts = null;
         if (!running)
             return;
         if (!_dnfDone || (_daemonKind === "shell" && !_shellDone)) {
