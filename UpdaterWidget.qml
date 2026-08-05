@@ -631,12 +631,18 @@ PluginComponent {
     }
 
     Component.onCompleted: {
-        // pendingUpdates falls back to the persisted snapshot, so enrichment
-        // (names, icons) also runs for a restored list
         if (pendingUpdates.length > 0) {
             store.refresh(pendingUpdates);
             root._trackFirstSeen();
         }
+    }
+
+    // pluginData (and with it the persisted snapshot) loads after component
+    // completion, so run enrichment (names, icons) whenever the restored
+    // list actually lands — otherwise snapshot rows show generic icons
+    onPendingUpdatesChanged: {
+        if (!_serviceHasState && pendingUpdates.length > 0)
+            store.refresh(pendingUpdates);
     }
 
     // The daemon already knows the update list but only pushes state on
