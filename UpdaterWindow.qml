@@ -1032,9 +1032,13 @@ FloatingWindow {
         return days === 1 ? Tr.t("released for install in 1 day") : Tr.t("released for install in %1 days").arg(days);
     }
 
+    // Pending updates: live service data, or the widget's persisted snapshot
+    // right after a restart (until the daemon has state again)
+    readonly property var pendingUpdates: widgetRoot ? widgetRoot.pendingUpdates : (SystemUpdateService.availableUpdates || [])
+
     // Live list of pending updates (idle view)
     readonly property var updateRows: {
-        const updates = SystemUpdateService.availableUpdates || [];
+        const updates = win.pendingUpdates;
         const seen = new Set();
         const rows = [];
         for (const pkg of updates) {
@@ -1192,12 +1196,12 @@ FloatingWindow {
     readonly property int effectiveCount: {
         if (widgetRoot)
             return widgetRoot.effectiveCount;
-        const updates = SystemUpdateService.availableUpdates || [];
+        const updates = win.pendingUpdates;
         return updates.filter(pkg => !store.isHeld(pkg)).length + ((firmware ? firmware.updates : []) || []).length;
     }
 
     readonly property int hiddenRuntimeCount: {
-        const updates = SystemUpdateService.availableUpdates || [];
+        const updates = win.pendingUpdates;
         if (showRuntimes)
             return 0;
         return updates.filter(pkg => classify(pkg) === "3 · Runtimes & extensions").length;

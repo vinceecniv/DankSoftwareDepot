@@ -23,10 +23,17 @@ PluginComponent {
 
     property bool confirmArmed: false
 
+    // Last known update list, persisted across restarts: the daemon loses
+    // its in-memory state when it restarts (reboot, dms restart) and only
+    // repopulates at its next check — until the service has real state the
+    // snapshot is shown, so found and delayed updates reappear immediately.
+    readonly property bool _serviceHasState: SystemUpdateService.lastCheckUnix > 0 || (SystemUpdateService.availableUpdates || []).length > 0
+    readonly property var pendingUpdates: _serviceHasState ? (SystemUpdateService.availableUpdates || []) : ((pluginData.updatesSnapshot || {}).packages || [])
+
     // Held packages (dnf versionlock/excludes) never count as real updates
     readonly property var heldSystemKeys: {
         const keys = [];
-        for (const pkg of SystemUpdateService.availableUpdates || []) {
+        for (const pkg of pendingUpdates) {
             if (store.isHeld(pkg))
                 keys.push(store.keyFor(pkg));
         }
@@ -127,7 +134,7 @@ PluginComponent {
                 result.remaining[engineKey] = Math.max(60, Math.min(windowSecs, seen + windowSecs - now));
             }
         };
-        for (const pkg of SystemUpdateService.availableUpdates || []) {
+        for (const pkg of pendingUpdates) {
             if (store.isHeld(pkg))
                 continue;
             if (pkg.repo === "flatpak")
@@ -146,7 +153,7 @@ PluginComponent {
     readonly property int effectiveCount: {
         const delayed = new Set(delayedKeys);
         let count = 0;
-        for (const pkg of SystemUpdateService.availableUpdates || []) {
+        for (const pkg of pendingUpdates) {
             if (store.isHeld(pkg))
                 continue;
             const key = pkg.repo === "flatpak" ? ("flatpak/" + pkg.name) : ("system/" + store.stripArch(pkg.name));
@@ -208,7 +215,7 @@ PluginComponent {
         const delayed = new Set(delayedKeys);
         const flatpaks = [];
         const rpms = [];
-        for (const pkg of SystemUpdateService.availableUpdates || []) {
+        for (const pkg of pendingUpdates) {
             if (store.isHeld(pkg))
                 continue;
             if (pkg.repo === "flatpak") {
@@ -587,6 +594,19 @@ PluginComponent {
         }
     }
 
+    // Persist the current list (only when it comes from real daemon state)
+    // so it can be shown right away after the next restart. Triggered on
+    // both signals because the service assigns availableUpdates before
+    // lastCheckUnix — either alone can fire while the other is still stale.
+    function _saveUpdatesSnapshot() {
+        if (SystemUpdateService.lastCheckUnix <= 0)
+            return;
+        PluginService.savePluginData("dankSoftwareDepot", "updatesSnapshot", {
+            ts: Math.floor(Date.now() / 1000),
+            packages: (SystemUpdateService.availableUpdates || []).slice(0, 500)
+        });
+    }
+
     Connections {
         target: SystemUpdateService
 
@@ -594,6 +614,11 @@ PluginComponent {
             store.refresh(SystemUpdateService.availableUpdates);
             root._trackFirstSeen();
             sizesDebounce.restart();
+            root._saveUpdatesSnapshot();
+        }
+
+        function onLastCheckUnixChanged() {
+            root._saveUpdatesSnapshot();
         }
     }
 
@@ -606,8 +631,10 @@ PluginComponent {
     }
 
     Component.onCompleted: {
-        if ((SystemUpdateService.availableUpdates || []).length > 0) {
-            store.refresh(SystemUpdateService.availableUpdates);
+        // pendingUpdates falls back to the persisted snapshot, so enrichment
+        // (names, icons) also runs for a restored list
+        if (pendingUpdates.length > 0) {
+            store.refresh(pendingUpdates);
             root._trackFirstSeen();
         }
     }
@@ -693,7 +720,7 @@ PluginComponent {
         if (engine.phase !== "idle" && (engine.runItems || []).length > 0)
             return engine.runItems.map(item => item.pkg);
         const delayed = new Set(delayedKeys);
-        const rows = (SystemUpdateService.availableUpdates || []).filter(pkg => {
+        const rows = pendingUpdates.filter(pkg => {
             if (store.isHeld(pkg))
                 return false;
             const key = pkg.repo === "flatpak" ? ("flatpak/" + pkg.name) : ("system/" + store.stripArch(pkg.name));
