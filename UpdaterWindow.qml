@@ -1360,27 +1360,36 @@ FloatingWindow {
 
                     StyledText {
                         Layout.fillWidth: true
-                        text: Tr.t("Dank Software Depot %1 is available").arg(win.selfUpdateVersion)
+                        textFormat: Text.StyledText
+                        text: Tr.t("Dank Software Depot %1 is available").arg("<b>" + win.selfUpdateVersion + "</b>")
                         font.pixelSize: Theme.fontSizeMedium
                         font.weight: Font.Medium
                         color: Theme.surfaceText
                         elide: Text.ElideRight
                     }
 
-                    DankButton {
-                        buttonHeight: 30
-                        iconName: "download"
-                        iconSize: 14
-                        horizontalPadding: Theme.spacingM
-                        enabled: !win.selfUpdateBusy
-                        text: win.selfUpdateBusy ? Tr.t("Updating…") : Tr.t("Update and reload shell")
-                        backgroundColor: Theme.buttonBg
-                        textColor: Theme.buttonText
-                        onClicked: {
-                            win.selfUpdateBusy = true;
-                            // Detached: the shell reload below kills our own
-                            // process tree mid-flight otherwise
-                            Quickshell.execDetached(["sh", "-c", "dms plugins update dankSoftwareDepot && dms restart"]);
+                    // Wrapper Item: DankButton sizes itself via `width`,
+                    // which the RowLayout would ignore and cramp the label
+                    Item {
+                        Layout.preferredWidth: selfUpdateButton.width
+                        Layout.preferredHeight: selfUpdateButton.height
+
+                        DankButton {
+                            id: selfUpdateButton
+                            buttonHeight: 30
+                            iconName: "download"
+                            iconSize: 14
+                            horizontalPadding: Theme.spacingM
+                            enabled: !win.selfUpdateBusy
+                            text: win.selfUpdateBusy ? Tr.t("Updating…") : Tr.t("Update and reload shell")
+                            backgroundColor: Theme.buttonBg
+                            textColor: Theme.buttonText
+                            onClicked: {
+                                win.selfUpdateBusy = true;
+                                // Detached: the shell reload below kills our
+                                // own process tree mid-flight otherwise
+                                Quickshell.execDetached(["sh", "-c", "dms plugins update dankSoftwareDepot && dms restart"]);
+                            }
                         }
                     }
 
