@@ -2588,13 +2588,19 @@ FloatingWindow {
 
                 DankButton {
                     id: windowUpdateAllButton
-                    visible: win.engine.running || win.effectiveCount > 0
-                    text: win.engine.running ? Tr.t("Cancel") : (Tr.t("Update All") + ((win.widgetRoot && win.widgetRoot.updateSizeText !== "") ? " · " + win.widgetRoot.updateSizeText : ""))
-                    iconName: win.engine.running ? "close" : "download"
-                    backgroundColor: win.engine.running ? Theme.errorPressed : Theme.buttonBg
-                    textColor: win.engine.running ? Theme.surfaceText : Theme.buttonText
+
+                    // Deferred counts as busy: the click already committed a
+                    // run (waiting on the pre-run check), so flip to Cancel
+                    // immediately
+                    readonly property bool busyRun: win.engine.running || win.engine.deferred
+
+                    visible: busyRun || win.effectiveCount > 0
+                    text: busyRun ? Tr.t("Cancel") : (Tr.t("Update All") + ((win.widgetRoot && win.widgetRoot.updateSizeText !== "") ? " · " + win.widgetRoot.updateSizeText : ""))
+                    iconName: busyRun ? "close" : "download"
+                    backgroundColor: busyRun ? Theme.errorPressed : Theme.buttonBg
+                    textColor: busyRun ? Theme.surfaceText : Theme.buttonText
                     onClicked: {
-                        if (win.engine.running) {
+                        if (busyRun) {
                             win.engine.cancel();
                         } else {
                             win.engine.start({});

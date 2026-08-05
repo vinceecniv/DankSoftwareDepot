@@ -42,7 +42,9 @@ Item {
     readonly property string progressDetail: {
         switch (phase) {
         case "dnf-download":
-            return _dnfStageY > 0 ? Tr.t("package %1 of %2").arg(Math.min(_dnfStageX + 1, _dnfStageY)).arg(_dnfStageY) : "";
+            // Before the first [x/y] series dnf is refreshing repo metadata —
+            // say so instead of sitting on a silent 0%
+            return _dnfStageY > 0 ? Tr.t("package %1 of %2").arg(Math.min(_dnfStageX + 1, _dnfStageY)).arg(_dnfStageY) : Tr.t("Loading repositories…");
         case "dnf-install":
         case "dms":
             return _dnfStageY > 0 ? Tr.t("step %1 of %2").arg(Math.min(_dnfStageX + 1, _dnfStageY)).arg(_dnfStageY) : "";
@@ -257,6 +259,9 @@ Item {
     // first. Defer the run, trigger the check (the UI shows its spinner) and
     // start for real when it lands.
     property var _deferredOpts: null
+    // True while a requested run waits for the pre-run check — buttons show
+    // their cancel state during this window too
+    readonly property bool deferred: _deferredOpts !== null
 
     Connections {
         target: SystemUpdateService

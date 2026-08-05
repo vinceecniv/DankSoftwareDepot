@@ -1279,23 +1279,26 @@ PluginComponent {
                 DankButton {
                     width: (parent.width - Theme.spacingM) / 2
                     buttonHeight: parent.height
+
+                    readonly property bool busyRun: engine.running || engine.deferred
+
                     text: {
-                        if (engine.running)
+                        if (busyRun)
                             return Tr.t("Cancel");
                         if (root.confirmArmed)
                             return Tr.t("Confirm?");
                         return Tr.t("Update All") + (root.updateSizeText !== "" ? " · " + root.updateSizeText : "");
                     }
                     backgroundColor: {
-                        if (engine.running)
+                        if (busyRun)
                             return Theme.errorPressed;
                         if (root.confirmArmed)
                             return Theme.warning;
                         return Theme.buttonBg;
                     }
-                    textColor: engine.running ? Theme.surfaceText : Theme.buttonText
+                    textColor: busyRun ? Theme.surfaceText : Theme.buttonText
                     onClicked: {
-                        if (engine.running) {
+                        if (busyRun) {
                             engine.cancel();
                         } else {
                             root.requestUpdateAll();
