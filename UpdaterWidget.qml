@@ -692,9 +692,69 @@ PluginComponent {
     // list actually lands — otherwise snapshot rows show generic icons.
     // The srpm-family map follows the list in both live and snapshot mode.
     onPendingUpdatesChanged: {
-        if (!_serviceHasState && pendingUpdates.length > 0)
+        if (!_serviceHasState && pendingUpdates.length > 0) {
             store.refresh(pendingUpdates);
+            _reconcileSnapshot();
+        }
         _refreshSourceMap();
+    }
+
+    // A restored snapshot can contain updates installed in the last moments
+    // before a shell reload (the DMS pass updates the daemon itself, so no
+    // post-run save could happen). Drop every rpm whose target version is
+    // already installed.
+    function _reconcileSnapshot() {
+        const pkgs = (pluginData.updatesSnapshot || {}).packages || [];
+        const names = [];
+        for (const pkg of pkgs) {
+            if (pkg.repo !== "flatpak")
+                names.push(store.stripArch(pkg.name));
+        }
+        if (names.length === 0)
+            return;
+        snapshotPruneProcess.command = ["rpm", "-q", "--qf", "%{NAME}\\t%{EVR}\\n"].concat(names);
+        snapshotPruneProcess.running = true;
+    }
+
+    Process {
+        id: snapshotPruneProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const installed = {};
+                for (const line of text.split("\n")) {
+                    const parts = line.split("\t");
+                    if (parts.length === 2)
+                        installed[parts[0].trim()] = parts[1].trim();
+                }
+                const noEpoch = v => String(v || "").replace(/^\d+:/, "");
+                const snap = root.pluginData.updatesSnapshot || {};
+                const pkgs = snap.packages || [];
+                const keep = pkgs.filter(pkg => {
+                    if (pkg.repo === "flatpak")
+                        return true;
+                    const evr = installed[store.stripArch(pkg.name)];
+                    return !evr || noEpoch(evr) !== noEpoch(pkg.toVersion);
+                });
+                if (keep.length !== pkgs.length)
+                    PluginService.savePluginData("dankSoftwareDepot", "updatesSnapshot", {
+                        ts: snap.ts || 0,
+                        packages: keep
+                    });
+            }
+        }
+    }
+
+    // And rebuild real daemon state without user action: when it comes up
+    // empty (it forgets its list on restart), trigger a check ourselves.
+    Timer {
+        interval: 8000
+        running: true
+
+        onTriggered: {
+            if (!root._serviceHasState && !SystemUpdateService.isChecking)
+                SystemUpdateService.checkForUpdates();
+        }
     }
 
     // The daemon already knows the update list but only pushes state on
