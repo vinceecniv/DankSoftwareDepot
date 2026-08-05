@@ -1090,7 +1090,12 @@ Item {
                             spacing: Theme.spacingS
 
                             Row {
+                                id: reviewStarsRow
                                 spacing: 2
+
+                                // Hover previews the rating live; a click
+                                // confirms it
+                                property int hoverStars: 0
 
                                 Repeater {
                                     model: 5
@@ -1098,14 +1103,22 @@ Item {
                                     delegate: DankIcon {
                                         required property int index
 
+                                        readonly property int shownStars: reviewStarsRow.hoverStars > 0 ? reviewStarsRow.hoverStars : dialog.reviewStars
+
                                         name: "star"
-                                        filled: index < dialog.reviewStars
+                                        filled: index < shownStars
                                         size: 20
-                                        color: index < dialog.reviewStars ? Theme.warning : Theme.withAlpha(Theme.surfaceVariantText, 0.5)
+                                        color: index < shownStars ? Theme.warning : Theme.withAlpha(Theme.surfaceVariantText, 0.5)
 
                                         MouseArea {
                                             anchors.fill: parent
+                                            hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
+                                            onEntered: reviewStarsRow.hoverStars = index + 1
+                                            onExited: {
+                                                if (reviewStarsRow.hoverStars === index + 1)
+                                                    reviewStarsRow.hoverStars = 0;
+                                            }
                                             onClicked: dialog.reviewStars = index + 1
                                         }
                                     }
