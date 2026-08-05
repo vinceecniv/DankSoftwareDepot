@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Common
+import qs.Services
 import qs.Widgets
 
 // Shared app-details popup used by the Updates, Installed and Install tabs.
@@ -108,13 +109,23 @@ Item {
     property int reviewStars: 5
     property string reviewStatus: ""   // "" | sending | done | error:<msg>
 
-    function submitReview(summaryText, bodyText) {
+    // Prefill the reviewer name from the remembered value, falling back to
+    // the login name (which the backend would otherwise use anyway)
+    onReviewFormOpenChanged: {
+        if (reviewFormOpen && reviewNameField.text.trim() === "")
+            reviewNameField.text = PluginService.loadPluginData("dankSoftwareDepot", "reviewerName", Quickshell.env("USER") || "");
+    }
+
+    function submitReview(summaryText, bodyText, displayName) {
         reviewStatus = "sending";
+        if (displayName !== "")
+            PluginService.savePluginData("dankSoftwareDepot", "reviewerName", displayName);
         reviewProcess.command = ["python3", scriptPath, "--submit-review", JSON.stringify({
             app_id: appData.id,
             rating: reviewStars,
             summary: summaryText,
             description: bodyText,
+            user_display: displayName,
             version: appData.versionLabel || "unknown"
         })];
         reviewProcess.running = true;
@@ -1040,16 +1051,24 @@ Item {
                             color: Theme.success
                         }
 
-                        DankButton {
+                        // Wrapper Item: DankButton sizes itself via `width`,
+                        // which the RowLayout would ignore and cramp the label
+                        Item {
                             visible: !dialog.reviewFormOpen && dialog.reviewStatus !== "done"
-                            buttonHeight: 26
-                            horizontalPadding: Theme.spacingM
-                            iconName: "rate_review"
-                            iconSize: 13
-                            text: Tr.t("Write a review")
-                            backgroundColor: Theme.secondaryContainer
-                            textColor: Theme.surfaceText
-                            onClicked: dialog.reviewFormOpen = true
+                            Layout.preferredWidth: writeReviewButton.width
+                            Layout.preferredHeight: writeReviewButton.height
+
+                            DankButton {
+                                id: writeReviewButton
+                                buttonHeight: 26
+                                horizontalPadding: Theme.spacingM
+                                iconName: "rate_review"
+                                iconSize: 13
+                                text: Tr.t("Write a review")
+                                backgroundColor: Theme.secondaryContainer
+                                textColor: Theme.surfaceText
+                                onClicked: dialog.reviewFormOpen = true
+                            }
                         }
                     }
 
@@ -1091,6 +1110,12 @@ Item {
                                         }
                                     }
                                 }
+                            }
+
+                            DankTextField {
+                                id: reviewNameField
+                                Layout.fillWidth: true
+                                placeholderText: Tr.t("Display name (shown with your review)")
                             }
 
                             DankTextField {
@@ -1148,28 +1173,42 @@ Item {
                                     size: 18
                                 }
 
-                                DankButton {
-                                    buttonHeight: 26
-                                    horizontalPadding: Theme.spacingM
-                                    text: Tr.t("Cancel")
-                                    backgroundColor: Theme.surfaceContainerHighest
-                                    textColor: Theme.surfaceText
-                                    onClicked: {
-                                        dialog.reviewFormOpen = false;
-                                        dialog.reviewStatus = "";
+                                // Wrapper Items: DankButton sizes itself via
+                                // `width`, which the RowLayout would ignore
+                                Item {
+                                    Layout.preferredWidth: reviewCancelButton.width
+                                    Layout.preferredHeight: reviewCancelButton.height
+
+                                    DankButton {
+                                        id: reviewCancelButton
+                                        buttonHeight: 26
+                                        horizontalPadding: Theme.spacingM
+                                        text: Tr.t("Cancel")
+                                        backgroundColor: Theme.surfaceContainerHighest
+                                        textColor: Theme.surfaceText
+                                        onClicked: {
+                                            dialog.reviewFormOpen = false;
+                                            dialog.reviewStatus = "";
+                                        }
                                     }
                                 }
 
-                                DankButton {
-                                    buttonHeight: 26
-                                    horizontalPadding: Theme.spacingM
-                                    iconName: "send"
-                                    iconSize: 13
-                                    text: Tr.t("Submit")
-                                    backgroundColor: Theme.buttonBg
-                                    textColor: Theme.buttonText
-                                    enabled: dialog.reviewStatus !== "sending" && (reviewSummaryField.text.trim() !== "" || reviewBodyEdit.text.trim() !== "")
-                                    onClicked: dialog.submitReview(reviewSummaryField.text.trim(), reviewBodyEdit.text.trim())
+                                Item {
+                                    Layout.preferredWidth: reviewSubmitButton.width
+                                    Layout.preferredHeight: reviewSubmitButton.height
+
+                                    DankButton {
+                                        id: reviewSubmitButton
+                                        buttonHeight: 26
+                                        horizontalPadding: Theme.spacingM
+                                        iconName: "send"
+                                        iconSize: 13
+                                        text: Tr.t("Submit")
+                                        backgroundColor: Theme.buttonBg
+                                        textColor: Theme.buttonText
+                                        enabled: dialog.reviewStatus !== "sending" && (reviewSummaryField.text.trim() !== "" || reviewBodyEdit.text.trim() !== "")
+                                        onClicked: dialog.submitReview(reviewSummaryField.text.trim(), reviewBodyEdit.text.trim(), reviewNameField.text.trim())
+                                    }
                                 }
                             }
                         }

@@ -265,5 +265,6 @@
     "Update and reload shell": "Aktualisieren und Shell neu laden",
     "Updating…": "Aktualisiere…",
     "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.": "Softwarecenter für DMS: Updates mit Fortschritt, Release Notes, App-Store mit Bewertungen, Verwaltung installierter Software, Firmware und ein Aktionsprotokoll.",
-    "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "Unterstützt Fedora-Pakete (rpm/dnf), Flatpak und AppImage."
+    "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "Unterstützt Fedora-Pakete (rpm/dnf), Flatpak und AppImage.",
+    "Display name (shown with your review)": "Anzeigename (steht bei deiner Bewertung)"
 }

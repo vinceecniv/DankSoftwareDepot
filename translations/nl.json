@@ -265,5 +265,6 @@
     "Update and reload shell": "Bijwerken en shell herladen",
     "Updating…": "Bijwerken…",
     "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.": "Softwarecentrum voor DMS: updates met voortgang, release notes, app store met reviews, beheer van geïnstalleerde software, firmware en een actielogboek.",
-    "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "Ondersteunt Fedora-pakketten (rpm/dnf), Flatpak en AppImage."
+    "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "Ondersteunt Fedora-pakketten (rpm/dnf), Flatpak en AppImage.",
+    "Display name (shown with your review)": "Weergavenaam (staat bij je review)"
 }
