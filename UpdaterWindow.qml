@@ -2133,10 +2133,155 @@ FloatingWindow {
                         columnSpacing: Theme.spacingM
                         rowSpacing: Theme.spacingM
 
+                        // System info
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            implicitHeight: systemCardCol.implicitHeight + Theme.spacingM * 2
+                            radius: Theme.cornerRadius
+                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+
+                            ColumnLayout {
+                                id: systemCardCol
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: Theme.spacingM
+                                anchors.rightMargin: Theme.spacingM
+                                spacing: Theme.spacingS
+
+                                RowLayout {
+                                    spacing: Theme.spacingS
+
+                                    DankIcon {
+                                        name: "computer"
+                                        size: 16
+                                        color: Theme.primary
+                                    }
+
+                                    StyledText {
+                                        text: Tr.t("System")
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.weight: Font.DemiBold
+                                        color: Theme.surfaceText
+                                    }
+                                }
+
+                                Repeater {
+                                    model: {
+                                        const dash = win.dashboard || {};
+                                        return [
+                                            { label: "OS", value: dash.osPretty || SystemUpdateService.distroPretty || "" },
+                                            { label: "Host", value: dash.hostname || "" },
+                                            { label: "Kernel", value: dash.kernel || "" },
+                                            { label: Tr.t("Uptime"), value: win.formatUptime(dash.uptimeSecs || 0) }
+                                        ].filter(row => row.value !== "");
+                                    }
+
+                                    delegate: RowLayout {
+                                        required property var modelData
+
+                                        Layout.fillWidth: true
+                                        spacing: Theme.spacingS
+
+                                        StyledText {
+                                            text: modelData.label
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            Layout.preferredWidth: 60
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: modelData.value
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceText
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Status
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            implicitHeight: statusCardCol.implicitHeight + Theme.spacingM * 2
+                            radius: Theme.cornerRadius
+                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+
+                            ColumnLayout {
+                                id: statusCardCol
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: Theme.spacingM
+                                anchors.rightMargin: Theme.spacingM
+                                spacing: Theme.spacingS
+
+                                RowLayout {
+                                    spacing: Theme.spacingS
+
+                                    DankIcon {
+                                        name: "monitor_heart"
+                                        size: 16
+                                        color: Theme.primary
+                                    }
+
+                                    StyledText {
+                                        text: "Status"
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.weight: Font.DemiBold
+                                        color: Theme.surfaceText
+                                    }
+                                }
+
+                                Repeater {
+                                    model: {
+                                        const root = win.widgetRoot;
+                                        if (!root)
+                                            return [];
+                                        const autoLabels = {
+                                            "off": Tr.t("Off"),
+                                            "notify": Tr.t("Notify only"),
+                                            "auto": Tr.t("Auto-install Flatpaks")
+                                        };
+                                        return [
+                                            { label: Tr.t("Held"), value: String((root.heldSystemKeys || []).length + (SettingsData.updaterIgnoredPackages || []).length) },
+                                            { label: "End-of-life", value: String((root.eolRefs || []).length) },
+                                            { label: Tr.t("Automatic updates"), value: autoLabels[root.autoUpdateMode] || Tr.t("Off") }
+                                        ];
+                                    }
+
+                                    delegate: RowLayout {
+                                        required property var modelData
+
+                                        Layout.fillWidth: true
+                                        spacing: Theme.spacingS
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: modelData.label
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            elide: Text.ElideRight
+                                        }
+
+                                        StyledText {
+                                            text: modelData.value
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            font.weight: Font.DemiBold
+                                            color: Theme.surfaceText
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         // Installed software per source
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.alignment: Qt.AlignTop
+                            Layout.fillHeight: true
                             implicitHeight: installedCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
                             color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
@@ -2223,80 +2368,10 @@ FloatingWindow {
                             }
                         }
 
-                        // System info
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.alignment: Qt.AlignTop
-                            implicitHeight: systemCardCol.implicitHeight + Theme.spacingM * 2
-                            radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
-
-                            ColumnLayout {
-                                id: systemCardCol
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: Theme.spacingM
-                                anchors.rightMargin: Theme.spacingM
-                                spacing: Theme.spacingS
-
-                                RowLayout {
-                                    spacing: Theme.spacingS
-
-                                    DankIcon {
-                                        name: "computer"
-                                        size: 16
-                                        color: Theme.primary
-                                    }
-
-                                    StyledText {
-                                        text: Tr.t("System")
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        font.weight: Font.DemiBold
-                                        color: Theme.surfaceText
-                                    }
-                                }
-
-                                Repeater {
-                                    model: {
-                                        const dash = win.dashboard || {};
-                                        return [
-                                            { label: "OS", value: dash.osPretty || SystemUpdateService.distroPretty || "" },
-                                            { label: "Host", value: dash.hostname || "" },
-                                            { label: "Kernel", value: dash.kernel || "" },
-                                            { label: Tr.t("Uptime"), value: win.formatUptime(dash.uptimeSecs || 0) }
-                                        ].filter(row => row.value !== "");
-                                    }
-
-                                    delegate: RowLayout {
-                                        required property var modelData
-
-                                        Layout.fillWidth: true
-                                        spacing: Theme.spacingS
-
-                                        StyledText {
-                                            text: modelData.label
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: Theme.surfaceVariantText
-                                            Layout.preferredWidth: 60
-                                        }
-
-                                        StyledText {
-                                            Layout.fillWidth: true
-                                            text: modelData.value
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: Theme.surfaceText
-                                            elide: Text.ElideRight
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         // Recently updated
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.alignment: Qt.AlignTop
+                            Layout.fillHeight: true
                             implicitHeight: recentCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
                             color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
@@ -2369,81 +2444,6 @@ FloatingWindow {
                             }
                         }
 
-                        // Status
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.alignment: Qt.AlignTop
-                            implicitHeight: statusCardCol.implicitHeight + Theme.spacingM * 2
-                            radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
-
-                            ColumnLayout {
-                                id: statusCardCol
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: Theme.spacingM
-                                anchors.rightMargin: Theme.spacingM
-                                spacing: Theme.spacingS
-
-                                RowLayout {
-                                    spacing: Theme.spacingS
-
-                                    DankIcon {
-                                        name: "monitor_heart"
-                                        size: 16
-                                        color: Theme.primary
-                                    }
-
-                                    StyledText {
-                                        text: "Status"
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        font.weight: Font.DemiBold
-                                        color: Theme.surfaceText
-                                    }
-                                }
-
-                                Repeater {
-                                    model: {
-                                        const root = win.widgetRoot;
-                                        if (!root)
-                                            return [];
-                                        const autoLabels = {
-                                            "off": Tr.t("Off"),
-                                            "notify": Tr.t("Notify only"),
-                                            "auto": Tr.t("Auto-install Flatpaks")
-                                        };
-                                        return [
-                                            { label: Tr.t("Held"), value: String((root.heldSystemKeys || []).length + (SettingsData.updaterIgnoredPackages || []).length) },
-                                            { label: "End-of-life", value: String((root.eolRefs || []).length) },
-                                            { label: Tr.t("Automatic updates"), value: autoLabels[root.autoUpdateMode] || Tr.t("Off") }
-                                        ];
-                                    }
-
-                                    delegate: RowLayout {
-                                        required property var modelData
-
-                                        Layout.fillWidth: true
-                                        spacing: Theme.spacingS
-
-                                        StyledText {
-                                            Layout.fillWidth: true
-                                            text: modelData.label
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: Theme.surfaceVariantText
-                                            elide: Text.ElideRight
-                                        }
-
-                                        StyledText {
-                                            text: modelData.value
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            font.weight: Font.DemiBold
-                                            color: Theme.surfaceText
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             }
