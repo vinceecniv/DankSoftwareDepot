@@ -121,6 +121,40 @@ PluginComponent {
             PluginService.savePluginData("dankSoftwareDepot", "updateFirstSeen", map);
     }
 
+    // "Install all now" on the delayed section: overriding the maturity
+    // window means the delay is over for these updates. Expire their
+    // first-seen entries so they move to the regular update list (and stay
+    // there if a run fails); the caller then starts a normal engine run.
+    function releaseAllDelayed() {
+        if (updateDelayDays <= 0)
+            return;
+        const delayed = new Set(delayedKeys);
+        const map = Object.assign({}, pluginData.updateFirstSeen || {});
+        const expired = Math.floor(Date.now() / 1000) - updateDelayDays * 86400 - 60;
+        let changed = false;
+        for (const pkg of pendingUpdates) {
+            const engineKey = pkg.repo === "flatpak" ? "flatpak/" + pkg.name : "system/" + store.stripArch(pkg.name);
+            if (!delayed.has(engineKey))
+                continue;
+            map[_delayMapKey(pkg.repo === "flatpak" ? "flatpak" : "system", pkg.name, pkg.toVersion)] = expired;
+            changed = true;
+        }
+        for (const fw of (includeFirmware ? firmware.updates : []) || []) {
+            if (delayed.has("firmware/" + fw.name)) {
+                map[_delayMapKey("firmware", fw.name, fw.next)] = expired;
+                changed = true;
+            }
+        }
+        for (const ai of appimageUpdates || []) {
+            if (delayed.has("appimage/" + ai.id)) {
+                map[_delayMapKey("appimage", ai.id, ai.latest)] = expired;
+                changed = true;
+            }
+        }
+        if (changed)
+            PluginService.savePluginData("dankSoftwareDepot", "updateFirstSeen", map);
+    }
+
     // Arch-stripped rpm name -> source package base name, so system updates
     // can be grouped into srpm families (kernel + kernel-core + …)
     property var rpmSourceMap: ({})

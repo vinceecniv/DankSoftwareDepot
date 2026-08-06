@@ -194,43 +194,13 @@ FloatingWindow {
     property var _pendingShellNames: []
 
     function installDelayedNow() {
-        if (singleUpdateProcess.running)
+        if (engine.running || engine.deferred || !widgetRoot)
             return;
-        const rows = updateRows.filter(row => row.delayed === true);
-        const rpmNames = rows.filter(row => row.pkg.repo !== "flatpak" && row.pkg.repo !== "firmware" && !_isShellPkg(row.pkg)).map(row => store.stripArch(row.pkg.name));
-        const shellNames = rows.filter(row => _isShellPkg(row.pkg)).map(row => row.pkg.name);
-        const deviceIds = rows.filter(row => row.pkg.repo === "firmware" && row.fwInfo && row.fwInfo.deviceId).map(row => row.fwInfo.deviceId);
-        const flatpakIds = rows.filter(row => row.pkg.repo === "flatpak").map(row => row.pkg.name);
-        const appimageIds = rows.filter(row => row.pkg.repo === "appimage").map(row => row.pkg.name);
-        _pendingShellNames = shellNames;
-        const commands = [];
-        if (rpmNames.length > 0)
-            // --refresh: the update was discovered with the daemon's fresh
-            // metadata; root's own dnf cache can predate it, and a stale
-            // cache makes this upgrade a silent "Nothing to do" (exit 0).
-            commands.push("pkexec dnf5 upgrade --refresh -y " + rpmNames.join(" "));
-        for (const deviceId of deviceIds)
-            commands.push("fwupdmgr update -y --no-reboot-check '" + deviceId.replace(/'/g, "") + "'");
-        if (commands.length > 0) {
-            singleBusyKey = "delayed-all";
-            singleUpdateProcess._label = Tr.t("Delayed updates");
-            singleUpdateProcess._count = rpmNames.length + deviceIds.length;
-            singleUpdateProcess._thenFlatpakIds = flatpakIds;
-            singleUpdateProcess._thenAppimageIds = appimageIds;
-            singleUpdateProcess.command = ["sh", "-c", commands.join("; ")];
-            singleUpdateProcess.running = true;
-        } else if (flatpakIds.length > 0 || appimageIds.length > 0) {
-            engine.start({
-                dnf: false,
-                firmware: false,
-                flatpak: flatpakIds.length > 0,
-                flatpakIds: flatpakIds,
-                appimageIds: appimageIds
-            });
-        } else if (shellNames.length > 0) {
-            _pendingShellNames = [];
-            _daemonUpgradeOnly(shellNames);
-        }
+        // Expire the delay clocks: the rows move to the regular update
+        // sections reactively, then a normal full run installs them with
+        // the standard phase stepper and per-package progress.
+        widgetRoot.releaseAllDelayed();
+        engine.start({});
     }
 
     // Last output line of the manual pass, shown in the progress strip
