@@ -29,15 +29,11 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - Rich update cards: logo, name, summary, `old → new` versions, repo chip,
   homepage link, expandable sanitized release notes (AppStream releases for
   apps, rpm changelog fallback), per-app update button
-- Sections (Applications / System / Runtimes / Firmware / Held / Delayed)
+- Sections (Applications / System / Runtimes / Firmware / Held)
   with a hover **Update these** button per section
 - **Held packages**: dnf versionlock/excludepkgs detected automatically,
   plus user-holds via the lock button — never counted or updated,
   releasable any time
-- **Delayed updates** (maturity window): optionally install updates only
-  after they have been visible for 1 day – 2 weeks, as protection against
-  soon-retracted updates; per-app override and "Install all now" stay
-  available
 - **Automatic updates**: off / notify only / auto-install Flatpaks
 - During a run the list becomes a live queue: queued / downloading /
   installing / completed / failed per item, each row with its own progress
@@ -96,7 +92,7 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 
 ## Bar widget & popout
 
-- Bar pill with the effective update count (held and delayed excluded);
+- Bar pill with the effective update count (held excluded);
   spinning refresh icon while checking, completed/planned counter during a
   run, restart icon when a reboot is recommended
 - Compact popout: enriched update list, Update All, phase label and
@@ -148,7 +144,7 @@ dms ipc call dankSoftwareDepot check     # trigger an update check
 
 | Piece | Role |
 |---|---|
-| `UpdaterWidget.qml` | Bar pill, popout, IPC, reboot logic, delay window, settings |
+| `UpdaterWidget.qml` | Bar pill, popout, IPC, reboot logic, settings |
 | `UpdaterWindow.qml` | Tabbed window (Updates / Installed / Install / Firmware / Log) |
 | `UpdateCard.qml` | Rich per-update card |
 | `InstalledView.qml` | Installed software browser + actions |

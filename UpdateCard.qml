@@ -19,8 +19,6 @@ Rectangle {
     property string holdReason: ""
     property bool isIgnored: false
     property bool canHold: false
-    property bool delayed: false
-    property string delayedText: ""
 
     signal updateRequested
     signal holdToggleRequested
@@ -157,33 +155,6 @@ Rectangle {
                     }
 
                     Rectangle {
-                        visible: card.delayed
-                        Layout.preferredWidth: delayedChipRow.implicitWidth + 14
-                        Layout.preferredHeight: 18
-                        radius: 9
-                        color: Theme.withAlpha(Theme.tertiary, 0.18)
-
-                        RowLayout {
-                            id: delayedChipRow
-                            anchors.centerIn: parent
-                            spacing: 3
-
-                            DankIcon {
-                                name: "schedule"
-                                size: 11
-                                color: Theme.tertiary
-                            }
-
-                            StyledText {
-                                text: Tr.t("Delayed")
-                                font.pixelSize: Theme.fontSizeSmall - 2
-                                font.weight: Font.Medium
-                                color: Theme.tertiary
-                            }
-                        }
-                    }
-
-                    Rectangle {
                         Layout.preferredWidth: repoChipText.implicitWidth + 14
                         Layout.preferredHeight: 18
                         radius: 9
@@ -214,8 +185,8 @@ Rectangle {
                     Layout.fillWidth: true
                     spacing: Theme.spacingXS
                     // Also shown without version info when there is status text
-                    // to carry (delay countdown, hold reason, run status)
-                    visible: (card.pkg.fromVersion || card.toVersionDisplay) !== "" || (card.delayed && card.delayedText !== "") || (card.held && card.holdReason !== "") || card.itemState !== null
+                    // to carry (hold reason, run status)
+                    visible: (card.pkg.fromVersion || card.toVersionDisplay) !== "" || (card.held && card.holdReason !== "") || card.itemState !== null
 
                     StyledText {
                         visible: (card.pkg.fromVersion || "") !== ""
@@ -268,16 +239,6 @@ Rectangle {
                         text: "· " + card.holdReason
                         font.pixelSize: Theme.fontSizeSmall - 1
                         color: Theme.warning
-                        elide: Text.ElideRight
-                        Layout.maximumWidth: 220
-                    }
-
-                    // Delay countdown, e.g. "installs in 2 days"
-                    StyledText {
-                        visible: card.delayed && card.delayedText !== ""
-                        text: "· " + card.delayedText
-                        font.pixelSize: Theme.fontSizeSmall - 1
-                        color: Theme.tertiary
                         elide: Text.ElideRight
                         Layout.maximumWidth: 220
                     }

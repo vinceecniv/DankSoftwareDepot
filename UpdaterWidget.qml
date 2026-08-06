@@ -26,7 +26,7 @@ PluginComponent {
     // Last known update list, persisted across restarts: the daemon loses
     // its in-memory state when it restarts (reboot, dms restart) and only
     // repopulates at its next check — until the service has real state the
-    // snapshot is shown, so found and delayed updates reappear immediately.
+    // snapshot is shown, so previously found updates reappear immediately.
     readonly property bool _serviceHasState: SystemUpdateService.lastCheckUnix > 0 || (SystemUpdateService.availableUpdates || []).length > 0
     readonly property var pendingUpdates: _serviceHasState ? (SystemUpdateService.availableUpdates || []) : ((pluginData.updatesSnapshot || {}).packages || [])
 
@@ -39,242 +39,16 @@ PluginComponent {
         }
         return keys;
     }
-    // ── Delayed updates (maturity window) ───────────────────────────────────
-    // With updateDelayDays > 0, an update only becomes installable once it
-    // has been visible for that many days — protection against updates that
-    // get retracted shortly after release. First-seen times persist in
-    // pluginData.updateFirstSeen, keyed by name@version so a newer build
-    // restarts the clock.
-    readonly property int updateDelayDays: pluginData.updateDelayDays || 0
-    property int delayNowUnix: Math.floor(Date.now() / 1000)
-
-    Timer {
-        interval: 15 * 60 * 1000
-        running: root.updateDelayDays > 0
-        repeat: true
-        onTriggered: root.delayNowUnix = Math.floor(Date.now() / 1000)
-    }
-
-    function _delayMapKey(repo, name, toVersion) {
-        return repo + "/" + name + "@" + (toVersion || "");
-    }
-
-    function _trackFirstSeen() {
-        if (SystemUpdateService.isChecking || engine.running)
-            return;
-        // The host loads pluginData only after component completion, and DMS
-        // recreates the whole bar (including this widget) on session resume.
-        // With the daemon still holding its update list, tracking against the
-        // not-yet-loaded (empty) settings would restamp every delay clock at
-        // "now". Enabled plugins always have at least the "enabled" key, so
-        // an empty object means unloaded — wait for onPluginDataChanged.
-        if (Object.keys(pluginData || {}).length === 0)
-            return;
-        const now = Math.floor(Date.now() / 1000);
-        const map = Object.assign({}, pluginData.updateFirstSeen || {});
-        const live = new Set();
-        let changed = false;
-        for (const pkg of SystemUpdateService.availableUpdates || []) {
-            const key = _delayMapKey(pkg.repo === "flatpak" ? "flatpak" : "system", pkg.name, pkg.toVersion);
-            live.add(key);
-            if (!map[key]) {
-                map[key] = now;
-                changed = true;
-            }
-        }
-        for (const fw of (includeFirmware ? firmware.updates : []) || []) {
-            const key = _delayMapKey("firmware", fw.name, fw.next);
-            live.add(key);
-            if (!map[key]) {
-                map[key] = now;
-                changed = true;
-            }
-        }
-        for (const ai of appimageUpdates || []) {
-            const key = _delayMapKey("appimage", ai.id, ai.latest);
-            live.add(key);
-            if (!map[key]) {
-                map[key] = now;
-                changed = true;
-            }
-        }
-        // Prune per source, and only when that source actually has data:
-        // a daemon reconnect briefly publishes an empty update list, and
-        // wiping then would restart every delay clock (they must survive
-        // shell and computer restarts). Stale entries are harmless — if the
-        // same name@version reappears, keeping the original first-seen is
-        // exactly right — so a 60-day age cap is the only hard cleanup.
-        const haveSystem = (SystemUpdateService.availableUpdates || []).length > 0;
-        const haveFirmware = ((includeFirmware ? firmware.updates : []) || []).length > 0;
-        const haveAppimage = (appimageUpdates || []).length > 0;
-        for (const key in map) {
-            if (live.has(key))
-                continue;
-            const src = key.split("/")[0];
-            const sourceLoaded = src === "firmware" ? haveFirmware : (src === "appimage" ? haveAppimage : haveSystem);
-            if (sourceLoaded || now - map[key] > 60 * 86400) {
-                delete map[key];
-                changed = true;
-            }
-        }
-        if (changed)
-            PluginService.savePluginData("dankSoftwareDepot", "updateFirstSeen", map);
-    }
-
-    // Overriding the maturity window ("Install all now", or a per-app
-    // update of a delayed row) means the delay is over for those updates.
-    // Expire their first-seen entries so they move to the regular update
-    // list (and stay there if a run fails); the caller then starts a
-    // normal engine run. Pass engine keys to release a subset, nothing to
-    // release every delayed update.
-    function releaseAllDelayed() {
-        releaseDelayed(null);
-    }
-
-    function releaseDelayed(onlyKeys) {
-        if (updateDelayDays <= 0)
-            return;
-        const wanted = (onlyKeys && onlyKeys.length > 0) ? new Set(onlyKeys) : null;
-        let delayed = new Set(delayedKeys);
-        if (wanted)
-            delayed = new Set(Array.from(delayed).filter(key => wanted.has(key)));
-        const map = Object.assign({}, pluginData.updateFirstSeen || {});
-        const expired = Math.floor(Date.now() / 1000) - updateDelayDays * 86400 - 60;
-        let changed = false;
-        for (const pkg of pendingUpdates) {
-            const engineKey = pkg.repo === "flatpak" ? "flatpak/" + pkg.name : "system/" + store.stripArch(pkg.name);
-            if (!delayed.has(engineKey))
-                continue;
-            map[_delayMapKey(pkg.repo === "flatpak" ? "flatpak" : "system", pkg.name, pkg.toVersion)] = expired;
-            changed = true;
-        }
-        for (const fw of (includeFirmware ? firmware.updates : []) || []) {
-            if (delayed.has("firmware/" + fw.name)) {
-                map[_delayMapKey("firmware", fw.name, fw.next)] = expired;
-                changed = true;
-            }
-        }
-        for (const ai of appimageUpdates || []) {
-            if (delayed.has("appimage/" + ai.id)) {
-                map[_delayMapKey("appimage", ai.id, ai.latest)] = expired;
-                changed = true;
-            }
-        }
-        if (changed) {
-            PluginService.savePluginData("dankSoftwareDepot", "updateFirstSeen", map);
-            // delayNowUnix ticks only every 15 min; without a fresh clock a
-            // just-expired entry still counts as delayed and the released
-            // rows would linger in the delayed section (and stay excluded
-            // from the run the caller is about to start).
-            delayNowUnix = Math.floor(Date.now() / 1000);
-        }
-    }
-
-    // Arch-stripped rpm name -> source package base name, so system updates
-    // can be grouped into srpm families (kernel + kernel-core + …)
-    property var rpmSourceMap: ({})
-
-    function _refreshSourceMap() {
-        const names = [];
-        for (const pkg of pendingUpdates) {
-            if (pkg.repo !== "flatpak")
-                names.push(store.stripArch(pkg.name));
-        }
-        if (names.length === 0)
-            return;
-        sourceMapProcess.command = ["rpm", "-q", "--qf", "%{NAME}\\t%{SOURCERPM}\\n"].concat(names);
-        sourceMapProcess.running = true;
-    }
-
-    Process {
-        id: sourceMapProcess
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const mapping = {};
-                for (const line of text.split("\n")) {
-                    const parts = line.split("\t");
-                    if (parts.length !== 2)
-                        continue;
-                    const src = /^(.+)-[^-]+-[^-]+\.src\.rpm$/.exec(parts[1].trim());
-                    if (src)
-                        mapping[parts[0].trim()] = src[1];
-                }
-                root.rpmSourceMap = mapping;
-            }
-        }
-    }
-
-    // {keys: ["system/foo", ...], remaining: {"system/foo": daysLeft}}
-    readonly property var delayedInfo: {
-        const result = {
-            keys: [],
-            remaining: ({})
-        };
-        if (updateDelayDays <= 0)
-            return result;
-        const map = pluginData.updateFirstSeen || {};
-        const windowSecs = updateDelayDays * 86400;
-        const now = delayNowUnix;
-        const push = (engineKey, seen) => {
-            if (now - seen < windowSecs) {
-                result.keys.push(engineKey);
-                // delayNowUnix ticks every 15 min, so a just-seen update can
-                // have seen > now; clamp to the window or the ceil-to-days
-                // display rounds a 1-day delay up to "2 days".
-                result.remaining[engineKey] = Math.max(60, Math.min(windowSecs, seen + windowSecs - now));
-            }
-        };
-        // System packages mature and release as complete srpm families: dnf
-        // cannot upgrade half a family (excluded members block the rest), so
-        // every member follows the newest first-seen within its family.
-        const famSeen = {};
-        for (const pkg of pendingUpdates) {
-            if (pkg.repo === "flatpak" || store.isHeld(pkg))
-                continue;
-            const base = store.stripArch(pkg.name);
-            const fam = rpmSourceMap[base] || base;
-            const seen = map[_delayMapKey("system", pkg.name, pkg.toVersion)] || now;
-            famSeen[fam] = Math.max(famSeen[fam] || 0, seen);
-        }
-        for (const pkg of pendingUpdates) {
-            if (store.isHeld(pkg))
-                continue;
-            if (pkg.repo === "flatpak") {
-                push("flatpak/" + pkg.name, map[_delayMapKey("flatpak", pkg.name, pkg.toVersion)] || now);
-            } else {
-                const base = store.stripArch(pkg.name);
-                push("system/" + base, famSeen[rpmSourceMap[base] || base] || now);
-            }
-        }
-        for (const fw of (includeFirmware ? firmware.updates : []) || [])
-            push("firmware/" + fw.name, map[_delayMapKey("firmware", fw.name, fw.next)] || now);
-        for (const ai of appimageUpdates || [])
-            push("appimage/" + ai.id, map[_delayMapKey("appimage", ai.id, ai.latest)] || now);
-        return result;
-    }
-    readonly property var delayedKeys: delayedInfo.keys
 
     readonly property int effectiveCount: {
-        const delayed = new Set(delayedKeys);
         let count = 0;
         for (const pkg of pendingUpdates) {
-            if (store.isHeld(pkg))
-                continue;
-            const key = pkg.repo === "flatpak" ? ("flatpak/" + pkg.name) : ("system/" + store.stripArch(pkg.name));
-            if (!delayed.has(key))
+            if (!store.isHeld(pkg))
                 count++;
         }
-        if (includeFirmware) {
-            for (const fw of firmware.updates || []) {
-                if (!delayed.has("firmware/" + fw.name))
-                    count++;
-            }
-        }
-        for (const ai of appimageUpdates || []) {
-            if (!delayed.has("appimage/" + ai.id))
-                count++;
-        }
+        if (includeFirmware)
+            count += (firmware.updates || []).length;
+        count += (appimageUpdates || []).length;
         return count;
     }
 
@@ -302,11 +76,8 @@ PluginComponent {
     property var updateSizes: null
     readonly property string updateSizeText: {
         let total = (updateSizes && updateSizes.totalBytes > 0) ? updateSizes.totalBytes : 0;
-        const delayed = new Set(delayedKeys);
-        for (const ai of appimageUpdates || []) {
-            if (!delayed.has("appimage/" + ai.id))
-                total += ai.size || 0;
-        }
+        for (const ai of appimageUpdates || [])
+            total += ai.size || 0;
         return total > 0 ? ("≤ " + engine.formatBytes(total)) : "";
     }
 
@@ -317,18 +88,15 @@ PluginComponent {
     }
 
     function _refreshSizes() {
-        const delayed = new Set(delayedKeys);
         const flatpaks = [];
         const rpms = [];
         for (const pkg of pendingUpdates) {
             if (store.isHeld(pkg))
                 continue;
-            if (pkg.repo === "flatpak") {
-                if (!delayed.has("flatpak/" + pkg.name))
-                    flatpaks.push(pkg.name);
-            } else if (!delayed.has("system/" + store.stripArch(pkg.name))) {
+            if (pkg.repo === "flatpak")
+                flatpaks.push(pkg.name);
+            else
                 rpms.push(store.stripArch(pkg.name));
-            }
         }
         if (flatpaks.length === 0 && rpms.length === 0) {
             updateSizes = null;
@@ -437,8 +205,7 @@ PluginComponent {
             Quickshell.execDetached(["notify-send", "-a", "Dank Software Depot", "-i", iconFile, text]);
         }
         if (autoUpdateMode === "auto" && !engine.running && !SystemUpdateService.isUpgrading) {
-            const delayed = new Set(delayedKeys);
-            const hasFlatpaks = (SystemUpdateService.availableUpdates || []).some(pkg => pkg.repo === "flatpak" && !delayed.has("flatpak/" + pkg.name));
+            const hasFlatpaks = (SystemUpdateService.availableUpdates || []).some(pkg => pkg.repo === "flatpak");
             if (hasFlatpaks)
                 engine.start({
                     dnf: false,
@@ -455,9 +222,6 @@ PluginComponent {
             if (!SystemUpdateService.isChecking && root.includeFirmware)
                 firmware.check();
             if (!SystemUpdateService.isChecking) {
-                // Stamp first-seen times now: list pushes during the check are
-                // ignored by the guard in _trackFirstSeen
-                root._trackFirstSeen();
                 appimageCheckProcess.running = true;
                 Qt.callLater(() => root._afterCheck());
             }
@@ -633,7 +397,6 @@ PluginComponent {
     UpdateEngine {
         id: engine
         heldKeys: root.heldSystemKeys
-        delayedKeys: root.delayedKeys
         pendingUpdates: root.pendingUpdates
         packageSizes: (root.updateSizes && root.updateSizes.rpmSizes) || ({})
         firmwareService: root.includeFirmware ? firmware : null
@@ -720,7 +483,6 @@ PluginComponent {
 
         function onAvailableUpdatesChanged() {
             store.refresh(SystemUpdateService.availableUpdates);
-            root._trackFirstSeen();
             sizesDebounce.restart();
             root._saveUpdatesSnapshot();
         }
@@ -730,38 +492,19 @@ PluginComponent {
         }
     }
 
-    Connections {
-        target: firmware
-
-        function onUpdatesChanged() {
-            root._trackFirstSeen();
-        }
-    }
-
     Component.onCompleted: {
-        if (pendingUpdates.length > 0) {
+        if (pendingUpdates.length > 0)
             store.refresh(pendingUpdates);
-            root._trackFirstSeen();
-            _refreshSourceMap();
-        }
     }
-
-    // Fires when the host delivers the persisted settings (shortly after
-    // completion, and again after every save). Runs the tracking that the
-    // unloaded-settings guard in _trackFirstSeen skipped; a no-op when the
-    // map is already up to date.
-    onPluginDataChanged: root._trackFirstSeen()
 
     // pluginData (and with it the persisted snapshot) loads after component
     // completion, so run enrichment (names, icons) whenever the restored
     // list actually lands — otherwise snapshot rows show generic icons.
-    // The srpm-family map follows the list in both live and snapshot mode.
     onPendingUpdatesChanged: {
         if (!_serviceHasState && pendingUpdates.length > 0) {
             store.refresh(pendingUpdates);
             _reconcileSnapshot();
         }
-        _refreshSourceMap();
     }
 
     // A restored snapshot can contain updates installed in the last moments
@@ -898,37 +641,29 @@ PluginComponent {
     popoutWidth: 420
     popoutHeight: 520
 
-    // Popout list: run snapshot while running, otherwise pending minus held/delayed
+    // Popout list: run snapshot while running, otherwise pending minus held
     readonly property var popoutModel: {
         if (engine.phase !== "idle" && (engine.runItems || []).length > 0)
             return engine.runItems.map(item => item.pkg);
-        const delayed = new Set(delayedKeys);
-        const rows = pendingUpdates.filter(pkg => {
-            if (store.isHeld(pkg))
-                return false;
-            const key = pkg.repo === "flatpak" ? ("flatpak/" + pkg.name) : ("system/" + store.stripArch(pkg.name));
-            return !delayed.has(key);
-        });
+        const rows = pendingUpdates.filter(pkg => !store.isHeld(pkg));
         if (includeFirmware) {
             for (const fw of firmware.updates || []) {
-                if (!delayed.has("firmware/" + fw.name))
-                    rows.push({
-                        name: fw.name,
-                        repo: "firmware",
-                        fromVersion: fw.current,
-                        toVersion: fw.next
-                    });
+                rows.push({
+                    name: fw.name,
+                    repo: "firmware",
+                    fromVersion: fw.current,
+                    toVersion: fw.next
+                });
             }
         }
         for (const ai of appimageUpdates || []) {
-            if (!delayed.has("appimage/" + ai.id))
-                rows.push({
-                    name: ai.id,
-                    displayName: ai.name,
-                    repo: "appimage",
-                    fromVersion: ai.current,
-                    toVersion: ai.latest
-                });
+            rows.push({
+                name: ai.id,
+                displayName: ai.name,
+                repo: "appimage",
+                fromVersion: ai.current,
+                toVersion: ai.latest
+            });
         }
         return rows;
     }

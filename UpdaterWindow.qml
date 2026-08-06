@@ -100,7 +100,7 @@ FloatingWindow {
                 return false;
             return SystemUpdateService.canIgnorePackage(rowPkg);
         }
-        showUpdateButton: rowPkg !== null && (rowPkg.repo === "flatpak" || rowData.delayed === true) && !win.engine.running && win.singleBusyKey === "" && (rowData.ignored !== true)
+        showUpdateButton: rowPkg !== null && rowPkg.repo === "flatpak" && !win.engine.running && win.singleBusyKey === "" && (rowData.ignored !== true)
         busy: {
             if (!rowPkg || !win.engine.running)
                 return false;
@@ -124,9 +124,8 @@ FloatingWindow {
         }
     }
 
-    // Manually update one pending item — also the override for delayed
-    // updates. Flatpaks go through the engine; single rpms and firmware run
-    // through their own privileged commands.
+    // Manually update one pending item. Flatpaks and AppImages go through
+    // the engine; firmware runs its own privileged command.
     property string singleBusyKey: ""
 
     // Upgrade ONLY the given rpm names, through the daemon: every other
@@ -154,14 +153,7 @@ FloatingWindow {
         if (engine.running || engine.deferred || singleUpdateProcess.running)
             return;
         const pkg = rowData.pkg || {};
-        // Updating a delayed row is an explicit override: expire its delay
-        // clock so it moves to the regular sections and stays installable.
-        const release = keys => {
-            if (rowData.delayed === true && widgetRoot)
-                widgetRoot.releaseDelayed(keys);
-        };
         if (pkg.repo === "appimage") {
-            release(["appimage/" + pkg.name]);
             engine.start({
                 dnf: false,
                 flatpak: false,
@@ -171,7 +163,6 @@ FloatingWindow {
             return;
         }
         if (pkg.repo === "flatpak") {
-            release(["flatpak/" + pkg.name]);
             engine.start({
                 dnf: false,
                 firmware: false,
@@ -181,98 +172,18 @@ FloatingWindow {
             return;
         }
         if (_isShellPkg(pkg)) {
-            release(["system/" + store.stripArch(pkg.name)]);
             _daemonUpgradeOnly([pkg.name]);
             return;
         }
         if (pkg.repo === "firmware" && rowData.fwInfo && rowData.fwInfo.deviceId) {
-            if (singleUpdateProcess.running)
-                return;
-            release(["firmware/" + pkg.name]);
             singleBusyKey = rowData.key;
             singleUpdateProcess._label = store.displayName(pkg);
             singleUpdateProcess.command = ["fwupdmgr", "update", "-y", "--no-reboot-check", rowData.fwInfo.deviceId];
             singleUpdateProcess.running = true;
-            return;
-        }
-        // System rpm (the update button only shows on delayed rows): run
-        // the whole srpm family through the engine — dnf cannot upgrade
-        // half a family — with every other rpm in this run's ignore list,
-        // so the normal progress UI applies to exactly this update. A dry
-        // resolve first finds cross-family dependencies (gjs needs the
-        // delayed mozjs140): those pending updates must join the run, or
-        // dnf fails on its own exclude list.
-        const srcMap = (widgetRoot && widgetRoot.rpmSourceMap) || {};
-        const base = store.stripArch(pkg.name);
-        const fam = srcMap[base] || base;
-        const members = win.pendingUpdates.filter(p => p.repo !== "flatpak" && (srcMap[store.stripArch(p.name)] || store.stripArch(p.name)) === fam);
-        _startSystemSingle(members);
-    }
-
-    // Dry-run resolution (unprivileged, against the daemon-refreshed root
-    // cache) to expand a single-package run with the pending updates dnf
-    // needs alongside it. Falls back to the plain family on any failure —
-    // the engine then reports honestly if dnf still can't resolve.
-    property var _closureMembers: []
-
-    function _startSystemSingle(members) {
-        if (members.length === 0)
-            return;
-        _closureMembers = members;
-        singleBusyKey = "closure";
-        singleUpdateStatus = Tr.t("Preparing update…");
-        closureProcess.command = ["env", "LC_ALL=C", "dnf5", "-C", "upgrade", "--assumeno"].concat(members.map(p => store.stripArch(p.name)));
-        closureProcess.running = true;
-    }
-
-    Process {
-        id: closureProcess
-
-        stdout: StdioCollector {
-            onStreamFinished: win._closureReady(text)
         }
     }
 
-    function _closureReady(text) {
-        singleBusyKey = "";
-        singleUpdateStatus = "";
-        const bases = new Set(_closureMembers.map(p => store.stripArch(p.name)));
-        for (const line of (text || "").split("\n")) {
-            if (line.indexOf("replacing") !== -1)
-                continue;
-            const m = /^ {1,2}(\S+) +(x86_64|noarch|i686|aarch64) /.exec(line);
-            if (m)
-                bases.add(m[1]);
-        }
-        const chosen = win.pendingUpdates.filter(p => p.repo !== "flatpak" && bases.has(store.stripArch(p.name)));
-        if (chosen.length === 0)
-            return;
-        if (widgetRoot)
-            widgetRoot.releaseDelayed(chosen.map(p => "system/" + store.stripArch(p.name)));
-        engine.start({
-            dnfNames: chosen.map(p => p.name),
-            flatpak: false,
-            firmware: false,
-            appimage: false
-        });
-    }
-
-    // Install every delayed update in one go (explicit user override):
-    // rpms and firmware run in one privileged pass, flatpaks follow via the
-    // engine with an explicit id list (which bypasses the delay).
-    // DMS/Quickshell packages always run LAST (and via the daemon): a shell
-    // reload must never abort the rest of this pass.
     property var _pendingShellNames: []
-
-    function installDelayedNow() {
-        if (engine.running || engine.deferred || !widgetRoot)
-            return;
-        // Expire the delay clocks: the rows move to the regular update
-        // sections reactively, then a normal full run installs them with
-        // the standard phase stepper and per-package progress.
-        widgetRoot.releaseAllDelayed();
-        engine.start({});
-    }
 
     // Last output line of the manual pass, shown in the progress strip
     property string singleUpdateStatus: ""
@@ -748,38 +659,6 @@ FloatingWindow {
                     }
 
                     DankDropdown {
-                        readonly property var delayMap: ({
-                                "Off": 0,
-                                "1 day": 1,
-                                "2 days": 2,
-                                "3 days": 3,
-                                "1 week": 7,
-                                "2 weeks": 14
-                            })
-
-                        width: parent.width
-                        text: Tr.t("Delay new updates")
-                        description: Tr.t("Install updates only after they have been visible this long — protects against soon-retracted updates. Per-app updating stays possible.")
-                        options: Object.keys(delayMap).map(k => Tr.t(k))
-                        currentValue: {
-                            const days = win.widgetRoot ? win.widgetRoot.updateDelayDays : 0;
-                            for (const label in delayMap) {
-                                if (delayMap[label] === days)
-                                    return Tr.t(label);
-                            }
-                            return days + " days";
-                        }
-                        onValueChanged: value => {
-                            for (const label in delayMap) {
-                                if (Tr.t(label) === value) {
-                                    PluginService.savePluginData("dankSoftwareDepot", "updateDelayDays", delayMap[label]);
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                    DankDropdown {
                         readonly property var autoMap: ({
                                 "Off": "off",
                                 "Notify only": "notify",
@@ -881,13 +760,12 @@ FloatingWindow {
     }
 
     // Dashboard shows whenever nothing is actionable — including when only
-    // delayed or held updates remain (those don't count as out-of-date)
+    // held updates remain (those don't count as out-of-date)
     readonly property bool dashboardMode: !showingRun && effectiveCount === 0
 
     // Collapsible sections (collapsed by default)
     property var collapsedCats: ({
-            "5 · Held packages": true,
-            "6 · Delayed updates": true
+            "5 · Held packages": true
         })
 
     function toggleCategory(category) {
@@ -964,11 +842,6 @@ FloatingWindow {
         if (visible) {
             tabs.currentIndex = 0;
             refreshDashboard();
-            // Delay countdowns recompute against this clock; refresh it so
-            // they are current the moment the window shows (the widget's
-            // 15-minute timer covers the time in between).
-            if (widgetRoot)
-                widgetRoot.delayNowUnix = Math.floor(Date.now() / 1000);
         }
     }
 
@@ -1047,33 +920,11 @@ FloatingWindow {
         rows.sort((a, b) => {
             if (a.category !== b.category)
                 return a.category < b.category ? -1 : 1;
-            if (a.category === "6 · Delayed updates") {
-                // Soonest-installable first
-                const remainingA = delayedRemaining[a.key] || 0;
-                const remainingB = delayedRemaining[b.key] || 0;
-                if (remainingA !== remainingB)
-                    return remainingA - remainingB;
-            }
             const nameA = (store.meta[a.key] && store.meta[a.key].name) || a.pkg.name;
             const nameB = (store.meta[b.key] && store.meta[b.key].name) || b.pkg.name;
             return nameA.localeCompare(nameB);
         });
         return rows;
-    }
-
-    // Delay-window state from the widget: Set of engine keys + remaining days
-    readonly property var delayedSet: new Set((widgetRoot ? widgetRoot.delayedKeys : []) || [])
-    readonly property var delayedRemaining: (widgetRoot && widgetRoot.delayedInfo) ? widgetRoot.delayedInfo.remaining : ({})
-
-    function delayedTextFor(key) {
-        const secs = delayedRemaining[key] || 0;
-        if (secs <= 0)
-            return "";
-        // <= so a fresh 1-day delay (clamped to exactly 24h) reads as hours
-        if (secs <= 24 * 3600)
-            return Tr.t("released for install in %1h").arg(Math.max(1, Math.ceil(secs / 3600)));
-        const days = Math.ceil(secs / 86400);
-        return days === 1 ? Tr.t("released for install in 1 day") : Tr.t("released for install in %1 days").arg(days);
     }
 
     // Pending updates: live service data, or the widget's persisted snapshot
@@ -1090,21 +941,17 @@ FloatingWindow {
             if (seen.has(key))
                 continue;
             seen.add(key);
-            const delayed = delayedSet.has(key) && !store.isHeld(pkg);
-            const category = delayed ? "6 · Delayed updates" : classify(pkg);
+            const category = classify(pkg);
             if (!showRuntimes && category === "3 · Runtimes & extensions")
                 continue;
             rows.push({
                 pkg: pkg,
                 key: key,
                 category: category,
-                ignored: false,
-                delayed: delayed
+                ignored: false
             });
         }
         for (const fw of (firmware ? firmware.updates : []) || []) {
-            const fwKey = "firmware/" + fw.name;
-            const delayed = delayedSet.has(fwKey);
             rows.push({
                 pkg: {
                     name: fw.name,
@@ -1112,16 +959,13 @@ FloatingWindow {
                     fromVersion: fw.current,
                     toVersion: fw.next
                 },
-                key: fwKey,
-                category: delayed ? "6 · Delayed updates" : "4 · Firmware",
+                key: "firmware/" + fw.name,
+                category: "4 · Firmware",
                 ignored: false,
-                delayed: delayed,
                 fwInfo: fw
             });
         }
         for (const ai of (widgetRoot ? widgetRoot.appimageUpdates : []) || []) {
-            const aiKey = "appimage/" + ai.id;
-            const delayed = delayedSet.has(aiKey);
             rows.push({
                 pkg: {
                     name: ai.id,
@@ -1130,10 +974,9 @@ FloatingWindow {
                     fromVersion: ai.current,
                     toVersion: ai.latest
                 },
-                key: aiKey,
-                category: delayed ? "6 · Delayed updates" : "1 · Applications",
+                key: "appimage/" + ai.id,
+                category: "1 · Applications",
                 ignored: false,
-                delayed: delayed,
                 aiInfo: ai
             });
         }
@@ -1175,11 +1018,11 @@ FloatingWindow {
     readonly property var visibleRows: {
         if (!showingRun)
             return updateRows;
-        // The run view focuses on the live queue, but held and delayed
-        // updates that sit out this run shouldn't vanish from the
-        // overview — keep their sections below the queue.
+        // The run view focuses on the live queue, but held updates that sit
+        // out this run shouldn't vanish from the overview — keep their
+        // section below the queue.
         const runKeys = new Set(runRows.map(row => row.key));
-        return runRows.concat(updateRows.filter(row => (row.delayed === true || row.category === "5 · Held packages") && !runKeys.has(row.key)));
+        return runRows.concat(updateRows.filter(row => row.category === "5 · Held packages" && !runKeys.has(row.key)));
     }
 
     // Flat list model with explicit header rows. This sidesteps ListView's
@@ -1189,7 +1032,7 @@ FloatingWindow {
         const counts = {};
         for (const row of visibleRows)
             counts[row.category] = (counts[row.category] || 0) + 1;
-        const collapsible = ["5 · Held packages", "6 · Delayed updates"];
+        const collapsible = ["5 · Held packages"];
         const out = [];
         let current = "";
         for (const row of visibleRows) {
@@ -1243,8 +1086,7 @@ FloatingWindow {
     }
 
     // Effective pending count: held packages don't count as real updates
-    // Follows the widget's count (held AND delayed excluded), so Update All
-    // hides when only delayed updates remain
+    // Follows the widget's count (held excluded)
     readonly property int effectiveCount: {
         if (widgetRoot)
             return widgetRoot.effectiveCount;
@@ -2000,8 +1842,7 @@ FloatingWindow {
             Item {
                 property var rowData: ({})
 
-                readonly property bool isDelayedSection: (rowData.category || "") === "6 · Delayed updates"
-                readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && (isDelayedSection || ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions", "4 · Firmware"].includes(rowData.category || ""))
+                readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions", "4 · Firmware"].includes(rowData.category || "")
 
                 width: cardsList.width
                 height: 36
@@ -2058,10 +1899,10 @@ FloatingWindow {
                     iconName: "download"
                     iconSize: 14
                     horizontalPadding: Theme.spacingM
-                    text: isDelayedSection ? Tr.t("Install all now") : Tr.t("Update these")
+                    text: Tr.t("Update these")
                     backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
                     textColor: Theme.buttonText
-                    onClicked: isDelayedSection ? win.installDelayedNow() : win.sectionUpdate(rowData.category)
+                    onClicked: win.sectionUpdate(rowData.category)
                 }
             }
         }
@@ -2116,9 +1957,7 @@ FloatingWindow {
                         return false;
                     return SystemUpdateService.canIgnorePackage(rowData.pkg);
                 }
-                delayed: rowData.delayed === true
-                delayedText: rowData.delayed === true ? win.delayedTextFor(rowData.key) : ""
-                showUpdateButton: rowData.pkg && (rowData.pkg.repo === "flatpak" || rowData.pkg.repo === "appimage" || rowData.delayed === true) && win.singleBusyKey === ""
+                showUpdateButton: rowData.pkg && (rowData.pkg.repo === "flatpak" || rowData.pkg.repo === "appimage") && win.singleBusyKey === ""
                 onUpdateRequested: win.runSingleUpdate(rowData)
                 onHoldToggleRequested: {
                     if (rowData.ignored === true) {
@@ -2132,7 +1971,7 @@ FloatingWindow {
         }
 
         // ── Up-to-date dashboard: rendered as the list header so collapsed
-        // Held/Delayed sections scroll along underneath it ─────────────────
+        // Held section scrolls along underneath it ─────────────────────────
         Component {
             id: dashboardHeaderComponent
 
@@ -2574,12 +2413,9 @@ FloatingWindow {
                                             "notify": Tr.t("Notify only"),
                                             "auto": Tr.t("Auto-install Flatpaks")
                                         };
-                                        const delayDays = root.updateDelayDays || 0;
                                         return [
                                             { label: Tr.t("Held"), value: String((root.heldSystemKeys || []).length + (SettingsData.updaterIgnoredPackages || []).length) },
-                                            { label: Tr.t("Delayed"), value: String((root.delayedKeys || []).length) },
                                             { label: "End-of-life", value: String((root.eolRefs || []).length) },
-                                            { label: Tr.t("Delay new updates"), value: delayDays === 0 ? Tr.t("Off") : (delayDays === 1 ? Tr.t("1 day") : Tr.t("%1 days").arg(delayDays)) },
                                             { label: Tr.t("Automatic updates"), value: autoLabels[root.autoUpdateMode] || Tr.t("Off") }
                                         ];
                                     }

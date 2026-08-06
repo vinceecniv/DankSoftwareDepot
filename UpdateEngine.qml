@@ -71,13 +71,8 @@ Item {
     // Effective pending-update list from the host (live daemon data, or the
     // persisted snapshot right after a restart) — start() must not read the
     // service directly or a run from snapshot state sees an empty list and
-    // loses the delayed/held exclusions.
+    // loses the held exclusions.
     property var pendingUpdates: []
-
-    // Keys of updates still inside the configured delay window (maturity
-    // period); excluded from runs unless explicitly selected. Bound by the
-    // widget.
-    property var delayedKeys: []
 
     // Updating DMS/Quickshell packages makes Quickshell live-reload the shell,
     // which tears down this UI mid-run. They are excluded from the first dnf
@@ -184,8 +179,6 @@ Item {
     property var _shellNameToKey: ({})
     // base name -> target EVR, for post-pass verification against rpm
     property var _daemonExpectedEvr: ({})
-    property var _delayedRpmNames: []
-    property bool _firmwareFiltered: false
     property bool _wantAppimage: false
     property var _appimageItems: []
     property var _aiOps: ({})            // id -> {weight, fraction, done}
@@ -294,31 +287,17 @@ Item {
             return;
         }
         const held = new Set(heldKeys || []);
-        const delayed = new Set(delayedKeys || []);
         const updates = pendingUpdates || [];
         const explicitFlatpak = (options.flatpakIds || []).length > 0;
-        const dnfLive = updates.filter(p => p.repo !== "flatpak" && !held.has("system/" + _stripArch(p.name)));
-        // An explicit rpm selection (per-app update button) runs alone:
-        // every other pending rpm — delayed or not — joins the daemon's
-        // ignore list for this run.
-        const onlyRpm = (options.dnfNames && options.dnfNames.length > 0) ? new Set(options.dnfNames) : null;
-        const dnfAll = onlyRpm ? dnfLive.filter(p => onlyRpm.has(p.name)) : dnfLive.filter(p => !delayed.has("system/" + _stripArch(p.name)));
-        _delayedRpmNames = dnfLive.filter(p => onlyRpm ? !onlyRpm.has(p.name) : delayed.has("system/" + _stripArch(p.name))).map(p => p.name);
+        const dnfAll = updates.filter(p => p.repo !== "flatpak" && !held.has("system/" + _stripArch(p.name)));
         const shellPkgs = (options.dnf !== false) ? dnfAll.filter(p => shellPackagePattern.test(_stripArch(p.name))) : [];
         const dnfPkgs = dnfAll.filter(p => !shellPackagePattern.test(_stripArch(p.name)));
-        // An explicit selection (per-app update button) bypasses the delay
-        const flatpakPkgs = updates.filter(p => p.repo === "flatpak" && (explicitFlatpak || !delayed.has("flatpak/" + p.name)));
-        const delayedFlatpakCount = updates.filter(p => p.repo === "flatpak" && delayed.has("flatpak/" + p.name)).length;
+        const flatpakPkgs = updates.filter(p => p.repo === "flatpak");
 
         _wantDnf = (options.dnf !== false) && dnfPkgs.length > 0;
         _wantShell = shellPkgs.length > 0;
         _flatpakIds = options.flatpakIds || [];
         _wantFlatpak = (options.flatpak !== false) && flatpakPkgs.length > 0;
-        if (_wantFlatpak && !explicitFlatpak && delayedFlatpakCount > 0) {
-            // The helper updates everything when given no ids, so pass the
-            // non-delayed set explicitly
-            _flatpakIds = flatpakPkgs.map(p => p.name);
-        }
         // AppImages join full runs and explicit selections; a flatpak-only
         // selection (flatpakIds) leaves them out
         let appimageItems = [];
@@ -326,13 +305,11 @@ Item {
             const wanted = new Set(options.appimageIds);
             appimageItems = (appimageUpdates || []).filter(u => wanted.has(u.id));
         } else if (options.appimage !== false && !explicitFlatpak) {
-            appimageItems = (appimageUpdates || []).filter(u => !delayed.has("appimage/" + u.id));
+            appimageItems = (appimageUpdates || []).slice();
         }
         _wantAppimage = appimageItems.length > 0;
         _appimageItems = appimageItems;
-        const firmwareAll = (options.firmware !== false && firmwareService && firmwareService.available) ? (firmwareService.updates || []) : [];
-        const firmwareItems = firmwareAll.filter(fw => !delayed.has("firmware/" + fw.name));
-        _firmwareFiltered = firmwareItems.length !== firmwareAll.length;
+        const firmwareItems = (options.firmware !== false && firmwareService && firmwareService.available) ? (firmwareService.updates || []) : [];
         _wantFirmware = firmwareItems.length > 0;
         _firmwareItems = firmwareItems;
 
@@ -543,13 +520,12 @@ Item {
             return;
         }
         const kind = _daemonKind;
-        // Delayed rpms stay excluded in every daemon pass; shell packages
-        // additionally sit out the first pass and run in the final one.
-        let extraIgnored = _delayedRpmNames || [];
+        // Shell packages sit out the first pass and run in the final one.
+        let extraIgnored = [];
         if (kind === "shell") {
             phase = "dms";
         } else if (_wantShell) {
-            extraIgnored = extraIgnored.concat(_shellNames);
+            extraIgnored = _shellNames.slice();
         }
         _daemonAttempts++;
         daemonRetryTimer.restart();
@@ -628,13 +604,7 @@ Item {
 
     function _startFirmware() {
         phase = "firmware";
-        if (_firmwareFiltered) {
-            // A subset is delayed: update the remaining devices one by one
-            const ids = _firmwareItems.map(fw => fw.deviceId).filter(Boolean);
-            firmwareProcess.command = ["sh", "-c", ids.map(id => "fwupdmgr update -y --no-reboot-check '" + id.replace(/'/g, "") + "'").join("; ")];
-        } else {
-            firmwareProcess.command = ["fwupdmgr", "update", "-y", "--no-reboot-check"];
-        }
+        firmwareProcess.command = ["fwupdmgr", "update", "-y", "--no-reboot-check"];
         firmwareProcess.running = true;
     }
 
