@@ -3,6 +3,34 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.2.3 — 2026-08-06
+
+- **Delayed updates removed.** The maturity window kept fighting the
+  package manager: updates had to release as complete source families,
+  dependencies crossed family lines (gjs needing the still-delayed
+  mozjs140), and every exception needed another workaround. Fedora's own
+  update pipeline (Bodhi) already gates stable updates upstream, so the
+  extra client-side window added little real protection while delaying
+  bug and security fixes. Held packages and per-app version restore
+  remain the honest tools for staying in control; stored delay settings
+  and clocks are cleaned up automatically.
+- Update runs verify against the rpm database when a pass ends: a pass
+  that silently installed nothing can no longer report success — rows
+  that never reached their target version fail visibly with a reason
+- The run engine no longer interrupts a working dnf process: the retry
+  nudge waits well past resolve time, backs off while daemon output
+  streams, and never fires an upgrade into a running check (these
+  collisions were killing transactions mid-resolve)
+- Failed check errors render as a bounded, wrapped message instead of
+  stretching the header off-screen
+- Update notifications carry the plugin's own icon, following the
+  light/dark theme
+- Waiting texts animate: a brightness wave slides across the trailing
+  dots, without the text ever changing width
+- The reboot banner now says a **computer** restart is recommended —
+  "restart" was ambiguous next to shell reloads
+- Held packages stay listed during an update run
+
 ## 0.2.2 — 2026-08-06
 
 - Six new UI languages: Spanish, Portuguese, Italian, Polish, Swedish and
