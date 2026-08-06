@@ -972,11 +972,16 @@ Item {
                     if (prev && prev.fraction > fraction)
                         fraction = prev.fraction;
                     let detail = currentDetail;
-                    if (pct >= 0) {
+                    const size = (packageSizes || {})[base] || 0;
+                    if (_dnfStage === 1 && pct >= 1) {
+                        // A stage-1 log line only prints when that package's
+                        // download completed — say so instead of leaving a
+                        // "downloading · 100%" that sits through the wait.
+                        detail = Tr.t("downloaded") + (size > 1024 * 1024 ? " · " + formatBytes(size) : "");
+                    } else if (pct >= 0) {
                         detail += " · " + Math.round(pct * 100) + "%";
                         // Byte detail like the flatpak rows: repoquery gave the
                         // exact download size, the percent gives the progress.
-                        const size = (packageSizes || {})[base] || 0;
                         if (_dnfStage === 1 && size > 1024 * 1024)
                             detail += " · " + formatBytes(size * pct) + " / " + formatBytes(size);
                     }
