@@ -1264,6 +1264,7 @@ def run_update_sizes(arg):
             flatpak_known += 1
     rpm_bytes = 0
     rpm_known = 0
+    rpm_map = {}
     rpm_names = [n for n in (request.get("rpm") or []) if re.match(r"^[\w.+-]+$", n)]
     if rpm_names:
         try:
@@ -1271,16 +1272,26 @@ def run_update_sizes(arg):
                 ["dnf", "-Cq", "repoquery", "--info", "--latest-limit=1", "--arch=x86_64,noarch"] + rpm_names,
                 capture_output=True, text=True, timeout=30,
                 env={**os.environ, "LC_ALL": "C"})
+            current_name = None
             for line in res.stdout.splitlines():
+                m = re.match(r"^Name\s*:\s*(\S+)", line)
+                if m:
+                    current_name = m.group(1)
+                    continue
                 m = re.match(r"^Download size\s*:\s*(.+)$", line)
                 if m:
-                    rpm_bytes += parse_human_size(m.group(1))
+                    size = parse_human_size(m.group(1))
+                    rpm_bytes += size
                     rpm_known += 1
+                    if current_name:
+                        rpm_map[current_name] = rpm_map.get(current_name, 0) + size
+                        current_name = None
         except (OSError, subprocess.SubprocessError):
             pass
     json.dump({
         "flatpakBytes": flatpak_bytes,
         "rpmBytes": rpm_bytes,
+        "rpmSizes": rpm_map,
         "totalBytes": flatpak_bytes + rpm_bytes,
         "knownCount": flatpak_known + rpm_known,
         "requestedCount": len(flatpak_ids) + len(rpm_names),

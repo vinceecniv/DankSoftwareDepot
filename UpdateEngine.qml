@@ -93,6 +93,9 @@ Item {
     // Pending AppImage updates [{id, name, current, latest, url, size}],
     // bound by the widget; they run in their own phase via scripts/appimage.py.
     property var appimageUpdates: []
+    // rpm base name -> exact download size in bytes (from dnf repoquery),
+    // used for per-package byte detail during the download stage
+    property var packageSizes: ({})
 
     // Clear the finished/failed result panel
     function dismiss() {
@@ -645,6 +648,7 @@ Item {
     function _finish(finalPhase) {
         running = false;
         etaTimer.stop();
+        cachePollProcess.running = false;
         phase = finalPhase;
         etaSeconds = -1;
         currentItem = "";
@@ -824,6 +828,93 @@ Item {
         }
     }
 
+    // ── Live download bytes from the dnf cache ──────────────────────────────
+    // dnf5's piped output only prints a line when a package finishes
+    // downloading, so the log cannot show progress inside a package. The
+    // daemon downloads into the world-readable dnf cache though: during the
+    // download stage the growing .rpm files there give real per-package
+    // bytes. Only fresh files count (-mmin -1) so leftovers from earlier
+    // runs don't masquerade as progress.
+    Process {
+        id: cachePollProcess
+
+        command: ["sh", "-c", "while true; do find /var/cache/libdnf5 -name '*.rpm' -mmin -1 -printf '%f\\t%s\\t%T@\\n' 2>/dev/null; echo ---; sleep 1; done"]
+
+        stdout: SplitParser {
+            onRead: line => engine._onCachePollLine(line)
+        }
+    }
+
+    property var _cacheBatch: []
+
+    function _onCachePollLine(line) {
+        if (line.trim() === "---") {
+            const batch = _cacheBatch;
+            _cacheBatch = [];
+            _applyCacheBatch(batch);
+            return;
+        }
+        const parts = line.split("\t");
+        if (parts.length === 3)
+            _cacheBatch.push({
+                file: parts[0],
+                bytes: parseInt(parts[1], 10) || 0,
+                mtime: parseFloat(parts[2]) || 0
+            });
+    }
+
+    function _applyCacheBatch(batch) {
+        if (!running || _dnfStage !== 1)
+            return;
+        const map = _daemonKind === "shell" ? _shellNameToKey : _dnfNameToKey;
+        // Newest matching file per package: the cache can hold several
+        // versions of the same rpm, only the growing one is the download.
+        const newest = {};
+        for (const entry of batch) {
+            let base = "";
+            for (const b in map) {
+                if (b.length > base.length && entry.file.indexOf(b + "-") === 0)
+                    base = b;
+            }
+            if (base && (!newest[base] || entry.mtime > newest[base].mtime))
+                newest[base] = entry;
+        }
+        for (const base in newest) {
+            const key = map[base];
+            const size = (packageSizes || {})[base] || 0;
+            if (!key || size <= 0)
+                continue;
+            const state = itemStates[key];
+            if (state && state.status !== "pending" && state.status !== "active")
+                continue;
+            const pct = Math.min(1, newest[base].bytes / size);
+            const fraction = 0.7 * pct;
+            if (state && state.fraction >= fraction)
+                continue;
+            let detail = Tr.t("downloading") + " · " + Math.round(pct * 100) + "%";
+            if (size > 1024 * 1024)
+                detail += " · " + formatBytes(Math.min(newest[base].bytes, size)) + " / " + formatBytes(size);
+            _setItem(key, {
+                status: "active",
+                fraction: fraction,
+                detail: detail
+            });
+        }
+    }
+
+    // Rows whose download completed would keep saying "downloading · 100%"
+    // through the silent transaction-test minutes; relabel them once the
+    // install stage starts.
+    function _markDownloadedRows() {
+        for (const key in itemStates) {
+            const st = itemStates[key];
+            if (st && st.status === "active" && (st.detail || "").indexOf(Tr.t("downloading")) === 0)
+                _setItem(key, {
+                    detail: Tr.t("downloaded")
+                });
+        }
+    }
+
     function _parseDnfLog() {
         const log = SystemUpdateService.recentLog || [];
         // The daemon keeps a rolling window; only look at fresh lines.
@@ -842,12 +933,16 @@ Item {
                 _dnfStageY = y;
                 if (_daemonKind !== "shell")
                     phase = "dnf-download";
+                _cacheBatch = [];
+                cachePollProcess.running = true;
             } else if (y !== _dnfStageY && _dnfStage === 1 && _dnfStageX >= Math.max(1, _dnfStageY - 1)) {
                 // Step total changed after the download series completed → transaction stage
                 _dnfStage = 2;
                 _dnfStageY = y;
                 if (_daemonKind !== "shell")
                     phase = "dnf-install";
+                cachePollProcess.running = false;
+                _markDownloadedRows();
             } else if (y !== _dnfStageY) {
                 _dnfStageY = y;
             }
@@ -864,10 +959,31 @@ Item {
                 }
                 currentDetail = _dnfStage === 1 ? Tr.t("downloading") : Tr.t("installing");
                 if (key) {
+                    // dnf5 step lines carry this item's own percent; map the
+                    // row bar to the package's full journey: download fills
+                    // 0–70%, the transaction step 70–100%. Lines without a
+                    // percent (scriptlets, verify) keep a mid-stage estimate.
+                    const pctMatch = /(\d{1,3})\s*%/.exec(rest);
+                    const pct = pctMatch ? Math.min(100, parseInt(pctMatch[1], 10)) / 100 : -1;
+                    let fraction = _dnfStage === 1 ? (pct >= 0 ? 0.7 * pct : 0.3) : (pct >= 0 ? 0.7 + 0.3 * pct : 0.8);
+                    // recentLog is a rolling window that gets rescanned, so
+                    // older lines reappear — never move a bar backwards.
+                    const prev = itemStates[key];
+                    if (prev && prev.fraction > fraction)
+                        fraction = prev.fraction;
+                    let detail = currentDetail;
+                    if (pct >= 0) {
+                        detail += " · " + Math.round(pct * 100) + "%";
+                        // Byte detail like the flatpak rows: repoquery gave the
+                        // exact download size, the percent gives the progress.
+                        const size = (packageSizes || {})[base] || 0;
+                        if (_dnfStage === 1 && size > 1024 * 1024)
+                            detail += " · " + formatBytes(size * pct) + " / " + formatBytes(size);
+                    }
                     _setItem(key, {
                         status: "active",
-                        fraction: _dnfStage === 1 ? 0.3 : 0.8,
-                        detail: currentDetail
+                        fraction: fraction,
+                        detail: detail
                     });
                 }
             }
@@ -876,11 +992,15 @@ Item {
     }
 
     function _dnfMatchPackage(text, map) {
+        // Prefer the longest matching name: with subpackage families in the
+        // run ("abrt" next to "abrt-addon-ccpp") the short base also occurs
+        // in the long package's lines, which would drive the wrong row.
+        let best = "";
         for (const base in map) {
-            if (text.indexOf(base) !== -1)
-                return base;
+            if (base.length > best.length && text.indexOf(base) !== -1)
+                best = base;
         }
-        return "";
+        return best;
     }
 
     // ── Flatpak via libflatpak helper ────────────────────────────────────────

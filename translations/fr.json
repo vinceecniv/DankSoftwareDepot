@@ -267,5 +267,6 @@
     "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.": "Centre logiciel pour DMS : mises à jour avec progression, notes de version, magasin d'applications avec avis, gestion des logiciels installés, micrologiciel et journal d'actions.",
     "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "Prend en charge les paquets Fedora (rpm/dnf), Flatpak et AppImage.",
     "Display name (shown with your review)": "Nom affiché (visible avec votre avis)",
-    "the update service did not start this pass — try again": "le service de mise à jour n'a pas démarré cette étape — réessayez"
+    "the update service did not start this pass — try again": "le service de mise à jour n'a pas démarré cette étape — réessayez",
+    "downloaded": "téléchargé"
 }

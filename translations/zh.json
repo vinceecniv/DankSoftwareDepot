@@ -267,5 +267,6 @@
     "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.": "DMS 的软件中心：带进度的更新、版本说明、带评价的应用商店、已安装软件管理、固件和操作日志。",
     "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "支持 Fedora 软件包（rpm/dnf）、Flatpak 和 AppImage。",
     "Display name (shown with your review)": "显示名称（随您的评价一起显示）",
-    "the update service did not start this pass — try again": "更新服务本次未启动 — 请重试"
+    "the update service did not start this pass — try again": "更新服务本次未启动 — 请重试",
+    "downloaded": "已下载"
 }
