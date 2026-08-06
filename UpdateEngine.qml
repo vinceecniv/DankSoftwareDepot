@@ -567,7 +567,11 @@ Item {
 
     Timer {
         id: daemonRetryTimer
-        interval: 5000
+        // Generous on purpose: a re-send while the daemon's dnf child is
+        // still refreshing metadata or resolving (easily 5-15s) kills that
+        // child mid-run. Only nudge when the daemon has been silent long
+        // past any normal resolve time.
+        interval: 20000
 
         onTriggered: {
             if (!engine.running || engine._dnfSawUpgrading || SystemUpdateService.isUpgrading)
@@ -818,6 +822,13 @@ Item {
         }
 
         function onRecentLogChanged() {
+            // Streaming log lines prove the daemon is working on this pass
+            // even while isUpgrading is still false (metadata refresh and
+            // dependency resolution). Re-sending the upgrade command then
+            // makes the daemon kill its dnf child mid-resolve — push the
+            // retry out as long as output keeps flowing.
+            if (daemonRetryTimer.running)
+                daemonRetryTimer.restart();
             engine._parseDnfLog();
         }
     }

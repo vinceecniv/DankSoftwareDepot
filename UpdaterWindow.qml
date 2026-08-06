@@ -1127,7 +1127,15 @@ FloatingWindow {
     }
 
     readonly property bool showingRun: engine.phase !== "idle" && runRows.length > 0
-    readonly property var visibleRows: showingRun ? runRows : updateRows
+    readonly property var visibleRows: {
+        if (!showingRun)
+            return updateRows;
+        // The run view focuses on the live queue, but held and delayed
+        // updates that sit out this run shouldn't vanish from the
+        // overview — keep their sections below the queue.
+        const runKeys = new Set(runRows.map(row => row.key));
+        return runRows.concat(updateRows.filter(row => (row.delayed === true || row.category === "5 · Held packages") && !runKeys.has(row.key)));
+    }
 
     // Flat list model with explicit header rows. This sidesteps ListView's
     // section attachment (which mis-assigned headers) and lets headers carry
