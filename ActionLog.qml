@@ -14,12 +14,17 @@ Item {
 
     property var _queue: []
 
-    function record(type, title, items) {
-        _run({
+    // ts is optional: replayed entries (a run whose logging was swallowed
+    // by a shell reload) carry their original timestamp.
+    function record(type, title, items, ts) {
+        const entry = {
             type: type,
             title: title,
             items: items || []
-        });
+        };
+        if (ts)
+            entry.ts = ts;
+        _run(entry);
     }
 
     function reload() {

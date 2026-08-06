@@ -139,6 +139,10 @@ FloatingWindow {
             if (pkg.repo !== "flatpak" && !wanted.has(pkg.name))
                 ignored.push(pkg.name);
         }
+        // This pass has no completion hook (the shell reloads on dms
+        // updates) — stash the log entry for replay at the next start
+        if (widgetRoot)
+            widgetRoot._stashShellRunLog(win.pendingUpdates.filter(p => p.repo !== "flatpak" && wanted.has(p.name)), []);
         DMSService.sysupdateUpgrade({
             includeFlatpak: false,
             ignored: ignored

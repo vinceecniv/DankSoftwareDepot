@@ -369,6 +369,107 @@ PluginComponent {
 
     readonly property var actionLogger: actionLog
 
+    // ── Shell-pass log survival ─────────────────────────────────────────────
+    // Updating dms/quickshell reloads the shell before the run can write its
+    // log entry (and the per-app dms route has no completion hook at all).
+    // Stash the planned entry beforehand; the next start verifies against
+    // the rpm database what actually arrived and writes the swallowed entry
+    // with its original timestamp.
+    function _stashShellRunLog(shellPkgs, doneItems) {
+        PluginService.savePluginData("dankSoftwareDepot", "pendingShellRunLog", {
+            ts: Math.floor(Date.now() / 1000),
+            items: doneItems || [],
+            shell: shellPkgs.map(pkg => ({
+                base: store.stripArch(pkg.name),
+                name: store.displayName(pkg),
+                from: pkg.fromVersion || "",
+                to: pkg.toVersion || ""
+            }))
+        });
+    }
+
+    function _stashFromEngine() {
+        const shellPkgs = [];
+        const doneItems = [];
+        for (const ri of engine.runItems || []) {
+            const base = store.stripArch(ri.pkg.name);
+            const isShell = ri.pkg.repo !== "flatpak" && ri.pkg.repo !== "firmware" && ri.pkg.repo !== "appimage" && engine.shellPackagePattern.test(base);
+            if (isShell) {
+                shellPkgs.push(ri.pkg);
+                continue;
+            }
+            const st = engine.itemStates[ri.key] || {};
+            doneItems.push({
+                name: store.displayName(ri.pkg),
+                from: ri.pkg.fromVersion || "",
+                to: ri.pkg.toVersion || "",
+                source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : "System")),
+                status: st.status || ""
+            });
+        }
+        if (shellPkgs.length > 0)
+            _stashShellRunLog(shellPkgs, doneItems);
+    }
+
+    property bool _replayedPendingLog: false
+
+    onPluginDataChanged: _replayPendingRunLog()
+
+    function _replayPendingRunLog() {
+        // An empty object means the host hasn't delivered the settings yet
+        if (_replayedPendingLog || Object.keys(pluginData || {}).length === 0)
+            return;
+        _replayedPendingLog = true;
+        const stash = pluginData.pendingShellRunLog;
+        if (!stash || !(stash.shell || []).length)
+            return;
+        replayVerifyProcess.command = ["rpm", "-q", "--qf", "%{NAME}\\t%{EVR}\\n"].concat(stash.shell.map(s => s.base));
+        replayVerifyProcess.running = true;
+    }
+
+    Process {
+        id: replayVerifyProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const stash = root.pluginData.pendingShellRunLog || {};
+                const installed = {};
+                for (const line of (text || "").split("\n")) {
+                    const parts = line.split("\t");
+                    if (parts.length === 2)
+                        (installed[parts[0].trim()] = installed[parts[0].trim()] || []).push(parts[1].trim());
+                }
+                const noEpoch = v => (v || "").replace(/^\d+:/, "");
+                const items = (stash.items || []).slice();
+                for (const s of stash.shell || []) {
+                    const want = noEpoch(s.to);
+                    const ok = want !== "" && (installed[s.base] || []).some(evr => noEpoch(evr) === want);
+                    items.push({
+                        name: s.name,
+                        from: s.from,
+                        to: s.to,
+                        source: "System",
+                        status: ok ? "done" : "error"
+                    });
+                }
+                let done = 0;
+                let failed = 0;
+                for (const it of items) {
+                    if (it.status === "done")
+                        done++;
+                    else if (it.status === "error")
+                        failed++;
+                }
+                const type = failed > 0 ? "update-failed" : "update";
+                const title = failed > 0 ? Tr.t("Update finished with issues (%1 failed)").arg(failed) : (done === 1 ? Tr.t("Updated %1 package") : Tr.t("Updated %1 packages")).arg(done);
+                actionLog.record(type, title, items, stash.ts || 0);
+                if (done > 0 && (stash.ts || 0) > (root.pluginData.lastUpdateUnix || 0))
+                    PluginService.savePluginData("dankSoftwareDepot", "lastUpdateUnix", stash.ts);
+                PluginService.savePluginData("dankSoftwareDepot", "pendingShellRunLog", {});
+            }
+        }
+    }
+
     function _logRun() {
         if (!engine.runItems || engine.runItems.length === 0)
             return;
@@ -392,6 +493,9 @@ PluginComponent {
             title = Tr.t("Update finished with issues (%1 failed)").arg(engine.failedCount);
         }
         actionLog.record(type, title, items);
+        // The run survived to its normal logging — the stashed entry for a
+        // possible shell reload is not needed anymore
+        PluginService.savePluginData("dankSoftwareDepot", "pendingShellRunLog", {});
     }
 
     UpdateEngine {
@@ -401,6 +505,13 @@ PluginComponent {
         packageSizes: (root.updateSizes && root.updateSizes.rpmSizes) || ({})
         firmwareService: root.includeFirmware ? firmware : null
         appimageUpdates: root.appimageUpdates
+
+        // The dms pass is about to reload the shell — stash the log entry
+        // it would otherwise swallow
+        onPhaseChanged: {
+            if (phase === "dms")
+                root._stashFromEngine();
+        }
 
         onFinished: ok => {
             root.confirmArmed = false;
