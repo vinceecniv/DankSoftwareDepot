@@ -16,7 +16,7 @@ PluginComponent {
 
     // ── Settings ─────────────────────────────────────────────────────────────
     readonly property bool hideWhenUpToDate: pluginData.hideWhenUpToDate === true
-    readonly property bool showRuntimes: pluginData.showRuntimes !== false
+    readonly property bool showRuntimes: pluginData.showRuntimes === true
     readonly property bool confirmBeforeUpdate: pluginData.confirmBeforeUpdate === true
     readonly property bool pillOpensWindow: pluginData.pillOpensWindow === true
     readonly property bool includeFirmware: pluginData.includeFirmware !== false

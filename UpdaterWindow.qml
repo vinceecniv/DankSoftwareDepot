@@ -16,7 +16,7 @@ FloatingWindow {
     required property var engine
     property var firmware: null
     property var widgetRoot: null
-    property bool showRuntimes: true
+    property bool showRuntimes: false
     property int lastUpdateUnix: 0
     property real checkFraction: 0
     property int checkElapsedSecs: 0
@@ -630,7 +630,7 @@ FloatingWindow {
                         width: parent.width
                         text: Tr.t("Show runtimes and extensions")
                         description: Tr.t("List Flatpak runtimes, locales and codec extensions. They are always included in Update All.")
-                        checked: win.widgetRoot ? win.widgetRoot.showRuntimes : true
+                        checked: win.widgetRoot ? win.widgetRoot.showRuntimes : false
                         onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "showRuntimes", checked)
                     }
 
