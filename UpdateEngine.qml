@@ -534,6 +534,14 @@ Item {
     property int _daemonAttempts: 0
 
     function _sendDaemonUpgrade() {
+        // Never fire an upgrade into a running check: the daemon kills the
+        // dnf child mid-resolve when the two collide (observed as a pass
+        // that "completes" without installing anything). The retry timer
+        // re-enters here once the check settles.
+        if (SystemUpdateService.isChecking) {
+            daemonRetryTimer.restart();
+            return;
+        }
         const kind = _daemonKind;
         // Delayed rpms stay excluded in every daemon pass; shell packages
         // additionally sit out the first pass and run in the final one.
