@@ -2406,42 +2406,60 @@ FloatingWindow {
                                     }
                                 }
 
-                                Repeater {
+                                ListView {
+                                    id: recentList
+
+                                    // Five visible rows (one fewer than before) keeps
+                                    // this card level with the installed-software one;
+                                    // the rest of the 50 entries scrolls.
+                                    readonly property int rowHeight: 24
+
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: rowHeight * Math.min(5, count)
+                                    clip: true
+                                    boundsBehavior: Flickable.StopAtBounds
                                     model: (win.dashboard && win.dashboard.recent) ? win.dashboard.recent : []
 
-                                    delegate: RowLayout {
+                                    delegate: Item {
                                         required property var modelData
 
-                                        Layout.fillWidth: true
-                                        spacing: Theme.spacingS
+                                        width: ListView.view.width
+                                        height: recentList.rowHeight
 
-                                        StyledText {
-                                            Layout.fillWidth: true
-                                            text: modelData.name
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            color: Theme.surfaceText
-                                            elide: Text.ElideRight
-                                        }
-
-                                        Rectangle {
-                                            Layout.preferredWidth: recentChip.implicitWidth + 10
-                                            Layout.preferredHeight: 16
-                                            radius: 8
-                                            color: Theme.withAlpha(Theme.tertiary, 0.12)
+                                        RowLayout {
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            spacing: Theme.spacingS
 
                                             StyledText {
-                                                id: recentChip
-                                                anchors.centerIn: parent
-                                                text: Tr.t(modelData.source)
-                                                font.pixelSize: Theme.fontSizeSmall - 3
-                                                color: Theme.tertiary
+                                                Layout.fillWidth: true
+                                                text: modelData.name
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                color: Theme.surfaceText
+                                                elide: Text.ElideRight
                                             }
-                                        }
 
-                                        StyledText {
-                                            text: win.formatAgo(modelData.ts)
-                                            font.pixelSize: Theme.fontSizeSmall - 1
-                                            color: Theme.surfaceVariantText
+                                            Rectangle {
+                                                Layout.preferredWidth: recentChip.implicitWidth + 10
+                                                Layout.preferredHeight: 16
+                                                radius: 8
+                                                color: Theme.withAlpha(Theme.tertiary, 0.12)
+
+                                                StyledText {
+                                                    id: recentChip
+                                                    anchors.centerIn: parent
+                                                    text: Tr.t(modelData.source)
+                                                    font.pixelSize: Theme.fontSizeSmall - 3
+                                                    color: Theme.tertiary
+                                                }
+                                            }
+
+                                            StyledText {
+                                                text: win.formatAgo(modelData.ts)
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                color: Theme.surfaceVariantText
+                                            }
                                         }
                                     }
                                 }

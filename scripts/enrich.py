@@ -1395,7 +1395,7 @@ def run_dashboard():
         pass
     out["rpmTotal"] = len(rpm_lines)
     for name, ts in sorted(((l[0], int(l[1])) for l in rpm_lines if len(l) > 1 and l[1].isdigit()),
-                           key=lambda x: -x[1])[:8]:
+                           key=lambda x: -x[1])[:50]:
         recent.append({"name": name, "source": "System", "ts": ts})
 
     # copr-installed count
@@ -1462,7 +1462,7 @@ def run_dashboard():
     out["appimageCount"] = len(appimage_files)
 
     recent.sort(key=lambda r: -r["ts"])
-    out["recent"] = recent[:6]
+    out["recent"] = recent[:50]
 
     # system info
     out["hostname"] = platform.node()
