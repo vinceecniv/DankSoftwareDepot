@@ -1,6 +1,6 @@
 # <picture><source media="(prefers-color-scheme: dark)" srcset="assets/icons/dank-software-depot-dark.svg"><img src="assets/icons/dank-software-depot-light.svg" alt="" width="42"></picture> Dank Software Depot
 
-**Beta** · **Fedora-based distros only (for now)** · English / Nederlands / Deutsch / Français
+**Beta** · **Fedora-based distros only (for now)** · English / Nederlands / Deutsch / Français / Español / Português / Italiano / Polski / Svenska / 中文
 
 A full software & updates center plugin for
 [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell):
@@ -104,7 +104,8 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 
 ## Languages
 
-The UI ships in **English, Dutch, German and French**. DMS has no per-plugin
+The UI ships in **English, Dutch, German, French, Spanish, Portuguese,
+Italian, Polish, Swedish and Chinese (Simplified)**. DMS has no per-plugin
 i18n mechanism, so the plugin brings its own: the `Tr` singleton loads
 `translations/<lang>.json` (keyed by the English source string) following the
 DMS/system locale, falling back to the DMS catalog and then English. Add a
