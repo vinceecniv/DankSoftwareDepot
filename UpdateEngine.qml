@@ -296,8 +296,12 @@ Item {
         const updates = pendingUpdates || [];
         const explicitFlatpak = (options.flatpakIds || []).length > 0;
         const dnfLive = updates.filter(p => p.repo !== "flatpak" && !held.has("system/" + _stripArch(p.name)));
-        const dnfAll = dnfLive.filter(p => !delayed.has("system/" + _stripArch(p.name)));
-        _delayedRpmNames = dnfLive.filter(p => delayed.has("system/" + _stripArch(p.name))).map(p => p.name);
+        // An explicit rpm selection (per-app update button) runs alone:
+        // every other pending rpm — delayed or not — joins the daemon's
+        // ignore list for this run.
+        const onlyRpm = (options.dnfNames && options.dnfNames.length > 0) ? new Set(options.dnfNames) : null;
+        const dnfAll = onlyRpm ? dnfLive.filter(p => onlyRpm.has(p.name)) : dnfLive.filter(p => !delayed.has("system/" + _stripArch(p.name)));
+        _delayedRpmNames = dnfLive.filter(p => onlyRpm ? !onlyRpm.has(p.name) : delayed.has("system/" + _stripArch(p.name))).map(p => p.name);
         const shellPkgs = (options.dnf !== false) ? dnfAll.filter(p => shellPackagePattern.test(_stripArch(p.name))) : [];
         const dnfPkgs = dnfAll.filter(p => !shellPackagePattern.test(_stripArch(p.name)));
         // An explicit selection (per-app update button) bypasses the delay

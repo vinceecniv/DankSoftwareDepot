@@ -151,8 +151,17 @@ FloatingWindow {
     }
 
     function runSingleUpdate(rowData) {
+        if (engine.running || engine.deferred || singleUpdateProcess.running)
+            return;
         const pkg = rowData.pkg || {};
+        // Updating a delayed row is an explicit override: expire its delay
+        // clock so it moves to the regular sections and stays installable.
+        const release = keys => {
+            if (rowData.delayed === true && widgetRoot)
+                widgetRoot.releaseDelayed(keys);
+        };
         if (pkg.repo === "appimage") {
+            release(["appimage/" + pkg.name]);
             engine.start({
                 dnf: false,
                 flatpak: false,
@@ -162,6 +171,7 @@ FloatingWindow {
             return;
         }
         if (pkg.repo === "flatpak") {
+            release(["flatpak/" + pkg.name]);
             engine.start({
                 dnf: false,
                 firmware: false,
@@ -171,19 +181,35 @@ FloatingWindow {
             return;
         }
         if (_isShellPkg(pkg)) {
+            release(["system/" + store.stripArch(pkg.name)]);
             _daemonUpgradeOnly([pkg.name]);
             return;
         }
-        if (singleUpdateProcess.running)
-            return;
-        singleBusyKey = rowData.key;
-        singleUpdateProcess._label = store.displayName(pkg);
         if (pkg.repo === "firmware" && rowData.fwInfo && rowData.fwInfo.deviceId) {
+            if (singleUpdateProcess.running)
+                return;
+            release(["firmware/" + pkg.name]);
+            singleBusyKey = rowData.key;
+            singleUpdateProcess._label = store.displayName(pkg);
             singleUpdateProcess.command = ["fwupdmgr", "update", "-y", "--no-reboot-check", rowData.fwInfo.deviceId];
-        } else {
-            singleUpdateProcess.command = ["pkexec", "dnf5", "upgrade", "--refresh", "-y", store.stripArch(pkg.name)];
+            singleUpdateProcess.running = true;
+            return;
         }
-        singleUpdateProcess.running = true;
+        // System rpm (the update button only shows on delayed rows): run
+        // the whole srpm family through the engine — dnf cannot upgrade
+        // half a family — with every other rpm in this run's ignore list,
+        // so the normal progress UI applies to exactly this update.
+        const srcMap = (widgetRoot && widgetRoot.rpmSourceMap) || {};
+        const base = store.stripArch(pkg.name);
+        const fam = srcMap[base] || base;
+        const members = win.pendingUpdates.filter(p => p.repo !== "flatpak" && (srcMap[store.stripArch(p.name)] || store.stripArch(p.name)) === fam);
+        release(members.map(p => "system/" + store.stripArch(p.name)));
+        engine.start({
+            dnfNames: members.map(p => p.name),
+            flatpak: false,
+            firmware: false,
+            appimage: false
+        });
     }
 
     // Install every delayed update in one go (explicit user override):

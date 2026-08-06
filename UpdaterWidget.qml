@@ -121,14 +121,23 @@ PluginComponent {
             PluginService.savePluginData("dankSoftwareDepot", "updateFirstSeen", map);
     }
 
-    // "Install all now" on the delayed section: overriding the maturity
-    // window means the delay is over for these updates. Expire their
-    // first-seen entries so they move to the regular update list (and stay
-    // there if a run fails); the caller then starts a normal engine run.
+    // Overriding the maturity window ("Install all now", or a per-app
+    // update of a delayed row) means the delay is over for those updates.
+    // Expire their first-seen entries so they move to the regular update
+    // list (and stay there if a run fails); the caller then starts a
+    // normal engine run. Pass engine keys to release a subset, nothing to
+    // release every delayed update.
     function releaseAllDelayed() {
+        releaseDelayed(null);
+    }
+
+    function releaseDelayed(onlyKeys) {
         if (updateDelayDays <= 0)
             return;
-        const delayed = new Set(delayedKeys);
+        const wanted = (onlyKeys && onlyKeys.length > 0) ? new Set(onlyKeys) : null;
+        let delayed = new Set(delayedKeys);
+        if (wanted)
+            delayed = new Set(Array.from(delayed).filter(key => wanted.has(key)));
         const map = Object.assign({}, pluginData.updateFirstSeen || {});
         const expired = Math.floor(Date.now() / 1000) - updateDelayDays * 86400 - 60;
         let changed = false;
