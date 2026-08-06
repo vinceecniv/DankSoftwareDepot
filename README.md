@@ -5,7 +5,7 @@
 A full software & updates center plugin for
 [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell):
 everything the built-in updater does, plus app logos, release notes, reviews,
-progress with a real ETA, an app store, AppImage management, firmware
+honest per-package progress, an app store, AppImage management, firmware
 support and an action log — and no terminal output anywhere.
 
 ![screenshot](screenshot.png)
@@ -39,8 +39,9 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   soon-retracted updates; per-app override and "Install all now" stay
   available
 - **Automatic updates**: off / notify only / auto-install Flatpaks
-- During a run the list becomes a live queue: queued / progress bar /
-  completed / failed per item, with bytes, speed, item counters and ETA
+- During a run the list becomes a live queue: queued / downloading /
+  installing / completed / failed per item, each row with its own progress
+  bar built from real bytes (flatpak transaction events, dnf cache growth)
 - Reboot recommendation banner (kernel/systemd/glibc/firmware) with
   confirm-restart button, persisted per boot
 - End-of-life Flatpak detection and distro-upgrade notice
@@ -96,10 +97,10 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 ## Bar widget & popout
 
 - Bar pill with the effective update count (held and delayed excluded);
-  spinning refresh icon while checking, live percentage during a run,
-  restart icon when a reboot is recommended
-- Compact popout: enriched update list, Update All, phase stepper,
-  progress bar with time remaining
+  spinning refresh icon while checking, completed/planned counter during a
+  run, restart icon when a reboot is recommended
+- Compact popout: enriched update list, Update All, phase label and
+  current item during a run
 - Optional: hide the pill when up to date, click opens the window directly
 
 ## Languages
@@ -155,7 +156,7 @@ dms ipc call dankSoftwareDepot check     # trigger an update check
 | `FirmwareView.qml` | fwupd device inventory |
 | `LogView.qml` | Action history browser |
 | `AppDetailsDialog.qml` | Shared app-details popup (info, reviews, actions) |
-| `UpdateEngine.qml` | Run orchestration (daemon dnf → libflatpak → fwupd → DMS packages), weighted progress/ETA model |
+| `UpdateEngine.qml` | Run orchestration (daemon dnf → libflatpak → fwupd → DMS packages), per-package progress from log lines and dnf-cache bytes |
 | `MetadataStore.qml` | Async enrichment cache + held-state persistence |
 | `ActionLog.qml` | Persistent action history (90-day retention) |
 | `FirmwareService.qml` | fwupd update detection |

@@ -3,6 +3,21 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.2.2 — 2026-08-06
+
+- Six new UI languages: Spanish, Portuguese, Italian, Polish, Swedish and
+  Chinese (Simplified) — ten languages in total
+- Real per-package download progress for system packages: bars build up
+  with actual bytes ("downloading · 37% · 6.7 MB / 18 MB") read live from
+  the dnf cache, instead of sitting still and jumping to 100%
+- Finished downloads read "downloaded" through the silent
+  transaction-prepare wait instead of a stuck "downloading · 100%"
+- Progress lines map to the right row in subpackage families
+- The delayed-updates countdown no longer restarts after suspend/resume —
+  first-seen clocks survive the shell rebuilding its bar
+- Update notifications carry the plugin's own icon, following the
+  light/dark theme
+
 ## 0.2.1 — 2026-08-05
 
 - Update runs are far more reliable: a run right after a service restart
