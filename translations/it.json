@@ -62,8 +62,6 @@
     "Confirm?": "Confermare?",
     "Restart": "Riavvia",
     "Details": "Dettagli",
-    "Restart recommended": "Riavvio consigliato",
-    "A restart is recommended to finish applying updates.": "Si consiglia un riavvio per completare l'applicazione degli aggiornamenti.",
     "Restart now": "Riavvia ora",
     "Confirm restart?": "Confermare il riavvio?",
     "Dismiss": "Nascondi",
@@ -256,5 +254,7 @@
     "Display name (shown with your review)": "Nome visualizzato (mostrato con la tua recensione)",
     "the update service did not start this pass — try again": "il servizio di aggiornamento non ha avviato questo passaggio — riprova",
     "downloaded": "scaricato",
-    "the package was not updated — try again": "il pacchetto non è stato aggiornato — riprova"
+    "the package was not updated — try again": "il pacchetto non è stato aggiornato — riprova",
+    "Computer restart recommended": "Consigliato riavviare il computer",
+    "A computer restart is recommended to finish applying updates.": "Si consiglia di riavviare il computer per completare l’applicazione degli aggiornamenti."
 }

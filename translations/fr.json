@@ -62,8 +62,6 @@
     "Confirm?": "Confirmer ?",
     "Restart": "Redémarrer",
     "Details": "Détails",
-    "Restart recommended": "Redémarrage recommandé",
-    "A restart is recommended to finish applying updates.": "Un redémarrage est recommandé pour finaliser les mises à jour.",
     "Restart now": "Redémarrer maintenant",
     "Confirm restart?": "Confirmer le redémarrage ?",
     "Dismiss": "Masquer",
@@ -256,5 +254,7 @@
     "Display name (shown with your review)": "Nom affiché (visible avec votre avis)",
     "the update service did not start this pass — try again": "le service de mise à jour n'a pas démarré cette étape — réessayez",
     "downloaded": "téléchargé",
-    "the package was not updated — try again": "le paquet n’a pas été mis à jour — réessayez"
+    "the package was not updated — try again": "le paquet n’a pas été mis à jour — réessayez",
+    "Computer restart recommended": "Redémarrage de l’ordinateur recommandé",
+    "A computer restart is recommended to finish applying updates.": "Un redémarrage de l’ordinateur est recommandé pour terminer l’application des mises à jour."
 }

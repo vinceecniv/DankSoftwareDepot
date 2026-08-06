@@ -62,8 +62,6 @@
     "Confirm?": "¿Confirmar?",
     "Restart": "Reiniciar",
     "Details": "Detalles",
-    "Restart recommended": "Se recomienda reiniciar",
-    "A restart is recommended to finish applying updates.": "Se recomienda reiniciar para terminar de aplicar las actualizaciones.",
     "Restart now": "Reiniciar ahora",
     "Confirm restart?": "¿Confirmar el reinicio?",
     "Dismiss": "Descartar",
@@ -256,5 +254,7 @@
     "Display name (shown with your review)": "Nombre visible (se muestra con tu reseña)",
     "the update service did not start this pass — try again": "el servicio de actualizaciones no se inició en esta pasada — inténtalo de nuevo",
     "downloaded": "descargado",
-    "the package was not updated — try again": "el paquete no se actualizó — inténtalo de nuevo"
+    "the package was not updated — try again": "el paquete no se actualizó — inténtalo de nuevo",
+    "Computer restart recommended": "Se recomienda reiniciar el equipo",
+    "A computer restart is recommended to finish applying updates.": "Se recomienda reiniciar el equipo para terminar de aplicar las actualizaciones."
 }

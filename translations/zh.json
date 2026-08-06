@@ -62,8 +62,6 @@
     "Confirm?": "确认？",
     "Restart": "重启",
     "Details": "详情",
-    "Restart recommended": "建议重启",
-    "A restart is recommended to finish applying updates.": "建议重启以完成更新的应用。",
     "Restart now": "立即重启",
     "Confirm restart?": "确认重启？",
     "Dismiss": "忽略",
@@ -256,5 +254,7 @@
     "Display name (shown with your review)": "显示名称（随您的评价一起显示）",
     "the update service did not start this pass — try again": "更新服务本次未启动 — 请重试",
     "downloaded": "已下载",
-    "the package was not updated — try again": "软件包未更新 — 请重试"
+    "the package was not updated — try again": "软件包未更新 — 请重试",
+    "Computer restart recommended": "建议重启计算机",
+    "A computer restart is recommended to finish applying updates.": "建议重启计算机以完成更新的应用。"
 }

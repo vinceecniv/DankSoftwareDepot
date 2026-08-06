@@ -62,8 +62,6 @@
     "Confirm?": "Bevestigen?",
     "Restart": "Herstarten",
     "Details": "Details",
-    "Restart recommended": "Herstart aanbevolen",
-    "A restart is recommended to finish applying updates.": "Een herstart wordt aanbevolen om de updates volledig door te voeren.",
     "Restart now": "Nu herstarten",
     "Confirm restart?": "Herstart bevestigen?",
     "Dismiss": "Verbergen",
@@ -256,5 +254,7 @@
     "Display name (shown with your review)": "Weergavenaam (staat bij je review)",
     "the update service did not start this pass — try again": "de updateservice startte deze stap niet — probeer opnieuw",
     "downloaded": "gedownload",
-    "the package was not updated — try again": "het pakket is niet bijgewerkt — probeer opnieuw"
+    "the package was not updated — try again": "het pakket is niet bijgewerkt — probeer opnieuw",
+    "Computer restart recommended": "Computerherstart aanbevolen",
+    "A computer restart is recommended to finish applying updates.": "Een computerherstart wordt aanbevolen om de updates volledig door te voeren."
 }

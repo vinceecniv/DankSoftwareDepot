@@ -846,7 +846,7 @@ PluginComponent {
 
                     StyledText {
                         Layout.fillWidth: true
-                        text: Tr.t("Restart recommended")
+                        text: Tr.t("Computer restart recommended")
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.surfaceText
                         elide: Text.ElideRight

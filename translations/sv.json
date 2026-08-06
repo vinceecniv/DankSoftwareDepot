@@ -62,8 +62,6 @@
     "Confirm?": "Bekräfta?",
     "Restart": "Starta om",
     "Details": "Detaljer",
-    "Restart recommended": "Omstart rekommenderas",
-    "A restart is recommended to finish applying updates.": "En omstart rekommenderas för att slutföra uppdateringarna.",
     "Restart now": "Starta om nu",
     "Confirm restart?": "Bekräfta omstart?",
     "Dismiss": "Avfärda",
@@ -256,5 +254,7 @@
     "Display name (shown with your review)": "Visningsnamn (visas med din recension)",
     "the update service did not start this pass — try again": "uppdateringstjänsten startade inte den här gången — försök igen",
     "downloaded": "hämtad",
-    "the package was not updated — try again": "paketet uppdaterades inte — försök igen"
+    "the package was not updated — try again": "paketet uppdaterades inte — försök igen",
+    "Computer restart recommended": "Omstart av datorn rekommenderas",
+    "A computer restart is recommended to finish applying updates.": "En omstart av datorn rekommenderas för att slutföra uppdateringarna."
 }

@@ -1394,7 +1394,7 @@ FloatingWindow {
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: Tr.t("A restart is recommended to finish applying updates.")
+                    text: Tr.t("A computer restart is recommended to finish applying updates.")
                     font.pixelSize: Theme.fontSizeMedium
                     color: Theme.surfaceText
                     wrapMode: Text.WordWrap

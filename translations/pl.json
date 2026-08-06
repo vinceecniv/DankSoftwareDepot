@@ -62,8 +62,6 @@
     "Confirm?": "Potwierdzić?",
     "Restart": "Uruchom ponownie",
     "Details": "Szczegóły",
-    "Restart recommended": "Zalecane ponowne uruchomienie",
-    "A restart is recommended to finish applying updates.": "Zalecane jest ponowne uruchomienie, aby dokończyć wprowadzanie aktualizacji.",
     "Restart now": "Uruchom ponownie teraz",
     "Confirm restart?": "Potwierdzić ponowne uruchomienie?",
     "Dismiss": "Ukryj",
@@ -256,5 +254,7 @@
     "Display name (shown with your review)": "Wyświetlana nazwa (widoczna przy recenzji)",
     "the update service did not start this pass — try again": "usługa aktualizacji nie uruchomiła się tym razem — spróbuj ponownie",
     "downloaded": "pobrano",
-    "the package was not updated — try again": "pakiet nie został zaktualizowany — spróbuj ponownie"
+    "the package was not updated — try again": "pakiet nie został zaktualizowany — spróbuj ponownie",
+    "Computer restart recommended": "Zalecane ponowne uruchomienie komputera",
+    "A computer restart is recommended to finish applying updates.": "Aby dokończyć instalowanie aktualizacji, zalecane jest ponowne uruchomienie komputera."
 }
