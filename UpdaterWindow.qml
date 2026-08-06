@@ -2145,9 +2145,10 @@ FloatingWindow {
                                 id: systemCardCol
                                 anchors.left: parent.left
                                 anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.top: parent.top
                                 anchors.leftMargin: Theme.spacingM
                                 anchors.rightMargin: Theme.spacingM
+                                anchors.topMargin: Theme.spacingM
                                 spacing: Theme.spacingS
 
                                 RowLayout {
@@ -2215,9 +2216,10 @@ FloatingWindow {
                                 id: statusCardCol
                                 anchors.left: parent.left
                                 anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.top: parent.top
                                 anchors.leftMargin: Theme.spacingM
                                 anchors.rightMargin: Theme.spacingM
+                                anchors.topMargin: Theme.spacingM
                                 spacing: Theme.spacingS
 
                                 RowLayout {
@@ -2290,9 +2292,10 @@ FloatingWindow {
                                 id: installedCardCol
                                 anchors.left: parent.left
                                 anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.top: parent.top
                                 anchors.leftMargin: Theme.spacingM
                                 anchors.rightMargin: Theme.spacingM
+                                anchors.topMargin: Theme.spacingM
                                 spacing: Theme.spacingS
 
                                 RowLayout {
@@ -2380,9 +2383,10 @@ FloatingWindow {
                                 id: recentCardCol
                                 anchors.left: parent.left
                                 anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.top: parent.top
                                 anchors.leftMargin: Theme.spacingM
                                 anchors.rightMargin: Theme.spacingM
+                                anchors.topMargin: Theme.spacingM
                                 spacing: Theme.spacingS
 
                                 RowLayout {
