@@ -62,6 +62,14 @@ PluginComponent {
     function _trackFirstSeen() {
         if (SystemUpdateService.isChecking || engine.running)
             return;
+        // The host loads pluginData only after component completion, and DMS
+        // recreates the whole bar (including this widget) on session resume.
+        // With the daemon still holding its update list, tracking against the
+        // not-yet-loaded (empty) settings would restamp every delay clock at
+        // "now". Enabled plugins always have at least the "enabled" key, so
+        // an empty object means unloaded — wait for onPluginDataChanged.
+        if (Object.keys(pluginData || {}).length === 0)
+            return;
         const now = Math.floor(Date.now() / 1000);
         const map = Object.assign({}, pluginData.updateFirstSeen || {});
         const live = new Set();
@@ -686,6 +694,12 @@ PluginComponent {
             _refreshSourceMap();
         }
     }
+
+    // Fires when the host delivers the persisted settings (shortly after
+    // completion, and again after every save). Runs the tracking that the
+    // unloaded-settings guard in _trackFirstSeen skipped; a no-op when the
+    // map is already up to date.
+    onPluginDataChanged: root._trackFirstSeen()
 
     // pluginData (and with it the persisted snapshot) loads after component
     // completion, so run enrichment (names, icons) whenever the restored
