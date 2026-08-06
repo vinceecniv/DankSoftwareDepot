@@ -181,7 +181,7 @@ FloatingWindow {
         if (pkg.repo === "firmware" && rowData.fwInfo && rowData.fwInfo.deviceId) {
             singleUpdateProcess.command = ["fwupdmgr", "update", "-y", "--no-reboot-check", rowData.fwInfo.deviceId];
         } else {
-            singleUpdateProcess.command = ["pkexec", "dnf5", "upgrade", "-y", store.stripArch(pkg.name)];
+            singleUpdateProcess.command = ["pkexec", "dnf5", "upgrade", "--refresh", "-y", store.stripArch(pkg.name)];
         }
         singleUpdateProcess.running = true;
     }
@@ -205,7 +205,10 @@ FloatingWindow {
         _pendingShellNames = shellNames;
         const commands = [];
         if (rpmNames.length > 0)
-            commands.push("pkexec dnf5 upgrade -y " + rpmNames.join(" "));
+            // --refresh: the update was discovered with the daemon's fresh
+            // metadata; root's own dnf cache can predate it, and a stale
+            // cache makes this upgrade a silent "Nothing to do" (exit 0).
+            commands.push("pkexec dnf5 upgrade --refresh -y " + rpmNames.join(" "));
         for (const deviceId of deviceIds)
             commands.push("fwupdmgr update -y --no-reboot-check '" + deviceId.replace(/'/g, "") + "'");
         if (commands.length > 0) {
