@@ -160,8 +160,14 @@ PluginComponent {
                 changed = true;
             }
         }
-        if (changed)
+        if (changed) {
             PluginService.savePluginData("dankSoftwareDepot", "updateFirstSeen", map);
+            // delayNowUnix ticks only every 15 min; without a fresh clock a
+            // just-expired entry still counts as delayed and the released
+            // rows would linger in the delayed section (and stay excluded
+            // from the run the caller is about to start).
+            delayNowUnix = Math.floor(Date.now() / 1000);
+        }
     }
 
     // Arch-stripped rpm name -> source package base name, so system updates
@@ -1042,7 +1048,7 @@ PluginComponent {
                         color: Theme.surfaceText
                     }
 
-                    StyledText {
+                    BusyText {
                         text: {
                             if (engine.running)
                                 return engine.phaseLabel;
@@ -1053,7 +1059,7 @@ PluginComponent {
                             const count = root.effectiveCount;
                             return count === 0 ? Tr.t("Up to date") : (count === 1 ? Tr.t("%1 update available") : Tr.t("%1 updates available")).arg(count);
                         }
-                        font.pixelSize: Theme.fontSizeSmall
+                        pixelSize: Theme.fontSizeSmall
                         color: SystemUpdateService.hasError ? Ui.failColor : Theme.surfaceVariantText
                     }
                 }

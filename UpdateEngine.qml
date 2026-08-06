@@ -182,6 +182,8 @@ Item {
     property int _shellCount: 0
     property var _shellNames: []
     property var _shellNameToKey: ({})
+    // base name -> target EVR, for post-pass verification against rpm
+    property var _daemonExpectedEvr: ({})
     property var _delayedRpmNames: []
     property bool _firmwareFiltered: false
     property bool _wantAppimage: false
@@ -365,6 +367,7 @@ Item {
 
         const states = {};
         const nameMap = {};
+        const expectedEvr = {};
         const items = [];
         const selectedFlatpak = new Set(_flatpakIds);
         plannedCount = 0;
@@ -379,6 +382,7 @@ Item {
                     detail: ""
                 };
                 nameMap[base] = "system/" + base;
+                expectedEvr[base] = pkg.toVersion || "";
                 items.push({
                     pkg: pkg,
                     key: "system/" + base
@@ -458,6 +462,7 @@ Item {
                 detail: Tr.t("runs last · reloads the shell")
             };
             shellMap[base] = "system/" + base;
+            expectedEvr[base] = pkg.toVersion || "";
             items.push({
                 pkg: pkg,
                 key: "system/" + base
@@ -466,6 +471,7 @@ Item {
         }
         _shellNameToKey = shellMap;
         _dnfNameToKey = nameMap;
+        _daemonExpectedEvr = expectedEvr;
         itemStates = states;
         runItems = items;
         flatpakBytesDone = 0;
@@ -785,50 +791,104 @@ Item {
             }
             if (!engine._dnfSawUpgrading)
                 return;
-            // Daemon finished this upgrade pass
-            const ok = !SystemUpdateService.hasError;
-            const map = engine._daemonKind === "shell" ? engine._shellNameToKey : engine._dnfNameToKey;
-            for (const base in map) {
-                engine._setItem(map[base], ok ? {
-                    status: "done",
-                    fraction: 1,
-                    detail: ""
-                } : {
-                    status: "error",
-                    detail: SystemUpdateService.errorMessage || Tr.t("failed")
-                });
-            }
-            if (engine._daemonKind === "shell") {
-                engine._shellDone = true;
-                if (ok) {
-                    engine.completedCount += engine._shellCount;
-                } else {
-                    engine.failedCount += engine._shellCount;
-                }
-                engine._finish(engine.failedCount > 0 ? "failed" : "done");
-                return;
-            }
-            engine._dnfDone = true;
-            if (ok) {
-                engine.completedCount += engine._dnfCount;
+            // Daemon finished this upgrade pass. On a reported error, fail
+            // everything with the reason; on reported success don't take
+            // its word for it — a killed or no-op dnf child also exits
+            // cleanly. Verify against the rpm database which packages
+            // actually reached their target version.
+            if (SystemUpdateService.hasError) {
+                const map = engine._daemonKind === "shell" ? engine._shellNameToKey : engine._dnfNameToKey;
+                for (const base in map)
+                    engine._setItem(map[base], {
+                        status: "error",
+                        detail: SystemUpdateService.errorMessage || Tr.t("failed")
+                    });
+                engine._daemonPassDone(0, engine._daemonKind === "shell" ? engine._shellCount : engine._dnfCount);
             } else {
-                engine.failedCount += engine._dnfCount;
-            }
-            if (engine._wantFlatpak) {
-                engine._startFlatpak();
-            } else if (engine._wantAppimage) {
-                engine._startAppimage();
-            } else if (engine._wantFirmware) {
-                engine._startFirmware();
-            } else if (engine._wantShell && !engine._shellDone) {
-                engine._startDaemon("shell");
-            } else {
-                engine._finish(ok ? "done" : "failed");
+                engine._verifyDaemonPass();
             }
         }
 
         function onRecentLogChanged() {
             engine._parseDnfLog();
+        }
+    }
+
+    // ── Post-pass verification ──────────────────────────────────────────────
+    Process {
+        id: verifyProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: engine._applyDaemonVerify(text)
+        }
+    }
+
+    function _verifyDaemonPass() {
+        const map = _daemonKind === "shell" ? _shellNameToKey : _dnfNameToKey;
+        const names = Object.keys(map);
+        if (names.length === 0) {
+            _daemonPassDone(0, 0);
+            return;
+        }
+        verifyProcess.command = ["rpm", "-q", "--qf", "%{NAME}\\t%{EVR}\\n"].concat(names);
+        verifyProcess.running = true;
+    }
+
+    function _applyDaemonVerify(text) {
+        if (!running)
+            return;
+        const installed = {};
+        for (const line of (text || "").split("\n")) {
+            const parts = line.split("\t");
+            if (parts.length === 2)
+                (installed[parts[0].trim()] = installed[parts[0].trim()] || []).push(parts[1].trim());
+        }
+        const noEpoch = v => (v || "").replace(/^\d+:/, "");
+        const map = _daemonKind === "shell" ? _shellNameToKey : _dnfNameToKey;
+        let okCount = 0;
+        let failCount = 0;
+        for (const base in map) {
+            const want = noEpoch(_daemonExpectedEvr[base] || "");
+            // Unknown target version: nothing to compare against, keep the
+            // daemon's success verdict for this row
+            const arrived = want === "" || (installed[base] || []).some(evr => noEpoch(evr) === want);
+            if (arrived) {
+                okCount++;
+                _setItem(map[base], {
+                    status: "done",
+                    fraction: 1,
+                    detail: ""
+                });
+            } else {
+                failCount++;
+                _setItem(map[base], {
+                    status: "error",
+                    detail: Tr.t("the package was not updated — try again")
+                });
+            }
+        }
+        _daemonPassDone(okCount, failCount);
+    }
+
+    function _daemonPassDone(okCount, failCount) {
+        completedCount += okCount;
+        failedCount += failCount;
+        if (_daemonKind === "shell") {
+            _shellDone = true;
+            _finish(failedCount > 0 ? "failed" : "done");
+            return;
+        }
+        _dnfDone = true;
+        if (_wantFlatpak) {
+            _startFlatpak();
+        } else if (_wantAppimage) {
+            _startAppimage();
+        } else if (_wantFirmware) {
+            _startFirmware();
+        } else if (_wantShell && !_shellDone) {
+            _startDaemon("shell");
+        } else {
+            _finish(failedCount > 0 ? "failed" : "done");
         }
     }
 

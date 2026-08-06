@@ -268,5 +268,6 @@
     "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "Unterstützt Fedora-Pakete (rpm/dnf), Flatpak und AppImage.",
     "Display name (shown with your review)": "Anzeigename (steht bei deiner Bewertung)",
     "the update service did not start this pass — try again": "der Update-Dienst hat diesen Schritt nicht gestartet — bitte erneut versuchen",
-    "downloaded": "heruntergeladen"
+    "downloaded": "heruntergeladen",
+    "the package was not updated — try again": "das Paket wurde nicht aktualisiert — bitte erneut versuchen"
 }

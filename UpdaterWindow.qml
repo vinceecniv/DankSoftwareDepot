@@ -1865,14 +1865,15 @@ FloatingWindow {
                 RowLayout {
                     Layout.fillWidth: true
 
+                    BusyText {
+                        text: win.engine.phaseLabel
+                        pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceText
+                    }
+
                     StyledText {
                         Layout.fillWidth: true
-                        text: {
-                            let label = win.engine.phaseLabel;
-                            if (win.engine.running && win.engine.currentItem)
-                                label += "  ·  " + win.store.prettyId(win.engine.currentItem);
-                            return label;
-                        }
+                        text: (win.engine.running && win.engine.currentItem) ? "·  " + win.store.prettyId(win.engine.currentItem) : ""
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.surfaceText
                         elide: Text.ElideRight
@@ -1898,13 +1899,12 @@ FloatingWindow {
                 }
 
                 // Download phase details: sizes, speed, item counts
-                StyledText {
+                BusyText {
                     Layout.fillWidth: true
                     visible: win.engine.running && win.engine.progressDetail !== ""
                     text: win.engine.progressDetail
-                    font.pixelSize: Theme.fontSizeSmall - 1
+                    pixelSize: Theme.fontSizeSmall - 1
                     color: Theme.surfaceVariantText
-                    elide: Text.ElideRight
                 }
             }
         }
@@ -2186,7 +2186,7 @@ FloatingWindow {
                             ColumnLayout {
                                 spacing: 2
 
-                                StyledText {
+                                BusyText {
                                     text: {
                                         if (SystemUpdateService.isChecking)
                                             return Tr.t("Checking for updates…");
@@ -2196,7 +2196,7 @@ FloatingWindow {
                                             return Tr.t("Check failed");
                                         return Tr.t("Your system is up to date!");
                                     }
-                                    font.pixelSize: Theme.fontSizeLarge
+                                    pixelSize: Theme.fontSizeLarge
                                     color: Theme.surfaceText
                                 }
 
