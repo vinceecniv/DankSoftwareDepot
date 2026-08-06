@@ -198,14 +198,59 @@ FloatingWindow {
         // System rpm (the update button only shows on delayed rows): run
         // the whole srpm family through the engine — dnf cannot upgrade
         // half a family — with every other rpm in this run's ignore list,
-        // so the normal progress UI applies to exactly this update.
+        // so the normal progress UI applies to exactly this update. A dry
+        // resolve first finds cross-family dependencies (gjs needs the
+        // delayed mozjs140): those pending updates must join the run, or
+        // dnf fails on its own exclude list.
         const srcMap = (widgetRoot && widgetRoot.rpmSourceMap) || {};
         const base = store.stripArch(pkg.name);
         const fam = srcMap[base] || base;
         const members = win.pendingUpdates.filter(p => p.repo !== "flatpak" && (srcMap[store.stripArch(p.name)] || store.stripArch(p.name)) === fam);
-        release(members.map(p => "system/" + store.stripArch(p.name)));
+        _startSystemSingle(members);
+    }
+
+    // Dry-run resolution (unprivileged, against the daemon-refreshed root
+    // cache) to expand a single-package run with the pending updates dnf
+    // needs alongside it. Falls back to the plain family on any failure —
+    // the engine then reports honestly if dnf still can't resolve.
+    property var _closureMembers: []
+
+    function _startSystemSingle(members) {
+        if (members.length === 0)
+            return;
+        _closureMembers = members;
+        singleBusyKey = "closure";
+        singleUpdateStatus = Tr.t("Preparing update…");
+        closureProcess.command = ["env", "LC_ALL=C", "dnf5", "-C", "upgrade", "--assumeno"].concat(members.map(p => store.stripArch(p.name)));
+        closureProcess.running = true;
+    }
+
+    Process {
+        id: closureProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: win._closureReady(text)
+        }
+    }
+
+    function _closureReady(text) {
+        singleBusyKey = "";
+        singleUpdateStatus = "";
+        const bases = new Set(_closureMembers.map(p => store.stripArch(p.name)));
+        for (const line of (text || "").split("\n")) {
+            if (line.indexOf("replacing") !== -1)
+                continue;
+            const m = /^ {1,2}(\S+) +(x86_64|noarch|i686|aarch64) /.exec(line);
+            if (m)
+                bases.add(m[1]);
+        }
+        const chosen = win.pendingUpdates.filter(p => p.repo !== "flatpak" && bases.has(store.stripArch(p.name)));
+        if (chosen.length === 0)
+            return;
+        if (widgetRoot)
+            widgetRoot.releaseDelayed(chosen.map(p => "system/" + store.stripArch(p.name)));
         engine.start({
-            dnfNames: members.map(p => p.name),
+            dnfNames: chosen.map(p => p.name),
             flatpak: false,
             firmware: false,
             appimage: false
