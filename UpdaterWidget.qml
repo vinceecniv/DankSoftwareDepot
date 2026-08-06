@@ -1054,7 +1054,7 @@ PluginComponent {
                             return count === 0 ? Tr.t("Up to date") : (count === 1 ? Tr.t("%1 update available") : Tr.t("%1 updates available")).arg(count);
                         }
                         font.pixelSize: Theme.fontSizeSmall
-                        color: SystemUpdateService.hasError ? Theme.error : Theme.surfaceVariantText
+                        color: SystemUpdateService.hasError ? Ui.failColor : Theme.surfaceVariantText
                     }
                 }
 

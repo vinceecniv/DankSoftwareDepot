@@ -2193,11 +2193,25 @@ FloatingWindow {
                                         if (windowEmptyArea.containsMouse)
                                             return Tr.t("Check for updates");
                                         if (SystemUpdateService.hasError)
-                                            return Tr.t("Update check failed: %1").arg(SystemUpdateService.errorMessage);
+                                            return Tr.t("Check failed");
                                         return Tr.t("Your system is up to date!");
                                     }
                                     font.pixelSize: Theme.fontSizeLarge
                                     color: Theme.surfaceText
+                                }
+
+                                // The raw service error (curl/dnf output) can be
+                                // arbitrarily long — wrap it in a bounded block
+                                // instead of letting it stretch the hero row.
+                                StyledText {
+                                    visible: SystemUpdateService.hasError && !SystemUpdateService.isChecking && !windowEmptyArea.containsMouse
+                                    text: SystemUpdateService.errorMessage || ""
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Ui.failColor
+                                    wrapMode: Text.WordWrap
+                                    maximumLineCount: 3
+                                    elide: Text.ElideRight
+                                    Layout.maximumWidth: Math.min(520, win.width - 220)
                                 }
 
                                 StyledText {
