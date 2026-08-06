@@ -2156,13 +2156,13 @@ FloatingWindow {
 
                                     DankIcon {
                                         name: "computer"
-                                        size: 16
+                                        size: 20
                                         color: Theme.primary
                                     }
 
                                     StyledText {
                                         text: Tr.t("System")
-                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.pixelSize: Theme.fontSizeMedium
                                         font.weight: Font.DemiBold
                                         color: Theme.surfaceText
                                     }
@@ -2227,13 +2227,13 @@ FloatingWindow {
 
                                     DankIcon {
                                         name: "monitor_heart"
-                                        size: 16
+                                        size: 20
                                         color: Theme.primary
                                     }
 
                                     StyledText {
                                         text: "Status"
-                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.pixelSize: Theme.fontSizeMedium
                                         font.weight: Font.DemiBold
                                         color: Theme.surfaceText
                                     }
@@ -2303,13 +2303,13 @@ FloatingWindow {
 
                                     DankIcon {
                                         name: "apps"
-                                        size: 16
+                                        size: 20
                                         color: Theme.primary
                                     }
 
                                     StyledText {
                                         text: Tr.t("Installed software")
-                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.pixelSize: Theme.fontSizeMedium
                                         font.weight: Font.DemiBold
                                         color: Theme.surfaceText
                                     }
@@ -2394,13 +2394,13 @@ FloatingWindow {
 
                                     DankIcon {
                                         name: "history"
-                                        size: 16
+                                        size: 20
                                         color: Theme.primary
                                     }
 
                                     StyledText {
                                         text: Tr.t("Recently updated")
-                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.pixelSize: Theme.fontSizeMedium
                                         font.weight: Font.DemiBold
                                         color: Theme.surfaceText
                                     }
