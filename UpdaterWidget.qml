@@ -862,7 +862,7 @@ PluginComponent {
                             horizontalPadding: Theme.spacingM
                             text: root.confirmReboot ? Tr.t("Confirm?") : Tr.t("Restart")
                             backgroundColor: root.confirmReboot ? Theme.error : Theme.buttonBg
-                            textColor: root.confirmReboot ? Theme.primaryText : Theme.buttonText
+                            textColor: root.confirmReboot ? Ui.onColor(Theme.error) : Theme.buttonText
                             onClicked: root.requestReboot()
                         }
                     }

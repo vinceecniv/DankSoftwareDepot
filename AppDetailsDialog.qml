@@ -1417,10 +1417,9 @@ Item {
                         iconSize: 14
                         text: dialog._confirmUninstall === (dialog.appData.id || "") ? Tr.t("Confirm uninstall?") : Tr.t("Uninstall")
                         backgroundColor: dialog._confirmUninstall === (dialog.appData.id || "") ? Theme.error : Theme.errorPressed
-                        // On the solid error fill, surfaceText is near-invisible in dark
-                        // mode (white on light pink); primaryText is the on-color DMS
-                        // pairs with Theme.error backgrounds.
-                        textColor: dialog._confirmUninstall === (dialog.appData.id || "") ? Theme.primaryText : Theme.surfaceText
+                        // On the solid error fill, pick black/white by the fill's
+                        // lightness — no theme tone is guaranteed to contrast.
+                        textColor: dialog._confirmUninstall === (dialog.appData.id || "") ? Ui.onColor(Theme.error) : Theme.surfaceText
                         enabled: !dialog.busy
                         onClicked: {
                             if (dialog._confirmUninstall === (dialog.appData.id || "")) {

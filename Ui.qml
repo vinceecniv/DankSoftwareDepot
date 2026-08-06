@@ -11,6 +11,13 @@ Item {
     // an unreadable salmon on light surfaces.
     readonly property color failColor: (Theme.isLightMode && Theme.error.hslLightness > 0.55) ? Qt.darker(Theme.error, 1.8) : Theme.error
 
+    // Text color with guaranteed contrast on a colored fill: the theme has
+    // no on-error tone, and Theme.primaryText can land on the same side of
+    // the lightness scale as Theme.error.
+    function onColor(bg) {
+        return bg.hslLightness > 0.55 ? Qt.rgba(0, 0, 0, 0.87) : "#FFFFFF";
+    }
+
     // Search-field caret: hidden while the field is empty (focus is already
     // visible through the field border); once text is entered a normally
     // blinking caret appears. Custom cursorDelegates don't blink by

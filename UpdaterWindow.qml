@@ -1411,7 +1411,7 @@ FloatingWindow {
                         iconSize: 15
                         text: (win.widgetRoot && win.widgetRoot.confirmReboot) ? Tr.t("Confirm restart?") : Tr.t("Restart now")
                         backgroundColor: (win.widgetRoot && win.widgetRoot.confirmReboot) ? Theme.error : Theme.buttonBg
-                        textColor: (win.widgetRoot && win.widgetRoot.confirmReboot) ? Theme.primaryText : Theme.buttonText
+                        textColor: (win.widgetRoot && win.widgetRoot.confirmReboot) ? Ui.onColor(Theme.error) : Theme.buttonText
                         onClicked: win.widgetRoot.requestReboot()
                     }
                 }
