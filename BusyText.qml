@@ -27,31 +27,35 @@ Row {
         font.weight: root.weight
     }
 
-    StyledText {
+    // Three individual dots with a phase-shifted brightness wave sliding
+    // across them left to right.
+    Row {
         id: dots
 
         visible: root._dots
-        text: "…"
-        color: root.color
-        font.pixelSize: root.pixelSize
-        font.weight: root.weight
+        spacing: 0
 
-        SequentialAnimation on opacity {
+        property real phase: 0
+
+        NumberAnimation on phase {
             running: dots.visible
             loops: Animation.Infinite
+            from: 0
+            to: 2 * Math.PI
+            duration: 1500
+        }
 
-            NumberAnimation {
-                from: 1
-                to: 0.1
-                duration: 700
-                easing.type: Easing.InOutSine
-            }
+        Repeater {
+            model: 3
 
-            NumberAnimation {
-                from: 0.1
-                to: 1
-                duration: 700
-                easing.type: Easing.InOutSine
+            StyledText {
+                required property int index
+
+                text: "."
+                color: root.color
+                font.pixelSize: root.pixelSize
+                font.weight: root.weight
+                opacity: 0.25 + 0.75 * Math.max(0, Math.sin(dots.phase - index * 1.1))
             }
         }
     }
