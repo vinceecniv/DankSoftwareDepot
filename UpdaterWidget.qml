@@ -384,7 +384,8 @@ PluginComponent {
         if (count !== _lastNotifiedCount) {
             _lastNotifiedCount = count;
             const text = (count === 1 ? Tr.t("%1 update available") : Tr.t("%1 updates available")).arg(count);
-            Quickshell.execDetached(["notify-send", "-a", "Dank Software Depot", "-i", "software-update-available", text]);
+            const iconFile = Qt.resolvedUrl("assets/icons/dank-software-depot-" + (Theme.isLightMode ? "light" : "dark") + ".svg").toString().replace("file://", "");
+            Quickshell.execDetached(["notify-send", "-a", "Dank Software Depot", "-i", iconFile, text]);
         }
         if (autoUpdateMode === "auto" && !engine.running && !SystemUpdateService.isUpgrading) {
             const delayed = new Set(delayedKeys);
@@ -585,6 +586,7 @@ PluginComponent {
         heldKeys: root.heldSystemKeys
         delayedKeys: root.delayedKeys
         pendingUpdates: root.pendingUpdates
+        packageSizes: (root.updateSizes && root.updateSizes.rpmSizes) || ({})
         firmwareService: root.includeFirmware ? firmware : null
         appimageUpdates: root.appimageUpdates
 
