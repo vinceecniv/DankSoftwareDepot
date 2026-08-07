@@ -259,5 +259,7 @@
     "A computer restart is recommended to finish applying updates.": "En omstart av datorn rekommenderas för att slutföra uppdateringarna.",
     "Install from %1": "Installera från %1",
     "Search new software (%1 repos + Flathub)…": "Sök ny programvara (%1-förråd + Flathub)…",
-    "Type to search %1 repos and Flathub": "Skriv för att söka i %1-förråd och Flathub"
+    "Type to search %1 repos and Flathub": "Skriv för att söka i %1-förråd och Flathub",
+    "Report an issue": "Rapportera ett problem",
+    "%1 support is experimental — please report anything that misbehaves.": "Stödet för %1 är experimentellt — rapportera allt som inte fungerar."
 }

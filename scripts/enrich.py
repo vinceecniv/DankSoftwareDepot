@@ -405,7 +405,7 @@ def compute_holds(rpm_names):
     entry, or when it is built from the same source package as a locked
     package (locking freerdp effectively holds freerdp-libs/libwinpr too).
     """
-    if BACKEND == "apt":
+    if BACKEND != "dnf":
         held_all = pkg_backend.holds()
         return {name: held_all[name] for name in rpm_names if name in held_all}
     import fnmatch
@@ -444,7 +444,7 @@ def strip_arch(name):
 
 
 def run_changelog(pkg):
-    if BACKEND == "apt":
+    if BACKEND != "dnf":
         # apt changelogs come from the network (packages.debian.org) — too
         # slow for this synchronous path; the UI shows its no-notes state
         print("")
@@ -633,7 +633,7 @@ def dnf_name_search(query):
 
     Covers command-line tools without AppStream metadata (e.g. playerctl)
     that `dnf search` finds but the catalog index does not."""
-    if BACKEND == "apt":
+    if BACKEND != "dnf":
         return pkg_backend.name_search(query)
     if not re.match(r"^[\w.+-]+$", query):
         return []
@@ -872,7 +872,7 @@ def cache_screenshots(urls):
 
 def rpm_repoquery_info(pkg):
     """Description, license and sizes for an rpm via cache-only repoquery."""
-    if BACKEND == "apt":
+    if BACKEND != "dnf":
         return pkg_backend.package_info(pkg)
     try:
         res = subprocess.run(
@@ -1283,7 +1283,7 @@ def run_update_sizes(arg):
     rpm_known = 0
     rpm_map = {}
     rpm_names = [n for n in (request.get("rpm") or []) if re.match(r"^[\w.+-]+$", n)]
-    if rpm_names and BACKEND == "apt":
+    if rpm_names and BACKEND != "dnf":
         rpm_bytes, rpm_map = pkg_backend.update_sizes(rpm_names)
         rpm_known = len(rpm_map)
     elif rpm_names:
@@ -1323,7 +1323,7 @@ DISTRO_UPGRADE_CACHE = os.path.join(CACHE_DIR, "distro-upgrade.json")
 
 def run_distro_upgrade():
     """Is a newer Fedora release available? (Bodhi, cached daily)"""
-    if BACKEND == "apt":
+    if BACKEND != "dnf":
         json.dump({}, sys.stdout)
         return
     import time
@@ -1409,12 +1409,13 @@ def run_dashboard():
     recent = []
 
     # system package counts + recent installs
-    if BACKEND == "apt":
+    if BACKEND != "dnf":
         dash = pkg_backend.dashboard()
         out["rpmTotal"] = dash["total"]
         for entry in dash["recent"]:
             recent.append({"name": entry["name"], "source": "System", "ts": entry["ts"]})
-        out["coprCount"] = 0
+        # On Arch this is the AUR/foreign-package count
+        out["coprCount"] = dash.get("foreign", 0)
     else:
         rpm_lines = []
         try:

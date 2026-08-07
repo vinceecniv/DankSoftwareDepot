@@ -28,7 +28,7 @@ _backend = None
 
 
 def detect():
-    """"apt" on the Debian family, "dnf" otherwise (the default)."""
+    """"apt" (Debian family), "pacman" (Arch family) or "dnf" (default)."""
     global _backend
     if _backend is None:
         _backend = "dnf"
@@ -37,9 +37,28 @@ def detect():
                 osr = f.read()
             if re.search(r"^(ID|ID_LIKE)=.*?(debian|ubuntu)", osr, re.M | re.I):
                 _backend = "apt"
+            elif re.search(r"^(ID|ID_LIKE)=.*?(arch|manjaro)", osr, re.M | re.I):
+                _backend = "pacman"
         except OSError:
             pass
     return _backend
+
+
+def _alpm():
+    """Read-only libalpm handle over the on-disk databases."""
+    import pyalpm
+    handle = pyalpm.Handle("/", "/var/lib/pacman")
+    for path in glob.glob("/var/lib/pacman/sync/*.db"):
+        handle.register_syncdb(os.path.basename(path)[:-3], 0)
+    return handle
+
+
+def _alpm_sync_pkg(handle, name):
+    for db in handle.get_syncdbs():
+        pkg = db.get_pkg(name)
+        if pkg is not None:
+            return pkg
+    return None
 
 
 def _human(size):
@@ -56,12 +75,23 @@ def _cache():
 
 
 def name_search(query):
-    """Match packages by name — the apt mirror of dnf_name_search."""
+    """Match packages by name — mirror of dnf_name_search."""
     if not re.match(r"^[\w.+-]+$", query):
         return []
     needle = query.lower()
     out = []
     try:
+        if detect() == "pacman":
+            seen = set()
+            for db in _alpm().get_syncdbs():
+                for pkg in db.pkgcache:
+                    if needle in pkg.name and pkg.name not in seen:
+                        seen.add(pkg.name)
+                        out.append({"name": pkg.name, "homepage": pkg.url or "",
+                                    "summary": pkg.desc or ""})
+                        if len(out) >= 400:
+                            return out
+            return out
         for pkg in _cache():
             if needle not in pkg.name or re.search(r"-(dbg|dbgsym)$", pkg.name):
                 continue
@@ -78,8 +108,27 @@ def name_search(query):
 
 
 def package_info(name):
-    """Description and sizes — the apt mirror of rpm_repoquery_info."""
+    """Description and sizes — mirror of rpm_repoquery_info."""
     out = {}
+    if detect() == "pacman":
+        try:
+            handle = _alpm()
+            pkg = _alpm_sync_pkg(handle, name) or handle.get_localdb().get_pkg(name)
+            if pkg is None:
+                return out
+            if pkg.desc:
+                out["descriptionHtml"] = "<p>" + html.escape(pkg.desc) + "</p>"
+            if getattr(pkg, "download_size", 0):
+                out["download"] = _human(pkg.download_size)
+            if pkg.isize:
+                out["installed"] = _human(pkg.isize)
+            if pkg.url:
+                out["homepage"] = pkg.url
+            if pkg.licenses:
+                out["license"] = " / ".join(pkg.licenses)
+        except Exception:
+            pass
+        return out
     try:
         cache = _cache()
         if name not in cache:
@@ -107,6 +156,14 @@ def update_sizes(names):
     total = 0
     sizes = {}
     try:
+        if detect() == "pacman":
+            handle = _alpm()
+            for name in names:
+                pkg = _alpm_sync_pkg(handle, name)
+                if pkg is not None and pkg.download_size:
+                    sizes[name] = int(pkg.download_size)
+                    total += int(pkg.download_size)
+            return total, sizes
         cache = _cache()
         for name in names:
             if name not in cache:
@@ -122,7 +179,25 @@ def update_sizes(names):
 
 def dashboard():
     """Installed count and recently-changed packages. dpkg records no
-    install time; the package's .list file mtime is the standard stand-in."""
+    install time; the package's .list file mtime is the standard stand-in.
+    libalpm records real install dates. The "foreign" count covers AUR
+    (and other out-of-repo) packages on Arch."""
+    if detect() == "pacman":
+        total = 0
+        recent = []
+        foreign = 0
+        try:
+            handle = _alpm()
+            pkgs = handle.get_localdb().pkgcache
+            total = len(pkgs)
+            for pkg in pkgs:
+                if _alpm_sync_pkg(handle, pkg.name) is None:
+                    foreign += 1
+            for pkg in sorted(pkgs, key=lambda p: -(p.installdate or 0))[:50]:
+                recent.append({"name": pkg.name, "ts": int(pkg.installdate or 0)})
+        except Exception:
+            pass
+        return {"total": total, "recent": recent, "foreign": foreign}
     total = 0
     recent = []
     try:
@@ -141,14 +216,23 @@ def dashboard():
         recent = [{"name": name, "ts": ts} for ts, name in entries[:50]]
     except (OSError, subprocess.SubprocessError):
         pass
-    return {"total": total, "recent": recent}
+    return {"total": total, "recent": recent, "foreign": 0}
 
 
 def installed_table():
     """TSV matching the rpm inventory the Installed view parses:
     name<TAB>version<TAB>size-bytes<TAB>installtime, sorted by name.
     dpkg reports Installed-Size in KiB and records no install time; the
-    .list file mtime is the stand-in."""
+    .list file mtime is the stand-in. libalpm has both natively."""
+    if detect() == "pacman":
+        rows = []
+        try:
+            for pkg in _alpm().get_localdb().pkgcache:
+                rows.append((pkg.name, pkg.version, int(pkg.isize or 0), int(pkg.installdate or 0)))
+        except Exception:
+            pass
+        rows.sort()
+        return "\n".join(f"{n}\t{v}\t{s}\t{t}" for n, v, s, t in rows)
     rows = []
     try:
         res = subprocess.run(["dpkg-query", "-W", "-f", "${Package}\t${Version}\t${Installed-Size}\n"],
@@ -174,7 +258,20 @@ def installed_table():
 
 
 def holds():
-    """{name: reason} — the apt mirror of compute_holds (apt-mark showhold)."""
+    """{name: reason} — apt-mark holds, or pacman.conf IgnorePkg entries."""
+    if detect() == "pacman":
+        out = {}
+        try:
+            with open("/etc/pacman.conf") as f:
+                for line in f:
+                    m = re.match(r"\s*IgnorePkg\s*=\s*(.+)", line)
+                    if m:
+                        for name in re.split(r"\s+", m.group(1).strip()):
+                            if name:
+                                out[name] = "IgnorePkg"
+        except OSError:
+            pass
+        return out
     out = {}
     try:
         res = subprocess.run(["apt-mark", "showhold"],
@@ -189,7 +286,11 @@ def holds():
 
 
 def available_versions(name):
-    """All available versions, newest first — feeds "Previous versions"."""
+    """All available versions, newest first — feeds "Previous versions".
+    pacman repositories carry only the newest version, so the Arch answer
+    is always empty (the UI shows its no-older-versions state)."""
+    if detect() == "pacman":
+        return []
     out = []
     try:
         import functools

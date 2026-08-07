@@ -11,11 +11,12 @@ import Quickshell.Io
 Item {
     id: backend
 
-    // "dnf" (Fedora/RHEL family, default) or "apt" (Debian/Ubuntu family)
+    // "dnf" (Fedora/RHEL family, default), "apt" (Debian/Ubuntu family)
+    // or "pacman" (Arch family)
     property string backendId: "dnf"
 
     // Transaction helper implementing the NDJSON event protocol
-    readonly property string packageHelper: Qt.resolvedUrl("scripts/" + (backendId === "apt" ? "apt_helper.py" : "rpm_helper.py")).toString().replace("file://", "")
+    readonly property string packageHelper: Qt.resolvedUrl("scripts/" + (backendId === "apt" ? "apt_helper.py" : (backendId === "pacman" ? "pacman_helper.py" : "rpm_helper.py"))).toString().replace("file://", "")
 
     // Command for a privileged helper transaction
     function helperCommand(action, specs) {
@@ -27,6 +28,8 @@ Item {
     function installedVersionsCommand(names) {
         if (backendId === "apt")
             return ["dpkg-query", "-W", "-f", "${Package}\\t${Version}\\n"].concat(names);
+        if (backendId === "pacman")
+            return ["sh", "-c", "LC_ALL=C pacman -Q " + names.join(" ") + " 2>/dev/null | sed 's/ /\\t/'"];
         return ["rpm", "-q", "--qf", "%{NAME}\\t%{EVR}\\n"].concat(names);
     }
 
@@ -34,29 +37,35 @@ Item {
 
     // Full installed inventory as "name<TAB>version<TAB>bytes<TAB>installtime"
     function installedTableCommand() {
-        if (backendId === "apt")
+        if (backendId === "apt" || backendId === "pacman")
             return ["python3", metadataHelper, "installed-table"];
         return ["sh", "-c", "rpm -qa --qf '%{NAME}\\t%{VERSION}-%{RELEASE}\\t%{SIZE}\\t%{INSTALLTIME}\\n' 2>/dev/null | sort"];
     }
 
     // Shell fragment printing one installed package name per line (embedded
     // in compound sh commands)
-    readonly property string installedNamesShellFragment: backendId === "apt" ? "dpkg-query -W -f '${Package}\\n' 2>/dev/null" : "rpm -qa --qf '%{NAME}\\n' 2>/dev/null"
+    readonly property string installedNamesShellFragment: backendId === "apt" ? "dpkg-query -W -f '${Package}\\n' 2>/dev/null" : (backendId === "pacman" ? "pacman -Qq 2>/dev/null" : "rpm -qa --qf '%{NAME}\\n' 2>/dev/null")
 
     // Available versions for the previous-versions feature. dnf prints
     // plain ascending version lines; the apt path prints a JSON array
     // (newest first, installed flagged) — consumers branch on the shape.
     function availableVersionsCommand(name) {
-        if (backendId === "apt")
+        if (backendId === "apt" || backendId === "pacman")
             return ["python3", metadataHelper, "versions", name];
         return ["sh", "-c", "LC_ALL=C dnf -Cq repoquery --qf '%{version}-%{release}\\n' " + name + " 2>/dev/null | sort -uV"];
     }
 
     // Packages whose update warrants the reboot recommendation
-    readonly property var rebootPackagePattern: backendId === "apt" ? /^(linux-image|linux-firmware|systemd|libc6|dbus|mesa|grub|shim|intel-microcode|amd64-microcode|nvidia)/ : /^(kernel|linux-firmware|systemd|glibc|dbus|mesa|amd-gpu-firmware|intel-gpu-firmware|nvidia|microcode_ctl|shim|grub2)/
+    readonly property var rebootPackagePattern: {
+        if (backendId === "apt")
+            return /^(linux-image|linux-firmware|systemd|libc6|dbus|mesa|grub|shim|intel-microcode|amd64-microcode|nvidia)/;
+        if (backendId === "pacman")
+            return /^(linux(-lts|-zen|-hardened)?$|linux-firmware|systemd|glibc|dbus|mesa|nvidia|amd-ucode|intel-ucode|grub)/;
+        return /^(kernel|linux-firmware|systemd|glibc|dbus|mesa|amd-gpu-firmware|intel-gpu-firmware|nvidia|microcode_ctl|shim|grub2)/;
+    }
 
     // Human label of the system package source ("Install from %1")
-    readonly property string systemRepoLabel: backendId === "apt" ? "Debian" : "Fedora"
+    readonly property string systemRepoLabel: backendId === "apt" ? "Debian" : (backendId === "pacman" ? "Arch" : "Fedora")
 
     FileView {
         path: "/etc/os-release"
@@ -65,6 +74,8 @@ Item {
             const os = text();
             if (/(^|\n)(ID|ID_LIKE)=.*(debian|ubuntu)/im.test(os))
                 backend.backendId = "apt";
+            else if (/(^|\n)(ID|ID_LIKE)=.*(arch|manjaro)/im.test(os))
+                backend.backendId = "pacman";
         }
     }
 }

@@ -9,14 +9,13 @@ Three helpers implement the protocol today:
 |---|---|---|
 | `scripts/rpm_helper.py` | libdnf5 (python3-libdnf5) | rpm install / remove / upgrade / downgrade / plan |
 | `scripts/apt_helper.py` | python-apt (python3-apt) | deb install / remove / upgrade / downgrade / plan |
+| `scripts/pacman_helper.py` | pyalpm | pacman install / remove / upgrade / plan (official repos only, no AUR) |
 | `scripts/flatpak_helper.py` | libflatpak (gi) | flatpak update / install (+ eol listing) |
 
 `Backend.qml` picks the transaction helper from the detected distro
-family (`/etc/os-release`). The protocol is deliberately package-manager-
-agnostic: an Arch port ships a `pacman_helper.py` (pyalpm) speaking the
-same events, and the QML layer needs no changes at the transaction
-level. See [Porting inventory](#porting-inventory) for what lives
-outside this protocol.
+family (`/etc/os-release`). The protocol is deliberately package-
+manager-agnostic — the QML layer needs no changes per backend. See
+[Porting inventory](#porting-inventory) for what lives outside it.
 
 ## CLI contract
 
@@ -103,8 +102,15 @@ Debian family `scripts/pkg_backend.py` provides the apt implementations.
 | Package changelogs | dnf/rpm changelog | **gap** — apt changelogs need the network |
 | AppStream catalog for system apps | Fedora swcatalog | **untested** — depends on DEP-11 data location |
 
-Known open items for full Debian parity: apt changelogs, the DEP-11
-AppStream catalog path, and confirming the DMS daemon's update checks on
-a real Debian install. An Arch port follows the same recipe: a
-`pacman_helper.py` (pyalpm) for transactions plus pacman entries in
-`pkg_backend.py`.
+The pacman column of `pkg_backend.py` mirrors the same functions via a
+read-only libalpm handle: real install dates, IgnorePkg holds, an
+AUR/foreign count on the dashboard, and an always-empty previous-versions
+answer (pacman repos keep no history). AUR is deliberately out of scope
+for transactions: read-only awareness (update notices via the AUR RPC)
+is a possible later step; building or installing AUR packages from a GUI
+is not — the interactive PKGBUILD review exists for safety.
+
+Known open items for parity: apt/pacman changelogs, the AppStream
+catalog paths (DEP-11 on Debian, `archlinux-appstream-data` on Arch),
+and confirming the DMS daemon's update checks on real installs of both
+families.

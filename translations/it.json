@@ -259,5 +259,7 @@
     "A computer restart is recommended to finish applying updates.": "Si consiglia di riavviare il computer per completare l’applicazione degli aggiornamenti.",
     "Install from %1": "Installa da %1",
     "Search new software (%1 repos + Flathub)…": "Cerca nuovo software (repository %1 + Flathub)…",
-    "Type to search %1 repos and Flathub": "Digita per cercare nei repository %1 e su Flathub"
+    "Type to search %1 repos and Flathub": "Digita per cercare nei repository %1 e su Flathub",
+    "Report an issue": "Segnala un problema",
+    "%1 support is experimental — please report anything that misbehaves.": "Il supporto per %1 è sperimentale — segnala qualsiasi malfunzionamento."
 }

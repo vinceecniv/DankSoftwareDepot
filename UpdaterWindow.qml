@@ -821,7 +821,7 @@ FloatingWindow {
             onStreamFinished: {
                 const parts = text.trim().split("|");
                 const ids = (parts[0] || "").toLowerCase().split(/\s+/).filter(t => t !== "");
-                const supported = ["fedora", "debian", "ubuntu"].some(id => ids.indexOf(id) >= 0);
+                const supported = ["fedora", "debian", "ubuntu", "arch", "manjaro"].some(id => ids.indexOf(id) >= 0);
                 win.osIncompatiblePretty = (ids.length > 0 && !supported) ? ((parts[1] || "").trim() || parts[0].trim()) : "";
             }
         }
@@ -1278,6 +1278,58 @@ FloatingWindow {
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.surfaceText
                     wrapMode: Text.WordWrap
+                }
+            }
+        }
+
+        // ── Experimental-backend notice (Debian/Ubuntu, Arch) ───────────────
+        Rectangle {
+            Layout.fillWidth: true
+            visible: Backend.backendId !== "dnf"
+            implicitHeight: aptNoticeRow.implicitHeight + Theme.spacingM * 2
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.secondary, 0.12)
+            border.width: 1
+            border.color: Theme.withAlpha(Theme.secondary, 0.3)
+
+            RowLayout {
+                id: aptNoticeRow
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingM
+                spacing: Theme.spacingM
+
+                DankIcon {
+                    name: "science"
+                    size: 20
+                    color: Theme.secondary
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: Tr.t("%1 support is experimental — please report anything that misbehaves.").arg(Backend.systemRepoLabel)
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceText
+                    wrapMode: Text.WordWrap
+                }
+
+                Item {
+                    implicitWidth: aptIssueButton.width
+                    implicitHeight: aptIssueButton.height
+
+                    DankButton {
+                        id: aptIssueButton
+                        buttonHeight: 28
+                        horizontalPadding: Theme.spacingM
+                        iconName: "bug_report"
+                        iconSize: 14
+                        text: Tr.t("Report an issue")
+                        backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                        textColor: Theme.buttonText
+                        onClicked: Qt.openUrlExternally(win.githubUrl + "/issues")
+                    }
                 }
             }
         }
@@ -2324,12 +2376,14 @@ FloatingWindow {
                                     model: {
                                         const dash = win.dashboard || {};
                                         const copr = dash.coprCount || 0;
+                                        // Second row: COPR on Fedora, AUR/foreign on Arch,
+                                        // nothing comparable on Debian
                                         return [
-                                            { label: "Fedora", icon: "memory", count: Math.max(0, (dash.rpmTotal || 0) - copr) },
-                                            { label: "COPR", icon: "science", count: copr },
+                                            { label: Backend.systemRepoLabel, icon: "memory", count: Math.max(0, (dash.rpmTotal || 0) - copr) },
+                                            { label: Backend.backendId === "pacman" ? "AUR" : "COPR", icon: "science", count: copr },
                                             { label: "Flatpak", icon: "apps", count: dash.flatpakCount || 0 },
                                             { label: "AppImage", icon: "deployed_code", count: dash.appimageCount || 0 }
-                                        ];
+                                        ].filter(row => row.label !== "COPR" && row.label !== "AUR" || row.count > 0 || Backend.backendId === "dnf");
                                     }
 
                                     delegate: RowLayout {

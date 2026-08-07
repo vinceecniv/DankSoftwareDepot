@@ -259,5 +259,7 @@
     "A computer restart is recommended to finish applying updates.": "Een computerherstart wordt aanbevolen om de updates volledig door te voeren.",
     "Install from %1": "Installeren via %1",
     "Search new software (%1 repos + Flathub)…": "Nieuwe software zoeken (%1-repos + Flathub)…",
-    "Type to search %1 repos and Flathub": "Typ om te zoeken in %1-repos en Flathub"
+    "Type to search %1 repos and Flathub": "Typ om te zoeken in %1-repos en Flathub",
+    "Report an issue": "Probleem melden",
+    "%1 support is experimental — please report anything that misbehaves.": "%1-ondersteuning is experimenteel — meld alles wat niet goed werkt."
 }

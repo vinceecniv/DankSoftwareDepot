@@ -259,5 +259,7 @@
     "A computer restart is recommended to finish applying updates.": "建议重启计算机以完成更新的应用。",
     "Install from %1": "从 %1 安装",
     "Search new software (%1 repos + Flathub)…": "搜索新软件（%1 仓库 + Flathub）…",
-    "Type to search %1 repos and Flathub": "输入以搜索 %1 仓库和 Flathub"
+    "Type to search %1 repos and Flathub": "输入以搜索 %1 仓库和 Flathub",
+    "Report an issue": "报告问题",
+    "%1 support is experimental — please report anything that misbehaves.": "%1 支持仍处于实验阶段 — 请报告任何异常。"
 }
