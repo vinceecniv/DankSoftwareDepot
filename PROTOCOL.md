@@ -3,18 +3,20 @@
 The QML layer never scrapes package-manager output. Every transaction runs
 through a small privileged helper that talks to the package manager's
 *library* and reports newline-delimited JSON (NDJSON) events on stdout.
-Two helpers implement the protocol today:
+Three helpers implement the protocol today:
 
 | Helper | Library | Covers |
 |---|---|---|
 | `scripts/rpm_helper.py` | libdnf5 (python3-libdnf5) | rpm install / remove / upgrade / downgrade / plan |
+| `scripts/apt_helper.py` | python-apt (python3-apt) | deb install / remove / upgrade / downgrade / plan |
 | `scripts/flatpak_helper.py` | libflatpak (gi) | flatpak update / install (+ eol listing) |
 
-The protocol is deliberately package-manager-agnostic: a Debian or Arch
-port ships an `apt_helper.py` (python-apt) or `pacman_helper.py` (pyalpm)
-speaking the same events, and the QML layer needs no changes at the
-transaction level. See [Porting inventory](#porting-inventory) for what
-lives outside this protocol.
+`Backend.qml` picks the transaction helper from the detected distro
+family (`/etc/os-release`). The protocol is deliberately package-manager-
+agnostic: an Arch port ships a `pacman_helper.py` (pyalpm) speaking the
+same events, and the QML layer needs no changes at the transaction
+level. See [Porting inventory](#porting-inventory) for what lives
+outside this protocol.
 
 ## CLI contract
 
@@ -88,7 +90,7 @@ implementation):
 |---|---|
 | Update checks & counts | DMS `SystemUpdateService` daemon (multi-backend on the DMS side) |
 | Shell self-update pass | DMS daemon (`DMSService.sysupdateUpgrade`) — must survive the shell reload |
-| Post-run verification | `rpm -q` EVR compare (UpdateEngine, UpdaterWidget log replay) |
+| Post-run verification | `Backend.installedVersionsCommand`: `rpm -q` / `dpkg-query -W` version compare |
 | Search & app metadata | `scripts/enrich.py`: dnf repoquery/search, rpm changelog, AppStream |
 | Update sizes | `dnf repoquery --info` (`--update-sizes`) |
 | Previous versions / restore | `dnf5 --showduplicates` + helper `downgrade` |

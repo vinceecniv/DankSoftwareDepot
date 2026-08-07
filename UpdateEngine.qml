@@ -995,7 +995,7 @@ Item {
             _daemonPassDone(0, 0);
             return;
         }
-        verifyProcess.command = ["rpm", "-q", "--qf", "%{NAME}\\t%{EVR}\\n"].concat(names);
+        verifyProcess.command = Backend.installedVersionsCommand(names);
         verifyProcess.running = true;
     }
 

@@ -427,7 +427,7 @@ PluginComponent {
         const stash = pluginData.pendingShellRunLog;
         if (!stash || !(stash.shell || []).length)
             return;
-        replayVerifyProcess.command = ["rpm", "-q", "--qf", "%{NAME}\\t%{EVR}\\n"].concat(stash.shell.map(s => s.base));
+        replayVerifyProcess.command = Backend.installedVersionsCommand(stash.shell.map(s => s.base));
         replayVerifyProcess.running = true;
     }
 
