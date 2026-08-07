@@ -1295,7 +1295,9 @@ PluginComponent {
                 anchors.bottomMargin: Theme.spacingL
                 height: 40
                 spacing: Theme.spacingM
-                visible: root.effectiveCount > 0 || engine.running
+                // Hidden while a finished run's trailing check still lists
+                // the just-updated packages
+                visible: (root.effectiveCount > 0 && !(engine.phase !== "idle" && !engine.running && SystemUpdateService.isChecking)) || engine.running
 
                 DankButton {
                     width: (parent.width - Theme.spacingM) / 2

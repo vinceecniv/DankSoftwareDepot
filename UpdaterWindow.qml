@@ -2504,8 +2504,11 @@ FloatingWindow {
                     // run (waiting on the pre-run check), so flip to Cancel
                     // immediately
                     readonly property bool busyRun: win.engine.running || win.engine.deferred
+                    // Between a finished run and its trailing check the stale
+                    // list would re-offer "Update All" for a few seconds
+                    readonly property bool settling: win.engine.phase !== "idle" && !busyRun && SystemUpdateService.isChecking
 
-                    visible: busyRun || win.effectiveCount > 0
+                    visible: busyRun || (win.effectiveCount > 0 && !settling)
                     text: busyRun ? Tr.t("Cancel") : (Tr.t("Update All") + ((win.widgetRoot && win.widgetRoot.updateSizeText !== "") ? " · " + win.widgetRoot.updateSizeText : ""))
                     iconName: busyRun ? "close" : "download"
                     backgroundColor: busyRun ? Theme.errorPressed : Theme.buttonBg

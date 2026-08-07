@@ -1323,6 +1323,9 @@ Item {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: Theme.spacingS
+                    // The busy detail in the right-hand row can grow long
+                    // (download counters) — yield the space during a run
+                    visible: !dialog.busy
 
                     DankActionButton {
                         buttonSize: 30
@@ -1374,6 +1377,8 @@ Item {
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.Medium
                         color: Theme.primary
+                        elide: Text.ElideLeft
+                        width: Math.min(implicitWidth, 260)
                     }
 
                     M3WaveProgress {
