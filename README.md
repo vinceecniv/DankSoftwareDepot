@@ -68,13 +68,13 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 ### 3 · Install
 - **Popular-software storefront** before you search: most-reviewed apps
   (ODRS) grouped by category, one-click install
-- Live search across Fedora repos and Flathub (cached AppStream index),
-  plus a dnf name fallback so plain CLI packages (e.g. `playerctl`) are
-  found too
+- Live search across the system repos and Flathub (cached AppStream
+  index), plus a package-name fallback so plain CLI packages
+  (e.g. `playerctl`) are found too
 - **Source choice** when an app ships from multiple sources
-  (Fedora / Flathub / AppImage)
+  (system repo / Flathub / AppImage)
 - ODRS star ratings with review counts
-- Live install progress: dnf5 output and libflatpak transaction events are
+- Live install progress: package-manager library and libflatpak events are
   turned into a progress panel with app icon, phase text and a transaction-
   wide percentage (repositories → download x/y → install)
 - **AppImage support**: searchable catalog (appimage.github.io, 1400+ apps),

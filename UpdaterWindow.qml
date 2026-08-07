@@ -451,7 +451,7 @@ FloatingWindow {
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: Tr.t("Supports Fedora packages (rpm/dnf), Flatpak and AppImage.")
+                    text: Tr.t("Supports %1 packages, Flatpak and AppImage.").arg(Backend.systemRepoLabel)
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.surfaceText
                     wrapMode: Text.WordWrap

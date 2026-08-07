@@ -250,7 +250,6 @@
     "Update and reload shell": "Bijwerken en shell herladen",
     "Updating…": "Bijwerken…",
     "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.": "Softwarecentrum voor DMS: updates met voortgang, release notes, app store met reviews, beheer van geïnstalleerde software, firmware en een actielogboek.",
-    "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "Ondersteunt Fedora-pakketten (rpm/dnf), Flatpak en AppImage.",
     "Display name (shown with your review)": "Weergavenaam (staat bij je review)",
     "the update service did not start this pass — try again": "de updateservice startte deze stap niet — probeer opnieuw",
     "downloaded": "gedownload",
@@ -261,5 +260,6 @@
     "Search new software (%1 repos + Flathub)…": "Nieuwe software zoeken (%1-repos + Flathub)…",
     "Type to search %1 repos and Flathub": "Typ om te zoeken in %1-repos en Flathub",
     "Report an issue": "Probleem melden",
-    "%1 support is experimental — please report anything that misbehaves.": "%1-ondersteuning is experimenteel — meld alles wat niet goed werkt."
+    "%1 support is experimental — please report anything that misbehaves.": "%1-ondersteuning is experimenteel — meld alles wat niet goed werkt.",
+    "Supports %1 packages, Flatpak and AppImage.": "Ondersteunt %1-pakketten, Flatpak en AppImage."
 }

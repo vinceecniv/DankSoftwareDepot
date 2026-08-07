@@ -250,7 +250,6 @@
     "Update and reload shell": "Aktualisieren und Shell neu laden",
     "Updating…": "Aktualisiere…",
     "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.": "Softwarecenter für DMS: Updates mit Fortschritt, Release Notes, App-Store mit Bewertungen, Verwaltung installierter Software, Firmware und ein Aktionsprotokoll.",
-    "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "Unterstützt Fedora-Pakete (rpm/dnf), Flatpak und AppImage.",
     "Display name (shown with your review)": "Anzeigename (steht bei deiner Bewertung)",
     "the update service did not start this pass — try again": "der Update-Dienst hat diesen Schritt nicht gestartet — bitte erneut versuchen",
     "downloaded": "heruntergeladen",
@@ -261,5 +260,6 @@
     "Search new software (%1 repos + Flathub)…": "Neue Software suchen (%1-Repos + Flathub)…",
     "Type to search %1 repos and Flathub": "Tippen, um %1-Repos und Flathub zu durchsuchen",
     "Report an issue": "Problem melden",
-    "%1 support is experimental — please report anything that misbehaves.": "Die %1-Unterstützung ist experimentell — bitte melde alles, was nicht richtig funktioniert."
+    "%1 support is experimental — please report anything that misbehaves.": "Die %1-Unterstützung ist experimentell — bitte melde alles, was nicht richtig funktioniert.",
+    "Supports %1 packages, Flatpak and AppImage.": "Unterstützt %1-Pakete, Flatpak und AppImage."
 }

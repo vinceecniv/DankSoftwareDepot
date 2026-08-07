@@ -250,7 +250,6 @@
     "Update and reload shell": "更新并重新加载 shell",
     "Updating…": "正在更新…",
     "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.": "DMS 的软件中心：带进度的更新、版本说明、带评价的应用商店、已安装软件管理、固件和操作日志。",
-    "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "支持 Fedora 软件包（rpm/dnf）、Flatpak 和 AppImage。",
     "Display name (shown with your review)": "显示名称（随您的评价一起显示）",
     "the update service did not start this pass — try again": "更新服务本次未启动 — 请重试",
     "downloaded": "已下载",
@@ -261,5 +260,6 @@
     "Search new software (%1 repos + Flathub)…": "搜索新软件（%1 仓库 + Flathub）…",
     "Type to search %1 repos and Flathub": "输入以搜索 %1 仓库和 Flathub",
     "Report an issue": "报告问题",
-    "%1 support is experimental — please report anything that misbehaves.": "%1 支持仍处于实验阶段 — 请报告任何异常。"
+    "%1 support is experimental — please report anything that misbehaves.": "%1 支持仍处于实验阶段 — 请报告任何异常。",
+    "Supports %1 packages, Flatpak and AppImage.": "支持 %1 软件包、Flatpak 和 AppImage。"
 }

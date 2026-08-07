@@ -250,7 +250,6 @@
     "Update and reload shell": "Uppdatera och ladda om shellen",
     "Updating…": "Uppdaterar…",
     "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.": "Programvarucentral för DMS: uppdateringar med förlopp, versionsinformation, appbutik med recensioner, hantering av installerad programvara, fast programvara och en åtgärdslogg.",
-    "Supports Fedora packages (rpm/dnf), Flatpak and AppImage.": "Stöder Fedora-paket (rpm/dnf), Flatpak och AppImage.",
     "Display name (shown with your review)": "Visningsnamn (visas med din recension)",
     "the update service did not start this pass — try again": "uppdateringstjänsten startade inte den här gången — försök igen",
     "downloaded": "hämtad",
@@ -261,5 +260,6 @@
     "Search new software (%1 repos + Flathub)…": "Sök ny programvara (%1-förråd + Flathub)…",
     "Type to search %1 repos and Flathub": "Skriv för att söka i %1-förråd och Flathub",
     "Report an issue": "Rapportera ett problem",
-    "%1 support is experimental — please report anything that misbehaves.": "Stödet för %1 är experimentellt — rapportera allt som inte fungerar."
+    "%1 support is experimental — please report anything that misbehaves.": "Stödet för %1 är experimentellt — rapportera allt som inte fungerar.",
+    "Supports %1 packages, Flatpak and AppImage.": "Stöder %1-paket, Flatpak och AppImage."
 }
