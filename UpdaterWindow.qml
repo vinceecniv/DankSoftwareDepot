@@ -573,7 +573,7 @@ FloatingWindow {
         Rectangle {
             anchors.centerIn: parent
             width: Math.min(480, parent.width - Theme.spacingL * 2)
-            height: Math.min(settingsColumn.implicitHeight + Theme.spacingL * 2, parent.height - Theme.spacingL * 2)
+            height: Math.min(settingsHeaderRow.implicitHeight + settingsScrollColumn.implicitHeight + Theme.spacingM + Theme.spacingL * 2, parent.height - Theme.spacingL * 2)
             radius: Theme.cornerRadius
             color: Theme.surfaceContainer
             border.width: 1
@@ -590,6 +590,7 @@ FloatingWindow {
                 spacing: Theme.spacingM
 
                 RowLayout {
+                    id: settingsHeaderRow
                     Layout.fillWidth: true
 
                     DankIcon {
@@ -615,108 +616,126 @@ FloatingWindow {
                     }
                 }
 
-                // Plain Column: DankToggle sizes itself via `height` (its
-                // implicitHeight stays 0), which a ColumnLayout would ignore —
-                // stacking by actual height keeps wrapped descriptions apart.
-                Column {
+                // Everything below the header scrolls when the window is
+                // shorter than the settings content
+                Flickable {
+                    id: settingsScroll
                     Layout.fillWidth: true
-                    spacing: Theme.spacingS
+                    Layout.fillHeight: true
+                    contentWidth: width
+                    contentHeight: settingsScrollColumn.implicitHeight
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
 
-                    DankToggle {
-                        width: parent.width
-                        text: Tr.t("Hide when up to date")
-                        description: Tr.t("Hide the bar pill while there are no pending updates.")
-                        checked: win.widgetRoot ? win.widgetRoot.hideWhenUpToDate : false
-                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "hideWhenUpToDate", checked)
-                    }
+                    ColumnLayout {
+                        id: settingsScrollColumn
+                        width: settingsScroll.width
+                        spacing: Theme.spacingM
 
-                    DankToggle {
-                        width: parent.width
-                        text: Tr.t("Show runtimes and extensions")
-                        description: Tr.t("List Flatpak runtimes, locales and codec extensions. They are always included in Update All.")
-                        checked: win.widgetRoot ? win.widgetRoot.showRuntimes : false
-                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "showRuntimes", checked)
-                    }
+                    // Plain Column: DankToggle sizes itself via `height` (its
+                    // implicitHeight stays 0), which a ColumnLayout would ignore —
+                    // stacking by actual height keeps wrapped descriptions apart.
+                    Column {
+                        Layout.fillWidth: true
+                        spacing: Theme.spacingS
 
-                    DankToggle {
-                        width: parent.width
-                        text: Tr.t("Include firmware updates")
-                        description: Tr.t("Check for device firmware updates via fwupd (LVFS) and include them in Update All.")
-                        checked: win.widgetRoot ? win.widgetRoot.includeFirmware : true
-                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "includeFirmware", checked)
-                    }
-
-                    DankToggle {
-                        width: parent.width
-                        text: Tr.t("Confirm before updating")
-                        description: Tr.t("Require a second click on Update All before the run starts.")
-                        checked: win.widgetRoot ? win.widgetRoot.confirmBeforeUpdate : false
-                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "confirmBeforeUpdate", checked)
-                    }
-
-                    DankToggle {
-                        width: parent.width
-                        text: Tr.t("Bar click opens window")
-                        description: Tr.t("Open this window instead of the compact popout when clicking the bar pill.")
-                        checked: win.widgetRoot ? win.widgetRoot.pillOpensWindow : false
-                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "pillOpensWindow", checked)
-                    }
-
-                    DankDropdown {
-                        readonly property var autoMap: ({
-                                "Off": "off",
-                                "Notify only": "notify",
-                                "Auto-install Flatpaks": "auto"
-                            })
-
-                        width: parent.width
-                        text: Tr.t("Automatic updates")
-                        description: Tr.t("Notify when updates are found, and optionally install Flatpak updates automatically. System packages always ask first.")
-                        options: Object.keys(autoMap).map(k => Tr.t(k))
-                        currentValue: {
-                            const mode = win.widgetRoot ? win.widgetRoot.autoUpdateMode : "off";
-                            for (const label in autoMap) {
-                                if (autoMap[label] === mode)
-                                    return Tr.t(label);
-                            }
-                            return Tr.t("Off");
+                        DankToggle {
+                            width: parent.width
+                            text: Tr.t("Hide when up to date")
+                            description: Tr.t("Hide the bar pill while there are no pending updates.")
+                            checked: win.widgetRoot ? win.widgetRoot.hideWhenUpToDate : false
+                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "hideWhenUpToDate", checked)
                         }
-                        onValueChanged: value => {
-                            for (const label in autoMap) {
-                                if (Tr.t(label) === value) {
-                                    PluginService.savePluginData("dankSoftwareDepot", "autoUpdateMode", autoMap[label]);
-                                    return;
+
+                        DankToggle {
+                            width: parent.width
+                            text: Tr.t("Show runtimes and extensions")
+                            description: Tr.t("List Flatpak runtimes, locales and codec extensions. They are always included in Update All.")
+                            checked: win.widgetRoot ? win.widgetRoot.showRuntimes : false
+                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "showRuntimes", checked)
+                        }
+
+                        DankToggle {
+                            width: parent.width
+                            text: Tr.t("Include firmware updates")
+                            description: Tr.t("Check for device firmware updates via fwupd (LVFS) and include them in Update All.")
+                            checked: win.widgetRoot ? win.widgetRoot.includeFirmware : true
+                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "includeFirmware", checked)
+                        }
+
+                        DankToggle {
+                            width: parent.width
+                            text: Tr.t("Confirm before updating")
+                            description: Tr.t("Require a second click on Update All before the run starts.")
+                            checked: win.widgetRoot ? win.widgetRoot.confirmBeforeUpdate : false
+                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "confirmBeforeUpdate", checked)
+                        }
+
+                        DankToggle {
+                            width: parent.width
+                            text: Tr.t("Bar click opens window")
+                            description: Tr.t("Open this window instead of the compact popout when clicking the bar pill.")
+                            checked: win.widgetRoot ? win.widgetRoot.pillOpensWindow : false
+                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "pillOpensWindow", checked)
+                        }
+
+                        DankDropdown {
+                            readonly property var autoMap: ({
+                                    "Off": "off",
+                                    "Notify only": "notify",
+                                    "Auto-install Flatpaks": "auto"
+                                })
+
+                            width: parent.width
+                            text: Tr.t("Automatic updates")
+                            description: Tr.t("Notify when updates are found, and optionally install Flatpak updates automatically. System packages always ask first.")
+                            options: Object.keys(autoMap).map(k => Tr.t(k))
+                            currentValue: {
+                                const mode = win.widgetRoot ? win.widgetRoot.autoUpdateMode : "off";
+                                for (const label in autoMap) {
+                                    if (autoMap[label] === mode)
+                                        return Tr.t(label);
+                                }
+                                return Tr.t("Off");
+                            }
+                            onValueChanged: value => {
+                                for (const label in autoMap) {
+                                    if (Tr.t(label) === value) {
+                                        PluginService.savePluginData("dankSoftwareDepot", "autoUpdateMode", autoMap[label]);
+                                        return;
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                StyledText {
-                    Layout.fillWidth: true
-                    text: Tr.t("Check interval and ignored packages are managed in DMS Settings → System Updater.")
-                    font.pixelSize: Theme.fontSizeSmall - 1
-                    color: Theme.surfaceVariantText
-                    wrapMode: Text.WordWrap
-                }
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: Tr.t("Check interval and ignored packages are managed in DMS Settings → System Updater.")
+                        font.pixelSize: Theme.fontSizeSmall - 1
+                        color: Theme.surfaceVariantText
+                        wrapMode: Text.WordWrap
+                    }
 
-                Item {
-                    Layout.preferredWidth: dmsSettingsLinkButton.width
-                    Layout.preferredHeight: dmsSettingsLinkButton.height
+                    Item {
+                        Layout.preferredWidth: dmsSettingsLinkButton.width
+                        Layout.preferredHeight: dmsSettingsLinkButton.height
 
-                    DankButton {
-                        id: dmsSettingsLinkButton
-                        buttonHeight: 30
-                        horizontalPadding: Theme.spacingM
-                        iconName: "open_in_new"
-                        iconSize: 14
-                        text: Tr.t("Open DMS System Updater settings")
-                        backgroundColor: Theme.secondaryContainer
-                        textColor: Theme.surfaceText
-                        onClicked: {
-                            win.settingsOpen = false;
-                            PopoutService.openSettingsWithTab("updater");
+                        DankButton {
+                            id: dmsSettingsLinkButton
+                            buttonHeight: 30
+                            horizontalPadding: Theme.spacingM
+                            iconName: "open_in_new"
+                            iconSize: 14
+                            text: Tr.t("Open DMS System Updater settings")
+                            backgroundColor: Theme.secondaryContainer
+                            textColor: Theme.surfaceText
+                            onClicked: {
+                                win.settingsOpen = false;
+                                PopoutService.openSettingsWithTab("updater");
+                            }
                         }
+                    }
                     }
                 }
             }
@@ -2309,8 +2328,9 @@ FloatingWindow {
                                         return [
                                             { label: Tr.t("Held"), value: String((root.heldSystemKeys || []).length + (SettingsData.updaterIgnoredPackages || []).length) },
                                             { label: "End-of-life", value: String((root.eolRefs || []).length) },
-                                            { label: Tr.t("Automatic updates"), value: autoLabels[root.autoUpdateMode] || Tr.t("Off") }
-                                        ];
+                                            { label: Tr.t("Automatic updates"), value: autoLabels[root.autoUpdateMode] || Tr.t("Off") },
+                                            { label: "Dank Software Depot", value: win.pluginManifest.version ? "v" + win.pluginManifest.version : "" }
+                                        ].filter(row => row.value !== "");
                                     }
 
                                     delegate: RowLayout {
