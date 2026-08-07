@@ -501,8 +501,16 @@ Item {
         _dnfStageY = 0;
         _dnfSawUpgrading = false;
         _daemonAttempts = 0;
+        _passRequestedAt = Date.now();
+        _nudgedBackendCheck = false;
         _sendDaemonUpgrade();
     }
+
+    // When this pass was first requested: the polite waits below (running
+    // check, streaming log lines) are capped against this so a confused
+    // daemon can delay a pass, but never hang it forever.
+    property double _passRequestedAt: 0
+    property bool _nudgedBackendCheck: false
 
     // The daemon can silently refuse an upgrade command fired right after
     // the previous pass finished (it is still winding down). Retry with a
@@ -514,8 +522,9 @@ Item {
         // Never fire an upgrade into a running check: the daemon kills the
         // dnf child mid-resolve when the two collide (observed as a pass
         // that "completes" without installing anything). The retry timer
-        // re-enters here once the check settles.
-        if (SystemUpdateService.isChecking) {
+        // re-enters here once the check settles — but a check that never
+        // settles must not hang the pass forever.
+        if (SystemUpdateService.isChecking && Date.now() - _passRequestedAt < 180000) {
             daemonRetryTimer.restart();
             return;
         }
@@ -554,8 +563,17 @@ Item {
                 return;
             // The daemon runs its own refresh after an upgrade pass and
             // refuses commands meanwhile — wait it out without burning
-            // attempts
-            if (SystemUpdateService.isChecking) {
+            // attempts, but never past the pass cap
+            if (SystemUpdateService.isChecking && Date.now() - engine._passRequestedAt < 180000) {
+                daemonRetryTimer.restart();
+                return;
+            }
+            // Right after a pass the daemon can reset its state and refuse
+            // upgrades with "no backend selected" until a check re-selects
+            // it — trigger that check once and wait it out
+            if (!engine._nudgedBackendCheck && /no backend/i.test(SystemUpdateService.errorMessage || "")) {
+                engine._nudgedBackendCheck = true;
+                SystemUpdateService.checkForUpdates();
                 daemonRetryTimer.restart();
                 return;
             }
@@ -796,8 +814,10 @@ Item {
             // even while isUpgrading is still false (metadata refresh and
             // dependency resolution). Re-sending the upgrade command then
             // makes the daemon kill its dnf child mid-resolve — push the
-            // retry out as long as output keeps flowing.
-            if (daemonRetryTimer.running)
+            // retry out while output keeps flowing, but only briefly: the
+            // rolling log also carries unrelated trailing output from a
+            // previous pass, which must not silence the retry forever.
+            if (daemonRetryTimer.running && Date.now() - engine._passRequestedAt < 45000)
                 daemonRetryTimer.restart();
             engine._parseDnfLog();
         }
