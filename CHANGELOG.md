@@ -3,6 +3,27 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.4.0 — 2026-08-07
+
+- **Experimental Debian/Ubuntu and Arch support.** The plugin now detects
+  the distro family and switches its whole package layer: transactions
+  run through python-apt or pyalpm (same live byte-progress as on
+  Fedora), and search, package info, update sizes, installed inventory,
+  holds and the dashboard all have apt and pacman implementations.
+  **Experimental means experimental**: everything is container-tested
+  (real installs, removals and upgrades on Debian trixie and Arch) but
+  not yet validated on real desktop installs — these systems show a
+  banner with a "Report an issue" button, and PROTOCOL.md tracks the
+  known gaps (package changelogs, AppStream catalog paths, update-check
+  daemon behaviour). Fedora code paths are untouched.
+- Arch specifics: official repositories only — AUR transactions are
+  deliberately out of scope (the interactive PKGBUILD review exists for
+  safety); AUR/foreign packages do appear read-only as their own count
+  on the dashboard. Version restore is unavailable (pacman repositories
+  keep no history).
+- The reboot recommendation, install labels, search placeholders and
+  post-run verification all follow the detected backend.
+
 ## 0.3.0 — 2026-08-07
 
 - **Programmatic dnf.** All rpm transactions (installs, removals,
