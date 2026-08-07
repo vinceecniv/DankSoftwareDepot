@@ -114,10 +114,14 @@ language by dropping a new `translations/<lang>.json` next to the others.
 
 ## Requirements
 
-- A Fedora-based distribution
+- A Fedora-based distribution — or Debian/Ubuntu or Arch (experimental)
 - DMS ≥ 1.5 with the `sysupdate` daemon capability
-- `python3`, `python3-gobject` + libflatpak GIR (standard on Fedora)
-- `flatpak`, `dnf5`, optionally `fwupd`
+- `python3`, `python3-gobject` + libflatpak GIR
+- `flatpak`, optionally `fwupd`
+- Package-manager bindings for your distro:
+  - Fedora: `python3-libdnf5`
+  - Debian/Ubuntu: `python3-apt` (usually preinstalled)
+  - Arch: `pyalpm`
 
 ## Install
 
