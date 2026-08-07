@@ -1462,7 +1462,7 @@ Item {
                             horizontalPadding: Theme.spacingM
                             iconName: "download"
                             iconSize: 14
-                            text: modelData.kind === "flatpak" ? Tr.t("Install from Flathub") : (modelData.kind === "appimage" ? Tr.t("Install AppImage") : Tr.t("Install from Fedora"))
+                            text: modelData.kind === "flatpak" ? Tr.t("Install from Flathub") : (modelData.kind === "appimage" ? Tr.t("Install AppImage") : Tr.t("Install from %1").arg(Backend.systemRepoLabel))
                             backgroundColor: modelData.kind === "flatpak" ? Theme.buttonBg : Theme.secondaryContainer
                             textColor: modelData.kind === "flatpak" ? Theme.buttonText : Theme.surfaceText
                             enabled: !dialog.busy

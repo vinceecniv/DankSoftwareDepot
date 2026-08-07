@@ -256,5 +256,8 @@
     "downloaded": "已下载",
     "the package was not updated — try again": "软件包未更新 — 请重试",
     "Computer restart recommended": "建议重启计算机",
-    "A computer restart is recommended to finish applying updates.": "建议重启计算机以完成更新的应用。"
+    "A computer restart is recommended to finish applying updates.": "建议重启计算机以完成更新的应用。",
+    "Install from %1": "从 %1 安装",
+    "Search new software (%1 repos + Flathub)…": "搜索新软件（%1 仓库 + Flathub）…",
+    "Type to search %1 repos and Flathub": "输入以搜索 %1 仓库和 Flathub"
 }

@@ -261,7 +261,7 @@ PluginComponent {
     }
     property bool confirmReboot: false
 
-    readonly property var _rebootPackagePattern: /^(kernel|linux-firmware|systemd|glibc|dbus|mesa|amd-gpu-firmware|intel-gpu-firmware|nvidia|microcode_ctl|shim|grub2)/
+    readonly property var _rebootPackagePattern: Backend.rebootPackagePattern
 
     Process {
         id: bootIdProcess

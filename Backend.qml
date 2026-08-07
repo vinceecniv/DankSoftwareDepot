@@ -30,6 +30,34 @@ Item {
         return ["rpm", "-q", "--qf", "%{NAME}\\t%{EVR}\\n"].concat(names);
     }
 
+    readonly property string metadataHelper: Qt.resolvedUrl("scripts/pkg_backend.py").toString().replace("file://", "")
+
+    // Full installed inventory as "name<TAB>version<TAB>bytes<TAB>installtime"
+    function installedTableCommand() {
+        if (backendId === "apt")
+            return ["python3", metadataHelper, "installed-table"];
+        return ["sh", "-c", "rpm -qa --qf '%{NAME}\\t%{VERSION}-%{RELEASE}\\t%{SIZE}\\t%{INSTALLTIME}\\n' 2>/dev/null | sort"];
+    }
+
+    // Shell fragment printing one installed package name per line (embedded
+    // in compound sh commands)
+    readonly property string installedNamesShellFragment: backendId === "apt" ? "dpkg-query -W -f '${Package}\\n' 2>/dev/null" : "rpm -qa --qf '%{NAME}\\n' 2>/dev/null"
+
+    // Available versions for the previous-versions feature. dnf prints
+    // plain ascending version lines; the apt path prints a JSON array
+    // (newest first, installed flagged) — consumers branch on the shape.
+    function availableVersionsCommand(name) {
+        if (backendId === "apt")
+            return ["python3", metadataHelper, "versions", name];
+        return ["sh", "-c", "LC_ALL=C dnf -Cq repoquery --qf '%{version}-%{release}\\n' " + name + " 2>/dev/null | sort -uV"];
+    }
+
+    // Packages whose update warrants the reboot recommendation
+    readonly property var rebootPackagePattern: backendId === "apt" ? /^(linux-image|linux-firmware|systemd|libc6|dbus|mesa|grub|shim|intel-microcode|amd64-microcode|nvidia)/ : /^(kernel|linux-firmware|systemd|glibc|dbus|mesa|amd-gpu-firmware|intel-gpu-firmware|nvidia|microcode_ctl|shim|grub2)/
+
+    // Human label of the system package source ("Install from %1")
+    readonly property string systemRepoLabel: backendId === "apt" ? "Debian" : "Fedora"
+
     FileView {
         path: "/etc/os-release"
 

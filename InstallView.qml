@@ -457,7 +457,7 @@ Item {
 
     Process {
         id: installedProcess
-        command: ["sh", "-c", "LC_ALL=C flatpak list --app --columns=application 2>/dev/null; echo '---RPM---'; rpm -qa --qf '%{NAME}\\n' 2>/dev/null"]
+        command: ["sh", "-c", "LC_ALL=C flatpak list --app --columns=application 2>/dev/null; echo '---RPM---'; " + Backend.installedNamesShellFragment]
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -764,7 +764,7 @@ Item {
             DankTextField {
                 id: searchField
                 Layout.fillWidth: true
-                placeholderText: Tr.t("Search new software (Fedora repos + Flathub)…")
+                placeholderText: Tr.t("Search new software (%1 repos + Flathub)…").arg(Backend.systemRepoLabel)
                 leftIconName: "search"
                 showClearButton: true
                 onTextChanged: view.searchText = text
@@ -1226,7 +1226,7 @@ Item {
                             return Tr.t("Searching…");
                         if (view.searchMode)
                             return Tr.t("No results for \"%1\"").arg(view.searchText.trim());
-                        return Tr.t("Type to search Fedora repos and Flathub");
+                        return Tr.t("Type to search %1 repos and Flathub").arg(Backend.systemRepoLabel);
                     }
                     font.pixelSize: Theme.fontSizeMedium
                     color: Theme.surfaceVariantText

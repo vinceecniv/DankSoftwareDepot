@@ -256,5 +256,8 @@
     "downloaded": "gedownload",
     "the package was not updated — try again": "het pakket is niet bijgewerkt — probeer opnieuw",
     "Computer restart recommended": "Computerherstart aanbevolen",
-    "A computer restart is recommended to finish applying updates.": "Een computerherstart wordt aanbevolen om de updates volledig door te voeren."
+    "A computer restart is recommended to finish applying updates.": "Een computerherstart wordt aanbevolen om de updates volledig door te voeren.",
+    "Install from %1": "Installeren via %1",
+    "Search new software (%1 repos + Flathub)…": "Nieuwe software zoeken (%1-repos + Flathub)…",
+    "Type to search %1 repos and Flathub": "Typ om te zoeken in %1-repos en Flathub"
 }

@@ -821,7 +821,8 @@ FloatingWindow {
             onStreamFinished: {
                 const parts = text.trim().split("|");
                 const ids = (parts[0] || "").toLowerCase().split(/\s+/).filter(t => t !== "");
-                win.osIncompatiblePretty = (ids.length > 0 && ids.indexOf("fedora") < 0) ? ((parts[1] || "").trim() || parts[0].trim()) : "";
+                const supported = ["fedora", "debian", "ubuntu"].some(id => ids.indexOf(id) >= 0);
+                win.osIncompatiblePretty = (ids.length > 0 && !supported) ? ((parts[1] || "").trim() || parts[0].trim()) : "";
             }
         }
     }

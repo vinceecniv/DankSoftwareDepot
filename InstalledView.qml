@@ -449,7 +449,7 @@ Item {
         rpmVersions = updated;
         rpmVersionsProcess._target = name;
         rpmVersionsProcess._installed = installedVersion;
-        rpmVersionsProcess.command = ["sh", "-c", "LC_ALL=C dnf -Cq repoquery --qf '%{version}-%{release}\\n' " + name + " 2>/dev/null | sort -uV"];
+        rpmVersionsProcess.command = Backend.availableVersionsCommand(name);
         rpmVersionsProcess.running = true;
     }
 
@@ -535,7 +535,7 @@ Item {
 
     Process {
         id: rpmListProcess
-        command: ["sh", "-c", "rpm -qa --qf '%{NAME}\\t%{VERSION}-%{RELEASE}\\t%{SIZE}\\t%{INSTALLTIME}\\n' 2>/dev/null | sort"]
+        command: Backend.installedTableCommand()
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -746,14 +746,32 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 const versions = [];
-                for (const line of text.trim().split("\n")) {
-                    const version = line.trim();
-                    // Keep only versions different from (and listed before)
-                    // the installed one — sort -V put them in ascending order
-                    if (version && version !== rpmVersionsProcess._installed)
-                        versions.push(version);
-                    else if (version === rpmVersionsProcess._installed)
-                        break;
+                const raw = text.trim();
+                if (raw.startsWith("[")) {
+                    // apt backend: JSON array, newest first, installed flagged
+                    try {
+                        const list = JSON.parse(raw);
+                        let past = false;
+                        for (const entry of list) {
+                            if (entry.installed) {
+                                past = true;
+                                continue;
+                            }
+                            if (past)
+                                versions.unshift(entry.version);
+                        }
+                    } catch (e) {
+                    }
+                } else {
+                    for (const line of raw.split("\n")) {
+                        const version = line.trim();
+                        // Keep only versions different from (and listed before)
+                        // the installed one — sort -V put them in ascending order
+                        if (version && version !== rpmVersionsProcess._installed)
+                            versions.push(version);
+                        else if (version === rpmVersionsProcess._installed)
+                            break;
+                    }
                 }
                 const updated = Object.assign({}, view.rpmVersions);
                 updated[rpmVersionsProcess._target] = versions.slice(-3).reverse();

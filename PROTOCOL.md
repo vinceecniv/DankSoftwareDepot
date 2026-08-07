@@ -83,21 +83,28 @@ layer at transaction level.
 **The transaction seam** — `Backend.qml` holds the helper path the QML
 call sites use. A port swaps this (or branches on the detected distro).
 
-**Distro-specific, outside the protocol** (each needs a per-backend
-implementation):
+**Distro-specific, outside the protocol.** The metadata layer dispatches
+per backend: on Fedora the dnf code paths in `enrich.py` run; on the
+Debian family `scripts/pkg_backend.py` provides the apt implementations.
 
-| Area | Current implementation |
-|---|---|
-| Update checks & counts | DMS `SystemUpdateService` daemon (multi-backend on the DMS side) |
-| Shell self-update pass | DMS daemon (`DMSService.sysupdateUpgrade`) — must survive the shell reload |
-| Post-run verification | `Backend.installedVersionsCommand`: `rpm -q` / `dpkg-query -W` version compare |
-| Search & app metadata | `scripts/enrich.py`: dnf repoquery/search, rpm changelog, AppStream |
-| Update sizes | `dnf repoquery --info` (`--update-sizes`) |
-| Previous versions / restore | `dnf5 --showduplicates` + helper `downgrade` |
-| Held packages | dnf versionlock/excludepkgs + DMS ignored list |
-| Installed inventory & dashboard | `rpm -qa` (counts, recently-updated) |
-| Distro upgrade notice | Bodhi (Fedora releases) |
+| Area | dnf | apt |
+|---|---|---|
+| Update checks & counts | DMS `SystemUpdateService` daemon | same daemon (backend support on the DMS side) |
+| Shell self-update pass | DMS daemon — must survive the shell reload | same |
+| Post-run verification | `rpm -q` version compare | `dpkg-query -W` (via `Backend.installedVersionsCommand`) |
+| Name search fallback | dnf repoquery | `pkg_backend.name_search` |
+| Package info fallback | dnf repoquery --info | `pkg_backend.package_info` |
+| Update sizes | dnf repoquery --info | `pkg_backend.update_sizes` |
+| Previous versions / restore | `dnf repoquery` + helper `downgrade` | `pkg_backend.available_versions` + helper `downgrade name=version` |
+| Held packages | dnf versionlock/excludepkgs + DMS ignored list | `apt-mark showhold` + DMS ignored list |
+| Installed inventory & dashboard | `rpm -qa` | `pkg_backend.installed_table` / `dashboard` (`.list` mtimes as install times) |
+| Reboot recommendation | kernel/glibc/… name pattern | linux-image/libc6/… pattern (`Backend.rebootPackagePattern`) |
+| Distro upgrade notice | Bodhi (Fedora releases) | not offered |
+| Package changelogs | dnf/rpm changelog | **gap** — apt changelogs need the network |
+| AppStream catalog for system apps | Fedora swcatalog | **untested** — depends on DEP-11 data location |
 
-The QML layer treats all of these as opaque data sources, so ports are a
-matter of implementing the same script entry points per backend — the
-protocol above stays identical.
+Known open items for full Debian parity: apt changelogs, the DEP-11
+AppStream catalog path, and confirming the DMS daemon's update checks on
+a real Debian install. An Arch port follows the same recipe: a
+`pacman_helper.py` (pyalpm) for transactions plus pacman entries in
+`pkg_backend.py`.

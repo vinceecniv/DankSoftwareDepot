@@ -256,5 +256,8 @@
     "downloaded": "téléchargé",
     "the package was not updated — try again": "le paquet n’a pas été mis à jour — réessayez",
     "Computer restart recommended": "Redémarrage de l’ordinateur recommandé",
-    "A computer restart is recommended to finish applying updates.": "Un redémarrage de l’ordinateur est recommandé pour terminer l’application des mises à jour."
+    "A computer restart is recommended to finish applying updates.": "Un redémarrage de l’ordinateur est recommandé pour terminer l’application des mises à jour.",
+    "Install from %1": "Installer depuis %1",
+    "Search new software (%1 repos + Flathub)…": "Rechercher de nouveaux logiciels (dépôts %1 + Flathub)…",
+    "Type to search %1 repos and Flathub": "Saisissez pour rechercher dans les dépôts %1 et Flathub"
 }

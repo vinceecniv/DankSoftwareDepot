@@ -26,6 +26,11 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 
+import pkg_backend
+
+# "dnf" (Fedora, the in-file code paths) or "apt" (dispatched to pkg_backend)
+BACKEND = pkg_backend.detect()
+
 CACHE_DIR = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "dankSoftwareDepot")
 CACHE_FILE = os.path.join(CACHE_DIR, "enrich-cache.json")
 MAX_RELEASES = 8
@@ -400,6 +405,9 @@ def compute_holds(rpm_names):
     entry, or when it is built from the same source package as a locked
     package (locking freerdp effectively holds freerdp-libs/libwinpr too).
     """
+    if BACKEND == "apt":
+        held_all = pkg_backend.holds()
+        return {name: held_all[name] for name in rpm_names if name in held_all}
     import fnmatch
     excludes, locked = read_dnf_holds()
     if not excludes and not locked:
@@ -436,6 +444,11 @@ def strip_arch(name):
 
 
 def run_changelog(pkg):
+    if BACKEND == "apt":
+        # apt changelogs come from the network (packages.debian.org) — too
+        # slow for this synchronous path; the UI shows its no-notes state
+        print("")
+        return
     try:
         res = subprocess.run(
             ["dnf", "-Cq", "repoquery", "--changelogs", "--available", "--latest-limit=1", strip_arch(pkg)],
@@ -620,6 +633,8 @@ def dnf_name_search(query):
 
     Covers command-line tools without AppStream metadata (e.g. playerctl)
     that `dnf search` finds but the catalog index does not."""
+    if BACKEND == "apt":
+        return pkg_backend.name_search(query)
     if not re.match(r"^[\w.+-]+$", query):
         return []
     try:
@@ -857,6 +872,8 @@ def cache_screenshots(urls):
 
 def rpm_repoquery_info(pkg):
     """Description, license and sizes for an rpm via cache-only repoquery."""
+    if BACKEND == "apt":
+        return pkg_backend.package_info(pkg)
     try:
         res = subprocess.run(
             ["dnf", "-Cq", "repoquery", "--info", "--latest-limit=1", "--arch=x86_64,noarch", pkg],
@@ -1266,7 +1283,10 @@ def run_update_sizes(arg):
     rpm_known = 0
     rpm_map = {}
     rpm_names = [n for n in (request.get("rpm") or []) if re.match(r"^[\w.+-]+$", n)]
-    if rpm_names:
+    if rpm_names and BACKEND == "apt":
+        rpm_bytes, rpm_map = pkg_backend.update_sizes(rpm_names)
+        rpm_known = len(rpm_map)
+    elif rpm_names:
         try:
             res = subprocess.run(
                 ["dnf", "-Cq", "repoquery", "--info", "--latest-limit=1", "--arch=x86_64,noarch"] + rpm_names,
@@ -1303,6 +1323,9 @@ DISTRO_UPGRADE_CACHE = os.path.join(CACHE_DIR, "distro-upgrade.json")
 
 def run_distro_upgrade():
     """Is a newer Fedora release available? (Bodhi, cached daily)"""
+    if BACKEND == "apt":
+        json.dump({}, sys.stdout)
+        return
     import time
     current = 0
     try:
@@ -1385,31 +1408,38 @@ def run_dashboard():
     out = {}
     recent = []
 
-    # rpm counts + recent installs
-    rpm_lines = []
-    try:
-        res = subprocess.run(["rpm", "-qa", "--qf", "%{NAME}\t%{INSTALLTIME}\n"],
-                             capture_output=True, text=True, timeout=20)
-        rpm_lines = [l.split("\t") for l in res.stdout.strip().split("\n") if l]
-    except (OSError, subprocess.SubprocessError):
-        pass
-    out["rpmTotal"] = len(rpm_lines)
-    for name, ts in sorted(((l[0], int(l[1])) for l in rpm_lines if len(l) > 1 and l[1].isdigit()),
-                           key=lambda x: -x[1])[:50]:
-        recent.append({"name": name, "source": "System", "ts": ts})
+    # system package counts + recent installs
+    if BACKEND == "apt":
+        dash = pkg_backend.dashboard()
+        out["rpmTotal"] = dash["total"]
+        for entry in dash["recent"]:
+            recent.append({"name": entry["name"], "source": "System", "ts": entry["ts"]})
+        out["coprCount"] = 0
+    else:
+        rpm_lines = []
+        try:
+            res = subprocess.run(["rpm", "-qa", "--qf", "%{NAME}\t%{INSTALLTIME}\n"],
+                                 capture_output=True, text=True, timeout=20)
+            rpm_lines = [l.split("\t") for l in res.stdout.strip().split("\n") if l]
+        except (OSError, subprocess.SubprocessError):
+            pass
+        out["rpmTotal"] = len(rpm_lines)
+        for name, ts in sorted(((l[0], int(l[1])) for l in rpm_lines if len(l) > 1 and l[1].isdigit()),
+                               key=lambda x: -x[1])[:50]:
+            recent.append({"name": name, "source": "System", "ts": ts})
 
-    # copr-installed count
-    copr = 0
-    try:
-        res = subprocess.run(["dnf", "-Cq", "repoquery", "--installed", "--qf", "%{from_repo}\n"],
-                             capture_output=True, text=True, timeout=30,
-                             env={**os.environ, "LC_ALL": "C"})
-        for repo in res.stdout.split():
-            if repo.startswith("copr"):
-                copr += 1
-    except (OSError, subprocess.SubprocessError):
-        pass
-    out["coprCount"] = copr
+        # copr-installed count
+        copr = 0
+        try:
+            res = subprocess.run(["dnf", "-Cq", "repoquery", "--installed", "--qf", "%{from_repo}\n"],
+                                 capture_output=True, text=True, timeout=30,
+                                 env={**os.environ, "LC_ALL": "C"})
+            for repo in res.stdout.split():
+                if repo.startswith("copr"):
+                    copr += 1
+        except (OSError, subprocess.SubprocessError):
+            pass
+        out["coprCount"] = copr
 
     # flatpaks + their deploy times; use cached friendly names when known
     names_cache = {}
