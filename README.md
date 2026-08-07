@@ -159,6 +159,7 @@ dms ipc call dankSoftwareDepot check     # trigger an update check
 | `PhaseIndicator.qml` | Material phase stepper |
 | `Tr.qml` | Plugin-local translation singleton |
 | `scripts/enrich.py` | AppStream parsing, dnf fallbacks, holds detection, search index, featured storefront, ODRS ratings, caching, sanitizing |
+| `scripts/rpm_helper.py` | libdnf5 transactions (install/remove/upgrade/downgrade) with exact byte progress (NDJSON events, see PROTOCOL.md) |
 | `scripts/flatpak_helper.py` | libflatpak transactions (updates & installs) with exact byte progress (NDJSON events) |
 | `scripts/appimage.py` | AppImage catalog, install/update/uninstall, GitHub update sources, adhoc folder scanning (NDJSON events) |
 | `scripts/action_log.py` | Action-log append/prune helper |

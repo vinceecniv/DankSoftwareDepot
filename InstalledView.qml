@@ -465,7 +465,7 @@ Item {
             to: "",
             source: "System"
         };
-        mutationProcess.command = ["pkexec", "python3", Qt.resolvedUrl("scripts/rpm_helper.py").toString().replace("file://", ""), "remove", name];
+        mutationProcess.command = Backend.helperCommand("remove", [name]);
         mutationProcess.running = true;
     }
 
@@ -481,7 +481,7 @@ Item {
             to: version,
             source: "System"
         };
-        mutationProcess.command = ["pkexec", "python3", Qt.resolvedUrl("scripts/rpm_helper.py").toString().replace("file://", ""), "downgrade", name + "-" + version];
+        mutationProcess.command = Backend.helperCommand("downgrade", [name + "-" + version]);
         mutationProcess.running = true;
     }
 

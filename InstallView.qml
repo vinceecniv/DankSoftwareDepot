@@ -447,10 +447,10 @@ Item {
             installProgress = Tr.t("Starting…");
             installProcess.command = ["python3", scriptPath.replace("enrich.py", "flatpak_helper.py"), "install", source.source, source.ref];
         } else {
-            // rpm installs run through the libdnf5 helper: real per-package
+            // rpm installs run through the backend helper: real per-package
             // byte progress as NDJSON events instead of scraping dnf output.
             installProgress = Tr.t("Waiting for authorization…");
-            installProcess.command = ["pkexec", "python3", scriptPath.replace("enrich.py", "rpm_helper.py"), "install", source.ref];
+            installProcess.command = Backend.helperCommand("install", [source.ref]);
         }
         installProcess.running = true;
     }

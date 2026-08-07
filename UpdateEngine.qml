@@ -546,8 +546,7 @@ Item {
         _helperPlanBytes = 0;
         _helperTransferred = 0;
         phase = "dnf-download";
-        const names = Object.keys(_dnfNameToKey);
-        helperProcess.command = ["pkexec", "python3", Qt.resolvedUrl("scripts/rpm_helper.py").toString().replace("file://", ""), "upgrade"].concat(names);
+        helperProcess.command = Backend.helperCommand("upgrade", Object.keys(_dnfNameToKey));
         helperProcess.running = true;
     }
 

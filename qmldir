@@ -1,5 +1,6 @@
 singleton Tr 1.0 Tr.qml
 singleton Ui 1.0 Ui.qml
+singleton Backend 1.0 Backend.qml
 UpdaterWidget 1.0 UpdaterWidget.qml
 UpdaterWindow 1.0 UpdaterWindow.qml
 UpdaterSettings 1.0 UpdaterSettings.qml
