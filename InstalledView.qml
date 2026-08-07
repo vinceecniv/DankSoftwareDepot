@@ -465,7 +465,7 @@ Item {
             to: "",
             source: "System"
         };
-        mutationProcess.command = ["pkexec", "dnf5", "remove", "-y", name];
+        mutationProcess.command = ["pkexec", "python3", Qt.resolvedUrl("scripts/rpm_helper.py").toString().replace("file://", ""), "remove", name];
         mutationProcess.running = true;
     }
 
@@ -481,7 +481,7 @@ Item {
             to: version,
             source: "System"
         };
-        mutationProcess.command = ["pkexec", "dnf5", "downgrade", "-y", name + "-" + version];
+        mutationProcess.command = ["pkexec", "python3", Qt.resolvedUrl("scripts/rpm_helper.py").toString().replace("file://", ""), "downgrade", name + "-" + version];
         mutationProcess.running = true;
     }
 
@@ -583,6 +583,64 @@ Item {
         }
     }
 
+    function _formatBytes(bytes) {
+        if (!bytes || bytes <= 0)
+            return "";
+        if (bytes >= 1e9)
+            return (bytes / 1e9).toFixed(1) + " GB";
+        if (bytes >= 1e6)
+            return Math.round(bytes / 1e6) + " MB";
+        return Math.max(1, Math.round(bytes / 1e3)) + " kB";
+    }
+
+    // rpm mutations run through rpm_helper.py (libdnf5) and report NDJSON
+    // events; flatpak output still arrives as raw lines below.
+    property real _mutPlanBytes: 0
+    property real _mutLastOverall: 0
+    property int _mutIdx: 0
+    property int _mutTot: 0
+
+    function _mutationEvent(event) {
+        const removing = mutationProcess._logType === "uninstall";
+        const part = Math.min(100, event.percent || 0) / 100;
+        switch (event.event) {
+        case "status":
+            mutationFraction = 0.1;
+            mutationProgress = Tr.t("Loading repositories…");
+            break;
+        case "plan":
+            _mutPlanBytes = event.totalDownloadBytes || 0;
+            _mutLastOverall = 0;
+            _mutIdx = 0;
+            _mutTot = 0;
+            mutationFraction = 0.3;
+            mutationProgress = _mutPlanBytes > 0 ? Tr.t("Downloading (%1)…").arg(_formatBytes(_mutPlanBytes)) : Tr.t("Applying changes…");
+            break;
+        case "op-start":
+            if (event.phase === "install" || event.phase === "remove") {
+                _mutIdx = event.index || (_mutIdx + 1);
+                _mutTot = event.total || _mutTot;
+                mutationFraction = Math.max(mutationFraction, 0.55);
+                mutationProgress = (removing ? Tr.t("Removing") : Tr.t("Applying")) + " " + _mutIdx + "/" + Math.max(1, _mutTot);
+            }
+            break;
+        case "progress":
+            if (event.phase === "install" || event.phase === "remove") {
+                const tot = Math.max(1, _mutTot);
+                const overall = Math.min(1, (Math.max(0, _mutIdx - 1) + part) / tot);
+                mutationFraction = 0.55 + 0.45 * overall;
+                mutationProgress = (removing ? Tr.t("Removing") : Tr.t("Applying")) + " " + _mutIdx + "/" + tot + " · " + Math.round(overall * 100) + "%";
+            } else if (event.totalTransferred !== undefined && _mutPlanBytes > 0) {
+                let overall = Math.min(1, event.totalTransferred / _mutPlanBytes);
+                overall = Math.max(_mutLastOverall, overall);
+                _mutLastOverall = overall;
+                mutationFraction = 0.3 + 0.25 * overall;
+                mutationProgress = Tr.t("Downloading") + " · " + Math.round(overall * 100) + "%";
+            }
+            break;
+        }
+    }
+
     // Short progress message from a raw dnf5/flatpak output line, with labels
     // that fit removals and downgrades alike. dnf5 piped output: "Updating and
     // loading repositories:", "Repositories loaded.", then
@@ -591,6 +649,16 @@ Item {
         const line = raw.trim();
         if (line === "")
             return;
+        if (line[0] === "{") {
+            let event = null;
+            try {
+                event = JSON.parse(line);
+            } catch (e) {
+                return;
+            }
+            _mutationEvent(event);
+            return;
+        }
         if (line.indexOf("Updating and loading repositories") === 0) {
             mutationFraction = 0.1;
             mutationProgress = Tr.t("Loading repositories…");

@@ -560,6 +560,8 @@ Item {
     // with download/install/remove and index/total for the rpm stage.
     property int _rpmIdx: 0
     property int _rpmTot: 0
+    property real _planBytes: 0
+    property real _lastOverall: 0
 
     function _installEvent(event) {
         const count = Math.max(1, _fpOpCount);
@@ -575,6 +577,8 @@ Item {
             _fpOpsDone = 0;
             _rpmIdx = 0;
             _rpmTot = 0;
+            _planBytes = event.totalDownloadBytes || 0;
+            _lastOverall = 0;
             installStep = 1;
             installFraction = 0.05;
             const total = _formatBytes(event.totalDownloadBytes);
@@ -603,7 +607,16 @@ Item {
                 // rpm has a real install stage after this; flatpak's download
                 // dominates its whole transaction
                 const span = installProcess._source === "System" ? 0.55 : 0.9;
-                const overall = Math.min(1, (_fpOpsDone + part) / count);
+                // Downloads run in parallel and their events interleave —
+                // aggregate bytes (rpm helper) give a steady overall; the
+                // per-event fallback (flatpak) is clamped monotonic.
+                let overall;
+                if (event.totalTransferred !== undefined && _planBytes > 0)
+                    overall = Math.min(1, event.totalTransferred / _planBytes);
+                else
+                    overall = Math.min(1, (_fpOpsDone + part) / count);
+                overall = Math.max(_lastOverall, overall);
+                _lastOverall = overall;
                 installStep = 1;
                 installFraction = 0.05 + span * overall;
                 // Transaction-wide percentage, not the current component's

@@ -54,6 +54,9 @@ class DownloadProgress(libdnf5.repo.DownloadCallbacks):
         self._downloads = {}
         self._next_key = 0
         self._announced_repos = False
+        # Aggregate over all (parallel) downloads: the UI derives its overall
+        # bar from this so interleaved per-package events can't make it jump
+        self._total_transferred = 0
 
     def add_new_download(self, user_data, description, total_to_download):
         if self.quiet:
@@ -63,7 +66,8 @@ class DownloadProgress(libdnf5.repo.DownloadCallbacks):
             return None
         self._next_key += 1
         name = _name_of(description or "", self.plan_names)
-        self._downloads[self._next_key] = {"name": name, "total": total_to_download, "pct": -1}
+        self._downloads[self._next_key] = {"name": name, "total": total_to_download,
+                                           "pct": -1, "transferred": 0}
         emit({"event": "op-start", "name": name, "phase": "download",
               "bytesTotal": int(total_to_download or 0)})
         return self._next_key
@@ -73,12 +77,15 @@ class DownloadProgress(libdnf5.repo.DownloadCallbacks):
         if not info:
             return 0
         total = total_to_download or info["total"] or 0
+        self._total_transferred += max(0, downloaded - info["transferred"])
+        info["transferred"] = downloaded
         pct = int(downloaded * 100 / total) if total else 0
         if pct != info["pct"]:
             info["pct"] = pct
             emit({"event": "progress", "name": info["name"], "phase": "download",
                   "percent": pct, "bytesTransferred": int(downloaded),
-                  "bytesTotal": int(total)})
+                  "bytesTotal": int(total),
+                  "totalTransferred": int(self._total_transferred)})
         return 0
 
     def end(self, user_cb_data, status, msg):
@@ -89,7 +96,10 @@ class DownloadProgress(libdnf5.repo.DownloadCallbacks):
             emit({"event": "op-error", "name": info["name"], "phase": "download",
                   "message": msg or "download failed"})
         else:
-            emit({"event": "op-done", "name": info["name"], "phase": "download"})
+            if info["total"]:
+                self._total_transferred += max(0, info["total"] - info["transferred"])
+            emit({"event": "op-done", "name": info["name"], "phase": "download",
+                  "totalTransferred": int(self._total_transferred)})
         return 0
 
 
