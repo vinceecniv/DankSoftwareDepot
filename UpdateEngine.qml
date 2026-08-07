@@ -42,9 +42,12 @@ Item {
     readonly property string progressDetail: {
         switch (phase) {
         case "dnf-download":
-            // Before the first [x/y] series dnf is refreshing repo metadata —
-            // say so instead of sitting on a silent 0%
-            return _dnfStageY > 0 ? Tr.t("package %1 of %2").arg(Math.min(_dnfStageX + 1, _dnfStageY)).arg(_dnfStageY) : Tr.t("Loading repositories…");
+            // Helper pass: aggregate bytes; before the plan arrives the
+            // helper is refreshing repo metadata — say so instead of
+            // sitting on a silent 0%
+            if (_helperPlanBytes > 0)
+                return Tr.t("%1 of %2").arg(formatBytes(_helperTransferred)).arg(formatBytes(_helperPlanBytes));
+            return _dnfStageY > 0 && _daemonKind === "shell" ? Tr.t("package %1 of %2").arg(Math.min(_dnfStageX + 1, _dnfStageY)).arg(_dnfStageY) : Tr.t("Loading repositories…");
         case "dnf-install":
         case "dms":
             return _dnfStageY > 0 ? Tr.t("step %1 of %2").arg(Math.min(_dnfStageX + 1, _dnfStageY)).arg(_dnfStageY) : "";
@@ -463,7 +466,7 @@ Item {
         etaTimer.start();
 
         if (_wantDnf) {
-            _startDaemon("dnf");
+            _startHelperUpgrade();
         } else if (_wantFlatpak) {
             _startFlatpak();
         } else if (_wantAppimage) {
@@ -503,7 +506,157 @@ Item {
         _daemonAttempts = 0;
         _passRequestedAt = Date.now();
         _nudgedBackendCheck = false;
+        _helperError = "";
         _sendDaemonUpgrade();
+    }
+
+    // ── System pass via rpm_helper.py (libdnf5) ─────────────────────────────
+    // The main rpm pass runs through the library helper: real per-package
+    // events instead of log scraping, explicit package names instead of an
+    // exclude list (dnf pulls dependencies itself). Only the dms/quickshell
+    // final pass stays on the daemon — that transaction must survive the
+    // shell reload it triggers.
+    property string _helperError: ""
+    property real _helperPlanBytes: 0
+    property real _helperTransferred: 0
+
+    Process {
+        id: helperProcess
+
+        stdout: SplitParser {
+            onRead: line => engine._onHelperEvent(line)
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            if (!engine.running || engine._dnfDone)
+                return;
+            // Success or failure, the rpm database is the arbiter: rows
+            // whose target version arrived turn green, the rest carry the
+            // helper's error message.
+            engine._verifyDaemonPass();
+        }
+    }
+
+    function _startHelperUpgrade() {
+        _daemonKind = "dnf";
+        _dnfStage = 0;
+        _dnfStageX = 0;
+        _dnfStageY = 0;
+        _helperError = "";
+        _helperPlanBytes = 0;
+        _helperTransferred = 0;
+        phase = "dnf-download";
+        const names = Object.keys(_dnfNameToKey);
+        helperProcess.command = ["pkexec", "python3", Qt.resolvedUrl("scripts/rpm_helper.py").toString().replace("file://", ""), "upgrade"].concat(names);
+        helperProcess.running = true;
+    }
+
+    function _onHelperEvent(line) {
+        let event;
+        try {
+            event = JSON.parse(line);
+        } catch (e) {
+            return;
+        }
+        const key = _dnfNameToKey[event.name] || "";
+        const state = key ? (itemStates[key] || null) : null;
+        switch (event.event) {
+        case "plan": {
+            _helperPlanBytes = event.totalDownloadBytes || 0;
+            _dnfStage = 1;
+            _dnfStageY = 100;
+            _dnfStageX = 0;
+            break;
+        }
+        case "op-start": {
+            if (!key)
+                break;
+            currentItem = event.name;
+            if (event.phase === "install" || event.phase === "remove") {
+                if (_dnfStage !== 2) {
+                    _dnfStage = 2;
+                    phase = "dnf-install";
+                }
+                _dnfStageY = event.total || _dnfStageY;
+                _dnfStageX = Math.max(0, (event.index || 1) - 1);
+                _setItem(key, {
+                    status: "active",
+                    fraction: Math.max(state ? state.fraction : 0, 0.7),
+                    detail: Tr.t("installing")
+                });
+            } else {
+                _setItem(key, {
+                    status: "active",
+                    detail: Tr.t("downloading")
+                });
+            }
+            break;
+        }
+        case "progress": {
+            const part = Math.min(100, event.percent || 0) / 100;
+            if (event.totalTransferred !== undefined) {
+                _helperTransferred = Math.max(_helperTransferred, event.totalTransferred);
+                if (_helperPlanBytes > 0)
+                    _dnfStageX = Math.min(100, Math.round(100 * _helperTransferred / _helperPlanBytes));
+            }
+            if (!key)
+                break;
+            if (event.phase === "install" || event.phase === "remove") {
+                _setItem(key, {
+                    status: "active",
+                    fraction: 0.7 + 0.3 * part,
+                    detail: Tr.t("installing") + " · " + Math.round(part * 100) + "%"
+                });
+            } else {
+                const fraction = 0.7 * part;
+                if (!state || state.fraction < fraction) {
+                    let detail = Tr.t("downloading") + " · " + Math.round(part * 100) + "%";
+                    if ((event.bytesTotal || 0) > 1024 * 1024)
+                        detail += " · " + formatBytes(event.bytesTransferred || 0) + " / " + formatBytes(event.bytesTotal);
+                    _setItem(key, {
+                        status: "active",
+                        fraction: fraction,
+                        detail: detail
+                    });
+                }
+            }
+            _updateOverall();
+            break;
+        }
+        case "op-done": {
+            if (event.totalTransferred !== undefined)
+                _helperTransferred = Math.max(_helperTransferred, event.totalTransferred);
+            if (!key)
+                break;
+            if (event.phase === "install" || event.phase === "remove") {
+                _setItem(key, {
+                    status: "active",
+                    fraction: 1,
+                    detail: ""
+                });
+            } else {
+                _setItem(key, {
+                    status: "active",
+                    fraction: Math.max(state ? state.fraction : 0, 0.7),
+                    detail: Tr.t("downloaded")
+                });
+            }
+            _updateOverall();
+            break;
+        }
+        case "op-error": {
+            if (key)
+                _setItem(key, {
+                    status: "error",
+                    detail: event.message || Tr.t("failed")
+                });
+            break;
+        }
+        case "error": {
+            _helperError = event.message || "";
+            break;
+        }
+        }
     }
 
     // When this pass was first requested: the polite waits below (running
@@ -631,7 +784,11 @@ Item {
         daemonRetryTimer.stop();
         if (!running)
             return;
-        if (!_dnfDone || (_daemonKind === "shell" && !_shellDone)) {
+        // The helper pass runs as root — we cannot signal it, and aborting
+        // an rpm transaction midway would be worse than finishing it. Its
+        // late exit is ignored via the running guard; only daemon passes
+        // can be cancelled for real.
+        if (!helperProcess.running && (!_dnfDone || (_daemonKind === "shell" && !_shellDone))) {
             SystemUpdateService.cancelUpdates();
         }
         if (flatpakProcess.running && flatpakProcess.processId > 0) {
@@ -872,7 +1029,7 @@ Item {
                 failCount++;
                 _setItem(map[base], {
                     status: "error",
-                    detail: Tr.t("the package was not updated — try again")
+                    detail: _helperError || Tr.t("the package was not updated — try again")
                 });
             }
         }
@@ -989,6 +1146,11 @@ Item {
     }
 
     function _parseDnfLog() {
+        // The daemon log only drives daemon passes; during the helper pass
+        // stray daemon output (its periodic check) must not touch the
+        // stage model or phase.
+        if (helperProcess.running)
+            return;
         const log = SystemUpdateService.recentLog || [];
         // The daemon keeps a rolling window; only look at fresh lines.
         const bracketRe = /\[\s*(\d+)\s*\/\s*(\d+)\s*\]\s*(.*)/;
