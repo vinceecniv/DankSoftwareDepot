@@ -1,6 +1,6 @@
 # <picture><source media="(prefers-color-scheme: dark)" srcset="assets/icons/dank-software-depot-dark.svg"><img src="assets/icons/dank-software-depot-light.svg" alt="" width="42"></picture> Dank Software Depot
 
-**Beta** · **Fedora-based distros only (for now)** · English / Nederlands / Deutsch / Français / Español / Português / Italiano / Polski / Svenska / 中文
+**Beta** · **Fedora-based distros (Debian/Ubuntu experimental)** · English / Nederlands / Deutsch / Français / Español / Português / Italiano / Polski / Svenska / 中文
 
 A full software & updates center plugin for
 [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell):
@@ -17,11 +17,14 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 
 - **Beta.** Actively developed; things may move around. Feedback and issues
   are welcome.
-- **Fedora-based distros only** (Fedora, Nobara, RHEL/CentOS family): package
-  management uses `dnf5` and Fedora AppStream metadata. The app shows a
-  warning banner when it detects a non-Fedora-based OS. Flatpak, AppImage and
-  firmware support are distro-agnostic, so broader distro support (e.g. Arch)
-  is a possible future direction.
+- **Fedora-based distros first** (Fedora, Nobara, RHEL/CentOS family):
+  package management uses libdnf5 and Fedora AppStream metadata.
+  **Debian/Ubuntu support is experimental**: transactions (python-apt),
+  search, sizes, inventory, holds and version restore are implemented and
+  container-tested, but not yet validated on real desktop installs — see
+  PROTOCOL.md for the remaining gaps. The app warns on other distros.
+  Flatpak, AppImage and firmware support are distro-agnostic; Arch is a
+  possible future direction.
 
 ## The five tabs
 
