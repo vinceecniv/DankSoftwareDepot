@@ -3,6 +3,37 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.3.0 — 2026-08-07
+
+- **Programmatic dnf.** All rpm transactions (installs, removals,
+  downgrades and the system pass of update runs) now go through a new
+  libdnf5 helper — the library dnf5 itself uses — instead of scraping
+  command output. Progress comes from real library callbacks: exact
+  per-package download bytes, a steady aggregate transfer counter, and
+  per-package rpm install progress. Failures carry the library's actual
+  error message. The DMS daemon remains for update checks and the
+  DankMaterialShell self-update pass (which must survive the shell
+  reload).
+- The helper event protocol is documented in PROTOCOL.md and is
+  package-manager-agnostic by design — groundwork for possible
+  apt (Debian) and pacman (Arch) backends later.
+- Update runs that update DMS itself no longer lose their action-log
+  entry to the shell reload: the entry is stashed beforehand and written
+  at the next start, verified against the rpm database, with its
+  original timestamp.
+- Clicking the updates notification (or its Open button) opens the main
+  window on the Updates tab.
+- Update-run reliability: waits on a busy daemon are now time-capped and
+  a lost backend selection triggers a re-check — a stuck "preparing"
+  phase can no longer hang for minutes.
+- Dashboard rearranged: system/status on top, installed/recently-updated
+  below, equal heights, top-aligned content, larger card titles; the
+  recently-updated card scrolls through the last 50 packages.
+- Flatpak runtimes and extensions are hidden by default (still always
+  updated; a footnote points to the setting).
+- Confirm buttons on red fills pick black or white by the fill's
+  lightness — readable in every theme.
+
 ## 0.2.3 — 2026-08-06
 
 - **Delayed updates removed.** The maturity window kept fighting the
