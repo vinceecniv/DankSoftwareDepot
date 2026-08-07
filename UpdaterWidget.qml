@@ -202,7 +202,11 @@ PluginComponent {
             _lastNotifiedCount = count;
             const text = (count === 1 ? Tr.t("%1 update available") : Tr.t("%1 updates available")).arg(count);
             const iconFile = Qt.resolvedUrl("assets/icons/dank-software-depot-" + (Theme.isLightMode ? "light" : "dark") + ".svg").toString().replace("file://", "");
-            Quickshell.execDetached(["notify-send", "-a", "Dank Software Depot", "-i", iconFile, text]);
+            // Clicking the notification body (action "default") or its Open
+            // button opens the main window: notify-send --action waits and
+            // prints the chosen action, the detached shell turns that into
+            // the plugin's own IPC call.
+            Quickshell.execDetached(["sh", "-c", "chosen=$(notify-send -a 'Dank Software Depot' -i \"$1\" -A default=\"$2\" -A open=\"$2\" \"$3\"); [ -n \"$chosen\" ] && dms ipc call dankSoftwareDepot open", "notify", iconFile, Tr.t("Open"), text]);
         }
         if (autoUpdateMode === "auto" && !engine.running && !SystemUpdateService.isUpgrading) {
             const hasFlatpaks = (SystemUpdateService.availableUpdates || []).some(pkg => pkg.repo === "flatpak");
@@ -541,7 +545,9 @@ PluginComponent {
         target: "dankSoftwareDepot"
 
         function open(): void {
-            updaterWindow.visible = true;
+            // Always land on the Updates tab — also when the window was
+            // already open on another tab (notification click)
+            updaterWindow.openTab(0);
         }
 
         function close(): void {
