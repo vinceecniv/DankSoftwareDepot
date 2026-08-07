@@ -440,14 +440,17 @@ Item {
         installFraction = 0.02;
         _fpOpCount = 0;
         _fpOpsDone = 0;
+        _helperError = "";
         if (source.kind === "flatpak") {
             // The flatpak CLI is silent when piped; the libflatpak helper
             // emits NDJSON progress events instead (same one updates use).
             installProgress = Tr.t("Starting…");
             installProcess.command = ["python3", scriptPath.replace("enrich.py", "flatpak_helper.py"), "install", source.source, source.ref];
         } else {
+            // rpm installs run through the libdnf5 helper: real per-package
+            // byte progress as NDJSON events instead of scraping dnf output.
             installProgress = Tr.t("Waiting for authorization…");
-            installProcess.command = ["pkexec", "dnf5", "install", "-y", source.ref];
+            installProcess.command = ["pkexec", "python3", scriptPath.replace("enrich.py", "rpm_helper.py"), "install", source.ref];
         }
         installProcess.running = true;
     }
@@ -552,40 +555,79 @@ Item {
         return Math.max(1, Math.round(bytes / 1e3)) + " kB";
     }
 
-    // NDJSON event from flatpak_helper.py install
+    // NDJSON event from flatpak_helper.py or rpm_helper.py. Flatpak events
+    // carry no phase (download-dominated); the rpm helper tags each event
+    // with download/install/remove and index/total for the rpm stage.
+    property int _rpmIdx: 0
+    property int _rpmTot: 0
+
     function _installEvent(event) {
         const count = Math.max(1, _fpOpCount);
+        const phase = event.phase || "";
         switch (event.event) {
+        case "status":
+            installStep = 0;
+            installFraction = 0.1;
+            installProgress = Tr.t("Loading repositories…");
+            break;
         case "plan":
             _fpOpCount = (event.ops || []).length;
             _fpOpsDone = 0;
+            _rpmIdx = 0;
+            _rpmTot = 0;
             installStep = 1;
             installFraction = 0.05;
             const total = _formatBytes(event.totalDownloadBytes);
             installProgress = total !== "" ? Tr.t("Downloading (%1)…").arg(total) : Tr.t("Downloading");
             break;
         case "op-start":
-            installStep = 1;
-            installProgress = Tr.t("Downloading") + " " + Math.min(_fpOpsDone + 1, count) + "/" + count;
+            if (phase === "install" || phase === "remove") {
+                _rpmIdx = event.index || (_rpmIdx + 1);
+                _rpmTot = event.total || _rpmTot;
+                installStep = 2;
+                installProgress = (phase === "remove" ? Tr.t("Removing") : Tr.t("Installing")) + " " + _rpmIdx + "/" + Math.max(1, _rpmTot);
+            } else {
+                installStep = 1;
+                installProgress = Tr.t("Downloading") + " " + Math.min(_fpOpsDone + 1, count) + "/" + count;
+            }
             break;
         case "progress":
             const part = Math.min(100, event.percent || 0) / 100;
-            const overall = Math.min(1, (_fpOpsDone + part) / count);
-            installStep = 1;
-            installFraction = 0.05 + 0.9 * overall;
-            // Transaction-wide percentage, not the current component's
-            installProgress = Tr.t("Downloading") + " " + Math.min(_fpOpsDone + 1, count) + "/" + count + " · " + Math.round(overall * 100) + "%";
+            if (phase === "install" || phase === "remove") {
+                const tot = Math.max(1, _rpmTot);
+                const overall = Math.min(1, (Math.max(0, _rpmIdx - 1) + part) / tot);
+                installStep = 2;
+                installFraction = 0.65 + 0.3 * overall;
+                installProgress = (phase === "remove" ? Tr.t("Removing") : Tr.t("Installing")) + " " + _rpmIdx + "/" + tot + " · " + Math.round(overall * 100) + "%";
+            } else {
+                // rpm has a real install stage after this; flatpak's download
+                // dominates its whole transaction
+                const span = installProcess._source === "System" ? 0.55 : 0.9;
+                const overall = Math.min(1, (_fpOpsDone + part) / count);
+                installStep = 1;
+                installFraction = 0.05 + span * overall;
+                // Transaction-wide percentage, not the current component's
+                installProgress = Tr.t("Downloading") + " " + Math.min(_fpOpsDone + 1, count) + "/" + count + " · " + Math.round(overall * 100) + "%";
+            }
             break;
         case "op-done":
+            if (phase === "install" || phase === "remove")
+                break;
             _fpOpsDone = Math.min(_fpOpsDone + 1, count);
-            installFraction = 0.05 + 0.9 * (_fpOpsDone / count);
+            installFraction = 0.05 + (installProcess._source === "System" ? 0.55 : 0.9) * (_fpOpsDone / count);
             if (_fpOpsDone >= count) {
                 installStep = 2;
                 installProgress = Tr.t("Installing…");
             }
             break;
+        case "error":
+            _helperError = event.message || "";
+            break;
         }
     }
+
+    // Last error message from a helper, shown with the failure result
+    property string _helperError: ""
 
     function _installLine(raw) {
         const line = raw.trim();
@@ -674,7 +716,7 @@ Item {
             view.installStep = 0;
             view.installFraction = 0;
             view.installIcon = "";
-            view.lastInstallResult = exitCode === 0 ? Tr.t("%1 installed ✓").arg(installProcess._label) : Tr.t("%1 failed (exit %2)").arg(installProcess._label).arg(exitCode);
+            view.lastInstallResult = exitCode === 0 ? Tr.t("%1 installed ✓").arg(installProcess._label) : (Tr.t("%1 failed (exit %2)").arg(installProcess._label).arg(exitCode) + (view._helperError !== "" ? " · " + view._helperError : ""));
             if (exitCode === 0) {
                 if (view.logger) {
                     view.logger.record("install", Tr.t("Installed %1").arg(installProcess._label), [{
