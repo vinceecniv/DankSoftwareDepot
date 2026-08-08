@@ -276,5 +276,7 @@
     "Waiting": "等待中",
     "Completed": "已完成",
     "View in log": "在日志中查看",
-    "Status": "状态"
+    "Status": "状态",
+    "Upvote plugin in Directory": "在插件目录中点赞",
+    "Star on GitHub": "在 GitHub 上加星"
 }

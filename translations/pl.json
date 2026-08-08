@@ -276,5 +276,7 @@
     "Waiting": "Oczekujące",
     "Completed": "Ukończone",
     "View in log": "Pokaż w dzienniku",
-    "Status": "Stan"
+    "Status": "Stan",
+    "Upvote plugin in Directory": "Zagłosuj na wtyczkę w katalogu",
+    "Star on GitHub": "Dodaj gwiazdkę na GitHubie"
 }

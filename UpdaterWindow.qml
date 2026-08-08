@@ -2869,6 +2869,77 @@ FloatingWindow {
                         }
 
                     }
+
+                    // ── Support links ───────────────────────────────────────
+                    // Only on the dashboard, where nothing else needs doing.
+                    // Deliberately quiet: a plugin asking for votes and stars
+                    // should not outshout the software it is reporting on.
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.topMargin: Theme.spacingXS
+                        spacing: Theme.spacingS
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
+                        Repeater {
+                            model: [
+                                {
+                                    text: Tr.t("Upvote plugin in Directory"),
+                                    icon: "thumb_up",
+                                    url: "https://github.com/AvengeMedia/dms-plugin-registry/issues/720"
+                                },
+                                {
+                                    text: Tr.t("Star on GitHub"),
+                                    icon: "star",
+                                    url: "https://github.com/vinceecniv/DankSoftwareDepot"
+                                }
+                            ]
+
+                            delegate: Rectangle {
+                                id: supportChip
+
+                                required property var modelData
+
+                                implicitWidth: supportChipRow.implicitWidth + Theme.spacingM * 2
+                                implicitHeight: 26
+                                radius: height / 2
+                                color: chipHover.hovered ? Theme.withAlpha(Theme.surfaceVariantText, 0.16) : Theme.withAlpha(Theme.surfaceVariantText, 0.08)
+
+                                HoverHandler {
+                                    id: chipHover
+                                    cursorShape: Qt.PointingHandCursor
+                                }
+
+                                TapHandler {
+                                    onTapped: Qt.openUrlExternally(supportChip.modelData.url)
+                                }
+
+                                RowLayout {
+                                    id: supportChipRow
+                                    anchors.centerIn: parent
+                                    spacing: Theme.spacingXS
+
+                                    DankIcon {
+                                        name: supportChip.modelData.icon
+                                        size: 13
+                                        color: Theme.surfaceVariantText
+                                    }
+
+                                    StyledText {
+                                        text: supportChip.modelData.text
+                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                        color: Theme.surfaceVariantText
+                                    }
+                                }
+                            }
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+                    }
                 }
             }
         }

@@ -276,5 +276,7 @@
     "Waiting": "Em espera",
     "Completed": "Concluído",
     "View in log": "Ver no registo",
-    "Status": "Estado"
+    "Status": "Estado",
+    "Upvote plugin in Directory": "Votar no plugin no diretório",
+    "Star on GitHub": "Dar uma estrela no GitHub"
 }

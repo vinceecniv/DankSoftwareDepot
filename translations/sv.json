@@ -276,5 +276,7 @@
     "Waiting": "Väntar",
     "Completed": "Klart",
     "View in log": "Visa i loggen",
-    "Status": "Status"
+    "Status": "Status",
+    "Upvote plugin in Directory": "Rösta på insticksmodulen i katalogen",
+    "Star on GitHub": "Stjärnmärk på GitHub"
 }
