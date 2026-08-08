@@ -451,8 +451,30 @@ PluginComponent {
                 } catch (e) {
                     root.cleanup = null;
                 }
+                if (root._pendingCleanupLog === "")
+                    return;
+                const freed = root._cleanupBefore - root._cleanupTotal();
+                const title = root._pendingCleanupLog;
+                const items = root._pendingCleanupItems;
+                root._pendingCleanupLog = "";
+                root._pendingCleanupItems = [];
+                if (freed > 0)
+                    actionLog.record("uninstall", title + " · " + engine.formatBytes(freed), items);
             }
         }
+    }
+
+    // Cleanups are logged by what they freed, not by whether the command
+    // exited cleanly: `dnf clean packages` returns 0 with nothing to clean,
+    // and an action log that reports emptying an empty cache is lying.
+    property real _cleanupBefore: 0
+    property string _pendingCleanupLog: ""
+    property var _pendingCleanupItems: []
+
+    function _cleanupTotal() {
+        if (!cleanup)
+            return 0;
+        return (cleanup.unneeded.bytes || 0) + (cleanup.cache.bytes || 0);
     }
 
     function removeUnneeded() {
@@ -460,8 +482,9 @@ PluginComponent {
         if (names.length === 0 || cleanupBusy !== "")
             return;
         cleanupBusy = "packages";
-        cleanupProcess._logTitle = Tr.t("Removed %1 unneeded packages").arg(names.length);
-        cleanupProcess._logItems = names.map(n => ({
+        _cleanupBefore = _cleanupTotal();
+        _pendingCleanupLog = Tr.t("Removed %1 unneeded packages").arg(names.length);
+        _pendingCleanupItems = names.map(n => ({
                     name: n,
                     from: "",
                     to: "",
@@ -476,8 +499,9 @@ PluginComponent {
         if (cleanupBusy !== "")
             return;
         cleanupBusy = "cache";
-        cleanupProcess._logTitle = Tr.t("Emptied the package cache");
-        cleanupProcess._logItems = [];
+        _cleanupBefore = _cleanupTotal();
+        _pendingCleanupLog = Tr.t("Emptied the package cache");
+        _pendingCleanupItems = [];
         cleanupProcess.command = Backend.cleanCacheCommand();
         cleanupProcess.running = true;
     }
@@ -485,13 +509,11 @@ PluginComponent {
     Process {
         id: cleanupProcess
 
-        property string _logTitle: ""
-        property var _logItems: []
-
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0 && _logTitle !== "")
-                actionLog.record("uninstall", _logTitle, _logItems);
             root.cleanupBusy = "";
+            if (exitCode !== 0)
+                root._pendingCleanupLog = "";
+            // The rescan decides what actually happened
             root.refreshCleanup();
         }
     }

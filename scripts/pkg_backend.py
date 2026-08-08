@@ -500,12 +500,18 @@ def changelog(name):
 # anywhere until a disk fills.
 
 CACHE_DIRS = ("/var/cache/libdnf5", "/var/cache/dnf", "/var/cache/apt/archives", "/var/cache/pacman/pkg")
+# Only downloaded packages count. The rest of these directories is repository
+# metadata, which the next update check downloads straight back — deleting it
+# is churn, not reclaimed space, and `clean packages` does not touch it either.
+PACKAGE_SUFFIXES = (".rpm", ".deb", ".pkg.tar.zst", ".pkg.tar.xz", ".pkg.tar.gz")
 
 
-def _dir_bytes(path):
+def _package_cache_bytes(path):
     total = 0
     for root, _dirs, files in os.walk(path, onerror=lambda e: None):
         for name in files:
+            if not name.endswith(PACKAGE_SUFFIXES):
+                continue
             try:
                 total += os.lstat(os.path.join(root, name)).st_size
             except OSError:
@@ -542,7 +548,7 @@ def cleanup_scan():
     cache_bytes = 0
     for path in CACHE_DIRS:
         if os.path.isdir(path):
-            cache_bytes += _dir_bytes(path)
+            cache_bytes += _package_cache_bytes(path)
 
     return {"unneeded": {"count": len(names), "bytes": size, "names": sorted(names)},
             "cache": {"bytes": cache_bytes}}
