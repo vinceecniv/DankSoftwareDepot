@@ -87,8 +87,10 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   wide percentage (repositories → download x/y → install)
 - **AppImage support**: searchable catalog (appimage.github.io, 1400+ apps),
   install straight from the app's GitHub releases or from a local file/URL;
-  icon and desktop entry are extracted; installs into the same folder
-  Gearlever uses, and existing AppImages are adopted automatically
+  icon and desktop entry are extracted; installs into `~/AppImages`
+  (created on first install — the same folder Gearlever uses by default, and
+  its own setting is honoured when it points elsewhere), and existing
+  AppImages are adopted automatically
 
 ### 4 · Firmware
 - fwupd device inventory: which hardware supports firmware updates, current

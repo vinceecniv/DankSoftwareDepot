@@ -29,7 +29,13 @@ import time
 import urllib.request
 
 def _gearlever_dir():
-    """Install into the same folder Gearlever uses, when configured."""
+    """Gearlever's folder, but only when it was pointed somewhere else.
+
+    `dconf read` prints explicitly set values only — a default Gearlever
+    install leaves the key unset and answers from its GSettings schema, so
+    this is empty far more often than it looks. That is fine: the schema
+    default is ~/AppImages, which is also ours.
+    """
     try:
         res = subprocess.run(["dconf", "read", "/it/mijorus/gearlever/appimages-default-folder"],
                              capture_output=True, text=True, timeout=5)
@@ -41,11 +47,19 @@ def _gearlever_dir():
     return ""
 
 
+DEFAULT_APP_DIR = os.path.expanduser("~/AppImages")
+
+
 def resolve_app_dir():
-    for candidate in (_gearlever_dir(), os.path.expanduser("~/AppImages")):
-        if candidate and os.path.isdir(candidate):
-            return candidate
-    return os.path.expanduser("~/Applications")
+    """Where new AppImages go.
+
+    ~/AppImages regardless of whether Gearlever is installed: it is
+    Gearlever's own default, so the two agree on one folder even on a
+    machine that never had it. Created on first install rather than
+    required up front — an empty folder in $HOME is not worth leaving
+    behind for someone who never installs an AppImage.
+    """
+    return _gearlever_dir() or DEFAULT_APP_DIR
 
 
 APP_DIR = resolve_app_dir()
