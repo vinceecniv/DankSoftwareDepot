@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "Ничего не найдено по «%1»",
     "Commands": "Команды",
     "Search \"%1\" in Install": "Искать «%1» в Установке",
+    "Search \"%1\" in Installed": "Искать «%1» в Установленных",
+    "Search \"%1\" in Log": "Искать «%1» в Журнале",
     "Search everything": "Искать везде",
     "Keyboard": "Клавиатура",
-    "Search this tab": "Искать в этой вкладке"
+    "Search this tab": "Искать в этой вкладке",
+    "Show in app launcher": "Показывать в меню приложений",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "Создаёт ярлык, чтобы это окно открывалось из меню приложений как отдельная программа.",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "Открывать Dank Software Depot из меню приложений? Ярлык и значок будут созданы в вашем домашнем каталоге.",
+    "Adding to the launcher…": "Добавление в меню приложений…",
+    "Add": "Добавить",
+    "the launcher entry could not be written": "не удалось записать ярлык"
 }

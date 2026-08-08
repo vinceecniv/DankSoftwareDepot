@@ -708,6 +708,22 @@ FloatingWindow {
 
                         DankToggle {
                             width: parent.width
+                            text: Tr.t("Show in app launcher")
+                            description: Tr.t("Place a desktop entry so this window can be opened from the application launcher, like a standalone app.")
+                            checked: Backend.launcherEntryPresent
+                            enabled: Backend.launcherEntryChecked && !Backend.launcherEntryBusy
+                            onToggled: checked => {
+                                if (checked)
+                                    Backend.installLauncherEntry();
+                                else
+                                    Backend.removeLauncherEntry();
+                                // However it is answered, it has now been asked
+                                PluginService.savePluginData("dankSoftwareDepot", "launcherPromptDone", true);
+                            }
+                        }
+
+                        DankToggle {
+                            width: parent.width
                             text: Tr.t("Bar click opens window")
                             description: Tr.t("Open this window instead of the compact popout when clicking the bar pill.")
                             checked: win.widgetRoot ? win.widgetRoot.pillOpensWindow : false
@@ -904,6 +920,10 @@ FloatingWindow {
         if (visible) {
             tabs.currentIndex = 0;
             refreshDashboard();
+            // A palette left open when the window closed must not be what
+            // greets you when it comes back
+            palette.close();
+            Backend.checkLauncherEntry();
         }
     }
 
@@ -1837,6 +1857,94 @@ FloatingWindow {
                     Layout.fillWidth: true
                     visible: Backend.requirementInstallError !== ""
                     text: Backend.requirementInstallError
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    color: Theme.error
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 3
+                    elide: Text.ElideRight
+                }
+            }
+        }
+
+        // ── Launcher entry offer ────────────────────────────────────────────
+        // Enabling a plugin cannot write to the applications directory, so
+        // the app is reachable only from the bar until someone follows a
+        // README step. Offered once, on the tab you land on; declining is
+        // remembered, and the switch in settings stays for either direction.
+        Rectangle {
+            Layout.fillWidth: true
+            visible: win.currentTab === 0 && Backend.launcherEntryChecked && !Backend.launcherEntryPresent && !(win.widgetRoot && win.widgetRoot.launcherPromptDone)
+            implicitHeight: launcherColumn.implicitHeight + Theme.spacingM * 2
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.secondary, 0.10)
+            border.width: 1
+            border.color: Theme.withAlpha(Theme.secondary, 0.30)
+
+            ColumnLayout {
+                id: launcherColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingM
+                spacing: Theme.spacingS
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingM
+
+                    DankIcon {
+                        name: "rocket_launch"
+                        size: 20
+                        color: Theme.secondary
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: Backend.launcherEntryBusy ? Tr.t("Adding to the launcher…") : Tr.t("Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.")
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceText
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Item {
+                        visible: !Backend.launcherEntryBusy
+                        implicitWidth: launcherAddButton.width
+                        implicitHeight: launcherAddButton.height
+
+                        DankButton {
+                            id: launcherAddButton
+                            buttonHeight: 28
+                            horizontalPadding: Theme.spacingM
+                            iconName: "add"
+                            iconSize: 14
+                            text: Tr.t("Add")
+                            backgroundColor: Theme.primary
+                            textColor: Theme.primaryText
+                            onClicked: {
+                                Backend.installLauncherEntry();
+                                PluginService.savePluginData("dankSoftwareDepot", "launcherPromptDone", true);
+                            }
+                        }
+                    }
+
+                    // Closing it is an answer too: the offer does not return,
+                    // and the switch in settings is where it lives afterwards
+                    DankActionButton {
+                        visible: !Backend.launcherEntryBusy
+                        buttonSize: 28
+                        iconName: "close"
+                        iconSize: 16
+                        iconColor: Theme.surfaceVariantText
+                        tooltipText: Tr.t("Dismiss")
+                        onClicked: PluginService.savePluginData("dankSoftwareDepot", "launcherPromptDone", true)
+                    }
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    visible: Backend.launcherEntryError !== ""
+                    text: Backend.launcherEntryError
                     font.pixelSize: Theme.fontSizeSmall - 1
                     color: Theme.error
                     wrapMode: Text.WordWrap

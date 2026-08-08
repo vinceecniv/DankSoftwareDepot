@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "Không có gì khớp \"%1\"",
     "Commands": "Lệnh",
     "Search \"%1\" in Install": "Tìm \"%1\" trong Cài đặt",
+    "Search \"%1\" in Installed": "Tìm \"%1\" trong Đã cài đặt",
+    "Search \"%1\" in Log": "Tìm \"%1\" trong Nhật ký",
     "Search everything": "Tìm mọi thứ",
     "Keyboard": "Bàn phím",
-    "Search this tab": "Tìm trong thẻ này"
+    "Search this tab": "Tìm trong thẻ này",
+    "Show in app launcher": "Hiển thị trong trình khởi chạy ứng dụng",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "Tạo một mục desktop để mở cửa sổ này từ trình khởi chạy ứng dụng, như một ứng dụng độc lập.",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "Mở Dank Software Depot từ trình khởi chạy ứng dụng? Mục và biểu tượng được đặt trong thư mục cá nhân của bạn.",
+    "Adding to the launcher…": "Đang thêm vào trình khởi chạy…",
+    "Add": "Thêm",
+    "the launcher entry could not be written": "không thể ghi mục desktop"
 }

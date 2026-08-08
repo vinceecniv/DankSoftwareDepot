@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "没有匹配“%1”的结果",
     "Commands": "命令",
     "Search \"%1\" in Install": "在“安装”中搜索“%1”",
+    "Search \"%1\" in Installed": "在“已安装”中搜索“%1”",
+    "Search \"%1\" in Log": "在“日志”中搜索“%1”",
     "Search everything": "搜索全部",
     "Keyboard": "键盘",
-    "Search this tab": "在此标签页中搜索"
+    "Search this tab": "在此标签页中搜索",
+    "Show in app launcher": "在应用启动器中显示",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "创建桌面条目，让此窗口可以像独立应用一样从应用启动器打开。",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "从应用启动器打开 Dank Software Depot？条目和图标会创建在你自己的主目录中。",
+    "Adding to the launcher…": "正在添加到启动器…",
+    "Add": "添加",
+    "the launcher entry could not be written": "无法写入桌面条目"
 }

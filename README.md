@@ -155,11 +155,27 @@ dms restart
 Enable **Dank Software Depot** in DMS Settings → Plugins, then add the widget
 to a DankBar layout.
 
-To launch the window from the app launcher like a standalone app:
+To launch the window from the app launcher like a standalone app, let the app
+place the entry itself: the Updates tab offers it once ("Add"), and
+**Settings → Show in app launcher** switches it on or off at any time. Both
+write a desktop entry and its icon into your own home directory — no root, and
+removing the switch takes them away again.
+
+The same by hand, if you would rather (the entry names the icon, so without the
+second step the launcher shows a blank one):
 
 ```bash
-cp com.danklinux.dankSoftwareDepot.desktop ~/.local/share/applications/
+install -Dm644 com.danklinux.dankSoftwareDepot.desktop \
+  ~/.local/share/applications/com.danklinux.dankSoftwareDepot.desktop
+install -Dm644 assets/icons/dank-software-depot-dark.svg \
+  ~/.local/share/icons/hicolor/scalable/apps/dank-software-depot.svg
+install -Dm644 assets/icons/dank-software-depot-symbolic.svg \
+  ~/.local/share/icons/hicolor/symbolic/apps/dank-software-depot-symbolic.svg
+update-desktop-database ~/.local/share/applications
 ```
+
+The entry calls the IPC below, so DMS must be running — it opens the window in
+the shell rather than starting a second process.
 
 ### IPC
 

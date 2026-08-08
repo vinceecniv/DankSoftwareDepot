@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "'%1'과(와) 일치하는 항목이 없습니다",
     "Commands": "명령",
     "Search \"%1\" in Install": "'설치'에서 '%1' 검색",
+    "Search \"%1\" in Installed": "'설치됨'에서 '%1' 검색",
+    "Search \"%1\" in Log": "'기록'에서 '%1' 검색",
     "Search everything": "전체 검색",
     "Keyboard": "키보드",
-    "Search this tab": "이 탭에서 검색"
+    "Search this tab": "이 탭에서 검색",
+    "Show in app launcher": "앱 실행기에 표시",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "데스크톱 항목을 만들어 이 창을 독립 실행형 앱처럼 앱 실행기에서 열 수 있게 합니다.",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "앱 실행기에서 Dank Software Depot을 여시겠습니까? 항목과 아이콘은 사용자 홈 디렉터리에 만들어집니다.",
+    "Adding to the launcher…": "실행기에 추가하는 중…",
+    "Add": "추가",
+    "the launcher entry could not be written": "데스크톱 항목을 쓸 수 없습니다"
 }

@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "Semmi nem egyezik ezzel: „%1”",
     "Commands": "Parancsok",
     "Search \"%1\" in Install": "„%1” keresése a Telepítés fülön",
+    "Search \"%1\" in Installed": "„%1” keresése a Telepítve fülön",
+    "Search \"%1\" in Log": "„%1” keresése a Napló fülön",
     "Search everything": "Keresés mindenben",
     "Keyboard": "Billentyűzet",
-    "Search this tab": "Keresés ezen a lapon"
+    "Search this tab": "Keresés ezen a lapon",
+    "Show in app launcher": "Megjelenítés az alkalmazásindítóban",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "Létrehoz egy asztali bejegyzést, hogy ez az ablak önálló alkalmazásként megnyitható legyen az alkalmazásindítóból.",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "Megnyitja a Dank Software Depotot az alkalmazásindítóból? A bejegyzés és az ikon a saját mappájába kerül.",
+    "Adding to the launcher…": "Hozzáadás az indítóhoz…",
+    "Add": "Hozzáadás",
+    "the launcher entry could not be written": "az asztali bejegyzést nem sikerült létrehozni"
 }

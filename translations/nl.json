@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "Niets komt overeen met \"%1\"",
     "Commands": "Opdrachten",
     "Search \"%1\" in Install": "Zoek \"%1\" in Installeren",
+    "Search \"%1\" in Installed": "Zoek \"%1\" in Geïnstalleerd",
+    "Search \"%1\" in Log": "Zoek \"%1\" in Logboek",
     "Search everything": "Zoek in alles",
     "Keyboard": "Toetsenbord",
-    "Search this tab": "Zoek in dit tabblad"
+    "Search this tab": "Zoek in dit tabblad",
+    "Show in app launcher": "Tonen in de programmastarter",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "Plaatst een bureaubladvermelding zodat dit venster als losstaand programma vanuit de programmastarter geopend kan worden.",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "Dank Software Depot vanuit je programmastarter openen? De vermelding en het pictogram komen in je eigen persoonlijke map te staan.",
+    "Adding to the launcher…": "Bezig met toevoegen aan de starter…",
+    "Add": "Toevoegen",
+    "the launcher entry could not be written": "de bureaubladvermelding kon niet worden weggeschreven"
 }

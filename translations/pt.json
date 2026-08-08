@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "Nada corresponde a \"%1\"",
     "Commands": "Comandos",
     "Search \"%1\" in Install": "Pesquisar \"%1\" em Instalar",
+    "Search \"%1\" in Installed": "Pesquisar \"%1\" em Instalado",
+    "Search \"%1\" in Log": "Pesquisar \"%1\" no Registro",
     "Search everything": "Pesquisar tudo",
     "Keyboard": "Teclado",
-    "Search this tab": "Pesquisar neste separador"
+    "Search this tab": "Pesquisar neste separador",
+    "Show in app launcher": "Mostrar no lançador de aplicativos",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "Cria uma entrada de desktop para abrir esta janela pelo lançador de aplicativos, como um aplicativo independente.",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "Abrir o Dank Software Depot pelo lançador de aplicativos? A entrada e o ícone são criados na sua própria pasta pessoal.",
+    "Adding to the launcher…": "Adicionando ao lançador…",
+    "Add": "Adicionar",
+    "the launcher entry could not be written": "não foi possível gravar a entrada de desktop"
 }

@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "「%1」に一致するものはありません",
     "Commands": "コマンド",
     "Search \"%1\" in Install": "「インストール」で「%1」を検索",
+    "Search \"%1\" in Installed": "「インストール済み」で「%1」を検索",
+    "Search \"%1\" in Log": "「ログ」で「%1」を検索",
     "Search everything": "すべてを検索",
     "Keyboard": "キーボード",
-    "Search this tab": "このタブ内を検索"
+    "Search this tab": "このタブ内を検索",
+    "Show in app launcher": "アプリランチャーに表示",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "デスクトップエントリを作成し、独立したアプリのようにアプリランチャーからこのウィンドウを開けるようにします。",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "Dank Software Depot をアプリランチャーから開けるようにしますか？エントリとアイコンはご自身のホームディレクトリに作成されます。",
+    "Adding to the launcher…": "ランチャーに追加しています…",
+    "Add": "追加",
+    "the launcher entry could not be written": "デスクトップエントリを書き込めませんでした"
 }

@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "Нічого не відповідає «%1»",
     "Commands": "Команди",
     "Search \"%1\" in Install": "Шукати «%1» у Встановленні",
+    "Search \"%1\" in Installed": "Шукати «%1» у Встановлених",
+    "Search \"%1\" in Log": "Шукати «%1» у Журналі",
     "Search everything": "Шукати всюди",
     "Keyboard": "Клавіатура",
-    "Search this tab": "Шукати в цій вкладці"
+    "Search this tab": "Шукати в цій вкладці",
+    "Show in app launcher": "Показувати в меню програм",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "Створює запис .desktop, щоб це вікно відкривалося з меню програм як окрема програма.",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "Відкривати Dank Software Depot із меню програм? Запис і піктограму буде створено у вашій домашній теці.",
+    "Adding to the launcher…": "Додавання до меню програм…",
+    "Add": "Додати",
+    "the launcher entry could not be written": "не вдалося записати запис .desktop"
 }

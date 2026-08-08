@@ -20,6 +20,9 @@ PluginComponent {
     readonly property bool confirmBeforeUpdate: pluginData.confirmBeforeUpdate === true
     readonly property bool pillOpensWindow: pluginData.pillOpensWindow === true
     readonly property bool includeFirmware: pluginData.includeFirmware !== false
+    // The offer to place a launcher entry is made once; declining it is a
+    // decision, not something to be asked again on the next window open
+    readonly property bool launcherPromptDone: pluginData.launcherPromptDone === true
 
     property bool confirmArmed: false
 

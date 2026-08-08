@@ -289,6 +289,78 @@ Item {
     // Human label of the system package source ("Install from %1")
     readonly property string systemRepoLabel: backendId === "apt" ? "Debian" : (backendId === "pacman" ? "Arch" : "Fedora")
 
+    // ── Launcher entry ──────────────────────────────────────────────────────
+    // Enabling the plugin puts a widget in the bar; it cannot put an entry in
+    // the application launcher, because that is a file in the user's data
+    // directory and no installer ever runs. Both files ship with the plugin,
+    // so the app can place them itself — a README step that has to be
+    // repeated on every machine is a step that gets forgotten on most.
+
+    // The plugin's own directory, wherever the shell loaded it from
+    readonly property string pluginDir: Qt.resolvedUrl(".").toString().replace("file://", "").replace(/\/$/, "")
+    readonly property string launcherEntryName: "com.danklinux.dankSoftwareDepot.desktop"
+
+    property bool launcherEntryPresent: false
+    // Until the first check answers, the UI should claim neither state
+    property bool launcherEntryChecked: false
+    property bool launcherEntryBusy: false
+    property string launcherEntryError: ""
+
+    function checkLauncherEntry() {
+        if (launcherCheckProcess.running)
+            return;
+        launcherCheckProcess.command = ["sh", "-c", "test -f \"$HOME/.local/share/applications/" + launcherEntryName + "\""];
+        launcherCheckProcess.running = true;
+    }
+
+    function installLauncherEntry() {
+        if (launcherEntryBusy)
+            return;
+        launcherEntryError = "";
+        launcherEntryBusy = true;
+        launcherProcess._output = "";
+        // The icon is installed too: the entry names it, and without it the
+        // launcher shows a blank tile next to a perfectly good name
+        launcherProcess.command = ["sh", "-c", "set -e; src='" + pluginDir + "'; apps=\"$HOME/.local/share/applications\"; icons=\"$HOME/.local/share/icons/hicolor\"; install -Dm644 \"$src/" + launcherEntryName + "\" \"$apps/" + launcherEntryName + "\"; install -Dm644 \"$src/assets/icons/dank-software-depot-dark.svg\" \"$icons/scalable/apps/dank-software-depot.svg\"; install -Dm644 \"$src/assets/icons/dank-software-depot-symbolic.svg\" \"$icons/symbolic/apps/dank-software-depot-symbolic.svg\"; update-desktop-database \"$apps\" 2>/dev/null || true"];
+        launcherProcess.running = true;
+    }
+
+    function removeLauncherEntry() {
+        if (launcherEntryBusy)
+            return;
+        launcherEntryError = "";
+        launcherEntryBusy = true;
+        launcherProcess._output = "";
+        launcherProcess.command = ["sh", "-c", "apps=\"$HOME/.local/share/applications\"; icons=\"$HOME/.local/share/icons/hicolor\"; rm -f \"$apps/" + launcherEntryName + "\" \"$icons/scalable/apps/dank-software-depot.svg\" \"$icons/symbolic/apps/dank-software-depot-symbolic.svg\"; update-desktop-database \"$apps\" 2>/dev/null || true"];
+        launcherProcess.running = true;
+    }
+
+    Process {
+        id: launcherCheckProcess
+
+        onExited: (exitCode, exitStatus) => {
+            backend.launcherEntryPresent = exitCode === 0;
+            backend.launcherEntryChecked = true;
+        }
+    }
+
+    Process {
+        id: launcherProcess
+
+        property string _output: ""
+
+        stderr: SplitParser {
+            onRead: line => launcherProcess._output += (launcherProcess._output === "" ? "" : "\n") + line
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            backend.launcherEntryBusy = false;
+            if (exitCode !== 0)
+                backend.launcherEntryError = _output || Tr.t("the launcher entry could not be written");
+            backend.checkLauncherEntry();
+        }
+    }
+
     FileView {
         path: "/etc/os-release"
 

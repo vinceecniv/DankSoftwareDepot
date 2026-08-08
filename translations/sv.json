@@ -312,7 +312,15 @@
     "Nothing matches \"%1\"": "Inget matchar \"%1\"",
     "Commands": "Kommandon",
     "Search \"%1\" in Install": "Sök \"%1\" i Installera",
+    "Search \"%1\" in Installed": "Sök \"%1\" i Installerat",
+    "Search \"%1\" in Log": "Sök \"%1\" i Logg",
     "Search everything": "Sök i allt",
     "Keyboard": "Tangentbord",
-    "Search this tab": "Sök i den här fliken"
+    "Search this tab": "Sök i den här fliken",
+    "Show in app launcher": "Visa i programstartaren",
+    "Place a desktop entry so this window can be opened from the application launcher, like a standalone app.": "Skapar en skrivbordspost så att det här fönstret kan öppnas från programstartaren, som ett fristående program.",
+    "Open Dank Software Depot from your app launcher? A desktop entry and icon are placed in your own home directory.": "Öppna Dank Software Depot från programstartaren? Posten och ikonen placeras i din egen hemkatalog.",
+    "Adding to the launcher…": "Lägger till i programstartaren…",
+    "Add": "Lägg till",
+    "the launcher entry could not be written": "skrivbordsposten kunde inte skrivas"
 }
