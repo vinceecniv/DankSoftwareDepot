@@ -3,6 +3,53 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.6.5 — 2026-08-08
+
+- **Software sources, as a panel rather than as a wiki page.** The Install
+  tab's header button (or Ctrl+K → Software sources) shows what this
+  machine is configured with and offers the changes that are safe to
+  express as a button:
+  - **RPM Fusion when it is missing**, both flavours in one step — most
+    of nonfree builds on free, so adding nonfree alone is half an
+    installation.
+  - **The well-known Flatpak remotes as buttons** instead of as
+    addresses to look up: Flathub, Flathub Beta, Fedora Flatpaks, GNOME
+    and KDE nightly. What you already have says so instead of offering
+    itself again. Anything else goes in by `.flatpakrepo` address.
+  - **The configured repositories with switches**, and Copr add and
+    remove. Debug, source and testing repositories are folded away —
+    they are two thirds of the list on a normal Fedora.
+  Switching off a repository the distribution is made of asks twice, as
+  does any removal. Writing a repository definition by hand stays a text
+  editor's job. Changes to `/etc` go through pkexec; Flatpak remotes are
+  added for you alone and ask for nothing. Every change that succeeds is
+  logged; every one that fails keeps the tool's own words. Only the dnf
+  family can be changed from here: apt and pacman sources are listed
+  read-only, because an apt source is a file plus a signing key and a
+  pacman repo lives in a single hand-edited `pacman.conf`.
+- The command palette hands its query to **Installed and Log** as well as
+  to Install, so the first few matches are no longer the only way onward.
+  Its direct log results are gone: activating one opened the newest entry
+  rather than the one that was clicked.
+- **The palette opens empty and takes the keyboard.** It came back with
+  the previous query still in it, the old row still selected, and the
+  first keystrokes still going to the window behind it — one dead
+  reference behind all three, silent because QML errors raised in a
+  plugin file never reach the journal.
+- **Opening the app when it is already open brings it to you** instead of
+  appearing to do nothing behind another window (niri and Hyprland are
+  asked directly; elsewhere the window re-maps). The same fix revealed
+  that the three-minute timer returning an idle window to the Updates tab
+  had never run, for the same reason.
+- **The app can put itself in your launcher**, and does it from the
+  Updates tab with a close button that is remembered, or from Settings at
+  any time. Both write the entry *and* its icon — the documented manual
+  step never mentioned the icon, which is a launcher item with a blank
+  tile.
+- Fix: the duration forecast built "usually about 5 min here" by deleting
+  the word "left" from a translated phrase, which only works in languages
+  that put that word last.
+
 ## 0.6.0 — 2026-08-08
 
 - **A command palette on Ctrl+K.** One field over everything the window
