@@ -539,6 +539,16 @@ FloatingWindow {
                     color: Theme.surfaceVariantText
                 }
 
+
+                // Ctrl+F was never written down anywhere either
+                StyledText {
+                    Layout.fillWidth: true
+                    Layout.topMargin: Theme.spacingS
+                    text: Tr.t("Keyboard") + ":  Ctrl+K " + Tr.t("Search everything") + "   ·   Ctrl+F " + Tr.t("Search this tab")
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceVariantText
+                    wrapMode: Text.WordWrap
+                }
                 // Wrapper Item: DankButton sizes itself via `width`, which a
                 // ColumnLayout ignores — anchoring keeps its natural width.
                 Item {
@@ -1493,6 +1503,17 @@ FloatingWindow {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.spacingXS
+
+                // The palette's only permanent affordance: discoverable by
+                // looking, with the shortcut in its tooltip for the next time
+                DankActionButton {
+                    buttonSize: 36
+                    iconName: "search"
+                    iconSize: 20
+                    iconColor: Theme.surfaceText
+                    tooltipText: Tr.t("Search everything") + " · Ctrl+K"
+                    onClicked: palette.open()
+                }
 
                 DankActionButton {
                     id: windowRefreshButton

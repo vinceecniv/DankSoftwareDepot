@@ -311,5 +311,8 @@
     "Type to search updates, installed software, the log and commands": "Escribe para buscar en actualizaciones, software instalado, el registro y los comandos",
     "Nothing matches \"%1\"": "Nada coincide con «%1»",
     "Commands": "Comandos",
-    "Search \"%1\" in Install": "Buscar «%1» en Instalar"
+    "Search \"%1\" in Install": "Buscar «%1» en Instalar",
+    "Search everything": "Buscar en todo",
+    "Keyboard": "Teclado",
+    "Search this tab": "Buscar en esta pestaña"
 }

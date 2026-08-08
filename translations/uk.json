@@ -311,5 +311,8 @@
     "Type to search updates, installed software, the log and commands": "Введіть, щоб шукати оновлення, встановлене ПЗ, журнал і команди",
     "Nothing matches \"%1\"": "Нічого не відповідає «%1»",
     "Commands": "Команди",
-    "Search \"%1\" in Install": "Шукати «%1» у Встановленні"
+    "Search \"%1\" in Install": "Шукати «%1» у Встановленні",
+    "Search everything": "Шукати всюди",
+    "Keyboard": "Клавіатура",
+    "Search this tab": "Шукати в цій вкладці"
 }

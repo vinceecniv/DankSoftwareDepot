@@ -311,5 +311,8 @@
     "Type to search updates, installed software, the log and commands": "Digita per cercare tra aggiornamenti, software installato, registro e comandi",
     "Nothing matches \"%1\"": "Nessun risultato per \"%1\"",
     "Commands": "Comandi",
-    "Search \"%1\" in Install": "Cerca \"%1\" in Installa"
+    "Search \"%1\" in Install": "Cerca \"%1\" in Installa",
+    "Search everything": "Cerca ovunque",
+    "Keyboard": "Tastiera",
+    "Search this tab": "Cerca in questa scheda"
 }

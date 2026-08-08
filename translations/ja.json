@@ -311,5 +311,8 @@
     "Type to search updates, installed software, the log and commands": "入力して更新・インストール済みソフトウェア・ログ・コマンドを検索",
     "Nothing matches \"%1\"": "「%1」に一致するものはありません",
     "Commands": "コマンド",
-    "Search \"%1\" in Install": "「インストール」で「%1」を検索"
+    "Search \"%1\" in Install": "「インストール」で「%1」を検索",
+    "Search everything": "すべてを検索",
+    "Keyboard": "キーボード",
+    "Search this tab": "このタブ内を検索"
 }
