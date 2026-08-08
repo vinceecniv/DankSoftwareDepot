@@ -2967,14 +2967,14 @@ FloatingWindow {
                                         Layout.alignment: Qt.AlignVCenter
 
                                         Repeater {
-                                            model: [5, 9, 14, 9, 5]
+                                            model: [4, 7, 11, 7, 4]
 
                                             delegate: Rectangle {
                                                 required property int modelData
 
-                                                width: 3
+                                                width: 2.5
                                                 height: modelData
-                                                radius: 1.5
+                                                radius: 1.25
                                                 color: chipHover.hovered ? supportChip.modelData.accent : Theme.surfaceVariantText
 
                                                 Behavior on color {
