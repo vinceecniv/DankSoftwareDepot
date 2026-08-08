@@ -1982,9 +1982,11 @@ FloatingWindow {
                     width: tabWidth
                     height: tabs.tabHeight
                     radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.primary, 0.10)
+                    color: Theme.withAlpha(Theme.primary, 0.14)
+                    // Fades, never hides: an invisible item receives no hover
+                    // events, so `visible: opacity > 0` would latch it off
+                    // forever. A fully transparent item still gets them.
                     opacity: hoverHandler.hovered ? 1 : 0
-                    visible: opacity > 0
 
                     HoverHandler {
                         id: hoverHandler
