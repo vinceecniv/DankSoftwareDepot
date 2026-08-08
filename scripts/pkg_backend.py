@@ -15,6 +15,7 @@ the container tests call it:
     pkg_backend.py dashboard          {"total": N, "recent": [{name, ts}]}
     pkg_backend.py holds              {name: reason}
     pkg_backend.py versions <name>    [{version, repo, installed}]
+    pkg_backend.py desktop-owners     [name]  (works on every backend)
 """
 import glob
 import html
@@ -317,6 +318,77 @@ def available_versions(name):
     return out
 
 
+# ── Which packages are applications ────────────────────────────────────────
+# "A program you would start" has no field in package metadata, but it has a
+# reliable fingerprint on disk: a desktop entry the launcher would show. A
+# package owning one is something the user installed to use; everything else
+# is a library, a font, a driver or a service. Unlike an install-reason flag
+# this survives reinstalls and distro upgrades, and it needs no network.
+
+DESKTOP_DIRS = ("/usr/share/applications", "/usr/local/share/applications")
+
+
+def _launchable_desktop_files():
+    """Desktop entries the launcher would offer: Type=Application, not
+    NoDisplay and not Hidden. Only the first group is read — later groups
+    are actions, whose own NoDisplay says nothing about the entry."""
+    files = []
+    for directory in DESKTOP_DIRS:
+        for path in sorted(glob.glob(os.path.join(directory, "*.desktop"))):
+            try:
+                with open(path, errors="replace") as f:
+                    body = f.read()
+            except OSError:
+                continue
+            head = body.split("\n[", 1)[0]
+            if not re.search(r"^Type\s*=\s*Application\s*$", head, re.M):
+                continue
+            if re.search(r"^(NoDisplay|Hidden)\s*=\s*true\s*$", head, re.M | re.I):
+                continue
+            files.append(path)
+    return files
+
+
+def _run_lines(cmd):
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return []
+    return [line for line in out.stdout.splitlines() if line.strip()]
+
+
+def desktop_owners():
+    """Names of installed packages that own a launchable desktop entry."""
+    files = _launchable_desktop_files()
+    if not files:
+        return []
+    backend = detect()
+    names = set()
+    # Chunked: a few hundred paths stay well inside any argv limit, and a
+    # single unowned file must not lose the rest of the batch
+    for start in range(0, len(files), 200):
+        chunk = files[start:start + 200]
+        if backend == "apt":
+            for line in _run_lines(["dpkg", "-S"] + chunk):
+                # "pkg1, pkg2: /path" — diversions and multi-owner paths
+                owner = line.split(":", 1)[0]
+                for part in owner.split(","):
+                    part = part.strip().split(":")[0]
+                    if part:
+                        names.add(part)
+        elif backend == "pacman":
+            for line in _run_lines(["pacman", "-Qo"] + chunk):
+                # "/path is owned by pkg 1.2.3"
+                match = re.search(r"\bis owned by\s+(\S+)\s", line)
+                if match:
+                    names.add(match.group(1))
+        else:
+            for line in _run_lines(["rpm", "-qf", "--qf", "%{NAME}\\n"] + chunk):
+                if not line.startswith("file "):
+                    names.add(line.strip())
+    return sorted(names)
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__, file=sys.stderr)
@@ -338,6 +410,8 @@ def main():
         json.dump(holds(), sys.stdout)
     elif cmd == "versions" and args:
         json.dump(available_versions(args[0]), sys.stdout)
+    elif cmd == "desktop-owners":
+        json.dump(desktop_owners(), sys.stdout)
     elif cmd == "detect":
         json.dump({"backend": detect()}, sys.stdout)
     else:

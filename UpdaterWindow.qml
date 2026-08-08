@@ -1406,7 +1406,7 @@ FloatingWindow {
                             iconSize: 14
                             text: Tr.t("Install")
                             backgroundColor: Theme.primary
-                            textColor: Ui.onColor(Theme.primary)
+                            textColor: Theme.primaryText
                             onClicked: Backend.installPackageHelper()
                         }
                     }

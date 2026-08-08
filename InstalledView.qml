@@ -193,6 +193,7 @@ Item {
         flatpakListProcess.running = true;
         rpmListProcess.running = true;
         appimageListProcess.running = true;
+        desktopOwnersProcess.running = true;
     }
 
     Process {
@@ -272,6 +273,16 @@ Item {
         appimageMutationProcess.running = true;
     }
 
+    // System packages that own a launchable desktop entry. Flatpak apps and
+    // AppImages are applications by definition; for rpm/deb/pacman packages
+    // this is what separates "a program I installed" from the libraries,
+    // fonts and services that came along with it.
+    property var appPackages: ({})
+
+    function _isApplication(row) {
+        return row.kind !== "system" || appPackages[row.id] === true;
+    }
+
     readonly property var filteredItems: {
         const needle = searchText.toLowerCase();
         const rows = [];
@@ -340,16 +351,22 @@ Item {
                 });
             }
         }
+        // Applications come first in every sort order: the programs someone
+        // installed to use are what this list is for, and the supporting
+        // packages they dragged in are context underneath them.
+        const appRank = row => view._isApplication(row) ? 0 : 1;
         switch (sortMode) {
         case "Largest":
-            rows.sort((a, b) => (b.sizeBytes - a.sizeBytes) || a.name.localeCompare(b.name));
+            rows.sort((a, b) => (appRank(a) - appRank(b)) || (b.sizeBytes - a.sizeBytes) || a.name.localeCompare(b.name));
             break;
         case "Recently updated":
-            rows.sort((a, b) => (b.updatedTs - a.updatedTs) || a.name.localeCompare(b.name));
+            rows.sort((a, b) => (appRank(a) - appRank(b)) || (b.updatedTs - a.updatedTs) || a.name.localeCompare(b.name));
             break;
         default:
             const kindRank = kind => kind === "flatpak" ? 0 : (kind === "appimage" ? 1 : 2);
             rows.sort((a, b) => {
+                if (appRank(a) !== appRank(b))
+                    return appRank(a) - appRank(b);
                 if (kindRank(a.kind) !== kindRank(b.kind))
                     return kindRank(a.kind) - kindRank(b.kind);
                 return a.name.localeCompare(b.name);
@@ -553,6 +570,23 @@ Item {
                 view.rpmPackages = pkgs;
                 view._requestEnrich();
                 view.loading = false;
+            }
+        }
+    }
+
+    Process {
+        id: desktopOwnersProcess
+        command: Backend.desktopOwnersCommand()
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const owners = {};
+                try {
+                    for (const name of JSON.parse(text))
+                        owners[name] = true;
+                } catch (e) {
+                }
+                view.appPackages = owners;
             }
         }
     }

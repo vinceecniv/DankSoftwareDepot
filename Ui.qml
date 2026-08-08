@@ -14,8 +14,15 @@ Item {
     // Text color with guaranteed contrast on a colored fill: the theme has
     // no on-error tone, and Theme.primaryText can land on the same side of
     // the lightness scale as Theme.error.
+    //
+    // Judged on perceived luminance rather than HSL lightness: a saturated
+    // purple or red sits high on the lightness scale while still reading as
+    // dark, and black text on it is barely legible. 0.179 is where white and
+    // black give the same contrast ratio.
     function onColor(bg) {
-        return bg.hslLightness > 0.55 ? Qt.rgba(0, 0, 0, 0.87) : "#FFFFFF";
+        const channel = c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+        const luminance = 0.2126 * channel(bg.r) + 0.7152 * channel(bg.g) + 0.0722 * channel(bg.b);
+        return luminance > 0.179 ? Qt.rgba(0, 0, 0, 0.87) : "#FFFFFF";
     }
 
     // Search-field caret: hidden while the field is empty (focus is already

@@ -151,6 +151,12 @@ Item {
         return ["sh", "-c", "rpm -qa --qf '%{NAME}\\t%{VERSION}-%{RELEASE}\\t%{SIZE}\\t%{INSTALLTIME}\\n' 2>/dev/null | sort"];
     }
 
+    // Installed packages that own a launchable desktop entry — the ones a
+    // user installed to actually run. Distro-agnostic; the helper branches.
+    function desktopOwnersCommand() {
+        return ["python3", metadataHelper, "desktop-owners"];
+    }
+
     // Shell fragment printing one installed package name per line (embedded
     // in compound sh commands)
     readonly property string installedNamesShellFragment: backendId === "apt" ? "dpkg-query -W -f '${Package}\\n' 2>/dev/null" : (backendId === "pacman" ? "pacman -Qq 2>/dev/null" : "rpm -qa --qf '%{NAME}\\n' 2>/dev/null")
