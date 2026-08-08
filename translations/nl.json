@@ -271,5 +271,8 @@
     "Hide details": "Verberg details",
     "Installing %1…": "%1 installeren…",
     "the installation failed": "de installatie is mislukt",
-    "%1 is missing — app names, icons and release notes stay limited without it.": "%1 ontbreekt — app-namen, iconen en release notes blijven zonder dit beperkt."
+    "%1 is missing — app names, icons and release notes stay limited without it.": "%1 ontbreekt — app-namen, iconen en release notes blijven zonder dit beperkt.",
+    "In progress": "Nu bezig",
+    "Waiting": "Wachtend",
+    "Completed": "Voltooid"
 }

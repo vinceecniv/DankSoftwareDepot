@@ -271,5 +271,8 @@
     "Hide details": "Details ausblenden",
     "Installing %1…": "%1 wird installiert…",
     "the installation failed": "die Installation ist fehlgeschlagen",
-    "%1 is missing — app names, icons and release notes stay limited without it.": "%1 fehlt — App-Namen, Symbole und Versionshinweise bleiben ohne dieses Paket eingeschränkt."
+    "%1 is missing — app names, icons and release notes stay limited without it.": "%1 fehlt — App-Namen, Symbole und Versionshinweise bleiben ohne dieses Paket eingeschränkt.",
+    "In progress": "In Arbeit",
+    "Waiting": "Wartend",
+    "Completed": "Abgeschlossen"
 }

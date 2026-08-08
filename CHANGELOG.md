@@ -37,6 +37,13 @@ in-app when the plugin offers its own update.
   updated" entry.
 - Update cards pack their chips, buttons and status icons into one
   cluster against the right edge, aligned with each other.
+- **During a run the list groups by what is happening**, not by what kind
+  of package it is: what is being downloaded or installed right now sits
+  at the top, then what is still waiting, then what this round already
+  finished — collapsed, because a long run finishes far more packages
+  than it works on at once. Failures sort to the top of the finished
+  group. Every section header carries an icon and a count, so "how many
+  are still waiting" is answerable at a glance.
 - A fresh install starts at **Notify only** instead of Off — finding
   updates and saying nothing helps nobody. An explicit Off is kept.
 - **Installed** shows the programs you use above the packages that hold

@@ -786,9 +786,12 @@ FloatingWindow {
     // held updates remain (those don't count as out-of-date)
     readonly property bool dashboardMode: !showingRun && effectiveCount === 0
 
-    // Collapsible sections (collapsed by default)
+    // Collapsible sections (collapsed by default). A long run finishes far
+    // more packages than it is working on; leaving that pile open would push
+    // the active rows off screen, which is the opposite of the point.
     property var collapsedCats: ({
-            "5 · Held packages": true
+            "5 · Held packages": true,
+            "3 · Completed": true
         })
 
     function toggleCategory(category) {
@@ -944,6 +947,12 @@ FloatingWindow {
         rows.sort((a, b) => {
             if (a.category !== b.category)
                 return a.category < b.category ? -1 : 1;
+            // Among finished rows the failures go first — they are the ones
+            // still asking something of you (no-op outside a run)
+            const failedA = a.failed ? 0 : 1;
+            const failedB = b.failed ? 0 : 1;
+            if (failedA !== failedB)
+                return failedA - failedB;
             const nameA = (store.meta[a.key] && store.meta[a.key].name) || a.pkg.name;
             const nameB = (store.meta[b.key] && store.meta[b.key].name) || b.pkg.name;
             return nameA.localeCompare(nameB);
@@ -1025,14 +1034,26 @@ FloatingWindow {
     // Snapshot of the running/finished run: keeps every queued item visible
     // with its own state (queued / downloading / installing / done / failed),
     // even while the daemon refreshes the live list mid-run.
+    // During a run the list regroups by what is happening to each package
+    // rather than by what kind of package it is. Sorted by source, the few
+    // rows actually being worked on sit scattered among hundreds of queued
+    // ones; grouped by state, they are the first thing on screen.
     readonly property var runRows: {
         const rows = [];
         for (const item of engine.runItems || []) {
+            const state = engine.itemStates[item.key] || null;
+            const status = state ? state.status : "pending";
+            let category = "2 · Waiting";
+            if (status === "active")
+                category = "1 · In progress";
+            else if (status === "done" || status === "error")
+                category = "3 · Completed";
             rows.push({
                 pkg: item.pkg,
                 key: item.key,
-                category: classify(item.pkg),
-                ignored: false
+                category: category,
+                ignored: false,
+                failed: status === "error"
             });
         }
         return _sortRows(rows);
@@ -1056,7 +1077,7 @@ FloatingWindow {
         const counts = {};
         for (const row of visibleRows)
             counts[row.category] = (counts[row.category] || 0) + 1;
-        const collapsible = ["5 · Held packages"];
+        const collapsible = ["5 · Held packages", "3 · Completed"];
         const out = [];
         let current = "";
         for (const row of visibleRows) {
@@ -1078,6 +1099,43 @@ FloatingWindow {
             }, row));
         }
         return out;
+    }
+
+    // Section headers carry the same iconography the rows use, so a group is
+    // recognisable before its title is read. The run groups say what is
+    // happening; the idle sections say what kind of software it is.
+    function categoryIcon(category) {
+        switch (category) {
+        case "1 · In progress":
+            return "sync";
+        case "2 · Waiting":
+            return "schedule";
+        case "3 · Completed":
+            return "check_circle";
+        case "2 · System packages":
+            return "memory";
+        case "3 · Runtimes & extensions":
+            return "extension";
+        case "4 · Firmware":
+            return "developer_board";
+        case "5 · Held packages":
+            return "lock";
+        default:
+            return "apps";
+        }
+    }
+
+    function categoryColor(category) {
+        switch (category) {
+        case "2 · Waiting":
+            return Theme.surfaceVariantText;
+        case "3 · Completed":
+            return Theme.success;
+        case "5 · Held packages":
+            return Theme.warning;
+        default:
+            return Theme.primary;
+        }
     }
 
     function sectionUpdate(category) {
@@ -2059,20 +2117,39 @@ FloatingWindow {
                     anchors.bottomMargin: 4
                     spacing: Theme.spacingS
 
-                    Rectangle {
-                        width: 4
-                        height: 16
-                        radius: 2
-                        color: Theme.primary
+                    DankIcon {
+                        name: win.categoryIcon(rowData.category || "")
+                        size: 18
+                        color: win.categoryColor(rowData.category || "")
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     StyledText {
-                        text: (rowData.title || "") + (rowData.collapsible === true ? " (" + (rowData.count || 0) + ")" : "")
+                        text: rowData.title || ""
                         font.pixelSize: Theme.fontSizeMedium
                         font.weight: Font.Bold
                         color: Theme.surfaceText
                         anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    // How many rows the group holds — the answer to "how much
+                    // is still waiting", readable without counting rows and
+                    // without opening a collapsed group
+                    Rectangle {
+                        width: headerCount.implicitWidth + 14
+                        height: 18
+                        radius: 9
+                        color: Theme.withAlpha(win.categoryColor(rowData.category || ""), 0.15)
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        StyledText {
+                            id: headerCount
+                            anchors.centerIn: parent
+                            text: String(rowData.count || 0)
+                            font.pixelSize: Theme.fontSizeSmall - 2
+                            font.weight: Font.Medium
+                            color: win.categoryColor(rowData.category || "")
+                        }
                     }
 
                     DankIcon {

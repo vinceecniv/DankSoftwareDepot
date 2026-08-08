@@ -271,5 +271,8 @@
     "Hide details": "Ocultar detalles",
     "Installing %1…": "Instalando %1…",
     "the installation failed": "la instalación falló",
-    "%1 is missing — app names, icons and release notes stay limited without it.": "Falta %1: los nombres de aplicaciones, los iconos y las notas de versión seguirán siendo limitados."
+    "%1 is missing — app names, icons and release notes stay limited without it.": "Falta %1: los nombres de aplicaciones, los iconos y las notas de versión seguirán siendo limitados.",
+    "In progress": "En curso",
+    "Waiting": "En espera",
+    "Completed": "Completado"
 }
