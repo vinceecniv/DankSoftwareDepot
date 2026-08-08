@@ -2906,10 +2906,11 @@ FloatingWindow {
                                 },
                                 {
                                     text: Tr.t("Built with Vito"),
-                                    // Vito's own mark rather than a glyph:
-                                    // Material Symbols has no letter icons and
-                                    // an improvised "V" is not a logo
-                                    image: Qt.resolvedUrl("assets/icons/vito.svg"),
+                                    // Vito's own mark, drawn rather than
+                                    // loaded: as bars it inherits the chip's
+                                    // colour and hover like the other two,
+                                    // which a bitmap or a gradient could not
+                                    bars: true,
                                     icon: "",
                                     accent: Theme.tertiary,
                                     url: "https://vito.talk"
@@ -2957,23 +2958,30 @@ FloatingWindow {
                                         }
                                     }
 
-                                    // A real logo carries its own colours, so
-                                    // it only gains a little presence on hover
-                                    // rather than changing hue
-                                    Image {
-                                        visible: (supportChip.modelData.image || "") !== ""
-                                        source: supportChip.modelData.image || ""
-                                        sourceSize.width: 28
-                                        sourceSize.height: 28
-                                        width: 14
-                                        height: 14
-                                        fillMode: Image.PreserveAspectFit
-                                        smooth: true
-                                        opacity: chipHover.hovered ? 1 : 0.75
+                                    // Vito's five bars, at the proportions of
+                                    // its own mark (12 wide on a 20 pitch,
+                                    // 20/36/56/36/20 tall)
+                                    Row {
+                                        visible: supportChip.modelData.bars === true
+                                        spacing: 2
+                                        Layout.alignment: Qt.AlignVCenter
 
-                                        Behavior on opacity {
-                                            NumberAnimation {
-                                                duration: Theme.shortDuration
+                                        Repeater {
+                                            model: [5, 9, 14, 9, 5]
+
+                                            delegate: Rectangle {
+                                                required property int modelData
+
+                                                width: 3
+                                                height: modelData
+                                                radius: 1.5
+                                                color: chipHover.hovered ? supportChip.modelData.accent : Theme.surfaceVariantText
+
+                                                Behavior on color {
+                                                    ColorAnimation {
+                                                        duration: Theme.shortDuration
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -3038,6 +3046,11 @@ FloatingWindow {
                             parts.push(Tr.t("%1 pulled in as dependencies").arg(plan.extra));
                         if (plan.removals > 0)
                             parts.push(Tr.t("%1 will be removed: %2").arg(plan.removals).arg(plan.removedNames.slice(0, 3).join(", ")));
+                        // Measured here, not guessed: silent while this
+                        // machine has not shown enough runs to have an opinion
+                        const seconds = win.widgetRoot ? win.widgetRoot.estimateRunSeconds(plan.total) : -1;
+                        if (seconds > 0)
+                            parts.push(Tr.t("usually about %1 here").arg(win.engine.formatEta(seconds).replace(Tr.t("left"), "").trim() || (Math.round(seconds / 60) + " min")));
                         return parts.join(" · ");
                     }
                     font.pixelSize: Theme.fontSizeSmall - 1

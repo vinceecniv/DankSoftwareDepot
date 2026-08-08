@@ -428,6 +428,35 @@ PluginComponent {
             _stashShellRunLog(shellPkgs, doneItems);
     }
 
+    // ── How long this usually takes here ────────────────────────────────────
+    // Seconds per package, measured on this machine. Package counts vary far
+    // more than per-package cost does, so the rate is what generalises — and
+    // the median ignores the one run that hit a slow mirror.
+    readonly property var runHistory: (pluginData.runHistory || [])
+
+    function _recordRun(seconds, items) {
+        if (items <= 0 || seconds <= 0)
+            return;
+        const history = runHistory.slice();
+        history.push({
+            seconds: seconds,
+            items: items
+        });
+        // Ten runs is enough to be representative and few enough to follow a
+        // machine that got faster
+        PluginService.savePluginData("dankSoftwareDepot", "runHistory", history.slice(-10));
+    }
+
+    // Estimated seconds for a run of `items` packages, -1 when this machine
+    // has not shown us enough yet
+    function estimateRunSeconds(items) {
+        const rates = runHistory.filter(r => r.items > 0).map(r => r.seconds / r.items).sort((a, b) => a - b);
+        if (rates.length < 2 || items <= 0)
+            return -1;
+        const median = rates.length % 2 ? rates[(rates.length - 1) / 2] : (rates[rates.length / 2 - 1] + rates[rates.length / 2]) / 2;
+        return Math.round(median * items);
+    }
+
     // ── Update severity ─────────────────────────────────────────────────────
     // name -> {type, severity, ids}. Without this every update looks equally
     // urgent, which is another way of saying none of them do.
@@ -698,6 +727,8 @@ PluginComponent {
                 root._saveFailures();
             }
         }
+
+        onRunMeasured: (seconds, items) => root._recordRun(seconds, items)
 
         onFinished: ok => {
             root.confirmArmed = false;

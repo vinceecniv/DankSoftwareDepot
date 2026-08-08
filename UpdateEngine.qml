@@ -67,6 +67,11 @@ Item {
     }
 
     signal finished(bool ok)
+    // Seconds the run took and how many items it covered, for the host to
+    // remember: a forecast from this machine's own history beats a guess.
+    signal runMeasured(int seconds, int items)
+
+    property double _runStartedAt: 0
 
     // Keys ("system/<basename>") of packages held back by dnf config
     // (versionlock/excludepkgs); they are skipped in runs. Bound by the widget.
@@ -553,6 +558,7 @@ Item {
 
         running = true;
         phase = "starting";
+        _runStartedAt = Date.now();
         etaTimer.start();
 
         if (_wantDnf) {
@@ -969,6 +975,11 @@ Item {
         if (finalPhase === "done" && failedCount === 0)
             overallFraction = 1;
         SystemUpdateService.checkForUpdates();
+        // Only a run that finished its work says anything useful about how
+        // long that work takes; a cancelled one would drag the estimate down
+        if (finalPhase !== "cancelled" && _runStartedAt > 0 && plannedCount > 0)
+            runMeasured(Math.round((Date.now() - _runStartedAt) / 1000), plannedCount);
+        _runStartedAt = 0;
         finished(finalPhase === "done" && failedCount === 0);
     }
 
