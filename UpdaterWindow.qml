@@ -880,16 +880,35 @@ FloatingWindow {
         onTriggered: tabs.currentIndex = 0
     }
 
-    function openTab(index) {
+    // ── Which tabs exist ────────────────────────────────────────────────────
+    // Firmware is a setting, and a tab for something the user switched off is
+    // just a dead end. Hiding it makes the bar's positions stop matching the
+    // tab numbers, so everything else speaks in stable ids and only the bar
+    // itself works in positions.
+    readonly property bool firmwareEnabled: firmware !== null
+    readonly property var tabIds: firmwareEnabled ? [0, 1, 2, 3, 4] : [0, 1, 2, 4]
+    readonly property int currentTab: tabIds[Math.min(tabs.currentIndex, tabIds.length - 1)]
+
+    // Switching firmware off while looking at it would silently land you on
+    // whatever slid into that position — go somewhere deliberate instead
+    onFirmwareEnabledChanged: {
+        if (!firmwareEnabled && tabs.currentIndex >= tabIds.length)
+            tabs.currentIndex = 0;
+    }
+
+    function openTab(id) {
         visible = true;
-        tabs.currentIndex = index;
-        if (index === 1)
+        const position = tabIds.indexOf(id);
+        if (position === -1)
+            return;
+        tabs.currentIndex = position;
+        if (id === 1)
             installedLoader.active = true;
-        if (index === 2)
+        if (id === 2)
             installLoader.active = true;
-        if (index === 3)
+        if (id === 3)
             firmwareLoader.active = true;
-        if (index === 4)
+        if (id === 4)
             logLoader.active = true;
         focusCurrentTab();
     }
@@ -908,7 +927,7 @@ FloatingWindow {
     // field get input focus on that field directly.
     function focusCurrentTab() {
         Qt.callLater(() => {
-            switch (tabs.currentIndex) {
+            switch (win.currentTab) {
             case 1:
                 if (installedLoader.item)
                     installedLoader.item.focusSearch();
@@ -1555,7 +1574,7 @@ FloatingWindow {
         // ── Plugin self-update banner ───────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0 && win.selfUpdateVersion !== "" && win.selfUpdateVersion !== win.selfUpdateDismissedVersion
+            visible: win.currentTab === 0 && win.selfUpdateVersion !== "" && win.selfUpdateVersion !== win.selfUpdateDismissedVersion
             implicitHeight: selfUpdateColumn.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.primary, 0.10)
@@ -1705,7 +1724,7 @@ FloatingWindow {
         // ── Compact status strip while updates are pending ──────────────────
         Rectangle {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0 && !win.dashboardMode && !win.showingRun && !SystemUpdateService.isChecking && win.effectiveCount > 0
+            visible: win.currentTab === 0 && !win.dashboardMode && !win.showingRun && !SystemUpdateService.isChecking && win.effectiveCount > 0
             implicitHeight: statusStripRow.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.primary, 0.08)
@@ -1778,7 +1797,7 @@ FloatingWindow {
         // ── Manual-pass progress (Install all now / single overrides) ──────
         Rectangle {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0 && win.singleBusyKey !== ""
+            visible: win.currentTab === 0 && win.singleBusyKey !== ""
             implicitHeight: manualRow.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.primary, 0.08)
@@ -1823,7 +1842,7 @@ FloatingWindow {
         // ── End-of-life components (no longer maintained upstream) ─────────
         Rectangle {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0 && win.widgetRoot !== null && (win.widgetRoot.eolRefs || []).length > 0
+            visible: win.currentTab === 0 && win.widgetRoot !== null && (win.widgetRoot.eolRefs || []).length > 0
             implicitHeight: eolRow.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.error, 0.10)
@@ -1856,7 +1875,7 @@ FloatingWindow {
         // ── Newer Fedora release available ──────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0 && win.widgetRoot !== null && win.widgetRoot.distroUpgrade !== null && win.widgetRoot.distroUpgrade.available === true
+            visible: win.currentTab === 0 && win.widgetRoot !== null && win.widgetRoot.distroUpgrade !== null && win.widgetRoot.distroUpgrade.available === true
             implicitHeight: distroRow.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.primary, 0.10)
@@ -1912,24 +1931,84 @@ FloatingWindow {
             Layout.bottomMargin: Theme.spacingL
             // Taller than the content so the hover highlight gets internal padding
             tabHeight: 52
-            model: [
-                { text: Tr.t("Updates"), icon: "deployed_code_update" },
-                { text: Tr.t("Installed"), icon: "apps" },
-                { text: Tr.t("Install"), icon: "storefront" },
-                { text: Tr.t("Firmware"), icon: "memory" },
-                { text: Tr.t("Log"), icon: "history" }
-            ]
+            // Built from the same list of ids the rest of the window uses, so
+            // a hidden tab cannot make the two disagree
+            model: win.tabIds.map(id => {
+                switch (id) {
+                case 1:
+                    return {
+                        text: Tr.t("Installed"),
+                        icon: "apps"
+                    };
+                case 2:
+                    return {
+                        text: Tr.t("Install"),
+                        icon: "storefront"
+                    };
+                case 3:
+                    return {
+                        text: Tr.t("Firmware"),
+                        icon: "memory"
+                    };
+                case 4:
+                    return {
+                        text: Tr.t("Log"),
+                        icon: "history"
+                    };
+                default:
+                    return {
+                        text: Tr.t("Updates"),
+                        icon: "deployed_code_update"
+                    };
+                }
+            })
+
+            // The shared tab bar does carry a state layer, but at surfaceTint
+            // 0.08 it is invisible against this window. Draw a clearer one on
+            // top: a HoverHandler never swallows clicks, so the bar keeps
+            // handling those itself.
+            Repeater {
+                model: tabs.model.length
+
+                Rectangle {
+                    id: tabHover
+
+                    required property int index
+                    readonly property int tabCount: Math.max(1, tabs.model.length)
+                    readonly property real tabWidth: (tabs.width - tabs.spacing * Math.max(0, tabCount - 1)) / tabCount
+
+                    x: index * (tabWidth + tabs.spacing)
+                    y: 0
+                    width: tabWidth
+                    height: tabs.tabHeight
+                    radius: Theme.cornerRadius
+                    color: Theme.withAlpha(Theme.primary, 0.10)
+                    opacity: hoverHandler.hovered ? 1 : 0
+                    visible: opacity > 0
+
+                    HoverHandler {
+                        id: hoverHandler
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: Theme.shortDuration
+                            easing.type: Theme.standardEasing
+                        }
+                    }
+                }
+            }
 
             onTabClicked: index => {
                 currentIndex = index;
             }
 
             onCurrentIndexChanged: {
-                if (currentIndex === 1)
+                if (win.currentTab === 1)
                     installedLoader.active = true;
-                if (currentIndex === 2)
+                if (win.currentTab === 2)
                     installLoader.active = true;
-                if (currentIndex === 3) {
+                if (win.currentTab === 3) {
                     // Re-scan hardware on every visit; first activation scans
                     // via Component.onCompleted
                     const rescan = firmwareLoader.active;
@@ -1937,7 +2016,7 @@ FloatingWindow {
                     if (rescan && firmwareLoader.item)
                         firmwareLoader.item.reload();
                 }
-                if (currentIndex === 4)
+                if (win.currentTab === 4)
                     logLoader.active = true;
                 win.focusCurrentTab();
             }
@@ -1948,7 +2027,7 @@ FloatingWindow {
             id: installedLoader
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: tabs.currentIndex === 1
+            visible: win.currentTab === 1
             active: false
 
             sourceComponent: InstalledView {
@@ -1966,7 +2045,7 @@ FloatingWindow {
             id: installLoader
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: tabs.currentIndex === 2
+            visible: win.currentTab === 2
             active: false
 
             sourceComponent: InstallView {
@@ -1982,7 +2061,7 @@ FloatingWindow {
             id: firmwareLoader
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: tabs.currentIndex === 3
+            visible: win.currentTab === 3
             active: false
 
             sourceComponent: FirmwareView {
@@ -1995,7 +2074,7 @@ FloatingWindow {
             id: logLoader
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: tabs.currentIndex === 4
+            visible: win.currentTab === 4
             active: false
 
             sourceComponent: LogView {
@@ -2006,7 +2085,7 @@ FloatingWindow {
         // ── Progress panel (only while a run adds information) ──────────────
         Rectangle {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0 && (win.engine.running || (win.engine.phase !== "idle" && win.engine.failedCount > 0) || win.engine.phase === "done")
+            visible: win.currentTab === 0 && (win.engine.running || (win.engine.phase !== "idle" && win.engine.failedCount > 0) || win.engine.phase === "done")
             implicitHeight: progressColumn.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
             color: Theme.surfaceContainer
@@ -2116,7 +2195,7 @@ FloatingWindow {
             clip: true
             spacing: Theme.spacingS
             model: win.listModel
-            visible: tabs.currentIndex === 0 && (win.listModel.length > 0 || win.dashboardMode)
+            visible: win.currentTab === 0 && (win.listModel.length > 0 || win.dashboardMode)
 
             delegate: Loader {
                 required property var modelData
@@ -2788,7 +2867,7 @@ FloatingWindow {
 
         StyledText {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0 && win.hiddenRuntimeCount > 0
+            visible: win.currentTab === 0 && win.hiddenRuntimeCount > 0
             text: (win.hiddenRuntimeCount === 1 ? Tr.t("%1 runtime component hidden (enable in plugin settings) — still included in Update All.") : Tr.t("%1 runtime components hidden (enable in plugin settings) — still included in Update All.")).arg(win.hiddenRuntimeCount)
             font.pixelSize: Theme.fontSizeSmall - 1
             color: Theme.surfaceVariantText
@@ -2804,7 +2883,7 @@ FloatingWindow {
         // button could never come back.
         RowLayout {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0 && win.showUpdateAll
+            visible: win.currentTab === 0 && win.showUpdateAll
             spacing: Theme.spacingM
 
             Item {
