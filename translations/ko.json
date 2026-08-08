@@ -281,5 +281,6 @@
     "Star on GitHub": "GitHub에서 별 주기",
     "Uninstalling also removes %1": "제거하면 %1도 함께 삭제됩니다",
     "Uninstalling also removes %1 packages: %2": "제거하면 패키지 %1개도 함께 삭제됩니다: %2",
-    " and %1 more": " 외 %1개"
+    " and %1 more": " 외 %1개",
+    "Built with Vito": "Vito로 제작"
 }

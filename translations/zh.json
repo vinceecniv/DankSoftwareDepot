@@ -281,5 +281,6 @@
     "Star on GitHub": "在 GitHub 上加星",
     "Uninstalling also removes %1": "卸载还会移除 %1",
     "Uninstalling also removes %1 packages: %2": "卸载还会移除 %1 个软件包：%2",
-    " and %1 more": " 等另外 %1 个"
+    " and %1 more": " 等另外 %1 个",
+    "Built with Vito": "使用 Vito 构建"
 }

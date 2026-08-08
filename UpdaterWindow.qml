@@ -2902,6 +2902,15 @@ FloatingWindow {
                                     icon: "star",
                                     accent: Theme.warning,
                                     url: "https://github.com/vinceecniv/DankSoftwareDepot"
+                                },
+                                {
+                                    text: Tr.t("Built with Vito"),
+                                    // Material Symbols has no letter glyphs;
+                                    // Vito's mark is its initial, so draw it
+                                    letter: "V",
+                                    icon: "",
+                                    accent: Theme.tertiary,
+                                    url: "https://vito.talk"
                                 }
                             ]
 
@@ -2929,12 +2938,28 @@ FloatingWindow {
                                     anchors.centerIn: parent
                                     spacing: Theme.spacingXS
 
-                                    // The icon takes its own colour on hover —
-                                    // enough to feel alive, while the chip
-                                    // stays quiet at rest
+                                    // Takes its own colour and fills in on
+                                    // hover — enough to feel alive, while the
+                                    // chip stays quiet at rest
                                     DankIcon {
+                                        visible: supportChip.modelData.icon !== ""
                                         name: supportChip.modelData.icon
                                         size: 13
+                                        filled: chipHover.hovered
+                                        color: chipHover.hovered ? supportChip.modelData.accent : Theme.surfaceVariantText
+
+                                        Behavior on color {
+                                            ColorAnimation {
+                                                duration: Theme.shortDuration
+                                            }
+                                        }
+                                    }
+
+                                    StyledText {
+                                        visible: (supportChip.modelData.letter || "") !== ""
+                                        text: supportChip.modelData.letter || ""
+                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                        font.weight: Font.Bold
                                         color: chipHover.hovered ? supportChip.modelData.accent : Theme.surfaceVariantText
 
                                         Behavior on color {

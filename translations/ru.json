@@ -281,5 +281,6 @@
     "Star on GitHub": "Поставить звезду на GitHub",
     "Uninstalling also removes %1": "Удаление также уберёт %1",
     "Uninstalling also removes %1 packages: %2": "Удаление также уберёт пакетов: %1 — %2",
-    " and %1 more": " и ещё %1"
+    " and %1 more": " и ещё %1",
+    "Built with Vito": "Создано с Vito"
 }

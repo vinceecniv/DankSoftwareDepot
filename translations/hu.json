@@ -281,5 +281,6 @@
     "Star on GitHub": "Csillagozd meg a GitHubon",
     "Uninstalling also removes %1": "Az eltávolítás %1 csomagot is töröl",
     "Uninstalling also removes %1 packages: %2": "Az eltávolítás további %1 csomagot is töröl: %2",
-    " and %1 more": " és még %1"
+    " and %1 more": " és még %1",
+    "Built with Vito": "Vitóval építve"
 }

@@ -281,5 +281,6 @@
     "Star on GitHub": "GitHub でスターを付ける",
     "Uninstalling also removes %1": "アンインストールすると %1 も削除されます",
     "Uninstalling also removes %1 packages: %2": "アンインストールすると %1 個のパッケージも削除されます: %2",
-    " and %1 more": " ほか %1 件"
+    " and %1 more": " ほか %1 件",
+    "Built with Vito": "Vito で構築"
 }
