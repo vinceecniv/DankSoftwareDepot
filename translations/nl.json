@@ -287,5 +287,6 @@
     "+%1 on disk": "+%1 op schijf",
     "frees %1": "maakt %1 vrij",
     "%1 pulled in as dependencies": "%1 meegetrokken als afhankelijkheid",
-    "%1 will be removed: %2": "%1 worden verwijderd: %2"
+    "%1 will be removed: %2": "%1 worden verwijderd: %2",
+    "Security": "Beveiliging"
 }

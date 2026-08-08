@@ -284,6 +284,66 @@ def run(action, specs, dry_run=False):
     return 0
 
 
+# ── Advisories ─────────────────────────────────────────────────────────────
+# Fedora ships updateinfo alongside its packages: which update fixes a
+# security hole, which is a bug fix, which is a new feature, and the CVE it
+# closes. Without it every update looks equally urgent, which is another way
+# of saying none of them do.
+
+SEVERITY_RANK = {"critical": 4, "important": 3, "moderate": 2, "low": 1}
+TYPE_RANK = {"security": 3, "bugfix": 2, "enhancement": 1}
+
+
+def run_advisories(names):
+    """{name: {type, severity, ids}} for the packages that have an advisory.
+
+    Read-only and cache-only, so it needs no root and no network.
+    """
+    base = libdnf5.base.Base()
+    base.load_config()
+    try:
+        base.get_config().get_cacheonly_option().set("all")
+    except Exception:
+        pass
+    base.setup()
+    sack = base.get_repo_sack()
+    sack.create_repos_from_system_configuration()
+    if hasattr(sack, "load_repos"):
+        sack.load_repos()
+    else:
+        sack.update_and_load_enabled_repos(True)
+
+    wanted = set(names)
+    out = {}
+    for adv in libdnf5.advisory.AdvisoryQuery(base):
+        adv_type = (adv.get_type() or "").lower()
+        severity = (adv.get_severity() or "").lower()
+        ids = []
+        try:
+            ids = [r.get_id() for r in adv.get_references() if (r.get_type() or "").lower() == "cve"]
+        except Exception:
+            pass
+        for collection in adv.get_collections():
+            for pkg in collection.get_packages():
+                name = pkg.get_name()
+                if name not in wanted:
+                    continue
+                current = out.get(name)
+                # Keep the most serious advisory a package appears in: one
+                # security fix among five enhancements is what matters
+                better = (TYPE_RANK.get(adv_type, 0), SEVERITY_RANK.get(severity, 0))
+                if current is None or better > (TYPE_RANK.get(current["type"], 0),
+                                                SEVERITY_RANK.get(current["severity"], 0)):
+                    out[name] = {"type": adv_type, "severity": severity, "ids": ids}
+                elif current["type"] == adv_type:
+                    for cve in ids:
+                        if cve not in current["ids"]:
+                            current["ids"].append(cve)
+    emit({"event": "advisories", "packages": out})
+    emit({"event": "done", "ok": True, "failed": []})
+    return 0
+
+
 ACTIONS = ("install", "remove", "upgrade", "downgrade")
 
 
@@ -297,6 +357,13 @@ def main():
     # process start — asking for a password before showing what it is for
     # would be the wrong way round.
     argv = sys.argv[1:]
+    if argv and argv[0] == "advisories":
+        try:
+            return run_advisories(argv[1:])
+        except Exception as exc:
+            emit({"event": "error", "message": str(exc)})
+            emit({"event": "done", "ok": False, "failed": []})
+            return 1
     dry_run = bool(argv) and argv[0] == "plan"
     if dry_run:
         argv = argv[1:]

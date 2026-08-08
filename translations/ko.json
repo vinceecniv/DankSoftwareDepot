@@ -287,5 +287,6 @@
     "+%1 on disk": "디스크 +%1",
     "frees %1": "%1 확보",
     "%1 pulled in as dependencies": "의존성으로 %1개 추가",
-    "%1 will be removed: %2": "%1개 삭제됨: %2"
+    "%1 will be removed: %2": "%1개 삭제됨: %2",
+    "Security": "보안"
 }

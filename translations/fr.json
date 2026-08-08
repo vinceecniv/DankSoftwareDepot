@@ -287,5 +287,6 @@
     "+%1 on disk": "+%1 sur le disque",
     "frees %1": "libère %1",
     "%1 pulled in as dependencies": "%1 ajoutés comme dépendances",
-    "%1 will be removed: %2": "%1 seront supprimés : %2"
+    "%1 will be removed: %2": "%1 seront supprimés : %2",
+    "Security": "Sécurité"
 }

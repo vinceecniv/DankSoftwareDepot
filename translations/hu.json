@@ -287,5 +287,6 @@
     "+%1 on disk": "+%1 a lemezen",
     "frees %1": "%1 szabadul fel",
     "%1 pulled in as dependencies": "%1 függőségként kerül be",
-    "%1 will be removed: %2": "%1 eltávolításra kerül: %2"
+    "%1 will be removed: %2": "%1 eltávolításra kerül: %2",
+    "Security": "Biztonság"
 }

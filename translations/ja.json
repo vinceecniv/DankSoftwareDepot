@@ -287,5 +287,6 @@
     "+%1 on disk": "ディスク +%1",
     "frees %1": "%1 を解放",
     "%1 pulled in as dependencies": "依存関係として %1 個追加",
-    "%1 will be removed: %2": "%1 個を削除: %2"
+    "%1 will be removed: %2": "%1 個を削除: %2",
+    "Security": "セキュリティ"
 }

@@ -23,6 +23,15 @@ Item {
         return ["pkexec", "python3", packageHelper, action].concat(specs);
     }
 
+    // Which updates are security fixes. Only the dnf family ships updateinfo
+    // in a form we can read locally; elsewhere the answer is "unknown", which
+    // the UI shows as no chip rather than as a reassuring absence.
+    readonly property bool hasAdvisories: backendId === "dnf"
+
+    function advisoryCommand(names) {
+        return ["python3", packageHelper, "advisories"].concat(names);
+    }
+
     // The same transaction, resolved but not run: no root, no changes, so
     // the consequences can be shown before the password is asked for.
     function planCommand(action, specs) {

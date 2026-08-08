@@ -21,6 +21,11 @@ Rectangle {
     property bool canHold: false
     // Verbatim tool output behind the short failure reason, revealed on request
     property string errorDetail: ""
+    // {type, severity, ids} from updateinfo, null when the update carries no
+    // advisory or the distro has none to give
+    property var advisory: null
+
+    readonly property bool isSecurity: advisory !== null && advisory.type === "security"
 
     signal updateRequested
     signal holdToggleRequested
@@ -238,6 +243,26 @@ Rectangle {
                             font.weight: Font.Medium
                             color: Theme.warning
                         }
+                    }
+                }
+
+                // Security first: the one distinction that changes whether
+                // this can wait until tonight
+                Rectangle {
+                    visible: card.isSecurity
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: securityChipText.implicitWidth + 14
+                    Layout.preferredHeight: 18
+                    radius: 9
+                    color: Theme.withAlpha(Theme.error, 0.18)
+
+                    StyledText {
+                        id: securityChipText
+                        anchors.centerIn: parent
+                        text: Tr.t("Security")
+                        font.pixelSize: Theme.fontSizeSmall - 2
+                        font.weight: Font.Medium
+                        color: Ui.failColor
                     }
                 }
 

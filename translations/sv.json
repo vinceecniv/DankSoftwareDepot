@@ -287,5 +287,6 @@
     "+%1 on disk": "+%1 på disken",
     "frees %1": "frigör %1",
     "%1 pulled in as dependencies": "%1 tillkommer som beroenden",
-    "%1 will be removed: %2": "%1 tas bort: %2"
+    "%1 will be removed: %2": "%1 tas bort: %2",
+    "Security": "Säkerhet"
 }

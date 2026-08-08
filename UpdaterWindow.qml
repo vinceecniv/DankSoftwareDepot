@@ -2342,6 +2342,7 @@ FloatingWindow {
                 }
                 itemState: win.engine.stateFor(rowData.pkg)
                 errorDetail: win.engine.runErrorDetails && rowData.pkg ? win.engine.errorDetailFor(rowData.pkg) : ""
+                advisory: (win.widgetRoot && rowData.pkg) ? (win.widgetRoot.advisories[win.store.stripArch(rowData.pkg.name)] || null) : null
                 store: win.store
                 engineBusy: win.engine.running
                 held: rowData.ignored === true || win.store.isHeld(rowData.pkg)

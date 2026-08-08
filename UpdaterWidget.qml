@@ -428,6 +428,60 @@ PluginComponent {
             _stashShellRunLog(shellPkgs, doneItems);
     }
 
+    // ── Update severity ─────────────────────────────────────────────────────
+    // name -> {type, severity, ids}. Without this every update looks equally
+    // urgent, which is another way of saying none of them do.
+    property var advisories: ({})
+
+    readonly property int securityCount: {
+        let count = 0;
+        for (const pkg of pendingUpdates) {
+            const adv = advisories[store.stripArch(pkg.name)];
+            if (adv && adv.type === "security")
+                count++;
+        }
+        return count;
+    }
+
+    Timer {
+        id: advisoryDebounce
+        interval: 2000
+        onTriggered: root._refreshAdvisories()
+    }
+
+    function _refreshAdvisories() {
+        if (!Backend.hasAdvisories || advisoryProcess.running)
+            return;
+        const names = [];
+        for (const pkg of pendingUpdates) {
+            if (pkg.repo !== "flatpak" && pkg.repo !== "firmware" && pkg.repo !== "appimage")
+                names.push(store.stripArch(pkg.name));
+        }
+        if (names.length === 0) {
+            advisories = {};
+            return;
+        }
+        advisoryProcess.command = Backend.advisoryCommand(names);
+        advisoryProcess.running = true;
+    }
+
+    Process {
+        id: advisoryProcess
+
+        stdout: SplitParser {
+            onRead: line => {
+                let event;
+                try {
+                    event = JSON.parse(line);
+                } catch (e) {
+                    return;
+                }
+                if (event.event === "advisories")
+                    root.advisories = event.packages || ({});
+            }
+        }
+    }
+
     // ── Failure reasons outlive the run panel ───────────────────────────────
     // A package that failed is still a pending update, so it comes back in
     // the list — but the reason lived only in the engine, which the shell
@@ -752,6 +806,7 @@ PluginComponent {
             _reconcileSnapshot();
         }
         _pruneRestoredFailures();
+        advisoryDebounce.restart();
     }
 
     // A restored snapshot can contain updates installed in the last moments

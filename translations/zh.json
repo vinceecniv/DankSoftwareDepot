@@ -287,5 +287,6 @@
     "+%1 on disk": "磁盘 +%1",
     "frees %1": "释放 %1",
     "%1 pulled in as dependencies": "%1 个作为依赖引入",
-    "%1 will be removed: %2": "将移除 %1 个：%2"
+    "%1 will be removed: %2": "将移除 %1 个：%2",
+    "Security": "安全"
 }

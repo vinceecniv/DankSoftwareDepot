@@ -287,5 +287,6 @@
     "+%1 on disk": "+%1 trên đĩa",
     "frees %1": "giải phóng %1",
     "%1 pulled in as dependencies": "%1 kéo theo làm phụ thuộc",
-    "%1 will be removed: %2": "sẽ xóa %1: %2"
+    "%1 will be removed: %2": "sẽ xóa %1: %2",
+    "Security": "Bảo mật"
 }
