@@ -328,11 +328,40 @@ def available_versions(name):
 DESKTOP_DIRS = ("/usr/share/applications", "/usr/local/share/applications")
 
 
+ICON_THEME_DIRS = ("/usr/share/icons", os.path.expanduser("~/.local/share/icons"))
+ICON_SIZES = ("scalable", "512x512", "256x256", "128x128", "96x96", "64x64", "48x48", "32x32")
+PIXMAP_DIRS = ("/usr/share/pixmaps", "/usr/share/icons")
+
+
+def _resolve_icon(name):
+    """Icon= as a file path. The launcher resolves these through the icon
+    theme; packages outside AppStream have no other icon anywhere, so the
+    desktop entry is the only place to find one."""
+    if not name:
+        return ""
+    if name.startswith("/"):
+        return name if os.path.exists(name) else ""
+    for theme_dir in ICON_THEME_DIRS:
+        for theme in ("hicolor", "Adwaita", "breeze"):
+            for size in ICON_SIZES:
+                for ext in (".svg", ".png"):
+                    path = os.path.join(theme_dir, theme, size, "apps", name + ext)
+                    if os.path.exists(path):
+                        return path
+    for directory in PIXMAP_DIRS:
+        for ext in (".svg", ".png", ".xpm"):
+            path = os.path.join(directory, name + ext)
+            if os.path.exists(path):
+                return path
+    return ""
+
+
 def _launchable_desktop_files():
-    """Desktop entries the launcher would offer: Type=Application, not
-    NoDisplay and not Hidden. Only the first group is read — later groups
-    are actions, whose own NoDisplay says nothing about the entry."""
-    files = []
+    """Desktop entries the launcher would offer, as (path, icon, name):
+    Type=Application, not NoDisplay and not Hidden. Only the first group is
+    read — later groups are actions, whose own NoDisplay says nothing about
+    the entry."""
+    entries = []
     for directory in DESKTOP_DIRS:
         for path in sorted(glob.glob(os.path.join(directory, "*.desktop"))):
             try:
@@ -345,8 +374,11 @@ def _launchable_desktop_files():
                 continue
             if re.search(r"^(NoDisplay|Hidden)\s*=\s*true\s*$", head, re.M | re.I):
                 continue
-            files.append(path)
-    return files
+            icon = re.search(r"^Icon\s*=\s*(.+?)\s*$", head, re.M)
+            label = re.search(r"^Name\s*=\s*(.+?)\s*$", head, re.M)
+            entries.append((path, _resolve_icon(icon.group(1) if icon else ""),
+                            label.group(1) if label else ""))
+    return entries
 
 
 def _run_lines(cmd):
@@ -357,36 +389,58 @@ def _run_lines(cmd):
     return [line for line in out.stdout.splitlines() if line.strip()]
 
 
-def desktop_owners():
-    """Names of installed packages that own a launchable desktop entry."""
-    files = _launchable_desktop_files()
-    if not files:
-        return []
+def _owners_of(paths):
+    """[(path, package)] for the paths the package manager knows. rpm keeps
+    the argument order, so it is matched positionally; dpkg and pacman name
+    the path in each line."""
     backend = detect()
-    names = set()
+    pairs = []
     # Chunked: a few hundred paths stay well inside any argv limit, and a
     # single unowned file must not lose the rest of the batch
-    for start in range(0, len(files), 200):
-        chunk = files[start:start + 200]
+    for start in range(0, len(paths), 200):
+        chunk = paths[start:start + 200]
         if backend == "apt":
             for line in _run_lines(["dpkg", "-S"] + chunk):
                 # "pkg1, pkg2: /path" — diversions and multi-owner paths
-                owner = line.split(":", 1)[0]
-                for part in owner.split(","):
-                    part = part.strip().split(":")[0]
-                    if part:
-                        names.add(part)
+                owner, _, path = line.partition(": ")
+                first = owner.split(",")[0].strip().split(":")[0]
+                if first and path.strip():
+                    pairs.append((path.strip(), first))
         elif backend == "pacman":
             for line in _run_lines(["pacman", "-Qo"] + chunk):
                 # "/path is owned by pkg 1.2.3"
-                match = re.search(r"\bis owned by\s+(\S+)\s", line)
+                match = re.match(r"^(.*?) is owned by (\S+)\s", line)
                 if match:
-                    names.add(match.group(1))
+                    pairs.append((match.group(1), match.group(2)))
         else:
-            for line in _run_lines(["rpm", "-qf", "--qf", "%{NAME}\\n"] + chunk):
-                if not line.startswith("file "):
-                    names.add(line.strip())
-    return sorted(names)
+            lines = _run_lines(["rpm", "-qf", "--qf", "%{NAME}\\n"] + chunk)
+            if len(lines) == len(chunk):
+                pairs.extend((path, name.strip()) for path, name in zip(chunk, lines)
+                             if name.strip() and not name.startswith("file "))
+            else:
+                # An unowned file breaks the alignment: ask one by one
+                for path in chunk:
+                    got = _run_lines(["rpm", "-qf", "--qf", "%{NAME}\\n", path])
+                    if len(got) == 1 and got[0].strip() and not got[0].startswith("file "):
+                        pairs.append((path, got[0].strip()))
+    return pairs
+
+
+def desktop_owners():
+    """Installed packages that own a launchable desktop entry, with the icon
+    and display name from that entry: {package: {icon, name}}."""
+    entries = _launchable_desktop_files()
+    if not entries:
+        return {}
+    by_path = {path: (icon, label) for path, icon, label in entries}
+    out = {}
+    for path, package in _owners_of([e[0] for e in entries]):
+        icon, label = by_path.get(path, ("", ""))
+        current = out.get(package)
+        # A package can ship several entries; keep the one with an icon
+        if current is None or (not current.get("icon") and icon):
+            out[package] = {"icon": icon, "name": label}
+    return out
 
 
 def main():

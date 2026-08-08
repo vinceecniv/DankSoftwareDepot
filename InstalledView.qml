@@ -273,14 +273,16 @@ Item {
         appimageMutationProcess.running = true;
     }
 
-    // System packages that own a launchable desktop entry. Flatpak apps and
-    // AppImages are applications by definition; for rpm/deb/pacman packages
-    // this is what separates "a program I installed" from the libraries,
-    // fonts and services that came along with it.
+    // System packages that own a launchable desktop entry, as
+    // {package: {icon, name}}. Flatpak apps and AppImages are applications
+    // by definition; for rpm/deb/pacman packages this is what separates "a
+    // program I installed" from the libraries, fonts and services that came
+    // along with it — and it carries the icon and name the launcher shows,
+    // which is the only one packages outside AppStream have.
     property var appPackages: ({})
 
     function _isApplication(row) {
-        return row.kind !== "system" || appPackages[row.id] === true;
+        return row.kind !== "system" || appPackages[row.id] !== undefined;
     }
 
     readonly property var filteredItems: {
@@ -333,7 +335,24 @@ Item {
         }
         if (sourceFilter === 0 || sourceFilter === 2) {
             for (const pkg of rpmPackages) {
-                const info = meta["system/" + pkg.name] || null;
+                let info = meta["system/" + pkg.name] || null;
+                // Packages outside AppStream (COPR builds, third-party
+                // repos) have no metadata at all; their desktop entry still
+                // knows the icon and name the launcher uses.
+                const desktop = appPackages[pkg.name];
+                if (desktop && (!info || !info.icon || !info.name)) {
+                    info = Object.assign({
+                        name: "",
+                        summary: "",
+                        homepage: "",
+                        icon: "",
+                        releases: []
+                    }, info || {});
+                    if (!info.icon)
+                        info.icon = desktop.icon || "";
+                    if (!info.name)
+                        info.name = desktop.name || "";
+                }
                 const name = (info && info.name) ? info.name : pkg.name;
                 const summary = info ? (info.summary || "") : "";
                 if (needle && !Ui.matchesWords((name + " " + pkg.name + " " + summary).toLowerCase(), needle))
@@ -372,6 +391,21 @@ Item {
                 return a.name.localeCompare(b.name);
             });
             break;
+        }
+        // Mark where each group starts; the delegate draws a heading there.
+        // Counting first means the heading can say how big its group is.
+        let appCount = 0;
+        for (const row of rows) {
+            if (appRank(row) === 0)
+                appCount++;
+        }
+        for (let i = 0; i < rows.length; i++) {
+            const isApp = appRank(rows[i]) === 0;
+            if (i > 0 && isApp === (appRank(rows[i - 1]) === 0))
+                continue;
+            rows[i].sectionLabel = isApp ? Tr.t("Applications") : Tr.t("System packages");
+            rows[i].sectionCount = isApp ? appCount : rows.length - appCount;
+            rows[i].sectionFirst = i === 0;
         }
         return rows;
     }
@@ -580,13 +614,11 @@ Item {
 
         stdout: StdioCollector {
             onStreamFinished: {
-                const owners = {};
                 try {
-                    for (const name of JSON.parse(text))
-                        owners[name] = true;
+                    view.appPackages = JSON.parse(text) || ({});
                 } catch (e) {
+                    view.appPackages = ({});
                 }
-                view.appPackages = owners;
             }
         }
     }
@@ -939,146 +971,173 @@ Item {
             model: view.filteredItems
             visible: !view.loading
 
-            delegate: Rectangle {
-                id: row
+            // A row, optionally under the heading that opens its group
+            delegate: Column {
+                id: rowWrap
 
                 required property var modelData
 
-                readonly property bool isFlatpak: modelData.kind === "flatpak"
-                readonly property bool held: view.isHeldName(modelData.id)
-                readonly property bool busy: view.busyAction.endsWith(":" + modelData.id)
-
                 width: installedList.width
-                implicitHeight: rowContent.implicitHeight + Theme.spacingS * 2
-                radius: Theme.cornerRadius
-                color: rowHover.hovered ? Theme.surfaceContainerHigh : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                spacing: Theme.spacingXS
 
-                HoverHandler {
-                    id: rowHover
+                Item {
+                    width: parent.width
+                    visible: (rowWrap.modelData.sectionLabel || "") !== ""
+                    height: visible ? sectionHeading.implicitHeight + (rowWrap.modelData.sectionFirst ? Theme.spacingXS : Theme.spacingL) : 0
+
+                    StyledText {
+                        id: sectionHeading
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.leftMargin: Theme.spacingS
+                        text: (rowWrap.modelData.sectionLabel || "") + " · " + (rowWrap.modelData.sectionCount || 0)
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.Medium
+                        color: Theme.surfaceVariantText
+                    }
                 }
 
-                // Click opens the details popup with all info and actions
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: view.openDetails(row.modelData)
-                }
+                Rectangle {
+                    id: row
 
-                ColumnLayout {
-                    id: rowContent
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: Theme.spacingS
-                    anchors.rightMargin: Theme.spacingS
-                    spacing: Theme.spacingS
+                    readonly property var modelData: rowWrap.modelData
+                    readonly property bool isFlatpak: modelData.kind === "flatpak"
+                    readonly property bool held: view.isHeldName(modelData.id)
+                    readonly property bool busy: view.busyAction.endsWith(":" + modelData.id)
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacingM
+                    width: rowWrap.width
+                    implicitHeight: rowContent.implicitHeight + Theme.spacingS * 2
+                    radius: Theme.cornerRadius
+                    color: rowHover.hovered ? Theme.surfaceContainerHigh : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
 
-                        Item {
-                            Layout.preferredWidth: 32
-                            Layout.preferredHeight: 32
+                    HoverHandler {
+                        id: rowHover
+                    }
 
-                            Image {
-                                id: rowLogo
-                                anchors.fill: parent
-                                source: (row.modelData.info && row.modelData.info.icon) ? "file://" + row.modelData.info.icon : ""
-                                sourceSize.width: 64
-                                sourceSize.height: 64
-                                fillMode: Image.PreserveAspectFit
-                                asynchronous: true
-                                visible: status === Image.Ready
-                            }
+                    // Click opens the details popup with all info and actions
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: view.openDetails(row.modelData)
+                    }
 
-                            DankIcon {
-                                anchors.centerIn: parent
-                                visible: rowLogo.status !== Image.Ready
-                                name: row.modelData.kind === "system" ? "memory" : "apps"
-                                size: 20
-                                color: Theme.surfaceVariantText
-                            }
-                        }
+                    ColumnLayout {
+                        id: rowContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: Theme.spacingS
+                        anchors.rightMargin: Theme.spacingS
+                        spacing: Theme.spacingS
 
-                        ColumnLayout {
+                        RowLayout {
                             Layout.fillWidth: true
-                            spacing: 0
+                            spacing: Theme.spacingM
 
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: Theme.spacingS
+                            Item {
+                                Layout.preferredWidth: 32
+                                Layout.preferredHeight: 32
 
-                                StyledText {
-                                    text: row.modelData.name
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    font.weight: Font.Medium
-                                    color: Theme.surfaceText
-                                    elide: Text.ElideRight
-                                    Layout.maximumWidth: 380
+                                Image {
+                                    id: rowLogo
+                                    anchors.fill: parent
+                                    source: (row.modelData.info && row.modelData.info.icon) ? "file://" + row.modelData.info.icon : ""
+                                    sourceSize.width: 64
+                                    sourceSize.height: 64
+                                    fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                    visible: status === Image.Ready
                                 }
 
-                                Rectangle {
-                                    visible: row.held
-                                    Layout.preferredWidth: heldMark.implicitWidth + 12
-                                    Layout.preferredHeight: 16
-                                    radius: 8
-                                    color: Theme.withAlpha(Theme.warning, 0.18)
+                                DankIcon {
+                                    anchors.centerIn: parent
+                                    visible: rowLogo.status !== Image.Ready
+                                    name: row.modelData.kind === "system" ? "memory" : "apps"
+                                    size: 20
+                                    color: Theme.surfaceVariantText
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.spacingS
 
                                     StyledText {
-                                        id: heldMark
-                                        anchors.centerIn: parent
-                                        text: Tr.t("Held")
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        color: Theme.warning
+                                        text: row.modelData.name
+                                        font.pixelSize: Theme.fontSizeMedium
+                                        font.weight: Font.Medium
+                                        color: Theme.surfaceText
+                                        elide: Text.ElideRight
+                                        Layout.maximumWidth: 380
+                                    }
+
+                                    Rectangle {
+                                        visible: row.held
+                                        Layout.preferredWidth: heldMark.implicitWidth + 12
+                                        Layout.preferredHeight: 16
+                                        radius: 8
+                                        color: Theme.withAlpha(Theme.warning, 0.18)
+
+                                        StyledText {
+                                            id: heldMark
+                                            anchors.centerIn: parent
+                                            text: Tr.t("Held")
+                                            font.pixelSize: Theme.fontSizeSmall - 2
+                                            color: Theme.warning
+                                        }
+                                    }
+
+                                    Item {
+                                        Layout.fillWidth: true
                                     }
                                 }
 
-                                Item {
+                                StyledText {
                                     Layout.fillWidth: true
+                                    visible: text !== ""
+                                    text: {
+                                        const parts = [];
+                                        if (row.modelData.version)
+                                            parts.push(row.modelData.version);
+                                        if (view.sortMode === "Largest" && row.modelData.sizeBytes > 0)
+                                            parts.push(view.formatSize(row.modelData.sizeBytes));
+                                        if (view.sortMode === "Recently updated" && row.modelData.updatedTs > 0)
+                                            parts.push(new Date(row.modelData.updatedTs * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat));
+                                        if (row.modelData.summary)
+                                            parts.push(row.modelData.summary);
+                                        return parts.join(" · ");
+                                    }
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.surfaceVariantText
+                                    elide: Text.ElideRight
                                 }
                             }
 
                             StyledText {
-                                Layout.fillWidth: true
-                                visible: text !== ""
-                                text: {
-                                    const parts = [];
-                                    if (row.modelData.version)
-                                        parts.push(row.modelData.version);
-                                    if (view.sortMode === "Largest" && row.modelData.sizeBytes > 0)
-                                        parts.push(view.formatSize(row.modelData.sizeBytes));
-                                    if (view.sortMode === "Recently updated" && row.modelData.updatedTs > 0)
-                                        parts.push(new Date(row.modelData.updatedTs * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat));
-                                    if (row.modelData.summary)
-                                        parts.push(row.modelData.summary);
-                                    return parts.join(" · ");
-                                }
+                                visible: row.busy && view.mutationProgress !== ""
+                                text: view.mutationProgress
                                 font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.surfaceVariantText
-                                elide: Text.ElideRight
+                                font.weight: Font.Medium
+                                color: Theme.primary
                             }
-                        }
 
-                        StyledText {
-                            visible: row.busy && view.mutationProgress !== ""
-                            text: view.mutationProgress
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.weight: Font.Medium
-                            color: Theme.primary
-                        }
+                            M3WaveProgress {
+                                visible: row.busy && view.mutationFraction > 0
+                                Layout.preferredWidth: 90
+                                Layout.preferredHeight: 16
+                                value: view.mutationFraction
+                                isPlaying: visible
+                            }
 
-                        M3WaveProgress {
-                            visible: row.busy && view.mutationFraction > 0
-                            Layout.preferredWidth: 90
-                            Layout.preferredHeight: 16
-                            value: view.mutationFraction
-                            isPlaying: visible
-                        }
-
-                        DankSpinner {
-                            visible: row.busy && view.mutationFraction <= 0
-                            size: 22
+                            DankSpinner {
+                                visible: row.busy && view.mutationFraction <= 0
+                                size: 22
+                            }
                         }
                     }
                 }
