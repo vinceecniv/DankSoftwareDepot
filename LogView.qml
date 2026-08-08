@@ -73,10 +73,27 @@ Item {
         return Qt.formatDate(date, "d MMM yyyy") + " " + time;
     }
 
+    function _dayKey(ts) {
+        const d = new Date(ts * 1000);
+        return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+    }
+
+    function _dayLabel(ts) {
+        const now = new Date();
+        const d = new Date(ts * 1000);
+        if (_dayKey(ts) === (now.getFullYear() + "-" + now.getMonth() + "-" + now.getDate()))
+            return Tr.t("Today");
+        const yesterday = new Date(now.getTime() - 86400000);
+        if (_dayKey(ts) === (yesterday.getFullYear() + "-" + yesterday.getMonth() + "-" + yesterday.getDate()))
+            return Tr.t("Yesterday");
+        return d.toLocaleDateString(Qt.locale(), Locale.LongFormat);
+    }
+
     readonly property var visibleEntries: {
         const all = (logger ? logger.entries : []) || [];
         const needle = searchText.trim().toLowerCase();
         const result = [];
+        let lastDay = "";
         for (let i = all.length - 1; i >= 0; i--) {
             const entry = all[i];
             if (needle !== "") {
@@ -84,9 +101,48 @@ Item {
                 if (!Ui.matchesWords(haystack, needle))
                     continue;
             }
-            result.push(entry);
+            // The first entry of each day carries its heading, so the list
+            // reads as days rather than as a stack of rows
+            const day = _dayKey(entry.ts || 0);
+            const row = Object.assign({}, entry);
+            row.dayLabel = day !== lastDay ? _dayLabel(entry.ts || 0) : "";
+            lastDay = day;
+            result.push(row);
         }
         return result;
+    }
+
+    // What this machine has been through lately: the log already knows, it
+    // just never said it out loud.
+    readonly property var activity: {
+        const all = (logger ? logger.entries : []) || [];
+        const cutoff = Date.now() / 1000 - 7 * 86400;
+        let updated = 0;
+        let installed = 0;
+        let removed = 0;
+        let runs = 0;
+        for (const entry of all) {
+            if ((entry.ts || 0) < cutoff)
+                continue;
+            const type = entry.type || "";
+            if (type.indexOf("update") === 0) {
+                runs++;
+                for (const item of entry.items || []) {
+                    if (item.status !== "error")
+                        updated++;
+                }
+            } else if (type === "install") {
+                installed += (entry.items || []).length;
+            } else if (type === "uninstall") {
+                removed += (entry.items || []).length;
+            }
+        }
+        return {
+            updated: updated,
+            installed: installed,
+            removed: removed,
+            runs: runs
+        };
     }
 
     Component.onCompleted: {
@@ -114,6 +170,76 @@ Item {
             }
         }
 
+        // ── The last seven days at a glance ─────────────────────────────────
+        Rectangle {
+            Layout.fillWidth: true
+            visible: view.searchText === "" && (view.activity.updated + view.activity.installed + view.activity.removed) > 0
+            implicitHeight: activityRow.implicitHeight + Theme.spacingM * 2
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+
+            RowLayout {
+                id: activityRow
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingM
+                spacing: Theme.spacingL
+
+                StyledText {
+                    text: Tr.t("Last 7 days")
+                    font.pixelSize: Theme.fontSizeSmall
+                    font.weight: Font.DemiBold
+                    color: Theme.surfaceVariantText
+                }
+
+                Repeater {
+                    model: [
+                        {
+                            value: view.activity.updated,
+                            label: Tr.t("updated"),
+                            colour: Theme.primary
+                        },
+                        {
+                            value: view.activity.installed,
+                            label: Tr.t("installed"),
+                            colour: Theme.success
+                        },
+                        {
+                            value: view.activity.removed,
+                            label: Tr.t("removed"),
+                            colour: Theme.surfaceVariantText
+                        }
+                    ]
+
+                    delegate: RowLayout {
+                        required property var modelData
+
+                        visible: modelData.value > 0
+                        spacing: 4
+
+                        StyledText {
+                            text: String(modelData.value)
+                            font.pixelSize: Theme.fontSizeMedium
+                            font.weight: Font.Bold
+                            color: modelData.colour
+                        }
+
+                        StyledText {
+                            text: modelData.label
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            color: Theme.surfaceVariantText
+                        }
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
+        }
+
         DankListView {
             id: logList
             Layout.fillWidth: true
@@ -123,17 +249,67 @@ Item {
             model: view.visibleEntries
             visible: view.visibleEntries.length > 0
 
-            delegate: Rectangle {
-                id: entryRow
+            // A day heading, then the entry on a rail: the log holds a
+            // sequence of events, and a stack of identical cards hides that.
+            delegate: Column {
+                id: entryWrap
 
                 required property var modelData
 
-                readonly property string entryKey: String(modelData.ts) + "/" + (modelData.type || "")
-                readonly property bool expanded: view.expandedKeys[entryKey] === true
-                readonly property var entryItems: modelData.items || []
-
                 width: logList.width
-                implicitHeight: entryColumn.implicitHeight + Theme.spacingS * 2
+                spacing: Theme.spacingXS
+
+                Item {
+                    width: parent.width
+                    visible: (entryWrap.modelData.dayLabel || "") !== ""
+                    height: visible ? dayHeading.implicitHeight + Theme.spacingS : 0
+
+                    StyledText {
+                        id: dayHeading
+                        anchors.left: parent.left
+                        anchors.bottom: parent.bottom
+                        anchors.leftMargin: Theme.spacingXS
+                        text: entryWrap.modelData.dayLabel || ""
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.DemiBold
+                        color: Theme.surfaceVariantText
+                    }
+                }
+
+                Item {
+                    width: parent.width
+                    implicitHeight: entryRow.implicitHeight
+
+                    // The rail runs through the gap to the next entry too, so
+                    // the days read as one thread rather than as loose cards
+                    Rectangle {
+                        x: 5
+                        y: 0
+                        width: 2
+                        height: parent.height + Theme.spacingXS
+                        color: Theme.withAlpha(Theme.outline, 0.35)
+                    }
+
+                    Rectangle {
+                        x: 2
+                        y: Theme.spacingM
+                        width: 8
+                        height: 8
+                        radius: 4
+                        color: view.colorFor(entryWrap.modelData.type || "")
+                    }
+
+                Rectangle {
+                    id: entryRow
+
+                    readonly property var modelData: entryWrap.modelData
+                    readonly property string entryKey: String(modelData.ts) + "/" + (modelData.type || "")
+                    readonly property bool expanded: view.expandedKeys[entryKey] === true
+                    readonly property var entryItems: modelData.items || []
+
+                    x: 18
+                    width: parent.width - 18
+                    implicitHeight: entryColumn.implicitHeight + Theme.spacingS * 2
                 radius: Theme.cornerRadius
                 color: entryHover.hovered ? Theme.surfaceContainerHigh : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
 
@@ -331,6 +507,8 @@ Item {
                             }
                         }
                     }
+                }
+                }
                 }
             }
         }

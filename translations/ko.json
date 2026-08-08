@@ -301,5 +301,10 @@
     "Empty": "비우기",
     "Working…": "진행 중…",
     "Removed %1 unneeded packages": "불필요한 패키지 %1개를 제거함",
-    "Emptied the package cache": "패키지 캐시를 비움"
+    "Emptied the package cache": "패키지 캐시를 비움",
+    "Last 7 days": "최근 7일",
+    "updated": "업데이트",
+    "removed": "제거",
+    "Today": "오늘",
+    "Yesterday": "어제"
 }

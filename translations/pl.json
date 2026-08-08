@@ -301,5 +301,10 @@
     "Empty": "Wyczyść",
     "Working…": "Trwa…",
     "Removed %1 unneeded packages": "Usunięto %1 zbędnych pakietów",
-    "Emptied the package cache": "Wyczyszczono pamięć podręczną pakietów"
+    "Emptied the package cache": "Wyczyszczono pamięć podręczną pakietów",
+    "Last 7 days": "Ostatnie 7 dni",
+    "updated": "zaktualizowane",
+    "removed": "usunięte",
+    "Today": "Dzisiaj",
+    "Yesterday": "Wczoraj"
 }

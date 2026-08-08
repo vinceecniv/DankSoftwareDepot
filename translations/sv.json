@@ -301,5 +301,10 @@
     "Empty": "Töm",
     "Working…": "Arbetar…",
     "Removed %1 unneeded packages": "Tog bort %1 onödiga paket",
-    "Emptied the package cache": "Tömde paketcachen"
+    "Emptied the package cache": "Tömde paketcachen",
+    "Last 7 days": "Senaste 7 dagarna",
+    "updated": "uppdaterade",
+    "removed": "borttagna",
+    "Today": "I dag",
+    "Yesterday": "I går"
 }

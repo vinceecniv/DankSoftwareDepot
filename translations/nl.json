@@ -301,5 +301,10 @@
     "Empty": "Legen",
     "Working…": "Bezig…",
     "Removed %1 unneeded packages": "%1 overbodige pakketten verwijderd",
-    "Emptied the package cache": "Pakketcache geleegd"
+    "Emptied the package cache": "Pakketcache geleegd",
+    "Last 7 days": "Afgelopen 7 dagen",
+    "updated": "bijgewerkt",
+    "removed": "verwijderd",
+    "Today": "Vandaag",
+    "Yesterday": "Gisteren"
 }

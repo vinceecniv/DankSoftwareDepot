@@ -301,5 +301,10 @@
     "Empty": "Vider",
     "Working…": "En cours…",
     "Removed %1 unneeded packages": "%1 paquets inutiles supprimés",
-    "Emptied the package cache": "Cache des paquets vidé"
+    "Emptied the package cache": "Cache des paquets vidé",
+    "Last 7 days": "7 derniers jours",
+    "updated": "mis à jour",
+    "removed": "supprimés",
+    "Today": "Aujourd'hui",
+    "Yesterday": "Hier"
 }

@@ -301,5 +301,10 @@
     "Empty": "Очистити",
     "Working…": "Виконується…",
     "Removed %1 unneeded packages": "Вилучено непотрібних пакетів: %1",
-    "Emptied the package cache": "Кеш пакетів очищено"
+    "Emptied the package cache": "Кеш пакетів очищено",
+    "Last 7 days": "Останні 7 днів",
+    "updated": "оновлено",
+    "removed": "вилучено",
+    "Today": "Сьогодні",
+    "Yesterday": "Учора"
 }

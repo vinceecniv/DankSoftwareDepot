@@ -301,5 +301,10 @@
     "Empty": "Leeren",
     "Working…": "Läuft…",
     "Removed %1 unneeded packages": "%1 nicht benötigte Pakete entfernt",
-    "Emptied the package cache": "Paket-Cache geleert"
+    "Emptied the package cache": "Paket-Cache geleert",
+    "Last 7 days": "Letzte 7 Tage",
+    "updated": "aktualisiert",
+    "removed": "entfernt",
+    "Today": "Heute",
+    "Yesterday": "Gestern"
 }

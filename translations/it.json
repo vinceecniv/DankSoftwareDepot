@@ -301,5 +301,10 @@
     "Empty": "Svuota",
     "Working…": "In corso…",
     "Removed %1 unneeded packages": "Rimossi %1 pacchetti non necessari",
-    "Emptied the package cache": "Cache dei pacchetti svuotata"
+    "Emptied the package cache": "Cache dei pacchetti svuotata",
+    "Last 7 days": "Ultimi 7 giorni",
+    "updated": "aggiornati",
+    "removed": "rimossi",
+    "Today": "Oggi",
+    "Yesterday": "Ieri"
 }

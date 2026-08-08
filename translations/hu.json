@@ -301,5 +301,10 @@
     "Empty": "Ürítés",
     "Working…": "Folyamatban…",
     "Removed %1 unneeded packages": "%1 felesleges csomag eltávolítva",
-    "Emptied the package cache": "Csomaggyorsítótár ürítve"
+    "Emptied the package cache": "Csomaggyorsítótár ürítve",
+    "Last 7 days": "Utolsó 7 nap",
+    "updated": "frissítve",
+    "removed": "eltávolítva",
+    "Today": "Ma",
+    "Yesterday": "Tegnap"
 }

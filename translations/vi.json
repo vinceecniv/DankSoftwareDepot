@@ -301,5 +301,10 @@
     "Empty": "Dọn sạch",
     "Working…": "Đang xử lý…",
     "Removed %1 unneeded packages": "Đã xóa %1 gói không cần thiết",
-    "Emptied the package cache": "Đã dọn bộ nhớ đệm gói"
+    "Emptied the package cache": "Đã dọn bộ nhớ đệm gói",
+    "Last 7 days": "7 ngày qua",
+    "updated": "đã cập nhật",
+    "removed": "đã xóa",
+    "Today": "Hôm nay",
+    "Yesterday": "Hôm qua"
 }

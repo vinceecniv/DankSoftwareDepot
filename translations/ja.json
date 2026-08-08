@@ -301,5 +301,10 @@
     "Empty": "空にする",
     "Working…": "処理中…",
     "Removed %1 unneeded packages": "不要なパッケージ %1 個を削除しました",
-    "Emptied the package cache": "パッケージキャッシュを空にしました"
+    "Emptied the package cache": "パッケージキャッシュを空にしました",
+    "Last 7 days": "過去 7 日間",
+    "updated": "更新",
+    "removed": "削除",
+    "Today": "今日",
+    "Yesterday": "昨日"
 }

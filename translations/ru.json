@@ -301,5 +301,10 @@
     "Empty": "Очистить",
     "Working…": "Выполняется…",
     "Removed %1 unneeded packages": "Удалено ненужных пакетов: %1",
-    "Emptied the package cache": "Кеш пакетов очищен"
+    "Emptied the package cache": "Кеш пакетов очищен",
+    "Last 7 days": "Последние 7 дней",
+    "updated": "обновлено",
+    "removed": "удалено",
+    "Today": "Сегодня",
+    "Yesterday": "Вчера"
 }

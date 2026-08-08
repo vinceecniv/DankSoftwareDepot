@@ -301,5 +301,10 @@
     "Empty": "清空",
     "Working…": "处理中…",
     "Removed %1 unneeded packages": "已移除 %1 个多余软件包",
-    "Emptied the package cache": "已清空软件包缓存"
+    "Emptied the package cache": "已清空软件包缓存",
+    "Last 7 days": "最近 7 天",
+    "updated": "已更新",
+    "removed": "已移除",
+    "Today": "今天",
+    "Yesterday": "昨天"
 }
