@@ -24,6 +24,14 @@ Item {
     // Fired after a successful uninstall/restore so other views can refresh
     signal softwareMutated()
 
+    // Set from the command palette, so a query typed there carries over
+    // into the tab that can search it properly
+    function setQuery(text) {
+        searchField.text = text;
+        searchText = text;
+        searchField.forceActiveFocus();
+    }
+
     function focusSearch() {
         searchField.forceActiveFocus();
     }

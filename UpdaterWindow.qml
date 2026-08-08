@@ -1332,20 +1332,32 @@ FloatingWindow {
                 add(Tr.t("Installed"), item.kind === "flatpak" ? "apps" : (item.kind === "appimage" ? "package_2" : "memory"), item.name, item.version || "", Theme.success, "installed", item);
             }
 
-            shown = 0;
-            const entries = (win.widgetRoot && win.widgetRoot.actionLogger) ? win.widgetRoot.actionLogger.entries : [];
-            for (let i = entries.length - 1; i >= 0 && shown < 4; i--) {
-                const entry = entries[i];
-                const haystack = (entry.title || "") + " " + (entry.items || []).map(it => it.name || "").join(" ");
-                if (!hit(haystack))
+            // The palette shows only the first few matches of each kind, and
+            // the repositories are not in memory at all; hand the query to the
+            // tab whose job that is instead of duplicating its search
+            const typed = palette.query.trim();
+            const handOff = [
+                {
+                    tab: 1,
+                    title: Tr.t("Search \"%1\" in Installed").arg(typed)
+                },
+                {
+                    tab: 2,
+                    title: Tr.t("Search \"%1\" in Install").arg(typed)
+                },
+                {
+                    tab: 4,
+                    title: Tr.t("Search \"%1\" in Log").arg(typed)
+                }
+            ];
+            for (const target of handOff) {
+                if (win.tabIds.indexOf(target.tab) === -1)
                     continue;
-                shown++;
-                add(Tr.t("Log"), "history", entry.title || "", win.formatAgo(entry.ts), Theme.surfaceVariantText, "log", entry);
+                add(Tr.t("Commands"), "search", target.title, "", Theme.secondary, "search", {
+                    tab: target.tab,
+                    text: typed
+                });
             }
-
-            // The repositories are not in memory; hand the query to the tab
-            // whose job that is instead of duplicating its search
-            add(Tr.t("Commands"), "search", Tr.t("Search \"%1\" in Install").arg(palette.query.trim()), "", Theme.secondary, "search", palette.query.trim());
         }
         return out;
     }
@@ -1354,7 +1366,7 @@ FloatingWindow {
         const item = win.paletteResults[index];
         if (!item)
             return;
-        palette.visible = false;
+        palette.close();
         switch (item.kind) {
         case "check":
             SystemUpdateService.checkForUpdates();
@@ -1382,13 +1394,15 @@ FloatingWindow {
             if (installedLoader.item)
                 installedLoader.item.openDetails(item.payload);
             break;
-        case "log":
-            win.openLatestLogEntry();
-            break;
         case "search":
-            win.openTab(2);
-            if (installLoader.item && installLoader.item.setQuery)
-                installLoader.item.setQuery(item.payload);
+            win.openTab(item.payload.tab);
+            // The tab may have only just been created by openTab, so hand the
+            // query over once it exists rather than at this instant
+            Qt.callLater(() => {
+                const view = win.tabView(item.payload.tab);
+                if (view && view.setQuery)
+                    view.setQuery(item.payload.text);
+            });
             break;
         }
     }
