@@ -275,5 +275,6 @@
     "In progress": "W toku",
     "Waiting": "Oczekujące",
     "Completed": "Ukończone",
-    "View in log": "Pokaż w dzienniku"
+    "View in log": "Pokaż w dzienniku",
+    "Status": "Stan"
 }

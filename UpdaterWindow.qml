@@ -2067,7 +2067,7 @@ FloatingWindow {
                         iconName: "close"
                         iconSize: 15
                         iconColor: Theme.surfaceVariantText
-                        tooltipText: "Dismiss result"
+                        tooltipText: Tr.t("Dismiss result")
                         onClicked: win.engine.dismiss()
                     }
                 }
@@ -2531,7 +2531,7 @@ FloatingWindow {
                                     }
 
                                     StyledText {
-                                        text: "Status"
+                                        text: Tr.t("Status")
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.weight: Font.DemiBold
                                         color: Theme.surfaceText

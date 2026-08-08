@@ -275,5 +275,6 @@
     "In progress": "En curso",
     "Waiting": "En espera",
     "Completed": "Completado",
-    "View in log": "Ver en el registro"
+    "View in log": "Ver en el registro",
+    "Status": "Estado"
 }

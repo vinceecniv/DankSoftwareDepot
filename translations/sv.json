@@ -275,5 +275,6 @@
     "In progress": "Pågår",
     "Waiting": "Väntar",
     "Completed": "Klart",
-    "View in log": "Visa i loggen"
+    "View in log": "Visa i loggen",
+    "Status": "Status"
 }

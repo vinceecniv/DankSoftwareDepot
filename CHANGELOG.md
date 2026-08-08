@@ -3,7 +3,7 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 0.5.0 — 2026-08-08
 
 - **A missing package-manager binding no longer looks like hundreds of
   failed packages.** `python3-libdnf5` is not part of a default Fedora

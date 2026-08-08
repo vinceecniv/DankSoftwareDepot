@@ -39,9 +39,13 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   plus user-holds via the lock button — never counted or updated,
   releasable any time
 - **Automatic updates**: off / notify only / auto-install Flatpaks
-- During a run the list becomes a live queue: queued / downloading /
-  installing / completed / failed per item, each row with its own progress
-  bar built from real bytes (flatpak transaction events, dnf cache growth)
+- During a run the list regroups by what is happening — **In progress**,
+  **Waiting**, **Completed** (collapsed) — so the packages actually being
+  worked on are the first thing on screen. Each row has its own progress
+  bar built from real bytes (flatpak transaction events, libdnf5 callbacks)
+- A package that fails keeps its reason on its card, including after the
+  shell reload a DMS update causes, with the tool's verbatim output one
+  click away under **Show details** — the same detail the action log keeps
 - Reboot recommendation banner (kernel/systemd/glibc/firmware) with
   confirm-restart button, persisted per boot
 - End-of-life Flatpak detection and distro-upgrade notice
@@ -54,6 +58,10 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 ### 2 · Installed
 - All Flatpak apps, rpm packages and AppImages in one list: live search,
   source filter, sorting (name / largest / recently updated) with sizes
+- **Applications first, supporting packages after**: anything that owns a
+  desktop entry your launcher would show counts as an application, in its
+  own group with a count — which is also where packages outside AppStream
+  get their icon and name from
 - Details popup per app: description, screenshots, star ratings and review
   texts (ODRS), release notes / changelog, homepage, sandbox permissions —
   and you can write a review yourself
@@ -181,7 +189,8 @@ dms ipc call dankSoftwareDepot check     # trigger an update check
 | `scripts/rpm_helper.py` | libdnf5 transactions (install/remove/upgrade/downgrade) with exact byte progress (NDJSON events, see PROTOCOL.md) |
 | `scripts/apt_helper.py` | python-apt counterpart of rpm_helper.py — experimental Debian/Ubuntu transaction backend |
 | `scripts/pacman_helper.py` | pyalpm counterpart of rpm_helper.py — experimental Arch transaction backend (official repos, no AUR) |
-| `scripts/pkg_backend.py` | Per-distro metadata backend (search, sizes, inventory, holds, versions); apt + pacman implemented, dnf stays in enrich.py |
+| `scripts/pkg_backend.py` | Per-distro metadata backend (search, sizes, inventory, holds, versions, changelogs); apt + pacman implemented, dnf stays in enrich.py. Also answers, for every distro, which packages own a launchable desktop entry |
+| `scripts/test_dep11.py` | Checks the DEP-11 and apt/pacman changelog paths against real-shaped data, runnable on any distro |
 | `scripts/flatpak_helper.py` | libflatpak transactions (updates & installs) with exact byte progress (NDJSON events) |
 | `scripts/appimage.py` | AppImage catalog, install/update/uninstall, GitHub update sources, adhoc folder scanning (NDJSON events) |
 | `scripts/action_log.py` | Action-log append/prune helper |

@@ -275,5 +275,6 @@
     "In progress": "In Arbeit",
     "Waiting": "Wartend",
     "Completed": "Abgeschlossen",
-    "View in log": "Im Protokoll ansehen"
+    "View in log": "Im Protokoll ansehen",
+    "Status": "Status"
 }
