@@ -282,5 +282,10 @@
     "Uninstalling also removes %1": "アンインストールすると %1 も削除されます",
     "Uninstalling also removes %1 packages: %2": "アンインストールすると %1 個のパッケージも削除されます: %2",
     " and %1 more": " ほか %1 件",
-    "Built with Vito": "Vito で構築"
+    "Built with Vito": "Vito で構築",
+    "%1 packages": "%1 個のパッケージ",
+    "+%1 on disk": "ディスク +%1",
+    "frees %1": "%1 を解放",
+    "%1 pulled in as dependencies": "依存関係として %1 個追加",
+    "%1 will be removed: %2": "%1 個を削除: %2"
 }

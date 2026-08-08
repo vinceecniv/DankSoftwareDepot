@@ -282,5 +282,10 @@
     "Uninstalling also removes %1": "제거하면 %1도 함께 삭제됩니다",
     "Uninstalling also removes %1 packages: %2": "제거하면 패키지 %1개도 함께 삭제됩니다: %2",
     " and %1 more": " 외 %1개",
-    "Built with Vito": "Vito로 제작"
+    "Built with Vito": "Vito로 제작",
+    "%1 packages": "패키지 %1개",
+    "+%1 on disk": "디스크 +%1",
+    "frees %1": "%1 확보",
+    "%1 pulled in as dependencies": "의존성으로 %1개 추가",
+    "%1 will be removed: %2": "%1개 삭제됨: %2"
 }

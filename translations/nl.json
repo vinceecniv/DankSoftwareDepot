@@ -282,5 +282,10 @@
     "Uninstalling also removes %1": "Verwijderen haalt ook %1 weg",
     "Uninstalling also removes %1 packages: %2": "Verwijderen haalt ook %1 pakketten weg: %2",
     " and %1 more": " en nog %1",
-    "Built with Vito": "Gebouwd met Vito"
+    "Built with Vito": "Gebouwd met Vito",
+    "%1 packages": "%1 pakketten",
+    "+%1 on disk": "+%1 op schijf",
+    "frees %1": "maakt %1 vrij",
+    "%1 pulled in as dependencies": "%1 meegetrokken als afhankelijkheid",
+    "%1 will be removed: %2": "%1 worden verwijderd: %2"
 }

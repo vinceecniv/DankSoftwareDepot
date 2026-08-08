@@ -282,5 +282,10 @@
     "Uninstalling also removes %1": "Avinstallationen tar även bort %1",
     "Uninstalling also removes %1 packages: %2": "Avinstallationen tar även bort %1 paket: %2",
     " and %1 more": " och %1 till",
-    "Built with Vito": "Byggd med Vito"
+    "Built with Vito": "Byggd med Vito",
+    "%1 packages": "%1 paket",
+    "+%1 on disk": "+%1 på disken",
+    "frees %1": "frigör %1",
+    "%1 pulled in as dependencies": "%1 tillkommer som beroenden",
+    "%1 will be removed: %2": "%1 tas bort: %2"
 }

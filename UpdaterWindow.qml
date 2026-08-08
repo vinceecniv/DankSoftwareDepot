@@ -2986,6 +2986,60 @@ FloatingWindow {
             }
         }
 
+        // ── What Update All would do ────────────────────────────────────────
+        // The resolver's answer, shown before the click rather than after the
+        // password: how much arrives, what nobody asked for, and what leaves.
+        Rectangle {
+            id: planStrip
+
+            Layout.fillWidth: true
+            readonly property var plan: win.engine.previewPlan
+            visible: win.currentTab === 0 && !win.engine.running && win.showUpdateAll && plan !== null
+            implicitHeight: planRow.implicitHeight + Theme.spacingS * 2
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(plan && plan.removals > 0 ? Theme.warning : Theme.surfaceVariantText, 0.08)
+
+            RowLayout {
+                id: planRow
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingM
+                spacing: Theme.spacingS
+
+                DankIcon {
+                    name: planStrip.plan && planStrip.plan.removals > 0 ? "warning" : "checklist"
+                    size: 16
+                    color: planStrip.plan && planStrip.plan.removals > 0 ? Theme.warning : Theme.surfaceVariantText
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: {
+                        const plan = win.engine.previewPlan;
+                        if (!plan)
+                            return "";
+                        const parts = [Tr.t("%1 packages").arg(plan.total), win.engine.formatBytes(plan.downloadBytes)];
+                        if (plan.diskDeltaBytes > 0)
+                            parts.push(Tr.t("+%1 on disk").arg(win.engine.formatBytes(plan.diskDeltaBytes)));
+                        else if (plan.diskDeltaBytes < 0)
+                            parts.push(Tr.t("frees %1").arg(win.engine.formatBytes(-plan.diskDeltaBytes)));
+                        if (plan.extra > 0)
+                            parts.push(Tr.t("%1 pulled in as dependencies").arg(plan.extra));
+                        if (plan.removals > 0)
+                            parts.push(Tr.t("%1 will be removed: %2").arg(plan.removals).arg(plan.removedNames.slice(0, 3).join(", ")));
+                        return parts.join(" · ");
+                    }
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    color: Theme.surfaceVariantText
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 2
+                    elide: Text.ElideRight
+                }
+            }
+        }
+
         StyledText {
             Layout.fillWidth: true
             visible: win.currentTab === 0 && win.hiddenRuntimeCount > 0

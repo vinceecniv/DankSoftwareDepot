@@ -282,5 +282,10 @@
     "Uninstalling also removes %1": "Gỡ cài đặt cũng xóa %1",
     "Uninstalling also removes %1 packages: %2": "Gỡ cài đặt cũng xóa %1 gói: %2",
     " and %1 more": " và %1 gói nữa",
-    "Built with Vito": "Xây dựng với Vito"
+    "Built with Vito": "Xây dựng với Vito",
+    "%1 packages": "%1 gói",
+    "+%1 on disk": "+%1 trên đĩa",
+    "frees %1": "giải phóng %1",
+    "%1 pulled in as dependencies": "%1 kéo theo làm phụ thuộc",
+    "%1 will be removed: %2": "sẽ xóa %1: %2"
 }

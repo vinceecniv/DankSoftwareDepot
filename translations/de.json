@@ -282,5 +282,10 @@
     "Uninstalling also removes %1": "Beim Deinstallieren wird auch %1 entfernt",
     "Uninstalling also removes %1 packages: %2": "Beim Deinstallieren werden auch %1 Pakete entfernt: %2",
     " and %1 more": " und %1 weitere",
-    "Built with Vito": "Mit Vito gebaut"
+    "Built with Vito": "Mit Vito gebaut",
+    "%1 packages": "%1 Pakete",
+    "+%1 on disk": "+%1 auf der Festplatte",
+    "frees %1": "gibt %1 frei",
+    "%1 pulled in as dependencies": "%1 als Abhängigkeit hinzugezogen",
+    "%1 will be removed: %2": "%1 werden entfernt: %2"
 }

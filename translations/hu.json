@@ -282,5 +282,10 @@
     "Uninstalling also removes %1": "Az eltávolítás %1 csomagot is töröl",
     "Uninstalling also removes %1 packages: %2": "Az eltávolítás további %1 csomagot is töröl: %2",
     " and %1 more": " és még %1",
-    "Built with Vito": "Vitóval építve"
+    "Built with Vito": "Vitóval építve",
+    "%1 packages": "%1 csomag",
+    "+%1 on disk": "+%1 a lemezen",
+    "frees %1": "%1 szabadul fel",
+    "%1 pulled in as dependencies": "%1 függőségként kerül be",
+    "%1 will be removed: %2": "%1 eltávolításra kerül: %2"
 }

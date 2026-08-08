@@ -228,6 +228,86 @@ Item {
         return Tr.t("about %1 h %2 min left").arg(Math.floor(mins / 60)).arg(mins % 60);
     }
 
+    // ── What the next run would do ──────────────────────────────────────────
+    // The resolver's own answer, fetched unprivileged before anyone clicks:
+    // how many packages, how many of them nobody selected, what leaves the
+    // disk. Everything here comes from the same `plan` event the run itself
+    // uses, so the preview cannot drift from the transaction.
+    // null while unknown; otherwise {total, extra, removals, downloadBytes,
+    // diskDeltaBytes, removedNames}
+    property var previewPlan: null
+
+    Timer {
+        id: previewDebounce
+        interval: 1500
+        onTriggered: engine._startPreview()
+    }
+
+    // Re-plan when the pending list settles, never while a run is on: the
+    // answer would be stale before it arrived.
+    onPendingUpdatesChanged: {
+        if (running)
+            return;
+        previewPlan = null;
+        previewDebounce.restart();
+    }
+
+    function _startPreview() {
+        if (running || previewProcess.running)
+            return;
+        const names = [];
+        const held = new Set(heldKeys || []);
+        for (const pkg of pendingUpdates || []) {
+            if (pkg.repo === "flatpak" || pkg.repo === "firmware" || pkg.repo === "appimage")
+                continue;
+            if (!held.has("system/" + _stripArch(pkg.name)))
+                names.push(pkg.name);
+        }
+        if (names.length === 0) {
+            previewPlan = null;
+            return;
+        }
+        previewProcess._selected = new Set(names.map(n => _stripArch(n)));
+        previewProcess.command = Backend.planCommand("upgrade", names);
+        previewProcess.running = true;
+    }
+
+    Process {
+        id: previewProcess
+
+        property var _selected: new Set()
+
+        stdout: SplitParser {
+            onRead: line => {
+                let event;
+                try {
+                    event = JSON.parse(line);
+                } catch (e) {
+                    return;
+                }
+                if (event.event !== "plan")
+                    return;
+                let extra = 0;
+                const removed = [];
+                for (const op of event.ops || []) {
+                    const outbound = /remove|obsolet/i.test(op.action || "");
+                    if (outbound)
+                        removed.push(op.name);
+                    else if (!previewProcess._selected.has(op.name))
+                        extra++;
+                }
+                engine.previewPlan = {
+                    total: (event.ops || []).length,
+                    extra: extra,
+                    removals: removed.length,
+                    removedNames: removed,
+                    downloadBytes: event.totalDownloadBytes || 0,
+                    diskDeltaBytes: event.installDeltaBytes || 0
+                };
+            }
+        }
+    }
+
     // Verbatim failure text for a package, "" when there is none
     function errorDetailFor(pkg) {
         return runErrorDetails[_keyFor(pkg)] || "";
