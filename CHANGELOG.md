@@ -3,6 +3,82 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.6.0 — 2026-08-08
+
+- **A command palette on Ctrl+K.** One field over everything the window
+  already holds — pending updates, installed software and the app's own
+  commands — filtered as you type, with no process to wait for. Arrows
+  move, Enter acts, Escape leaves. It deliberately does not search the
+  repositories: that needs a process and a cache the Install tab already
+  owns, so the last results hand the query to Installed, Install or Log
+  instead of growing a second search engine here. Reachable from a
+  magnifier in the header, which carries the shortcut in its tooltip.
+- **Show what Update All would do, before the click.** A strip above the
+  list states the resolver's own answer: how many packages the
+  transaction really touches, how much arrives, what it costs or frees on
+  disk, how many were pulled in as dependencies nobody selected, and — in
+  warning colour — anything that would be removed. It comes from the same
+  `plan` event the run consumes, fetched without root, so the preview
+  cannot drift from the transaction it describes.
+- **Say what a removal takes with it, before it takes it.** Removing one
+  package can remove others, and that used to happen in silence: only
+  packages you picked ever got a row, so anything the resolver decided to
+  remove left no trace. The details popup now names them. `plan` became a
+  prefix on any action rather than an action of its own, which is what
+  makes an unprivileged preview possible at all.
+- **Not every update is equally urgent, and the list now says so.**
+  Fedora ships updateinfo next to its packages — which update closes a
+  security hole, which fixes a bug, and the CVE behind it. Read from the
+  local cache, so it costs no root and no network. Only the dnf family
+  publishes this in a locally readable form; elsewhere it shows as no
+  chip rather than as a reassuring absence of danger.
+- **Why is this on my system, answered.** Did you ask for this package or
+  did it arrive as somebody's dependency, and what would miss it if it
+  went — one line in the details popup, from facts every package manager
+  keeps behind flags nobody remembers.
+- **Reclaim space: the two piles nobody looks at** — packages pulled in
+  for something since removed, and the download cache of files already
+  installed, each with its measured size and its own button. The card
+  stays hidden below 50 MB, where the offer would be noise.
+- **How long this usually takes here, measured rather than guessed.**
+  Every run reports its own duration and size and the last ten are kept;
+  the forecast is the median seconds per package, so one run that hit a
+  slow mirror does not set the expectation. It stays silent until this
+  machine has shown at least two runs.
+- **The log becomes a timeline** — a heading per day, a dot per event on
+  a rail that runs between them, and above it what the log always knew
+  and never said: how many packages were updated, installed and removed
+  in the last seven days.
+- **The app can put itself in your launcher.** Enabling a plugin cannot
+  write a desktop entry, so until now the window was reachable from the
+  bar and nowhere else unless you found the README step and repeated it
+  on every machine. The Updates tab offers it once, with a close button
+  that is remembered, and Settings keeps the switch permanently — on
+  places the entry and its icon in your own home directory, off takes
+  them away. No password, nothing outside your home.
+- **Opening the app when it is already open now brings it to you**
+  instead of appearing to do nothing behind another window. A Wayland
+  window cannot raise itself, so the compositor is asked (niri, Hyprland,
+  and a re-map elsewhere).
+- **AppImages install into `~/AppImages`** whether or not Gearlever is
+  there, created on first install. The old chain used it only if it
+  already existed and otherwise fell back to `~/Applications`, which
+  quietly split installs across two folders. Gearlever's own setting
+  still wins where it points elsewhere, and existing `~/Applications`
+  installs keep being listed and updated in place.
+- Fixes: the cache row measured repository metadata rather than package
+  files, and offered to free something `clean packages` never touches —
+  and then wrote "Emptied the package cache" for runs that emptied
+  nothing, because the command exits 0 with nothing to clean. Cleanups
+  are now logged by what they actually freed. The three-minute timer that
+  returns an idle window to the Updates tab read a window property that
+  does not exist, so it had never run. Colours written into a JS model
+  are strings, and blending one silently produced an invalid colour —
+  which draws as nothing.
+- Three quiet support chips under the dashboard cards: the plugin
+  registry entry, the repository, and Vito — the last drawn as its own
+  five bars, which take the brand gradient on hover.
+
 ## 0.5.1 — 2026-08-08
 
 - **Six more languages: Ukrainian, Russian, Hungarian, Japanese, Korean
