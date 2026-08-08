@@ -85,6 +85,16 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - Live install progress: package-manager library and libflatpak events are
   turned into a progress panel with app icon, phase text and a transaction-
   wide percentage (repositories → download x/y → install)
+- **Software sources** behind the header button (or Ctrl+K → Software
+  sources): the configured repositories with enable/disable switches, the
+  Flatpak remotes, one-click RPM Fusion and Flathub where they are missing,
+  and Copr add/remove. Debug, source and testing repositories are folded away
+  — on a normal Fedora they are two thirds of the list. Switching off a
+  repository the distribution is made of asks twice; writing a repository
+  definition by hand stays a job for a text editor. Only the dnf family can be
+  changed from here: apt and pacman sources are shown read-only, because an
+  apt source is a file plus a signing key and a pacman repo lives in a single
+  hand-edited `pacman.conf`.
 - **AppImage support**: searchable catalog (appimage.github.io, 1400+ apps),
   install straight from the app's GitHub releases or from a local file/URL;
   icon and desktop entry are extracted; installs into `~/AppImages`
@@ -212,6 +222,7 @@ dms ipc call dankSoftwareDepot check     # trigger an update check
 | `scripts/test_dep11.py` | Checks the DEP-11 and apt/pacman changelog paths against real-shaped data, runnable on any distro |
 | `scripts/flatpak_helper.py` | libflatpak transactions (updates & installs) with exact byte progress (NDJSON events) |
 | `scripts/appimage.py` | AppImage catalog, install/update/uninstall, GitHub update sources, adhoc folder scanning (NDJSON events) |
+| `scripts/repo_backend.py` | Software sources: reads the configured repositories and Flatpak remotes; enable/disable, Copr add/remove, RPM Fusion and Flathub (dnf family only; apt and pacman are listed read-only) |
 | `scripts/action_log.py` | Action-log append/prune helper |
 
 Update detection, check interval and ignored packages remain managed by DMS

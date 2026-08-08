@@ -29,6 +29,11 @@ Item {
     // Fired after a successful install so other views can refresh their lists
     signal softwareMutated()
 
+    // The sources panel lives in the window, because it is about the whole
+    // system rather than about this tab — but this is where you stand when
+    // the question comes up
+    signal sourcesRequested()
+
     // Bumped by the window when software changed elsewhere (Installed tab,
     // update run) so the Installed-chips stay current.
     property int refreshSerial: 0
@@ -792,6 +797,15 @@ Item {
                     enabled: view.visible && searchField.text !== "" && !detailsDialog.visible
                     onActivated: searchField.clear()
                 }
+            }
+
+            DankActionButton {
+                buttonSize: 34
+                iconName: "database"
+                iconSize: 18
+                iconColor: Theme.surfaceText
+                tooltipText: Tr.t("Software sources")
+                onClicked: view.sourcesRequested()
             }
 
             DankActionButton {

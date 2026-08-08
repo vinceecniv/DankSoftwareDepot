@@ -275,6 +275,14 @@ FloatingWindow {
         z: 150
     }
 
+    // Where software comes from. Window-wide, like the other panels, because
+    // sources are a property of the system rather than of a tab.
+    RepositoriesDialog {
+        id: sourcesDialog
+        anchors.fill: parent
+        logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
+    }
+
     CommandPalette {
         id: palette
         anchors.fill: parent
@@ -1307,6 +1315,11 @@ FloatingWindow {
                 payload: 4
             },
             {
+                title: Tr.t("Software sources"),
+                icon: "database",
+                kind: "sources"
+            },
+            {
                 title: Tr.t("Plugin settings"),
                 icon: "settings",
                 kind: "settings"
@@ -1401,6 +1414,9 @@ FloatingWindow {
             break;
         case "settings":
             win.settingsOpen = true;
+            break;
+        case "sources":
+            sourcesDialog.open();
             break;
         case "url":
             Qt.openUrlExternally(item.payload);
@@ -2444,6 +2460,7 @@ FloatingWindow {
                 refreshSerial: win.softwareSerial
                 overlayParent: windowOverlayLayer
                 onSoftwareMutated: win.softwareSerial++
+                onSourcesRequested: sourcesDialog.open()
             }
         }
 

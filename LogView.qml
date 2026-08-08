@@ -51,6 +51,8 @@ Item {
             return "error";
         case "update-cancelled":
             return "cancel";
+        case "sources":
+            return "database";
         default:
             return "deployed_code_update";
         }
@@ -64,6 +66,8 @@ Item {
             return Theme.surfaceVariantText;
         case "uninstall":
             return Theme.warning;
+        case "sources":
+            return Theme.secondary;
         default:
             return Theme.primary;
         }

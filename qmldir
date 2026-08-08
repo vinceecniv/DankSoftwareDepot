@@ -16,4 +16,5 @@ FirmwareView 1.0 FirmwareView.qml
 LogView 1.0 LogView.qml
 CommandPalette 1.0 CommandPalette.qml
 PaletteRow 1.0 PaletteRow.qml
+RepositoriesDialog 1.0 RepositoriesDialog.qml
 AppDetailsDialog 1.0 AppDetailsDialog.qml

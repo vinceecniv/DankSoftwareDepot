@@ -289,6 +289,24 @@ Item {
     // Human label of the system package source ("Install from %1")
     readonly property string systemRepoLabel: backendId === "apt" ? "Debian" : (backendId === "pacman" ? "Arch" : "Fedora")
 
+    // ── Software sources ────────────────────────────────────────────────────
+    // Which repositories exist, and the few changes worth offering from a UI.
+    // Reading is unprivileged; anything that writes to /etc goes through
+    // pkexec, and the Flatpak user scope needs neither.
+    readonly property string repoHelper: Qt.resolvedUrl("scripts/repo_backend.py").toString().replace("file://", "")
+
+    function repoListCommand() {
+        return ["python3", repoHelper, "list", backendId];
+    }
+
+    function repoAdminCommand(args) {
+        return ["pkexec", "python3", repoHelper].concat(args);
+    }
+
+    function repoUserCommand(args) {
+        return ["python3", repoHelper].concat(args);
+    }
+
     // ── Launcher entry ──────────────────────────────────────────────────────
     // Enabling the plugin puts a widget in the bar; it cannot put an entry in
     // the application launcher, because that is a file in the user's data
