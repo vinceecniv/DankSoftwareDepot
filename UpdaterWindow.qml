@@ -250,12 +250,28 @@ FloatingWindow {
         onActivated: win.focusCurrentTab()
     }
 
+    // Ctrl+K opens the palette: for a keyboard-driven desktop the fastest
+    // path to anything should not be a tab and a scroll.
+    Shortcut {
+        sequence: "Ctrl+K"
+        enabled: win.visible
+        onActivated: palette.open()
+    }
+
     // Full-window layer that hosts the view-local detail popups, so their
     // dim overlay covers the entire window instead of just the tab area.
     Item {
         id: windowOverlayLayer
         anchors.fill: parent
         z: 150
+    }
+
+    CommandPalette {
+        id: palette
+        anchors.fill: parent
+        z: 200
+        results: win.paletteResults
+        onAccepted: index => win.runPaletteResult(index)
     }
 
     // ── About popup (info icon in the header) ───────────────────────────────
@@ -1141,6 +1157,176 @@ FloatingWindow {
             return true;
         const settling = engine.phase !== "idle" && SystemUpdateService.isChecking;
         return effectiveCount > 0 && !settling;
+    }
+
+    // ── Command palette ─────────────────────────────────────────────────────
+    // Searches what the window already holds, so results appear as you type
+    // with no process to wait for. Anything that would need a repository
+    // search is handed to the Install tab rather than reimplemented here.
+    readonly property var paletteResults: {
+        const query = palette.query.trim().toLowerCase();
+        const out = [];
+        const add = (group, icon, title, subtitle, colour, kind, payload) => {
+            out.push({
+                group: group,
+                icon: icon,
+                title: title,
+                subtitle: subtitle || "",
+                colour: colour,
+                kind: kind,
+                payload: payload
+            });
+        };
+        const hit = text => query === "" || Ui.matchesWords((text || "").toLowerCase(), query);
+
+        // Commands first: with an empty field the palette should be a menu,
+        // not a blank page
+        const commands = [
+            {
+                title: Tr.t("Check for updates"),
+                icon: "refresh",
+                kind: "check"
+            },
+            {
+                title: Tr.t("Update All"),
+                icon: "download",
+                kind: "updateAll"
+            },
+            {
+                title: Tr.t("Updates"),
+                icon: "deployed_code_update",
+                kind: "tab",
+                payload: 0
+            },
+            {
+                title: Tr.t("Installed"),
+                icon: "apps",
+                kind: "tab",
+                payload: 1
+            },
+            {
+                title: Tr.t("Install"),
+                icon: "storefront",
+                kind: "tab",
+                payload: 2
+            },
+            {
+                title: Tr.t("Firmware"),
+                icon: "memory",
+                kind: "tab",
+                payload: 3
+            },
+            {
+                title: Tr.t("Log"),
+                icon: "history",
+                kind: "tab",
+                payload: 4
+            },
+            {
+                title: Tr.t("Plugin settings"),
+                icon: "settings",
+                kind: "settings"
+            },
+            {
+                title: Tr.t("Open GitHub page"),
+                icon: "open_in_new",
+                kind: "url",
+                payload: win.githubUrl
+            }
+        ];
+        for (const command of commands) {
+            if (command.kind === "tab" && win.tabIds.indexOf(command.payload) === -1)
+                continue;
+            if (command.kind === "updateAll" && !win.showUpdateAll)
+                continue;
+            if (hit(command.title))
+                add(Tr.t("Commands"), command.icon, command.title, "", Theme.primary, command.kind, command.payload);
+        }
+
+        if (query !== "") {
+            let shown = 0;
+            for (const row of win.updateRows) {
+                if (shown >= 6)
+                    break;
+                const name = win.store.stripArch(row.pkg.name);
+                const info = win.store.infoFor(row.pkg);
+                const label = (info && info.name) ? info.name : name;
+                if (!hit(label + " " + name))
+                    continue;
+                shown++;
+                add(Tr.t("Updates"), "deployed_code_update", label, row.pkg.toVersion || "", Theme.primary, "update", row);
+            }
+
+            shown = 0;
+            const installed = installedLoader.item ? installedLoader.item.filteredItems : [];
+            for (const item of installed) {
+                if (shown >= 6)
+                    break;
+                if (item.type === "header" || !hit(item.name + " " + item.id))
+                    continue;
+                shown++;
+                add(Tr.t("Installed"), item.kind === "flatpak" ? "apps" : (item.kind === "appimage" ? "package_2" : "memory"), item.name, item.version || "", Theme.success, "installed", item);
+            }
+
+            shown = 0;
+            const entries = (win.widgetRoot && win.widgetRoot.actionLogger) ? win.widgetRoot.actionLogger.entries : [];
+            for (let i = entries.length - 1; i >= 0 && shown < 4; i--) {
+                const entry = entries[i];
+                const haystack = (entry.title || "") + " " + (entry.items || []).map(it => it.name || "").join(" ");
+                if (!hit(haystack))
+                    continue;
+                shown++;
+                add(Tr.t("Log"), "history", entry.title || "", win.formatAgo(entry.ts), Theme.surfaceVariantText, "log", entry);
+            }
+
+            // The repositories are not in memory; hand the query to the tab
+            // whose job that is instead of duplicating its search
+            add(Tr.t("Commands"), "search", Tr.t("Search \"%1\" in Install").arg(palette.query.trim()), "", Theme.secondary, "search", palette.query.trim());
+        }
+        return out;
+    }
+
+    function runPaletteResult(index) {
+        const item = win.paletteResults[index];
+        if (!item)
+            return;
+        palette.visible = false;
+        switch (item.kind) {
+        case "check":
+            SystemUpdateService.checkForUpdates();
+            if (win.firmware)
+                win.firmware.check();
+            break;
+        case "updateAll":
+            win.engine.start({});
+            break;
+        case "tab":
+            win.openTab(item.payload);
+            break;
+        case "settings":
+            win.settingsOpen = true;
+            break;
+        case "url":
+            Qt.openUrlExternally(item.payload);
+            break;
+        case "update":
+            win.openTab(0);
+            win.openUpdateDetails(item.payload, win.store.infoFor(item.payload.pkg));
+            break;
+        case "installed":
+            win.openTab(1);
+            if (installedLoader.item)
+                installedLoader.item.openDetails(item.payload);
+            break;
+        case "log":
+            win.openLatestLogEntry();
+            break;
+        case "search":
+            win.openTab(2);
+            if (installLoader.item && installLoader.item.setQuery)
+                installLoader.item.setQuery(item.payload);
+            break;
+        }
     }
 
     // Section headers carry the same iconography the rows use, so a group is

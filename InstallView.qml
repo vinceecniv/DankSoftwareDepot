@@ -35,6 +35,14 @@ Item {
 
     onRefreshSerialChanged: installedProcess.running = true
 
+    // Set from the command palette, which searches what is already in memory
+    // and hands anything needing the repositories to this tab
+    function setQuery(text) {
+        searchField.text = text;
+        searchText = text;
+        searchField.forceActiveFocus();
+    }
+
     function focusSearch() {
         searchField.forceActiveFocus();
     }

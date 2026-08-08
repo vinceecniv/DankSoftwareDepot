@@ -306,5 +306,10 @@
     "updated": "已更新",
     "removed": "已移除",
     "Today": "今天",
-    "Yesterday": "昨天"
+    "Yesterday": "昨天",
+    "Search everything…": "搜索全部…",
+    "Type to search updates, installed software, the log and commands": "输入以搜索更新、已安装软件、日志和命令",
+    "Nothing matches \"%1\"": "没有匹配“%1”的结果",
+    "Commands": "命令",
+    "Search \"%1\" in Install": "在“安装”中搜索“%1”"
 }

@@ -306,5 +306,10 @@
     "updated": "更新",
     "removed": "削除",
     "Today": "今日",
-    "Yesterday": "昨日"
+    "Yesterday": "昨日",
+    "Search everything…": "すべてを検索…",
+    "Type to search updates, installed software, the log and commands": "入力して更新・インストール済みソフトウェア・ログ・コマンドを検索",
+    "Nothing matches \"%1\"": "「%1」に一致するものはありません",
+    "Commands": "コマンド",
+    "Search \"%1\" in Install": "「インストール」で「%1」を検索"
 }

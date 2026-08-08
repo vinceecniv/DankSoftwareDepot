@@ -306,5 +306,10 @@
     "updated": "frissítve",
     "removed": "eltávolítva",
     "Today": "Ma",
-    "Yesterday": "Tegnap"
+    "Yesterday": "Tegnap",
+    "Search everything…": "Keresés mindenben…",
+    "Type to search updates, installed software, the log and commands": "Gépeljen a frissítések, a telepített szoftverek, a napló és a parancsok kereséséhez",
+    "Nothing matches \"%1\"": "Semmi nem egyezik ezzel: „%1”",
+    "Commands": "Parancsok",
+    "Search \"%1\" in Install": "„%1” keresése a Telepítés fülön"
 }

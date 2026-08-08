@@ -306,5 +306,10 @@
     "updated": "atualizados",
     "removed": "removidos",
     "Today": "Hoje",
-    "Yesterday": "Ontem"
+    "Yesterday": "Ontem",
+    "Search everything…": "Pesquisar tudo…",
+    "Type to search updates, installed software, the log and commands": "Escreva para pesquisar atualizações, software instalado, o registo e comandos",
+    "Nothing matches \"%1\"": "Nada corresponde a \"%1\"",
+    "Commands": "Comandos",
+    "Search \"%1\" in Install": "Pesquisar \"%1\" em Instalar"
 }

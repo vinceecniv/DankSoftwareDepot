@@ -306,5 +306,10 @@
     "updated": "uppdaterade",
     "removed": "borttagna",
     "Today": "I dag",
-    "Yesterday": "I går"
+    "Yesterday": "I går",
+    "Search everything…": "Sök i allt…",
+    "Type to search updates, installed software, the log and commands": "Skriv för att söka i uppdateringar, installerad programvara, loggen och kommandon",
+    "Nothing matches \"%1\"": "Inget matchar \"%1\"",
+    "Commands": "Kommandon",
+    "Search \"%1\" in Install": "Sök \"%1\" i Installera"
 }

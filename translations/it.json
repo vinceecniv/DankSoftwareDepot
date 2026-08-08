@@ -306,5 +306,10 @@
     "updated": "aggiornati",
     "removed": "rimossi",
     "Today": "Oggi",
-    "Yesterday": "Ieri"
+    "Yesterday": "Ieri",
+    "Search everything…": "Cerca ovunque…",
+    "Type to search updates, installed software, the log and commands": "Digita per cercare tra aggiornamenti, software installato, registro e comandi",
+    "Nothing matches \"%1\"": "Nessun risultato per \"%1\"",
+    "Commands": "Comandi",
+    "Search \"%1\" in Install": "Cerca \"%1\" in Installa"
 }
