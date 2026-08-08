@@ -48,6 +48,8 @@ Item {
     // unprivileged plan comes back, and empty for anything that takes
     // nothing with it.
     property var alsoRemoves: []
+    // {userInstalled, requiredBy, requiredByCount} — why this package is here
+    property var provenance: null
 
     signal installRequested(var source)
     signal updateRequested()
@@ -1474,6 +1476,31 @@ Item {
                         }
                     }
                 }
+            }
+
+            // ── Why this is here ────────────────────────────────────────────
+            // Two facts settle it: did you ask for this package, and what
+            // would miss it if it went. Every package manager can answer,
+            // behind a flag nobody remembers.
+            StyledText {
+                Layout.fillWidth: true
+                visible: dialog.provenance !== null && !dialog.busy
+                text: {
+                    const prov = dialog.provenance;
+                    if (!prov)
+                        return "";
+                    const origin = prov.userInstalled ? Tr.t("You installed this") : Tr.t("Came in as a dependency");
+                    const count = prov.requiredByCount || 0;
+                    if (count === 0)
+                        return origin + " · " + Tr.t("nothing else needs it");
+                    const names = (prov.requiredBy || []).slice(0, 3).join(", ");
+                    return origin + " · " + (count === 1 ? Tr.t("needed by %1").arg(names) : Tr.t("needed by %1 packages, among them %2").arg(count).arg(names));
+                }
+                font.pixelSize: Theme.fontSizeSmall - 1
+                color: Theme.surfaceVariantText
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
             }
 
             // ── What else goes ──────────────────────────────────────────────

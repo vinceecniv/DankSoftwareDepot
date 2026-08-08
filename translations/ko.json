@@ -288,5 +288,10 @@
     "frees %1": "%1 확보",
     "%1 pulled in as dependencies": "의존성으로 %1개 추가",
     "%1 will be removed: %2": "%1개 삭제됨: %2",
-    "Security": "보안"
+    "Security": "보안",
+    "You installed this": "직접 설치함",
+    "Came in as a dependency": "의존성으로 설치됨",
+    "nothing else needs it": "다른 곳에서 필요하지 않음",
+    "needed by %1": "%1이(가) 필요로 함",
+    "needed by %1 packages, among them %2": "패키지 %1개가 필요로 함, 예: %2"
 }

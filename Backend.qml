@@ -238,6 +238,11 @@ Item {
         return ["sh", "-c", "rpm -qa --qf '%{NAME}\\t%{VERSION}-%{RELEASE}\\t%{SIZE}\\t%{INSTALLTIME}\\n' 2>/dev/null | sort"];
     }
 
+    // Did the user ask for this package, and what would miss it if it went
+    function provenanceCommand(name) {
+        return ["python3", metadataHelper, "provenance", name];
+    }
+
     // Installed packages that own a launchable desktop entry — the ones a
     // user installed to actually run. Distro-agnostic; the helper branches.
     function desktopOwnersCommand() {

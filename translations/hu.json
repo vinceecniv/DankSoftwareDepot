@@ -288,5 +288,10 @@
     "frees %1": "%1 szabadul fel",
     "%1 pulled in as dependencies": "%1 függőségként kerül be",
     "%1 will be removed: %2": "%1 eltávolításra kerül: %2",
-    "Security": "Biztonság"
+    "Security": "Biztonság",
+    "You installed this": "Ön telepítette",
+    "Came in as a dependency": "Függőségként került fel",
+    "nothing else needs it": "semmi másnak nincs rá szüksége",
+    "needed by %1": "szüksége van rá: %1",
+    "needed by %1 packages, among them %2": "%1 csomagnak van rá szüksége, köztük %2"
 }

@@ -17,6 +17,7 @@ the container tests call it:
     pkg_backend.py versions <name>    [{version, repo, installed}]
     pkg_backend.py desktop-owners     {name: {icon, name}}  (every backend)
     pkg_backend.py changelog <name>   plain text (may be empty)
+    pkg_backend.py provenance <name>  {userInstalled, requiredBy: [name]}
 """
 import glob
 import html
@@ -492,6 +493,53 @@ def changelog(name):
     return ""
 
 
+# ── Why is this here? ──────────────────────────────────────────────────────
+# Every package manager can answer this and none of them are asked, because
+# the answer lives behind a flag nobody remembers. Two facts settle it: did
+# you ask for this package, and what would miss it if it went.
+
+
+def provenance(name):
+    backend = detect()
+    user_installed = False
+    required_by = []
+    if backend == "apt":
+        out = _run_lines(["apt-mark", "showmanual", name])
+        user_installed = any(line.strip() == name for line in out)
+        for line in _run_lines(["apt-cache", "rdepends", "--installed", "--no-recommends",
+                                "--no-suggests", "--no-conflicts", "--no-breaks",
+                                "--no-replaces", "--no-enhances", name]):
+            dep = line.strip()
+            if dep and dep != name and not dep.endswith(":") and not dep.startswith("Reverse"):
+                required_by.append(dep.lstrip("| "))
+    elif backend == "pacman":
+        user_installed = bool(_run_lines(["pacman", "-Qeq", name]))
+        for line in _run_lines(["pacman", "-Qi", name]):
+            if line.startswith("Required By"):
+                value = line.split(":", 1)[1].strip()
+                if value and value != "None":
+                    required_by = value.split()
+                break
+    else:
+        env = {**os.environ, "LC_ALL": "C"}
+        try:
+            res = subprocess.run(["dnf", "-Cq", "repoquery", "--userinstalled", "--qf", "%{name}\n", name],
+                                 capture_output=True, text=True, timeout=60, env=env)
+            user_installed = any(l.strip() == name for l in res.stdout.splitlines())
+            res = subprocess.run(["dnf", "-Cq", "repoquery", "--installed", "--whatrequires", name,
+                                  "--qf", "%{name}\n"],
+                                 capture_output=True, text=True, timeout=60, env=env)
+            required_by = [l.strip() for l in res.stdout.splitlines() if l.strip() and l.strip() != name]
+        except (OSError, subprocess.SubprocessError):
+            pass
+    # glibc has a thousand dependants; the popup wants a fact, not a wall.
+    # The count is the fact, the names are the illustration.
+    unique = sorted(dict.fromkeys(required_by))
+    return {"userInstalled": user_installed,
+            "requiredBy": unique[:12],
+            "requiredByCount": len(unique)}
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__, file=sys.stderr)
@@ -517,6 +565,8 @@ def main():
         json.dump(desktop_owners(), sys.stdout)
     elif cmd == "changelog" and args:
         sys.stdout.write(changelog(args[0]))
+    elif cmd == "provenance" and args:
+        json.dump(provenance(args[0]), sys.stdout)
     elif cmd == "detect":
         json.dump({"backend": detect()}, sys.stdout)
     else:

@@ -288,5 +288,10 @@
     "frees %1": "zwalnia %1",
     "%1 pulled in as dependencies": "%1 dodanych jako zależności",
     "%1 will be removed: %2": "%1 zostanie usuniętych: %2",
-    "Security": "Bezpieczeństwo"
+    "Security": "Bezpieczeństwo",
+    "You installed this": "Zainstalowane przez Ciebie",
+    "Came in as a dependency": "Dodane jako zależność",
+    "nothing else needs it": "nic innego tego nie potrzebuje",
+    "needed by %1": "potrzebne dla %1",
+    "needed by %1 packages, among them %2": "potrzebne dla %1 pakietów, m.in. %2"
 }

@@ -288,5 +288,10 @@
     "frees %1": "maakt %1 vrij",
     "%1 pulled in as dependencies": "%1 meegetrokken als afhankelijkheid",
     "%1 will be removed: %2": "%1 worden verwijderd: %2",
-    "Security": "Beveiliging"
+    "Security": "Beveiliging",
+    "You installed this": "Door jou geïnstalleerd",
+    "Came in as a dependency": "Meegekomen als afhankelijkheid",
+    "nothing else needs it": "niets anders heeft het nodig",
+    "needed by %1": "nodig voor %1",
+    "needed by %1 packages, among them %2": "nodig voor %1 pakketten, waaronder %2"
 }

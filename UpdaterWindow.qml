@@ -2906,9 +2906,10 @@ FloatingWindow {
                                 },
                                 {
                                     text: Tr.t("Built with Vito"),
-                                    // Material Symbols has no letter glyphs;
-                                    // Vito's mark is its initial, so draw it
-                                    letter: "V",
+                                    // Vito's own mark rather than a glyph:
+                                    // Material Symbols has no letter icons and
+                                    // an improvised "V" is not a logo
+                                    image: Qt.resolvedUrl("assets/icons/vito.svg"),
                                     icon: "",
                                     accent: Theme.tertiary,
                                     url: "https://vito.talk"
@@ -2956,15 +2957,22 @@ FloatingWindow {
                                         }
                                     }
 
-                                    StyledText {
-                                        visible: (supportChip.modelData.letter || "") !== ""
-                                        text: supportChip.modelData.letter || ""
-                                        font.pixelSize: Theme.fontSizeSmall - 1
-                                        font.weight: Font.Bold
-                                        color: chipHover.hovered ? supportChip.modelData.accent : Theme.surfaceVariantText
+                                    // A real logo carries its own colours, so
+                                    // it only gains a little presence on hover
+                                    // rather than changing hue
+                                    Image {
+                                        visible: (supportChip.modelData.image || "") !== ""
+                                        source: supportChip.modelData.image || ""
+                                        sourceSize.width: 28
+                                        sourceSize.height: 28
+                                        width: 14
+                                        height: 14
+                                        fillMode: Image.PreserveAspectFit
+                                        smooth: true
+                                        opacity: chipHover.hovered ? 1 : 0.75
 
-                                        Behavior on color {
-                                            ColorAnimation {
+                                        Behavior on opacity {
+                                            NumberAnimation {
                                                 duration: Theme.shortDuration
                                             }
                                         }

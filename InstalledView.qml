@@ -38,6 +38,7 @@ Item {
             store.fetchChangelog(rowData.id);
             loadRpmVersions(rowData.id, rowData.version);
             loadRemovalImpact(rowData.id);
+            loadProvenance(rowData.id);
         }
         detailsDialog.open({
             id: rowData.id,
@@ -109,6 +110,7 @@ Item {
         }
         noOlderVersions: entry !== null && !entryIsFlatpak && !entryIsAppimage && Array.isArray(view.rpmVersions[entryId]) && view.rpmVersions[entryId].length === 0
         alsoRemoves: (entry !== null && !entryIsFlatpak && !entryIsAppimage) ? (view.removalImpact[entryId] || []) : []
+        provenance: (entry !== null && !entryIsFlatpak && !entryIsAppimage) ? (view.provenance[entryId] || null) : null
 
         onHoldToggleRequested: {
             view.toggleHold(entryId);
@@ -168,6 +170,35 @@ Item {
         removalPlanProcess._others = [];
         removalPlanProcess.command = Backend.planCommand("remove", [name]);
         removalPlanProcess.running = true;
+    }
+
+    // name -> {userInstalled, requiredBy, requiredByCount}
+    property var provenance: ({})
+
+    function loadProvenance(name) {
+        if (provenance[name] !== undefined || provenanceProcess.running)
+            return;
+        provenanceProcess._target = name;
+        provenanceProcess.command = Backend.provenanceCommand(name);
+        provenanceProcess.running = true;
+    }
+
+    Process {
+        id: provenanceProcess
+
+        property string _target: ""
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const updated = Object.assign({}, view.provenance);
+                try {
+                    updated[provenanceProcess._target] = JSON.parse(text);
+                } catch (e) {
+                    updated[provenanceProcess._target] = null;
+                }
+                view.provenance = updated;
+            }
+        }
     }
 
     Process {

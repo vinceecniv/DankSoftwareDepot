@@ -288,5 +288,10 @@
     "frees %1": "вивільнить %1",
     "%1 pulled in as dependencies": "%1 підтягнуто як залежності",
     "%1 will be removed: %2": "буде вилучено %1: %2",
-    "Security": "Безпека"
+    "Security": "Безпека",
+    "You installed this": "Встановлено вами",
+    "Came in as a dependency": "Потрапило як залежність",
+    "nothing else needs it": "більше ніщо його не потребує",
+    "needed by %1": "потрібне для %1",
+    "needed by %1 packages, among them %2": "потрібне для %1 пакетів, зокрема %2"
 }

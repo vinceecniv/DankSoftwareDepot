@@ -288,5 +288,10 @@
     "frees %1": "释放 %1",
     "%1 pulled in as dependencies": "%1 个作为依赖引入",
     "%1 will be removed: %2": "将移除 %1 个：%2",
-    "Security": "安全"
+    "Security": "安全",
+    "You installed this": "由你安装",
+    "Came in as a dependency": "作为依赖引入",
+    "nothing else needs it": "没有其他软件需要它",
+    "needed by %1": "被 %1 需要",
+    "needed by %1 packages, among them %2": "被 %1 个软件包需要，其中包括 %2"
 }

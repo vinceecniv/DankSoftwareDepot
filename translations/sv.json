@@ -288,5 +288,10 @@
     "frees %1": "frigör %1",
     "%1 pulled in as dependencies": "%1 tillkommer som beroenden",
     "%1 will be removed: %2": "%1 tas bort: %2",
-    "Security": "Säkerhet"
+    "Security": "Säkerhet",
+    "You installed this": "Du installerade den",
+    "Came in as a dependency": "Kom med som beroende",
+    "nothing else needs it": "inget annat behöver den",
+    "needed by %1": "behövs av %1",
+    "needed by %1 packages, among them %2": "behövs av %1 paket, bland dem %2"
 }

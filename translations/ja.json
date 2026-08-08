@@ -288,5 +288,10 @@
     "frees %1": "%1 を解放",
     "%1 pulled in as dependencies": "依存関係として %1 個追加",
     "%1 will be removed: %2": "%1 個を削除: %2",
-    "Security": "セキュリティ"
+    "Security": "セキュリティ",
+    "You installed this": "あなたがインストールしました",
+    "Came in as a dependency": "依存関係として入りました",
+    "nothing else needs it": "他に必要としているものはありません",
+    "needed by %1": "%1 が必要としています",
+    "needed by %1 packages, among them %2": "%1 個のパッケージが必要としています（例: %2）"
 }

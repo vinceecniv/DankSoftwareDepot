@@ -288,5 +288,10 @@
     "frees %1": "освободит %1",
     "%1 pulled in as dependencies": "%1 подтянуто как зависимости",
     "%1 will be removed: %2": "будет удалено %1: %2",
-    "Security": "Безопасность"
+    "Security": "Безопасность",
+    "You installed this": "Установлено вами",
+    "Came in as a dependency": "Пришло как зависимость",
+    "nothing else needs it": "больше ничему не нужно",
+    "needed by %1": "нужно для %1",
+    "needed by %1 packages, among them %2": "нужно для %1 пакетов, среди них %2"
 }

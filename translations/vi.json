@@ -288,5 +288,10 @@
     "frees %1": "giải phóng %1",
     "%1 pulled in as dependencies": "%1 kéo theo làm phụ thuộc",
     "%1 will be removed: %2": "sẽ xóa %1: %2",
-    "Security": "Bảo mật"
+    "Security": "Bảo mật",
+    "You installed this": "Bạn đã cài gói này",
+    "Came in as a dependency": "Được kéo theo làm phụ thuộc",
+    "nothing else needs it": "không có gì khác cần nó",
+    "needed by %1": "cần cho %1",
+    "needed by %1 packages, among them %2": "cần cho %1 gói, trong đó có %2"
 }
