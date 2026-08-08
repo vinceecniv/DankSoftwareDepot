@@ -278,5 +278,8 @@
     "View in log": "기록에서 보기",
     "Status": "상태",
     "Upvote plugin in Directory": "디렉터리에서 플러그인에 투표",
-    "Star on GitHub": "GitHub에서 별 주기"
+    "Star on GitHub": "GitHub에서 별 주기",
+    "Uninstalling also removes %1": "제거하면 %1도 함께 삭제됩니다",
+    "Uninstalling also removes %1 packages: %2": "제거하면 패키지 %1개도 함께 삭제됩니다: %2",
+    " and %1 more": " 외 %1개"
 }

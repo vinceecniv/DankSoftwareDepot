@@ -138,7 +138,7 @@ def _split_spec(spec):
     return spec, None
 
 
-def run(action, specs):
+def run(action, specs, dry_run=False):
     cache = apt.Cache()
     for spec in specs:
         name, version = _split_spec(spec)
@@ -192,8 +192,10 @@ def run(action, specs):
     if not ops:
         emit({"event": "done", "ok": True, "failed": [], "nothingToDo": True})
         return 0
-    emit({"event": "plan", "ops": ops, "totalDownloadBytes": int(total_download)})
-    if action == "plan":
+    disk_delta = sum(o["installBytes"] for o in ops)
+    emit({"event": "plan", "ops": ops, "totalDownloadBytes": int(total_download),
+          "installDeltaBytes": int(disk_delta)})
+    if dry_run:
         emit({"event": "done", "ok": True, "failed": []})
         return 0
 
@@ -212,14 +214,19 @@ def main():
     if len(sys.argv) == 2 and sys.argv[1] == "selftest":
         emit({"event": "done", "ok": True, "failed": []})
         return 0
-    if len(sys.argv) < 3 or sys.argv[1] not in ("install", "remove", "upgrade", "downgrade", "plan"):
+    # `plan <action> …` resolves without root and without changing anything
+    argv = sys.argv[1:]
+    dry_run = bool(argv) and argv[0] == "plan"
+    if dry_run:
+        argv = argv[1:]
+    if len(argv) < 2 or argv[0] not in ("install", "remove", "upgrade", "downgrade"):
         print(__doc__, file=sys.stderr)
         return 2
     try:
-        return run(sys.argv[1], sys.argv[2:])
+        return run(argv[0], argv[1:], dry_run)
     except Exception as exc:
         emit({"event": "error", "message": str(exc)})
-        emit({"event": "done", "ok": False, "failed": sys.argv[2:]})
+        emit({"event": "done", "ok": False, "failed": argv[1:]})
         return 1
 
 

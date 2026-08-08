@@ -278,5 +278,8 @@
     "View in log": "Voir dans le journal",
     "Status": "État",
     "Upvote plugin in Directory": "Voter pour le plugin dans l'annuaire",
-    "Star on GitHub": "Mettre une étoile sur GitHub"
+    "Star on GitHub": "Mettre une étoile sur GitHub",
+    "Uninstalling also removes %1": "La désinstallation supprime aussi %1",
+    "Uninstalling also removes %1 packages: %2": "La désinstallation supprime aussi %1 paquets : %2",
+    " and %1 more": " et %1 de plus"
 }

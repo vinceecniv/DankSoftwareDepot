@@ -278,5 +278,8 @@
     "View in log": "Im Protokoll ansehen",
     "Status": "Status",
     "Upvote plugin in Directory": "Plugin im Verzeichnis hochstufen",
-    "Star on GitHub": "Auf GitHub mit Stern versehen"
+    "Star on GitHub": "Auf GitHub mit Stern versehen",
+    "Uninstalling also removes %1": "Beim Deinstallieren wird auch %1 entfernt",
+    "Uninstalling also removes %1 packages: %2": "Beim Deinstallieren werden auch %1 Pakete entfernt: %2",
+    " and %1 more": " und %1 weitere"
 }

@@ -278,5 +278,8 @@
     "View in log": "Показати в журналі",
     "Status": "Стан",
     "Upvote plugin in Directory": "Проголосувати за плагін у каталозі",
-    "Star on GitHub": "Поставити зірку на GitHub"
+    "Star on GitHub": "Поставити зірку на GitHub",
+    "Uninstalling also removes %1": "Видалення також прибере %1",
+    "Uninstalling also removes %1 packages: %2": "Видалення також прибере пакетів: %1 — %2",
+    " and %1 more": " та ще %1"
 }

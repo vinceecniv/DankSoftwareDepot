@@ -2894,11 +2894,13 @@ FloatingWindow {
                                 {
                                     text: Tr.t("Upvote plugin in Directory"),
                                     icon: "thumb_up",
+                                    accent: Theme.primary,
                                     url: "https://github.com/AvengeMedia/dms-plugin-registry/issues/720"
                                 },
                                 {
                                     text: Tr.t("Star on GitHub"),
                                     icon: "star",
+                                    accent: Theme.warning,
                                     url: "https://github.com/vinceecniv/DankSoftwareDepot"
                                 }
                             ]
@@ -2927,10 +2929,19 @@ FloatingWindow {
                                     anchors.centerIn: parent
                                     spacing: Theme.spacingXS
 
+                                    // The icon takes its own colour on hover —
+                                    // enough to feel alive, while the chip
+                                    // stays quiet at rest
                                     DankIcon {
                                         name: supportChip.modelData.icon
                                         size: 13
-                                        color: Theme.surfaceVariantText
+                                        color: chipHover.hovered ? supportChip.modelData.accent : Theme.surfaceVariantText
+
+                                        Behavior on color {
+                                            ColorAnimation {
+                                                duration: Theme.shortDuration
+                                            }
+                                        }
                                     }
 
                                     StyledText {

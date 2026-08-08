@@ -278,5 +278,8 @@
     "View in log": "Xem trong nhật ký",
     "Status": "Trạng thái",
     "Upvote plugin in Directory": "Bình chọn plugin trong Directory",
-    "Star on GitHub": "Gắn sao trên GitHub"
+    "Star on GitHub": "Gắn sao trên GitHub",
+    "Uninstalling also removes %1": "Gỡ cài đặt cũng xóa %1",
+    "Uninstalling also removes %1 packages: %2": "Gỡ cài đặt cũng xóa %1 gói: %2",
+    " and %1 more": " và %1 gói nữa"
 }

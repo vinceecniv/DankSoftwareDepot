@@ -278,5 +278,8 @@
     "View in log": "Показать в журнале",
     "Status": "Состояние",
     "Upvote plugin in Directory": "Проголосовать за плагин в каталоге",
-    "Star on GitHub": "Поставить звезду на GitHub"
+    "Star on GitHub": "Поставить звезду на GitHub",
+    "Uninstalling also removes %1": "Удаление также уберёт %1",
+    "Uninstalling also removes %1 packages: %2": "Удаление также уберёт пакетов: %1 — %2",
+    " and %1 more": " и ещё %1"
 }

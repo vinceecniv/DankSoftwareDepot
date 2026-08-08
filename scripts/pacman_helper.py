@@ -124,7 +124,7 @@ def find_sync_pkg(handle, name):
     return None
 
 
-def run(action, specs):
+def run(action, specs, dry_run=False):
     handle = init_handle()
     callbacks = Callbacks(handle)
     localdb = handle.get_localdb()
@@ -159,15 +159,18 @@ def run(action, specs):
             callbacks.plan_names.add(pkg.name)
             ops.append({"name": pkg.name, "evr": pkg.version, "action": act,
                         "downloadBytes": down, "installBytes": int(pkg.isize or 0)})
+        disk_delta = sum(o["installBytes"] for o in ops)
         for pkg in transaction.to_remove:
             ops.append({"name": pkg.name, "evr": pkg.version, "action": "Remove",
                         "downloadBytes": 0, "installBytes": int(pkg.isize or 0)})
+            disk_delta -= int(pkg.isize or 0)
         callbacks.removing = bool(transaction.to_remove) and not transaction.to_add
         if not ops:
             emit({"event": "done", "ok": True, "failed": [], "nothingToDo": True})
             return 0
-        emit({"event": "plan", "ops": ops, "totalDownloadBytes": total_download})
-        if action == "plan":
+        emit({"event": "plan", "ops": ops, "totalDownloadBytes": total_download,
+              "installDeltaBytes": disk_delta})
+        if dry_run:
             emit({"event": "done", "ok": True, "failed": []})
             return 0
         transaction.commit()
@@ -189,14 +192,19 @@ def main():
     if len(sys.argv) == 2 and sys.argv[1] == "selftest":
         emit({"event": "done", "ok": True, "failed": []})
         return 0
-    if len(sys.argv) < 3 or sys.argv[1] not in ("install", "remove", "upgrade", "plan"):
+    # `plan <action> …` resolves without root and without changing anything
+    argv = sys.argv[1:]
+    dry_run = bool(argv) and argv[0] == "plan"
+    if dry_run:
+        argv = argv[1:]
+    if len(argv) < 2 or argv[0] not in ("install", "remove", "upgrade"):
         print(__doc__, file=sys.stderr)
         return 2
     try:
-        return run(sys.argv[1], sys.argv[2:])
+        return run(argv[0], argv[1:], dry_run)
     except Exception as exc:
         emit({"event": "error", "message": str(exc)})
-        emit({"event": "done", "ok": False, "failed": sys.argv[2:]})
+        emit({"event": "done", "ok": False, "failed": argv[1:]})
         return 1
 
 

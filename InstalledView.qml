@@ -37,6 +37,7 @@ Item {
         } else {
             store.fetchChangelog(rowData.id);
             loadRpmVersions(rowData.id, rowData.version);
+            loadRemovalImpact(rowData.id);
         }
         detailsDialog.open({
             id: rowData.id,
@@ -107,6 +108,7 @@ Item {
             })) : [];
         }
         noOlderVersions: entry !== null && !entryIsFlatpak && !entryIsAppimage && Array.isArray(view.rpmVersions[entryId]) && view.rpmVersions[entryId].length === 0
+        alsoRemoves: (entry !== null && !entryIsFlatpak && !entryIsAppimage) ? (view.removalImpact[entryId] || []) : []
 
         onHoldToggleRequested: {
             view.toggleHold(entryId);
@@ -153,6 +155,52 @@ Item {
     property real mutationFraction: 0     // 0..1 overall progress estimate
     property var downgradeLogs: ({}) // id -> [{commit, date}] | "loading"
     property var rpmVersions: ({})   // name -> [version strings older than installed] | "loading"
+    // name -> [other packages the resolver would remove along with it]
+    property var removalImpact: ({})
+
+    // Asks the helper to resolve the removal without running it — no root,
+    // no changes — so the popup can say what a click would cost before the
+    // click happens.
+    function loadRemovalImpact(name) {
+        if (removalImpact[name] !== undefined || removalPlanProcess.running)
+            return;
+        removalPlanProcess._target = name;
+        removalPlanProcess._others = [];
+        removalPlanProcess.command = Backend.planCommand("remove", [name]);
+        removalPlanProcess.running = true;
+    }
+
+    Process {
+        id: removalPlanProcess
+
+        property string _target: ""
+        property var _others: []
+
+        stdout: SplitParser {
+            onRead: line => {
+                let event;
+                try {
+                    event = JSON.parse(line);
+                } catch (e) {
+                    return;
+                }
+                if (event.event !== "plan")
+                    return;
+                const others = [];
+                for (const op of event.ops || []) {
+                    if (op.name !== removalPlanProcess._target && /remove|obsolet/i.test(op.action || ""))
+                        others.push(op.name);
+                }
+                removalPlanProcess._others = others;
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            const updated = Object.assign({}, view.removalImpact);
+            updated[_target] = _others;
+            view.removalImpact = updated;
+        }
+    }
 
     Component.onCompleted: {
         reload();

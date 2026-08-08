@@ -44,6 +44,10 @@ Item {
     property bool showUpdateButton: false
     property bool showHoldToggle: false
     property bool showUninstall: false
+    // Packages the resolver says would go with this one. Empty until the
+    // unprivileged plan comes back, and empty for anything that takes
+    // nothing with it.
+    property var alsoRemoves: []
 
     signal installRequested(var source)
     signal updateRequested()
@@ -1470,6 +1474,27 @@ Item {
                         }
                     }
                 }
+            }
+
+            // ── What else goes ──────────────────────────────────────────────
+            // The resolver knows that removing one package can take others
+            // with it. Until now it happened silently: the run only ever
+            // showed rows for what the user picked.
+            StyledText {
+                Layout.fillWidth: true
+                visible: dialog.showUninstall && dialog.alsoRemoves.length > 0 && !dialog.busy
+                text: {
+                    const names = dialog.alsoRemoves;
+                    const listed = names.slice(0, 4).join(", ");
+                    const rest = names.length - 4;
+                    const tail = rest > 0 ? listed + Tr.t(" and %1 more").arg(rest) : listed;
+                    return (names.length === 1 ? Tr.t("Uninstalling also removes %1") : Tr.t("Uninstalling also removes %1 packages: %2").arg(names.length)).arg(tail);
+                }
+                font.pixelSize: Theme.fontSizeSmall - 1
+                color: Theme.warning
+                wrapMode: Text.WordWrap
+                maximumLineCount: 3
+                elide: Text.ElideRight
             }
         }
     }

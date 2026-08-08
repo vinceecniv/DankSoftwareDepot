@@ -278,5 +278,8 @@
     "View in log": "Bekijk in logboek",
     "Status": "Status",
     "Upvote plugin in Directory": "Stem op de plugin in de Directory",
-    "Star on GitHub": "Ster geven op GitHub"
+    "Star on GitHub": "Ster geven op GitHub",
+    "Uninstalling also removes %1": "Verwijderen haalt ook %1 weg",
+    "Uninstalling also removes %1 packages: %2": "Verwijderen haalt ook %1 pakketten weg: %2",
+    " and %1 more": " en nog %1"
 }

@@ -278,5 +278,8 @@
     "View in log": "Visa i loggen",
     "Status": "Status",
     "Upvote plugin in Directory": "Rösta på insticksmodulen i katalogen",
-    "Star on GitHub": "Stjärnmärk på GitHub"
+    "Star on GitHub": "Stjärnmärk på GitHub",
+    "Uninstalling also removes %1": "Avinstallationen tar även bort %1",
+    "Uninstalling also removes %1 packages: %2": "Avinstallationen tar även bort %1 paket: %2",
+    " and %1 more": " och %1 till"
 }

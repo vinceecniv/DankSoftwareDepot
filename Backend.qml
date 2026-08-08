@@ -23,6 +23,12 @@ Item {
         return ["pkexec", "python3", packageHelper, action].concat(specs);
     }
 
+    // The same transaction, resolved but not run: no root, no changes, so
+    // the consequences can be shown before the password is asked for.
+    function planCommand(action, specs) {
+        return ["python3", packageHelper, "plan", action].concat(specs);
+    }
+
     // ── Helper readiness ────────────────────────────────────────────────────
     // The helpers need their package manager's Python bindings, which are a
     // separate package on every distro and are not part of a default install

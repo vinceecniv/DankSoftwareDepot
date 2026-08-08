@@ -20,16 +20,20 @@ manager-agnostic — the QML layer needs no changes per backend. See
 ## CLI contract
 
 ```
-<helper> <action> <spec>...
+<helper> [plan] <action> <spec>...
 ```
 
-- Actions: `install`, `remove`, `upgrade`, `downgrade`, `plan`.
+- Actions: `install`, `remove`, `upgrade`, `downgrade`.
 - `<spec>` is a package name or name-version in the package manager's
   native spec syntax. Dependencies are the resolver's job — callers pass
   the packages the user chose, never a dependency closure.
-- Transactions require root (run via `pkexec`). `plan` resolves against
-  the existing metadata cache, prints the `plan` event and exits — it must
-  work unprivileged and make no changes.
+- Transactions require root (run via `pkexec`). Prefixing any action with
+  `plan` resolves it against the existing metadata cache, prints the
+  `plan` event and exits — it must work unprivileged and make no changes.
+  That prefix is what lets a UI show the consequences of a transaction
+  *before* asking for a password: the helper runs under `pkexec`, which
+  prompts when the process starts, so a plan produced inside the real run
+  would arrive after the authentication it is meant to inform.
 - stdout carries only NDJSON events. stderr is free-form (never parsed).
 - Exit code 0 on success, 1 on failure, 2 on usage errors. Regardless of
   the exit path, the last event on stdout is always `done`.
@@ -42,7 +46,7 @@ ignored by consumers (forward compatibility).
 | Event | Fields | Meaning |
 |---|---|---|
 | `status` | `message` | Coarse state before the plan exists (`"repos"` = refreshing repo metadata) |
-| `plan` | `ops: [{name, evr, action, downloadBytes, installBytes}]`, `totalDownloadBytes` | The resolved transaction. `action` is a human string (`Install`, `Upgrade`, `Remove`, …); outbound-only ops have `downloadBytes: 0` |
+| `plan` | `ops: [{name, evr, action, downloadBytes, installBytes}]`, `totalDownloadBytes`, `installDeltaBytes` | The resolved transaction — **the whole of it**, including packages the caller never asked for: dependencies pulled in, and anything the resolver decided to remove. `action` is a human string (`Install`, `Upgrade`, `Remove`, …); outbound-only ops have `downloadBytes: 0`. `installDeltaBytes` is the net disk change, incoming sizes minus outgoing |
 | `op-start` | `name`, `phase`, `bytesTotal`? (download), `index`/`total`? (install/remove) | Work on one package begins in the given phase |
 | `progress` | `name`, `phase`, `percent`, download also: `bytesTransferred`, `bytesTotal`, `totalTransferred` | Per-package progress. `percent` is the package's own 0–100 |
 | `op-done` | `name`, `phase`, `totalTransferred`? | The package finished this phase |

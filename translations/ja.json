@@ -278,5 +278,8 @@
     "View in log": "ログで表示",
     "Status": "状態",
     "Upvote plugin in Directory": "ディレクトリでプラグインに投票",
-    "Star on GitHub": "GitHub でスターを付ける"
+    "Star on GitHub": "GitHub でスターを付ける",
+    "Uninstalling also removes %1": "アンインストールすると %1 も削除されます",
+    "Uninstalling also removes %1 packages: %2": "アンインストールすると %1 個のパッケージも削除されます: %2",
+    " and %1 more": " ほか %1 件"
 }

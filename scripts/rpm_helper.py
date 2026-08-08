@@ -15,12 +15,14 @@ as flatpak_helper.py, so the QML side needs no output scraping:
   {"event":"error","message":...}
   {"event":"done","ok":true|false,"failed":[names]}
 
-Transactions need root — run via pkexec. The `plan` action only resolves
-against the system cache and prints the plan; it works unprivileged and
-exists for testing and dry runs. `selftest` only reports whether the
-bindings are present, so callers can ask before starting a transaction.
+Transactions need root — run via pkexec. Prefixing any action with `plan`
+resolves it against the system cache, prints the plan and stops: no root,
+no changes, so a caller can show what a transaction would do before asking
+for a password. `selftest` only reports whether the bindings are present,
+so callers can ask before starting a transaction.
 
-Usage: rpm_helper.py <install|remove|upgrade|downgrade|plan|selftest> <spec>...
+Usage: rpm_helper.py [plan] <install|remove|upgrade|downgrade> <spec>...
+       rpm_helper.py selftest
 
 This event protocol is deliberately package-manager-agnostic: an apt or
 pacman helper implementing the same events would slot into the same UI.
@@ -183,6 +185,10 @@ class RpmProgress(libdnf5.rpm.TransactionCallbacks):
 
 
 INBOUND_ACTIONS = ("Install", "Upgrade", "Downgrade", "Reinstall")
+# What leaves the disk. "Replaced" is the outgoing half of an upgrade, so
+# counting both sides gives the real space delta rather than the gross size
+# of everything arriving.
+OUTBOUND_ACTIONS = ("Remove", "Replaced", "Obsoleted")
 
 
 def _action_string(tp):
@@ -192,10 +198,10 @@ def _action_string(tp):
         return str(tp.get_action())
 
 
-def run(action, specs):
+def run(action, specs, dry_run=False):
     base = libdnf5.base.Base()
     base.load_config()
-    if action == "plan":
+    if dry_run:
         # Unprivileged dry resolve against the existing system cache
         try:
             base.get_config().get_cacheonly_option().set("all")
@@ -220,7 +226,6 @@ def run(action, specs):
         "remove": goal.add_remove,
         "upgrade": goal.add_upgrade,
         "downgrade": goal.add_downgrade,
-        "plan": goal.add_install,
     }[action]
     for spec in specs:
         add(spec)
@@ -234,6 +239,7 @@ def run(action, specs):
 
     ops = []
     total_download = 0
+    disk_delta = 0
     for tp in transaction.get_transaction_packages():
         pkg = tp.get_package()
         act = _action_string(tp)
@@ -246,13 +252,17 @@ def run(action, specs):
         }
         if act in INBOUND_ACTIONS:
             total_download += entry["downloadBytes"]
+            disk_delta += entry["installBytes"]
             downloads.plan_names.add(pkg.get_name())
+        elif act in OUTBOUND_ACTIONS:
+            disk_delta -= entry["installBytes"]
         ops.append(entry)
     if not ops:
         emit({"event": "done", "ok": True, "failed": [], "nothingToDo": True})
         return 0
-    emit({"event": "plan", "ops": ops, "totalDownloadBytes": total_download})
-    if action == "plan":
+    emit({"event": "plan", "ops": ops, "totalDownloadBytes": total_download,
+          "installDeltaBytes": disk_delta})
+    if dry_run:
         emit({"event": "done", "ok": True, "failed": []})
         return 0
 
@@ -274,19 +284,30 @@ def run(action, specs):
     return 0
 
 
+ACTIONS = ("install", "remove", "upgrade", "downgrade")
+
+
 def main():
     # Reaching this point means the bindings imported: the answer selftest exists for
     if len(sys.argv) == 2 and sys.argv[1] == "selftest":
         emit({"event": "done", "ok": True, "failed": []})
         return 0
-    if len(sys.argv) < 3 or sys.argv[1] not in ("install", "remove", "upgrade", "downgrade", "plan"):
+    # `plan <action> <spec>...` resolves without touching anything, so a
+    # preview costs no root: the helper runs under pkexec, which prompts at
+    # process start — asking for a password before showing what it is for
+    # would be the wrong way round.
+    argv = sys.argv[1:]
+    dry_run = bool(argv) and argv[0] == "plan"
+    if dry_run:
+        argv = argv[1:]
+    if len(argv) < 2 or argv[0] not in ACTIONS:
         print(__doc__, file=sys.stderr)
         return 2
     try:
-        return run(sys.argv[1], sys.argv[2:])
+        return run(argv[0], argv[1:], dry_run)
     except Exception as exc:  # any library error must still end the stream cleanly
         emit({"event": "error", "message": str(exc)})
-        emit({"event": "done", "ok": False, "failed": sys.argv[2:]})
+        emit({"event": "done", "ok": False, "failed": argv[1:]})
         return 1
 
 
