@@ -11,7 +11,7 @@ import shutil
 import sys
 import tempfile
 
-sys.path.insert(0, "/home/vincent/Code/DankSoftwareDepot/scripts")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pkg_backend
 
 pkg_backend._backend = "apt"          # force the Debian branch
