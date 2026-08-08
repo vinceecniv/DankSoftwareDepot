@@ -27,7 +27,22 @@ Item {
 
     // Linear blend between two colours, for gradients that have to be built
     // out of separate items rather than a single fill.
-    function mix(from, to, t) {
+    //
+    // Accepts "#RRGGBB" strings as well as colours: a colour written in a JS
+    // model stays a string, and a string has no .r/.g/.b — blending one
+    // silently yields an invalid colour, which draws as nothing at all.
+    function _asColor(value) {
+        if (typeof value !== "string")
+            return value;
+        const hex = value.replace("#", "");
+        if (hex.length < 6)
+            return value;
+        return Qt.rgba(parseInt(hex.substring(0, 2), 16) / 255, parseInt(hex.substring(2, 4), 16) / 255, parseInt(hex.substring(4, 6), 16) / 255, hex.length >= 8 ? parseInt(hex.substring(6, 8), 16) / 255 : 1);
+    }
+
+    function mix(fromValue, toValue, t) {
+        const from = _asColor(fromValue);
+        const to = _asColor(toValue);
         const k = Math.max(0, Math.min(1, t));
         return Qt.rgba(from.r + (to.r - from.r) * k, from.g + (to.g - from.g) * k, from.b + (to.b - from.b) * k, from.a + (to.a - from.a) * k);
     }
