@@ -32,6 +32,18 @@ in-app when the plugin offers its own update.
   cluster against the right edge, aligned with each other.
 - A fresh install starts at **Notify only** instead of Off — finding
   updates and saying nothing helps nobody. An explicit Off is kept.
+- **Installed** shows the programs you use above the packages that hold
+  them up, in two named groups. A package counts as an application when
+  it owns a desktop entry the launcher would show — which also gives an
+  icon and a name to packages AppStream never heard of (COPR builds,
+  third-party repos), so Nautilus and Remmina look like themselves again.
+- **The last two Debian/Arch metadata gaps are closed.** Package
+  changelogs come from `/usr/share/doc` on apt and `pacman -Qc` on Arch,
+  read locally rather than over the network, and the AppStream catalog is
+  read from DEP-11 YAML on the Debian family (apt's own lists and the
+  appstream cache) and from the legacy XML path Arch's
+  `archlinux-appstream-data` still uses. DEP-11 release notes go through
+  the same markup reduction as every other external source.
 
 ## 0.4.0 — 2026-08-07
 

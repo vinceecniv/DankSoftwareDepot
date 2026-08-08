@@ -36,10 +36,36 @@ CACHE_FILE = os.path.join(CACHE_DIR, "enrich-cache.json")
 MAX_RELEASES = 8
 
 
+# Where each distro family keeps its AppStream catalog. Fedora and Arch both
+# ship XML (Arch through archlinux-appstream-data, at the modern swcatalog
+# path on current installs and the legacy app-info path on older ones); the
+# Debian family ships DEP-11 YAML, which apt itself downloads into its lists
+# directory and appstreamcli caches next to it.
+XML_CATALOG_GLOBS = (
+    "/usr/share/swcatalog/xml/*.xml",
+    "/usr/share/swcatalog/xml/*.xml.gz",
+    "/usr/share/app-info/xmls/*.xml",
+    "/usr/share/app-info/xmls/*.xml.gz",
+    "/var/lib/app-info/xmls/*.xml.gz",
+)
+
+YAML_CATALOG_GLOBS = (
+    "/usr/share/swcatalog/yaml/*.yml.gz",
+    "/usr/share/app-info/yaml/*.yml.gz",
+    "/var/lib/app-info/yaml/*.yml.gz",
+    "/var/cache/app-info/yaml/*.yml.gz",
+    "/var/lib/apt/lists/*Components-*.yml.gz",
+    "/var/lib/apt/lists/*Components-*.yml",
+)
+
+
 def catalog_paths():
     paths = []
-    paths += glob.glob("/usr/share/swcatalog/xml/*.xml")
-    paths += glob.glob("/usr/share/swcatalog/xml/*.xml.gz")
+    for pattern in XML_CATALOG_GLOBS:
+        paths += glob.glob(pattern)
+    if BACKEND == "apt":
+        for pattern in YAML_CATALOG_GLOBS:
+            paths += glob.glob(pattern)
     for base in ("/var/lib/flatpak/appstream", os.path.expanduser("~/.local/share/flatpak/appstream")):
         paths += glob.glob(os.path.join(base, "*", "*", "active", "appstream.xml.gz"))
         paths += glob.glob(os.path.join(base, "*", "*", "active", "appstream.xml"))
@@ -211,6 +237,107 @@ def parse_component(elem):
     return comp
 
 
+def dep11_description_html(text):
+    """DEP-11 keeps descriptions as an HTML string rather than as elements.
+    Reparse it so it goes through the same reduction as the XML path — no
+    upstream release note may reach the Qt renderer with markup intact."""
+    import html as htmlmod
+    if not text:
+        return ""
+    try:
+        return description_html(ET.fromstring("<description>" + text + "</description>"))
+    except ET.ParseError:
+        # Entities or stray markup: keep the words, drop the tags
+        return "<p>" + htmlmod.escape(" ".join(re.sub(r"<[^>]+>", " ", text).split())) + "</p>"
+
+
+def dep11_localized(value):
+    """DEP-11 carries translations as {lang: text}; "C" is untranslated."""
+    if isinstance(value, str):
+        return value.strip()
+    if not isinstance(value, dict):
+        return ""
+    for lang in get_locale_langs():
+        if lang in value and isinstance(value[lang], str):
+            return value[lang].strip()
+    for key in ("C", "en"):
+        if key in value and isinstance(value[key], str):
+            return value[key].strip()
+    for text in value.values():
+        if isinstance(text, str):
+            return text.strip()
+    return ""
+
+
+def parse_dep11_component(doc):
+    """A DEP-11 YAML document in parse_component's shape, so everything
+    downstream stays unaware of which catalog format it came from."""
+    comp = {
+        "id": (doc.get("ID") or "").strip(),
+        "pkgname": (doc.get("Package") or "").strip(),
+        "name": dep11_localized(doc.get("Name")),
+        "summary": dep11_localized(doc.get("Summary")),
+        "developer": "",
+        "homepage": "",
+        "icon_cached": "",
+        "icon_stock": "",
+        "releases": [],
+    }
+    developer = doc.get("Developer")
+    if isinstance(developer, dict):
+        comp["developer"] = dep11_localized(developer.get("Name"))
+    if not comp["developer"]:
+        comp["developer"] = dep11_localized(doc.get("DeveloperName"))
+    url = doc.get("Url")
+    if isinstance(url, dict):
+        comp["homepage"] = (url.get("homepage") or "").strip()
+    icon = doc.get("Icon")
+    if isinstance(icon, dict):
+        cached = icon.get("cached")
+        if isinstance(cached, list) and cached:
+            # Largest first: resolve_icon walks sizes from big to small
+            best = max((c for c in cached if isinstance(c, dict)),
+                       key=lambda c: c.get("width", 0), default=None)
+            if best:
+                comp["icon_cached"] = (best.get("name") or "").strip()
+        stock = icon.get("stock")
+        if isinstance(stock, str):
+            comp["icon_stock"] = stock.strip()
+    releases = doc.get("Releases")
+    if isinstance(releases, list):
+        for rel in releases[:MAX_RELEASES]:
+            if not isinstance(rel, dict):
+                continue
+            comp["releases"].append({
+                "version": str(rel.get("version", "")),
+                "date": normalize_date(str(rel.get("unix-timestamp", "") or rel.get("date", ""))),
+                "notesHtml": dep11_description_html(dep11_localized(rel.get("description"))),
+            })
+    return comp
+
+
+def scan_yaml_catalog(path, wanted):
+    """Components for the wanted packages out of a DEP-11 catalog. Needs
+    PyYAML; where it is missing the XML catalogs and the apt fallbacks still
+    carry the list, only without AppStream descriptions."""
+    try:
+        import yaml
+    except ImportError:
+        return []
+    found = []
+    try:
+        with open_catalog(path) as f:
+            for doc in yaml.safe_load_all(f):
+                if not isinstance(doc, dict):
+                    continue
+                package = doc.get("Package")
+                if isinstance(package, str) and package in wanted:
+                    found.append(parse_dep11_component(doc))
+    except (OSError, yaml.YAMLError, UnicodeDecodeError):
+        return found
+    return found
+
+
 def resolve_icon(comp, catalog_path):
     name = comp.get("icon_cached")
     if name:
@@ -220,6 +347,11 @@ def resolve_icon(comp, catalog_path):
             candidates.append(os.path.join(catalog_dir, "icons", size, name))
             candidates += glob.glob(os.path.join("/usr/share/swcatalog/icons", "*", size, name))
             candidates += glob.glob(os.path.join("/usr/share/app-info/icons", "*", size, name))
+            # DEP-11 icons are unpacked from apt's Icons-*.tar.gz into the
+            # appstream cache, never next to the catalog itself
+            candidates += glob.glob(os.path.join("/var/lib/app-info/icons", "*", size, name))
+            candidates += glob.glob(os.path.join("/var/cache/app-info/icons", "*", size, name))
+            candidates += glob.glob(os.path.join("/var/lib/swcatalog/icons", "*", size, name))
         for c in candidates:
             if os.path.isfile(c):
                 return c
@@ -310,6 +442,14 @@ def scan_catalogs(wanted_rpm, wanted_flatpak):
         need_flat = {n for n in wanted_flatpak if n not in flatpak_found or not flatpak_found[n].get("name")}
         if not need_rpm and not need_flat:
             break
+        if path.endswith((".yml", ".yml.gz")):
+            # DEP-11: same components, different serialization
+            for comp in scan_yaml_catalog(path, need_rpm):
+                pkg = comp["pkgname"]
+                if pkg not in rpm_found or not rpm_found[pkg].get("name"):
+                    comp["icon"] = resolve_icon(comp, path)
+                    rpm_found[pkg] = comp
+            continue
         try:
             with open_catalog(path) as f:
                 for _, elem in ET.iterparse(f, events=("end",)):
@@ -445,9 +585,7 @@ def strip_arch(name):
 
 def run_changelog(pkg):
     if BACKEND != "dnf":
-        # apt changelogs come from the network (packages.debian.org) — too
-        # slow for this synchronous path; the UI shows its no-notes state
-        print("")
+        print(pkg_backend.changelog(strip_arch(pkg)))
         return
     try:
         res = subprocess.run(

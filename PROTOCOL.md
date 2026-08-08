@@ -99,18 +99,28 @@ Debian family `scripts/pkg_backend.py` provides the apt implementations.
 | Installed inventory & dashboard | `rpm -qa` | `pkg_backend.installed_table` / `dashboard` (`.list` mtimes as install times) |
 | Reboot recommendation | kernel/glibc/… name pattern | linux-image/libc6/… pattern (`Backend.rebootPackagePattern`) |
 | Distro upgrade notice | Bodhi (Fedora releases) | not offered |
-| Package changelogs | dnf/rpm changelog | **gap** — apt changelogs need the network |
-| AppStream catalog for system apps | Fedora swcatalog | **untested** — depends on DEP-11 data location |
+| Package changelogs | dnf/rpm changelog | `/usr/share/doc/<pkg>/changelog.Debian.gz` — the installed version, read locally |
+| AppStream catalog for system apps | Fedora swcatalog XML | DEP-11 YAML from apt's lists and the appstream cache |
 
 The pacman column of `pkg_backend.py` mirrors the same functions via a
 read-only libalpm handle: real install dates, IgnorePkg holds, an
 AUR/foreign count on the dashboard, and an always-empty previous-versions
-answer (pacman repos keep no history). AUR is deliberately out of scope
-for transactions: read-only awareness (update notices via the AUR RPC)
-is a possible later step; building or installing AUR packages from a GUI
-is not — the interactive PKGBUILD review exists for safety.
+answer (pacman repos keep no history). Its changelog answer comes from
+`pacman -Qc`, which is empty for the many packages that ship none; Arch
+reads its AppStream catalog from the same XML paths as Fedora, filled by
+`archlinux-appstream-data`. AUR is deliberately out of scope for
+transactions: read-only awareness (update notices via the AUR RPC) is a
+possible later step; building or installing AUR packages from a GUI is
+not — the interactive PKGBUILD review exists for safety.
 
-Known open items for parity: apt/pacman changelogs, the AppStream
-catalog paths (DEP-11 on Debian, `archlinux-appstream-data` on Arch),
-and confirming the DMS daemon's update checks on real installs of both
-families.
+Two notes on the metadata sources, both of which apply to Fedora too:
+changelogs and AppStream data are only as present as their distro
+package (`appstream-data`, `appstream`, `archlinux-appstream-data`) —
+without it, names and icons fall back to the package manager and the
+desktop entries on disk. And a package's changelog outside dnf describes
+the *installed* version: fetching the pending version's changelog would
+mean a network round trip inside a synchronous popup, which is not worth
+it.
+
+Known open item for parity: confirming the DMS daemon's update checks on
+real installs of both families. The metadata layer itself is complete.

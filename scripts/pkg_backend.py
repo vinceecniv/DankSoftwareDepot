@@ -15,7 +15,8 @@ the container tests call it:
     pkg_backend.py dashboard          {"total": N, "recent": [{name, ts}]}
     pkg_backend.py holds              {name: reason}
     pkg_backend.py versions <name>    [{version, repo, installed}]
-    pkg_backend.py desktop-owners     [name]  (works on every backend)
+    pkg_backend.py desktop-owners     {name: {icon, name}}  (every backend)
+    pkg_backend.py changelog <name>   plain text (may be empty)
 """
 import glob
 import html
@@ -443,6 +444,54 @@ def desktop_owners():
     return out
 
 
+# ── Changelogs ─────────────────────────────────────────────────────────────
+# Neither apt nor pacman keeps changelogs in its repository metadata the way
+# dnf does. What they do have is what the installed package shipped on disk,
+# which is the version the details popup is showing anyway. Nothing here
+# touches the network: a synchronous popup must not wait on packages.debian.org.
+
+CHANGELOG_ENTRIES = 4
+
+
+def _read_maybe_gzip(path):
+    try:
+        if path.endswith(".gz"):
+            import gzip
+            with gzip.open(path, "rt", errors="replace") as f:
+                return f.read()
+        with open(path, errors="replace") as f:
+            return f.read()
+    except OSError:
+        return ""
+
+
+def changelog(name):
+    """Plain-text changelog of the installed package, "" when it ships none."""
+    backend = detect()
+    if backend == "apt":
+        # Debian policy: /usr/share/doc/<pkg>/changelog.Debian.gz, with
+        # changelog.gz for native packages
+        for candidate in ("changelog.Debian.gz", "changelog.gz", "changelog.Debian", "changelog"):
+            text = _read_maybe_gzip(os.path.join("/usr/share/doc", name, candidate))
+            if text.strip():
+                # Entries start at column 0 with "package (version) suite;"
+                entries = re.split(r"\n(?=\S.*\(\S+\))", text.strip())
+                return "\n\n".join(e.strip() for e in entries[:CHANGELOG_ENTRIES])
+        return ""
+    if backend == "pacman":
+        # Only packages that ship a ChangeLog have one; pacman prints
+        # "Changelog for <pkg>:" or an error on stderr
+        try:
+            res = subprocess.run(["pacman", "-Qc", name], capture_output=True,
+                                 text=True, timeout=30,
+                                 env={**os.environ, "LC_ALL": "C"})
+        except (OSError, subprocess.SubprocessError):
+            return ""
+        lines = [l for l in res.stdout.splitlines() if not l.startswith("Changelog for ")]
+        return "\n".join(lines).strip()
+    return ""
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__, file=sys.stderr)
@@ -466,6 +515,8 @@ def main():
         json.dump(available_versions(args[0]), sys.stdout)
     elif cmd == "desktop-owners":
         json.dump(desktop_owners(), sys.stdout)
+    elif cmd == "changelog" and args:
+        sys.stdout.write(changelog(args[0]))
     elif cmd == "detect":
         json.dump({"backend": detect()}, sys.stdout)
     else:

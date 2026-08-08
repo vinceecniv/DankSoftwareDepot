@@ -20,12 +20,12 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - **Fedora-based distros first** (Fedora, Nobara, RHEL/CentOS family):
   package management uses libdnf5 and Fedora AppStream metadata.
   **Debian/Ubuntu and Arch support is experimental**: transactions
-  (python-apt / pyalpm), search, sizes, inventory and holds are
-  implemented and container-tested, but not yet validated on real
-  desktop installs — see PROTOCOL.md for the remaining gaps. AUR is out
-  of scope (official Arch repos only). The app shows an experimental
-  banner on these distros and warns on unsupported ones. Flatpak,
-  AppImage and firmware support are distro-agnostic.
+  (python-apt / pyalpm), search, sizes, inventory, holds, changelogs and
+  the AppStream catalog are implemented, but not yet validated on real
+  desktop installs — see PROTOCOL.md for what is left. AUR is out of
+  scope (official Arch repos only). The app shows an experimental banner
+  on these distros and warns on unsupported ones. Flatpak, AppImage and
+  firmware support are distro-agnostic.
 
 ## The five tabs
 
@@ -124,7 +124,15 @@ language by dropping a new `translations/<lang>.json` next to the others.
   - Arch: `pyalpm`
 
 Without those bindings no system package can be installed, updated or
-removed; the plugin checks for them at startup and shows what to install.
+removed; the plugin checks for them at startup and offers to install what
+is missing.
+
+Optional, for richer app information (names, icons, screenshots and
+release notes for system packages): the AppStream catalog for your
+distro — `appstream-data` on Fedora, `appstream` on Debian/Ubuntu,
+`archlinux-appstream-data` on Arch. Without it the plugin falls back to
+the package manager's own summaries and the icons in your desktop
+entries, so apps still look like apps.
 
 ## Install
 
