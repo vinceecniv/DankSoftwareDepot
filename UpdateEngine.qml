@@ -233,6 +233,16 @@ Item {
         return Tr.t("about %1 h %2 min left").arg(Math.floor(mins / 60)).arg(mins % 60);
     }
 
+    // A bare duration, for sentences that supply their own framing. Cutting
+    // the word "left" out of formatEta() only worked in languages that put it
+    // last, which is not most of them.
+    function formatDuration(seconds) {
+        const mins = Math.max(1, Math.round(seconds / 60));
+        if (mins < 60)
+            return Tr.t("%1 min").arg(mins);
+        return Tr.t("%1 h %2 min").arg(Math.floor(mins / 60)).arg(mins % 60);
+    }
+
     // ── What the next run would do ──────────────────────────────────────────
     // The resolver's own answer, fetched unprivileged before anyone clicks:
     // how many packages, how many of them nobody selected, what leaves the

@@ -3555,7 +3555,7 @@ FloatingWindow {
                         // machine has not shown enough runs to have an opinion
                         const seconds = win.widgetRoot ? win.widgetRoot.estimateRunSeconds(plan.total) : -1;
                         if (seconds > 0)
-                            parts.push(Tr.t("usually about %1 here").arg(win.engine.formatEta(seconds).replace(Tr.t("left"), "").trim() || (Math.round(seconds / 60) + " min")));
+                            parts.push(Tr.t("usually about %1 here").arg(win.engine.formatDuration(seconds)));
                         return parts.join(" · ");
                     }
                     font.pixelSize: Theme.fontSizeSmall - 1
