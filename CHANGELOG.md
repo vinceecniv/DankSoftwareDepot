@@ -3,6 +3,26 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.5.1 — 2026-08-08
+
+- **Six more languages: Ukrainian, Russian, Hungarian, Japanese, Korean
+  and Vietnamese** — sixteen in total. Chosen by measuring the shared
+  DankMaterialShell catalogs rather than guessing: these all sit between
+  88% and 97% translated, above several languages this plugin already
+  shipped. Arabic and Hebrew score highest of all but are still missing,
+  because the layout has no right-to-left handling and shipping the text
+  without it would be half a job.
+- **No Firmware tab when firmware updates are switched off** in the
+  plugin settings — a tab for something you turned off is a dead end.
+- The main tabs have a visible hover state, and the spinning refresh
+  icons no longer look ragged while they turn: they were drawn with
+  pixel-grid hinting, which does not survive rotation.
+- On the dashboard the footer no longer reserves room for an Update All
+  button that is not there, so the cards get the space instead of
+  scrolling early.
+- Two quiet links under the dashboard cards, to the plugin registry entry
+  and the repository.
+
 ## 0.5.0 — 2026-08-08
 
 - **A missing package-manager binding no longer looks like hundreds of
