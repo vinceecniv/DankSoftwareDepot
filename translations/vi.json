@@ -293,5 +293,13 @@
     "Came in as a dependency": "Được kéo theo làm phụ thuộc",
     "nothing else needs it": "không có gì khác cần nó",
     "needed by %1": "cần cho %1",
-    "needed by %1 packages, among them %2": "cần cho %1 gói, trong đó có %2"
+    "needed by %1 packages, among them %2": "cần cho %1 gói, trong đó có %2",
+    "Reclaim space": "Thu hồi dung lượng",
+    "%1 packages nothing needs any more": "%1 gói không còn gì cần đến",
+    "Downloaded package files, already installed": "Tệp gói đã tải, đã cài đặt",
+    "Remove": "Xóa",
+    "Empty": "Dọn sạch",
+    "Working…": "Đang xử lý…",
+    "Removed %1 unneeded packages": "Đã xóa %1 gói không cần thiết",
+    "Emptied the package cache": "Đã dọn bộ nhớ đệm gói"
 }

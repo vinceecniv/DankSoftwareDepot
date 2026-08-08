@@ -293,5 +293,13 @@
     "Came in as a dependency": "Arrivé comme dépendance",
     "nothing else needs it": "rien d'autre n'en a besoin",
     "needed by %1": "requis par %1",
-    "needed by %1 packages, among them %2": "requis par %1 paquets, dont %2"
+    "needed by %1 packages, among them %2": "requis par %1 paquets, dont %2",
+    "Reclaim space": "Libérer de l'espace",
+    "%1 packages nothing needs any more": "%1 paquets dont plus rien n'a besoin",
+    "Downloaded package files, already installed": "Fichiers de paquets téléchargés, déjà installés",
+    "Remove": "Supprimer",
+    "Empty": "Vider",
+    "Working…": "En cours…",
+    "Removed %1 unneeded packages": "%1 paquets inutiles supprimés",
+    "Emptied the package cache": "Cache des paquets vidé"
 }

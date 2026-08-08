@@ -293,5 +293,13 @@
     "Came in as a dependency": "Пришло как зависимость",
     "nothing else needs it": "больше ничему не нужно",
     "needed by %1": "нужно для %1",
-    "needed by %1 packages, among them %2": "нужно для %1 пакетов, среди них %2"
+    "needed by %1 packages, among them %2": "нужно для %1 пакетов, среди них %2",
+    "Reclaim space": "Освободить место",
+    "%1 packages nothing needs any more": "%1 пакетов, которые больше никому не нужны",
+    "Downloaded package files, already installed": "Загруженные файлы пакетов, уже установлены",
+    "Remove": "Удалить",
+    "Empty": "Очистить",
+    "Working…": "Выполняется…",
+    "Removed %1 unneeded packages": "Удалено ненужных пакетов: %1",
+    "Emptied the package cache": "Кеш пакетов очищен"
 }

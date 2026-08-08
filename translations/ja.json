@@ -293,5 +293,13 @@
     "Came in as a dependency": "依存関係として入りました",
     "nothing else needs it": "他に必要としているものはありません",
     "needed by %1": "%1 が必要としています",
-    "needed by %1 packages, among them %2": "%1 個のパッケージが必要としています（例: %2）"
+    "needed by %1 packages, among them %2": "%1 個のパッケージが必要としています（例: %2）",
+    "Reclaim space": "空き容量を確保",
+    "%1 packages nothing needs any more": "どこからも必要とされていない %1 個のパッケージ",
+    "Downloaded package files, already installed": "ダウンロード済みのパッケージファイル（インストール済み）",
+    "Remove": "削除",
+    "Empty": "空にする",
+    "Working…": "処理中…",
+    "Removed %1 unneeded packages": "不要なパッケージ %1 個を削除しました",
+    "Emptied the package cache": "パッケージキャッシュを空にしました"
 }

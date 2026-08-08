@@ -293,5 +293,13 @@
     "Came in as a dependency": "의존성으로 설치됨",
     "nothing else needs it": "다른 곳에서 필요하지 않음",
     "needed by %1": "%1이(가) 필요로 함",
-    "needed by %1 packages, among them %2": "패키지 %1개가 필요로 함, 예: %2"
+    "needed by %1 packages, among them %2": "패키지 %1개가 필요로 함, 예: %2",
+    "Reclaim space": "공간 확보",
+    "%1 packages nothing needs any more": "더 이상 필요 없는 패키지 %1개",
+    "Downloaded package files, already installed": "내려받은 패키지 파일, 이미 설치됨",
+    "Remove": "제거",
+    "Empty": "비우기",
+    "Working…": "진행 중…",
+    "Removed %1 unneeded packages": "불필요한 패키지 %1개를 제거함",
+    "Emptied the package cache": "패키지 캐시를 비움"
 }

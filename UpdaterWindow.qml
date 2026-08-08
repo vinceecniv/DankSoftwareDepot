@@ -2877,6 +2877,121 @@ FloatingWindow {
 
                     }
 
+                    // ── Reclaimable space ───────────────────────────────────
+                    // Two piles nobody looks at until a disk fills: packages
+                    // pulled in for something since removed, and the download
+                    // cache. Shown with their real sizes so the offer is a
+                    // fact rather than a suggestion.
+                    Rectangle {
+                        readonly property var scan: win.widgetRoot ? win.widgetRoot.cleanup : null
+                        readonly property real total: scan ? ((scan.unneeded.bytes || 0) + (scan.cache.bytes || 0)) : 0
+
+                        Layout.fillWidth: true
+                        visible: total > 50 * 1024 * 1024
+                        implicitHeight: cleanupColumn.implicitHeight + Theme.spacingM * 2
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+
+                        ColumnLayout {
+                            id: cleanupColumn
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.leftMargin: Theme.spacingM
+                            anchors.rightMargin: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+
+                                DankIcon {
+                                    name: "cleaning_services"
+                                    size: 18
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Reclaim space")
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
+                                }
+
+                                Item {
+                                    Layout.fillWidth: true
+                                }
+
+                                StyledText {
+                                    text: win.engine.formatBytes(parent.parent.parent.total)
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.Medium
+                                    color: Theme.primary
+                                }
+                            }
+
+                            Repeater {
+                                model: {
+                                    const scan = win.widgetRoot ? win.widgetRoot.cleanup : null;
+                                    if (!scan)
+                                        return [];
+                                    const rows = [];
+                                    if (scan.unneeded.count > 0)
+                                        rows.push({
+                                            kind: "packages",
+                                            label: Tr.t("%1 packages nothing needs any more").arg(scan.unneeded.count),
+                                            bytes: scan.unneeded.bytes || 0,
+                                            action: Tr.t("Remove")
+                                        });
+                                    if ((scan.cache.bytes || 0) > 0)
+                                        rows.push({
+                                            kind: "cache",
+                                            label: Tr.t("Downloaded package files, already installed"),
+                                            bytes: scan.cache.bytes,
+                                            action: Tr.t("Empty")
+                                        });
+                                    return rows;
+                                }
+
+                                delegate: RowLayout {
+                                    required property var modelData
+
+                                    Layout.fillWidth: true
+                                    spacing: Theme.spacingS
+
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        text: modelData.label + " · " + win.engine.formatBytes(modelData.bytes)
+                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                        color: Theme.surfaceVariantText
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Item {
+                                        implicitWidth: cleanupButton.width
+                                        implicitHeight: cleanupButton.height
+
+                                        DankButton {
+                                            id: cleanupButton
+                                            buttonHeight: 26
+                                            horizontalPadding: Theme.spacingM
+                                            text: (win.widgetRoot && win.widgetRoot.cleanupBusy === modelData.kind) ? Tr.t("Working…") : modelData.action
+                                            backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                                            textColor: Theme.buttonText
+                                            enabled: win.widgetRoot !== null && win.widgetRoot.cleanupBusy === ""
+                                            onClicked: {
+                                                if (modelData.kind === "packages")
+                                                    win.widgetRoot.removeUnneeded();
+                                                else
+                                                    win.widgetRoot.cleanCache();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // ── Support links ───────────────────────────────────────
                     // Only on the dashboard, where nothing else needs doing.
                     // Deliberately quiet: a plugin asking for votes and stars

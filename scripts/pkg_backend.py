@@ -18,6 +18,7 @@ the container tests call it:
     pkg_backend.py desktop-owners     {name: {icon, name}}  (every backend)
     pkg_backend.py changelog <name>   plain text (may be empty)
     pkg_backend.py provenance <name>  {userInstalled, requiredBy: [name]}
+    pkg_backend.py cleanup-scan      {unneeded: {...}, cache: {...}}
 """
 import glob
 import html
@@ -493,6 +494,60 @@ def changelog(name):
     return ""
 
 
+# ── Reclaimable space ──────────────────────────────────────────────────────
+# Two piles nobody looks at: packages that were pulled in for something since
+# removed, and the download cache. Both are safe to lose and neither shows up
+# anywhere until a disk fills.
+
+CACHE_DIRS = ("/var/cache/libdnf5", "/var/cache/dnf", "/var/cache/apt/archives", "/var/cache/pacman/pkg")
+
+
+def _dir_bytes(path):
+    total = 0
+    for root, _dirs, files in os.walk(path, onerror=lambda e: None):
+        for name in files:
+            try:
+                total += os.lstat(os.path.join(root, name)).st_size
+            except OSError:
+                pass
+    return total
+
+
+def cleanup_scan():
+    backend = detect()
+    names, size = [], 0
+    if backend == "apt":
+        for line in _run_lines(["apt-get", "-s", "autoremove"]):
+            if line.startswith("Remv "):
+                names.append(line.split()[1])
+    elif backend == "pacman":
+        names = [l.strip() for l in _run_lines(["pacman", "-Qdtq"]) if l.strip()]
+    else:
+        try:
+            res = subprocess.run(["dnf", "-Cq", "repoquery", "--unneeded", "--qf", "%{name}\t%{installsize}\n"],
+                                 capture_output=True, text=True, timeout=60,
+                                 env={**os.environ, "LC_ALL": "C"})
+            for line in res.stdout.splitlines():
+                parts = line.split("\t")
+                if parts and parts[0].strip():
+                    names.append(parts[0].strip())
+                    if len(parts) > 1:
+                        try:
+                            size += int(parts[1])
+                        except ValueError:
+                            pass
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+    cache_bytes = 0
+    for path in CACHE_DIRS:
+        if os.path.isdir(path):
+            cache_bytes += _dir_bytes(path)
+
+    return {"unneeded": {"count": len(names), "bytes": size, "names": sorted(names)},
+            "cache": {"bytes": cache_bytes}}
+
+
 # ── Why is this here? ──────────────────────────────────────────────────────
 # Every package manager can answer this and none of them are asked, because
 # the answer lives behind a flag nobody remembers. Two facts settle it: did
@@ -567,6 +622,8 @@ def main():
         sys.stdout.write(changelog(args[0]))
     elif cmd == "provenance" and args:
         json.dump(provenance(args[0]), sys.stdout)
+    elif cmd == "cleanup-scan":
+        json.dump(cleanup_scan(), sys.stdout)
     elif cmd == "detect":
         json.dump({"backend": detect()}, sys.stdout)
     else:

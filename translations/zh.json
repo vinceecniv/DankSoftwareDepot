@@ -293,5 +293,13 @@
     "Came in as a dependency": "作为依赖引入",
     "nothing else needs it": "没有其他软件需要它",
     "needed by %1": "被 %1 需要",
-    "needed by %1 packages, among them %2": "被 %1 个软件包需要，其中包括 %2"
+    "needed by %1 packages, among them %2": "被 %1 个软件包需要，其中包括 %2",
+    "Reclaim space": "回收空间",
+    "%1 packages nothing needs any more": "%1 个不再被需要的软件包",
+    "Downloaded package files, already installed": "已下载的软件包文件，已安装",
+    "Remove": "移除",
+    "Empty": "清空",
+    "Working…": "处理中…",
+    "Removed %1 unneeded packages": "已移除 %1 个多余软件包",
+    "Emptied the package cache": "已清空软件包缓存"
 }

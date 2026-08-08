@@ -238,6 +238,21 @@ Item {
         return ["sh", "-c", "rpm -qa --qf '%{NAME}\\t%{VERSION}-%{RELEASE}\\t%{SIZE}\\t%{INSTALLTIME}\\n' 2>/dev/null | sort"];
     }
 
+    // What could be freed: packages nothing needs any more, and the cache
+    function cleanupScanCommand() {
+        return ["python3", metadataHelper, "cleanup-scan"];
+    }
+
+    // Emptying the download cache is a plain package-manager chore with no
+    // transaction to report, so it does not go through the helper protocol
+    function cleanCacheCommand() {
+        if (backendId === "apt")
+            return ["pkexec", "apt-get", "clean"];
+        if (backendId === "pacman")
+            return ["pkexec", "pacman", "-Scc", "--noconfirm"];
+        return ["pkexec", "dnf", "clean", "packages"];
+    }
+
     // Did the user ask for this package, and what would miss it if it went
     function provenanceCommand(name) {
         return ["python3", metadataHelper, "provenance", name];

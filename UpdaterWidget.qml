@@ -183,6 +183,7 @@ PluginComponent {
             eolProcess.running = true;
             distroProcess.running = true;
             appimageCheckProcess.running = true;
+            root.refreshCleanup();
         }
     }
 
@@ -426,6 +427,73 @@ PluginComponent {
         }
         if (shellPkgs.length > 0)
             _stashShellRunLog(shellPkgs, doneItems);
+    }
+
+    // ── Reclaimable space ───────────────────────────────────────────────────
+    // {unneeded: {count, bytes, names}, cache: {bytes}} — null until scanned
+    property var cleanup: null
+    property string cleanupBusy: ""   // "" | packages | cache
+
+    function refreshCleanup() {
+        if (cleanupScanProcess.running)
+            return;
+        cleanupScanProcess.command = Backend.cleanupScanCommand();
+        cleanupScanProcess.running = true;
+    }
+
+    Process {
+        id: cleanupScanProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.cleanup = JSON.parse(text);
+                } catch (e) {
+                    root.cleanup = null;
+                }
+            }
+        }
+    }
+
+    function removeUnneeded() {
+        const names = (cleanup && cleanup.unneeded) ? cleanup.unneeded.names : [];
+        if (names.length === 0 || cleanupBusy !== "")
+            return;
+        cleanupBusy = "packages";
+        cleanupProcess._logTitle = Tr.t("Removed %1 unneeded packages").arg(names.length);
+        cleanupProcess._logItems = names.map(n => ({
+                    name: n,
+                    from: "",
+                    to: "",
+                    source: "System",
+                    status: "done"
+                }));
+        cleanupProcess.command = Backend.helperCommand("remove", names);
+        cleanupProcess.running = true;
+    }
+
+    function cleanCache() {
+        if (cleanupBusy !== "")
+            return;
+        cleanupBusy = "cache";
+        cleanupProcess._logTitle = Tr.t("Emptied the package cache");
+        cleanupProcess._logItems = [];
+        cleanupProcess.command = Backend.cleanCacheCommand();
+        cleanupProcess.running = true;
+    }
+
+    Process {
+        id: cleanupProcess
+
+        property string _logTitle: ""
+        property var _logItems: []
+
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0 && _logTitle !== "")
+                actionLog.record("uninstall", _logTitle, _logItems);
+            root.cleanupBusy = "";
+            root.refreshCleanup();
+        }
     }
 
     // ── How long this usually takes here ────────────────────────────────────

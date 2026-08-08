@@ -293,5 +293,13 @@
     "Came in as a dependency": "Kom med som beroende",
     "nothing else needs it": "inget annat behöver den",
     "needed by %1": "behövs av %1",
-    "needed by %1 packages, among them %2": "behövs av %1 paket, bland dem %2"
+    "needed by %1 packages, among them %2": "behövs av %1 paket, bland dem %2",
+    "Reclaim space": "Frigör utrymme",
+    "%1 packages nothing needs any more": "%1 paket som inget längre behöver",
+    "Downloaded package files, already installed": "Nedladdade paketfiler, redan installerade",
+    "Remove": "Ta bort",
+    "Empty": "Töm",
+    "Working…": "Arbetar…",
+    "Removed %1 unneeded packages": "Tog bort %1 onödiga paket",
+    "Emptied the package cache": "Tömde paketcachen"
 }
