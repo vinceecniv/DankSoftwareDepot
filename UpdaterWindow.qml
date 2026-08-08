@@ -2006,11 +2006,17 @@ FloatingWindow {
             }
 
             onCurrentIndexChanged: {
-                if (win.currentTab === 1)
+                // Derived from currentIndex right here, not read off
+                // win.currentTab: that is a binding on this very property and
+                // is not guaranteed to have caught up while this handler runs.
+                // Reading it stale activated the previous tab's loader and
+                // left the new tab blank until it was clicked twice.
+                const id = win.tabIds[Math.min(currentIndex, win.tabIds.length - 1)];
+                if (id === 1)
                     installedLoader.active = true;
-                if (win.currentTab === 2)
+                if (id === 2)
                     installLoader.active = true;
-                if (win.currentTab === 3) {
+                if (id === 3) {
                     // Re-scan hardware on every visit; first activation scans
                     // via Component.onCompleted
                     const rescan = firmwareLoader.active;
@@ -2018,7 +2024,7 @@ FloatingWindow {
                     if (rescan && firmwareLoader.item)
                         firmwareLoader.item.reload();
                 }
-                if (win.currentTab === 4)
+                if (id === 4)
                     logLoader.active = true;
                 win.focusCurrentTab();
             }
