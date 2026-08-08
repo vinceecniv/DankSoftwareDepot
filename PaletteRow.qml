@@ -96,7 +96,10 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onEntered: slot.hovered()
+            // Movement, not entry: a row that appears under a resting pointer
+            // fires `entered` without the mouse having done anything, which
+            // would hand the selection to wherever the cursor happened to be
+            onPositionChanged: slot.hovered()
             onClicked: slot.activated()
         }
     }

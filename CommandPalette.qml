@@ -28,16 +28,28 @@ Item {
     visible: false
 
     function open() {
-        query = "";
-        current = 0;
         visible = true;
-        field.text = "";
+        // Repeated after the assignment as well as in onVisibleChanged: the
+        // handler runs in the middle of the property write, and a focus
+        // request that lands too early is dropped without complaint.
         field.forceActiveFocus();
     }
 
     function close() {
         visible = false;
         dismissed();
+    }
+
+    // State follows visibility rather than the open() call, because the
+    // palette can also appear without one — the window reopening while it
+    // was left open would otherwise return it with the previous query still
+    // in the field and nothing holding focus, so the arrows went nowhere.
+    onVisibleChanged: {
+        field.text = "";
+        query = "";
+        current = 0;
+        if (visible)
+            field.forceActiveFocus();
     }
 
     function _shown() {
@@ -99,7 +111,7 @@ Item {
         anchors.top: parent.top
         anchors.topMargin: Math.round(parent.height * 0.12)
         width: Math.min(parent.width - Theme.spacingXL * 2, 620)
-        height: header.height + resultColumn.height + emptyLabel.height + Theme.spacingM * 2 + Theme.spacingS
+        height: field.height + resultColumn.height + emptyLabel.height + Theme.spacingM * 2 + Theme.spacingS
         radius: Theme.cornerRadius
         color: Theme.surfaceContainerHigh
         border.width: 1
@@ -113,7 +125,7 @@ Item {
         }
 
         DankTextField {
-            id: header
+            id: field
 
             x: Theme.spacingM
             y: Theme.spacingM
@@ -144,7 +156,7 @@ Item {
 
             x: Theme.spacingM
             width: sheet.width - Theme.spacingM * 2
-            anchors.top: header.bottom
+            anchors.top: field.bottom
             anchors.topMargin: Theme.spacingS
             spacing: 1
 
