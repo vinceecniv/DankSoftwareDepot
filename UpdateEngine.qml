@@ -228,7 +228,16 @@ Item {
         return Tr.t("about %1 h %2 min left").arg(Math.floor(mins / 60)).arg(mins % 60);
     }
 
+    // Verbatim failure text for a package, "" when there is none
+    function errorDetailFor(pkg) {
+        return runErrorDetails[_keyFor(pkg)] || "";
+    }
+
     function stateFor(pkg) {
+        return itemStates[_keyFor(pkg)] || null;
+    }
+
+    function _keyFor(pkg) {
         let key;
         if (pkg.repo === "flatpak")
             key = "flatpak/" + pkg.name;
@@ -238,7 +247,7 @@ Item {
             key = "appimage/" + pkg.name;
         else
             key = "system/" + _stripArch(pkg.name);
-        return itemStates[key] || null;
+        return key;
     }
 
     function _stripArch(name) {
@@ -340,6 +349,7 @@ Item {
         _elapsedSeconds = 0;
         failedCount = 0;
         completedCount = 0;
+        runErrorDetails = {};
         etaSeconds = -1;
         overallFraction = 0;
         currentItem = "";
@@ -519,6 +529,27 @@ Item {
     property string _helperError: ""
     property real _helperPlanBytes: 0
     property real _helperTransferred: 0
+    // Verbatim helper output kept for the "what really went wrong" view: the
+    // short translated reason on a row is for reading, this is for reporting
+    property string _helperStderr: ""
+    property bool _helperSawPlan: false
+
+    // Raw failure text of the last run, per item key, alongside the short
+    // reason in itemStates[key].detail. Survives the run so the details
+    // popup and the action log can show what the tool actually said.
+    property var runErrorDetails: ({})
+
+    function _setError(key, reason, raw) {
+        _setItem(key, {
+            status: "error",
+            detail: reason || Tr.t("failed")
+        });
+        if (raw && raw !== reason) {
+            const updated = Object.assign({}, runErrorDetails);
+            updated[key] = raw;
+            runErrorDetails = updated;
+        }
+    }
 
     Process {
         id: helperProcess
@@ -527,9 +558,19 @@ Item {
             onRead: line => engine._onHelperEvent(line)
         }
 
+        stderr: StdioCollector {
+            onStreamFinished: engine._helperStderr = (text || "").trim()
+        }
+
         onExited: (exitCode, exitStatus) => {
             if (!engine.running || engine._dnfDone)
                 return;
+            // A helper that never got as far as a plan did not run a
+            // transaction at all — a missing dependency, a refused polkit
+            // prompt, a crash. Carry that reason to the rows instead of
+            // letting them report a mystery per package.
+            if (!engine._helperSawPlan && engine._helperError === "")
+                engine._helperError = exitCode === 126 || exitCode === 127 ? Tr.t("the authorisation was refused") : Tr.t("the package helper could not start");
             // Success or failure, the rpm database is the arbiter: rows
             // whose target version arrived turn green, the rest carry the
             // helper's error message.
@@ -543,9 +584,19 @@ Item {
         _dnfStageX = 0;
         _dnfStageY = 0;
         _helperError = "";
+        _helperStderr = "";
+        _helperSawPlan = false;
         _helperPlanBytes = 0;
         _helperTransferred = 0;
         phase = "dnf-download";
+        // Known-broken helper: say so once, up front, instead of running a
+        // transaction that cannot start and reporting its silence per package
+        if (Backend.packageHelperBroken) {
+            _helperError = Tr.t("%1 is missing — install it to update system packages").arg(Backend.packageHelperRequirement);
+            _helperStderr = Backend.packageHelperError;
+            _verifyDaemonPass();
+            return;
+        }
         helperProcess.command = Backend.helperCommand("upgrade", Object.keys(_dnfNameToKey));
         helperProcess.running = true;
     }
@@ -561,6 +612,7 @@ Item {
         const state = key ? (itemStates[key] || null) : null;
         switch (event.event) {
         case "plan": {
+            _helperSawPlan = true;
             _helperPlanBytes = event.totalDownloadBytes || 0;
             _dnfStage = 1;
             _dnfStageY = 100;
@@ -645,10 +697,7 @@ Item {
         }
         case "op-error": {
             if (key)
-                _setItem(key, {
-                    status: "error",
-                    detail: event.message || Tr.t("failed")
-                });
+                _setError(key, event.message || Tr.t("failed"), event.message || "");
             break;
         }
         case "error": {
@@ -682,9 +731,16 @@ Item {
         }
         const kind = _daemonKind;
         // Shell packages sit out the first pass and run in the final one.
+        // Either way the pass is told what to leave alone: the daemon's
+        // upgrade command is "upgrade everything pending", so an unbounded
+        // final pass would quietly install the packages this run did not
+        // pick — including any the earlier pass had just reported as failed,
+        // with no progress shown for them. The pass may only touch its own
+        // packages; everything else pending is ignored.
         let extraIgnored = [];
         if (kind === "shell") {
             phase = "dms";
+            extraIgnored = _otherPendingNames(_shellNames);
         } else if (_wantShell) {
             extraIgnored = _shellNames.slice();
         }
@@ -700,6 +756,20 @@ Item {
                 includeFlatpak: false
             });
         }
+    }
+
+    // Pending system packages other than the ones this pass is for — the
+    // ignore list that keeps a daemon pass inside its own scope.
+    function _otherPendingNames(passNames) {
+        const mine = new Set(passNames || []);
+        const names = [];
+        for (const pkg of pendingUpdates || []) {
+            if (pkg.repo === "flatpak" || pkg.repo === "firmware" || pkg.repo === "appimage")
+                continue;
+            if (!mine.has(pkg.name))
+                names.push(pkg.name);
+        }
+        return names;
     }
 
     Timer {
@@ -737,10 +807,7 @@ Item {
             const reason = SystemUpdateService.errorMessage || Tr.t("the update service did not start this pass — try again");
             const map = engine._daemonKind === "shell" ? engine._shellNameToKey : engine._dnfNameToKey;
             for (const base in map)
-                engine._setItem(map[base], {
-                    status: "error",
-                    detail: reason
-                });
+                engine._setError(map[base], reason, SystemUpdateService.errorMessage || "");
             if (engine._daemonKind === "shell") {
                 engine._shellDone = true;
                 engine.failedCount += engine._shellCount;
@@ -955,10 +1022,7 @@ Item {
             if (SystemUpdateService.hasError) {
                 const map = engine._daemonKind === "shell" ? engine._shellNameToKey : engine._dnfNameToKey;
                 for (const base in map)
-                    engine._setItem(map[base], {
-                        status: "error",
-                        detail: SystemUpdateService.errorMessage || Tr.t("failed")
-                    });
+                    engine._setError(map[base], SystemUpdateService.errorMessage || Tr.t("failed"), SystemUpdateService.errorMessage || "");
                 engine._daemonPassDone(0, engine._daemonKind === "shell" ? engine._shellCount : engine._dnfCount);
             } else {
                 engine._verifyDaemonPass();
@@ -1026,10 +1090,7 @@ Item {
                 });
             } else {
                 failCount++;
-                _setItem(map[base], {
-                    status: "error",
-                    detail: _helperError || Tr.t("the package was not updated — try again")
-                });
+                _setError(map[base], _helperError || Tr.t("the package was not updated — try again"), _helperStderr || _helperError);
             }
         }
         _daemonPassDone(okCount, failCount);
@@ -1333,10 +1394,7 @@ Item {
                 });
             } else {
                 failedCount++;
-                _setItem("appimage/" + event.id, {
-                    status: "error",
-                    detail: event.message || Tr.t("failed")
-                });
+                _setError("appimage/" + event.id, event.message || Tr.t("failed"), event.message || "");
             }
             _updateOverall();
             break;
@@ -1348,8 +1406,14 @@ Item {
     Process {
         id: firmwareProcess
 
+        property string _stderr: ""
+
         stdout: SplitParser {
             onRead: line => engine._onFirmwareLine(line)
+        }
+
+        stderr: StdioCollector {
+            onStreamFinished: firmwareProcess._stderr = (text || "").trim()
         }
 
         onExited: (exitCode, exitStatus) => {
@@ -1357,14 +1421,14 @@ Item {
                 return;
             const ok = exitCode === 0 || exitCode === 2;
             for (const fw of engine._firmwareItems) {
-                engine._setItem("firmware/" + fw.name, ok ? {
-                    status: "done",
-                    fraction: 1,
-                    detail: ""
-                } : {
-                    status: "error",
-                    detail: Tr.t("fwupdmgr exit %1").arg(exitCode)
-                });
+                if (ok)
+                    engine._setItem("firmware/" + fw.name, {
+                        status: "done",
+                        fraction: 1,
+                        detail: ""
+                    });
+                else
+                    engine._setError("firmware/" + fw.name, Tr.t("fwupdmgr exit %1").arg(exitCode), firmwareProcess._stderr);
             }
             if (ok) {
                 engine.completedCount += engine._firmwareItems.length;
@@ -1512,10 +1576,7 @@ Item {
             failedCount++;
             const key = _flatpakKeyFor(event.appid);
             if (key)
-                _setItem(key, {
-                    status: "error",
-                    detail: event.message || Tr.t("failed")
-                });
+                _setError(key, event.message || Tr.t("failed"), event.message || "");
             break;
         }
         case "done": {

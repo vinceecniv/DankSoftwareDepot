@@ -17,9 +17,10 @@ as flatpak_helper.py, so the QML side needs no output scraping:
 
 Transactions need root — run via pkexec. The `plan` action only resolves
 against the system cache and prints the plan; it works unprivileged and
-exists for testing and dry runs.
+exists for testing and dry runs. `selftest` only reports whether the
+bindings are present, so callers can ask before starting a transaction.
 
-Usage: rpm_helper.py <install|remove|upgrade|downgrade|plan> <spec>...
+Usage: rpm_helper.py <install|remove|upgrade|downgrade|plan|selftest> <spec>...
 
 This event protocol is deliberately package-manager-agnostic: an apt or
 pacman helper implementing the same events would slot into the same UI.
@@ -27,12 +28,23 @@ pacman helper implementing the same events would slot into the same UI.
 import json
 import sys
 
-import libdnf5
-
 
 def emit(obj):
     sys.stdout.write(json.dumps(obj) + "\n")
     sys.stdout.flush()
+
+
+# The Python bindings ship as their own package (python3-libdnf5) which a
+# working dnf5 system does not necessarily carry. Dying on the import would
+# end the stream before its first event, leaving the caller with nothing to
+# report but "every package failed" — so answer in the protocol instead.
+try:
+    import libdnf5
+except ImportError as exc:
+    emit({"event": "error",
+          "message": "python3-libdnf5 is not installed (%s)" % exc})
+    emit({"event": "done", "ok": False, "failed": sys.argv[2:]})
+    sys.exit(1)
 
 
 def _name_of(description, plan_names):
@@ -263,6 +275,10 @@ def run(action, specs):
 
 
 def main():
+    # Reaching this point means the bindings imported: the answer selftest exists for
+    if len(sys.argv) == 2 and sys.argv[1] == "selftest":
+        emit({"event": "done", "ok": True, "failed": []})
+        return 0
     if len(sys.argv) < 3 or sys.argv[1] not in ("install", "remove", "upgrade", "downgrade", "plan"):
         print(__doc__, file=sys.stderr)
         return 2

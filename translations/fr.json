@@ -261,5 +261,12 @@
     "Type to search %1 repos and Flathub": "Saisissez pour rechercher dans les dépôts %1 et Flathub",
     "Report an issue": "Signaler un problème",
     "%1 support is experimental — please report anything that misbehaves.": "La prise en charge de %1 est expérimentale — merci de signaler tout dysfonctionnement.",
-    "Supports %1 packages, Flatpak and AppImage.": "Prend en charge les paquets %1, Flatpak et AppImage."
+    "Supports %1 packages, Flatpak and AppImage.": "Prend en charge les paquets %1, Flatpak et AppImage.",
+    "the package helper could not start": "l'assistant de paquets n'a pas pu démarrer",
+    "the authorisation was refused": "l'autorisation a été refusée",
+    "%1 is missing — install it to update system packages": "%1 est absent — installez-le pour mettre à jour les paquets système",
+    "%1 is missing — system packages cannot be installed or updated until it is there.": "%1 est absent — les paquets système ne peuvent être installés ni mis à jour tant qu'il manque.",
+    "Check again": "Vérifier à nouveau",
+    "Show details": "Afficher les détails",
+    "Hide details": "Masquer les détails"
 }

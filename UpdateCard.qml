@@ -19,6 +19,8 @@ Rectangle {
     property string holdReason: ""
     property bool isIgnored: false
     property bool canHold: false
+    // Verbatim tool output behind the short failure reason, revealed on request
+    property string errorDetail: ""
 
     signal updateRequested
     signal holdToggleRequested
@@ -127,48 +129,6 @@ Rectangle {
                         elide: Text.ElideRight
                     }
 
-                    Rectangle {
-                        visible: card.held
-                        Layout.preferredWidth: heldChipRow.implicitWidth + 14
-                        Layout.preferredHeight: 18
-                        radius: 9
-                        color: Theme.withAlpha(Theme.warning, 0.18)
-
-                        RowLayout {
-                            id: heldChipRow
-                            anchors.centerIn: parent
-                            spacing: 3
-
-                            DankIcon {
-                                name: "lock"
-                                size: 11
-                                color: Theme.warning
-                            }
-
-                            StyledText {
-                                text: Tr.t("Held")
-                                font.pixelSize: Theme.fontSizeSmall - 2
-                                font.weight: Font.Medium
-                                color: Theme.warning
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.preferredWidth: repoChipText.implicitWidth + 14
-                        Layout.preferredHeight: 18
-                        radius: 9
-                        color: card.isFlatpak ? Theme.withAlpha(Theme.tertiary, 0.15) : Theme.withAlpha(Theme.secondary, 0.15)
-
-                        StyledText {
-                            id: repoChipText
-                            anchors.centerIn: parent
-                            text: card.isFlatpak ? "Flatpak" : Tr.t("System")
-                            font.pixelSize: Theme.fontSizeSmall - 2
-                            font.weight: Font.Medium
-                            color: card.isFlatpak ? Theme.tertiary : Theme.secondary
-                        }
-                    }
                 }
 
                 StyledText {
@@ -249,13 +209,67 @@ Rectangle {
                 }
             }
 
-            // ── Actions / status (fixed slots so all cards align) ───────────
+            // ── Chips, actions and status ──────────────────────────────────
+            // One cluster packed against the right edge: the chips and the
+            // action slot share a row, so they line up with each other
+            // instead of drifting apart across the card's right side. The
+            // action slot keeps a fixed width whenever the card can show
+            // something there, so buttons line up down the list.
             RowLayout {
                 Layout.alignment: Qt.AlignTop
-                spacing: 2
+                spacing: Theme.spacingXS
+
+                Rectangle {
+                    visible: card.held
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: heldChipRow.implicitWidth + 14
+                    Layout.preferredHeight: 18
+                    radius: 9
+                    color: Theme.withAlpha(Theme.warning, 0.18)
+
+                    RowLayout {
+                        id: heldChipRow
+                        anchors.centerIn: parent
+                        spacing: 3
+
+                        DankIcon {
+                            name: "lock"
+                            size: 11
+                            color: Theme.warning
+                        }
+
+                        StyledText {
+                            text: Tr.t("Held")
+                            font.pixelSize: Theme.fontSizeSmall - 2
+                            font.weight: Font.Medium
+                            color: Theme.warning
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: repoChipText.implicitWidth + 14
+                    Layout.preferredHeight: 18
+                    radius: 9
+                    color: card.isFlatpak ? Theme.withAlpha(Theme.tertiary, 0.15) : Theme.withAlpha(Theme.secondary, 0.15)
+
+                    StyledText {
+                        id: repoChipText
+                        anchors.centerIn: parent
+                        text: card.isFlatpak ? "Flatpak" : Tr.t("System")
+                        font.pixelSize: Theme.fontSizeSmall - 2
+                        font.weight: Font.Medium
+                        color: card.isFlatpak ? Theme.tertiary : Theme.secondary
+                    }
+                }
 
                 Item {
-                    Layout.preferredWidth: 28
+                    // Collapses on cards that have neither a button nor a run
+                    // status, so the chips stay flush against the edge
+                    readonly property bool reserved: card.showUpdateButton || card.itemState !== null
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.preferredWidth: reserved ? 28 : 0
                     Layout.preferredHeight: 28
 
                     DankActionButton {
@@ -332,15 +346,70 @@ Rectangle {
         }
 
         // ── Error detail ────────────────────────────────────────────────────
-        StyledText {
+        // The short reason is what the card says; the tool's own words are
+        // one click away rather than on display, because they are long,
+        // untranslated and only interesting when reporting a problem.
+        ColumnLayout {
             Layout.fillWidth: true
             visible: card.status === "error" && card.itemState && (card.itemState.detail || "") !== ""
-            text: card.itemState ? card.itemState.detail : ""
-            font.pixelSize: Theme.fontSizeSmall - 1
-            color: Ui.failColor
-            wrapMode: Text.WordWrap
-            maximumLineCount: 3
-            elide: Text.ElideRight
+            spacing: 2
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Theme.spacingXS
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: card.itemState ? card.itemState.detail : ""
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    color: Ui.failColor
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 3
+                    elide: Text.ElideRight
+                }
+
+                StyledText {
+                    id: errorToggle
+
+                    property bool expanded: false
+
+                    visible: card.errorDetail !== ""
+                    text: expanded ? Tr.t("Hide details") : Tr.t("Show details")
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    font.underline: toggleArea.containsMouse
+                    color: Ui.failColor
+
+                    MouseArea {
+                        id: toggleArea
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: errorToggle.expanded = !errorToggle.expanded
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                visible: errorToggle.expanded && card.errorDetail !== ""
+                implicitHeight: rawErrorText.implicitHeight + Theme.spacingS * 2
+                radius: Theme.cornerRadius / 2
+                color: Theme.withAlpha(Theme.surfaceVariant, 0.5)
+
+                StyledText {
+                    id: rawErrorText
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.margins: Theme.spacingS
+                    text: card.errorDetail
+                    font.family: Theme.monoFontFamily
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    color: Theme.surfaceVariantText
+                    wrapMode: Text.Wrap
+                }
+            }
         }
 
     }

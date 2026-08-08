@@ -119,9 +119,12 @@ language by dropping a new `translations/<lang>.json` next to the others.
 - `python3`, `python3-gobject` + libflatpak GIR
 - `flatpak`, optionally `fwupd`
 - Package-manager bindings for your distro:
-  - Fedora: `python3-libdnf5`
+  - Fedora: `python3-libdnf5` (**not** part of a default install)
   - Debian/Ubuntu: `python3-apt` (usually preinstalled)
   - Arch: `pyalpm`
+
+Without those bindings no system package can be installed, updated or
+removed; the plugin checks for them at startup and shows what to install.
 
 ## Install
 

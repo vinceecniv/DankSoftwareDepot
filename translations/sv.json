@@ -261,5 +261,12 @@
     "Type to search %1 repos and Flathub": "Skriv för att söka i %1-förråd och Flathub",
     "Report an issue": "Rapportera ett problem",
     "%1 support is experimental — please report anything that misbehaves.": "Stödet för %1 är experimentellt — rapportera allt som inte fungerar.",
-    "Supports %1 packages, Flatpak and AppImage.": "Stöder %1-paket, Flatpak och AppImage."
+    "Supports %1 packages, Flatpak and AppImage.": "Stöder %1-paket, Flatpak och AppImage.",
+    "the package helper could not start": "pakethjälpen kunde inte starta",
+    "the authorisation was refused": "behörigheten nekades",
+    "%1 is missing — install it to update system packages": "%1 saknas — installera det för att uppdatera systempaket",
+    "%1 is missing — system packages cannot be installed or updated until it is there.": "%1 saknas — systempaket kan inte installeras eller uppdateras förrän det finns.",
+    "Check again": "Kontrollera igen",
+    "Show details": "Visa detaljer",
+    "Hide details": "Dölj detaljer"
 }

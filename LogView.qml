@@ -211,48 +211,108 @@ Item {
                         Repeater {
                             model: entryRow.expanded ? entryRow.entryItems : []
 
-                            delegate: RowLayout {
+                            delegate: ColumnLayout {
+                                id: itemRow
+
                                 required property var modelData
+                                // The tool's own words behind a failed row —
+                                // kept out of sight until asked for
+                                property bool showError: false
+                                readonly property string rawError: modelData.error || ""
 
                                 Layout.fillWidth: true
-                                spacing: Theme.spacingS
+                                spacing: 1
 
-                                DankIcon {
-                                    name: modelData.status === "error" ? "error" : "check_circle"
-                                    size: 13
-                                    color: modelData.status === "error" ? Theme.error : Theme.success
-                                }
-
-                                StyledText {
-                                    text: modelData.name || ""
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.surfaceText
-                                    elide: Text.ElideRight
-                                    Layout.maximumWidth: 260
-                                }
-
-                                StyledText {
-                                    visible: (modelData.from || "") !== "" || (modelData.to || "") !== ""
-                                    text: {
-                                        if ((modelData.from || "") !== "" && (modelData.to || "") !== "")
-                                            return modelData.from + " → " + modelData.to;
-                                        return modelData.to || modelData.from || "";
-                                    }
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.surfaceVariantText
-                                    elide: Text.ElideMiddle
-                                    Layout.maximumWidth: 240
-                                }
-
-                                Item {
+                                RowLayout {
                                     Layout.fillWidth: true
+                                    spacing: Theme.spacingS
+
+                                    DankIcon {
+                                        name: itemRow.modelData.status === "error" ? "error" : "check_circle"
+                                        size: 13
+                                        color: itemRow.modelData.status === "error" ? Theme.error : Theme.success
+                                    }
+
+                                    StyledText {
+                                        text: itemRow.modelData.name || ""
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: Theme.surfaceText
+                                        elide: Text.ElideRight
+                                        Layout.maximumWidth: 260
+                                    }
+
+                                    StyledText {
+                                        visible: (itemRow.modelData.from || "") !== "" || (itemRow.modelData.to || "") !== ""
+                                        text: {
+                                            if ((itemRow.modelData.from || "") !== "" && (itemRow.modelData.to || "") !== "")
+                                                return itemRow.modelData.from + " → " + itemRow.modelData.to;
+                                            return itemRow.modelData.to || itemRow.modelData.from || "";
+                                        }
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: Theme.surfaceVariantText
+                                        elide: Text.ElideMiddle
+                                        Layout.maximumWidth: 240
+                                    }
+
+                                    StyledText {
+                                        visible: (itemRow.modelData.reason || "") !== ""
+                                        text: "· " + (itemRow.modelData.reason || "")
+                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                        color: Theme.error
+                                        elide: Text.ElideRight
+                                        Layout.maximumWidth: 260
+                                    }
+
+                                    Item {
+                                        Layout.fillWidth: true
+                                    }
+
+                                    StyledText {
+                                        visible: itemRow.rawError !== ""
+                                        text: itemRow.showError ? Tr.t("Hide details") : Tr.t("Show details")
+                                        font.pixelSize: Theme.fontSizeSmall - 2
+                                        font.underline: rawToggleArea.containsMouse
+                                        color: Theme.error
+
+                                        MouseArea {
+                                            id: rawToggleArea
+                                            anchors.fill: parent
+                                            anchors.margins: -4
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: itemRow.showError = !itemRow.showError
+                                        }
+                                    }
+
+                                    StyledText {
+                                        visible: (itemRow.modelData.source || "") !== ""
+                                        text: Tr.t(itemRow.modelData.source || "")
+                                        font.pixelSize: Theme.fontSizeSmall - 2
+                                        color: Theme.surfaceVariantText
+                                    }
                                 }
 
-                                StyledText {
-                                    visible: (modelData.source || "") !== ""
-                                    text: Tr.t(modelData.source || "")
-                                    font.pixelSize: Theme.fontSizeSmall - 2
-                                    color: Theme.surfaceVariantText
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: 21
+                                    Layout.bottomMargin: Theme.spacingXS
+                                    visible: itemRow.showError && itemRow.rawError !== ""
+                                    implicitHeight: rawErrorLabel.implicitHeight + Theme.spacingS * 2
+                                    radius: Theme.cornerRadius / 2
+                                    color: Theme.withAlpha(Theme.surfaceVariant, 0.5)
+
+                                    StyledText {
+                                        id: rawErrorLabel
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.margins: Theme.spacingS
+                                        text: itemRow.rawError
+                                        font.family: Theme.monoFontFamily
+                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                        color: Theme.surfaceVariantText
+                                        wrapMode: Text.Wrap
+                                    }
                                 }
                             }
                         }

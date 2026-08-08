@@ -3,6 +3,36 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **A missing package-manager binding no longer looks like hundreds of
+  failed packages.** `python3-libdnf5` is not part of a default Fedora
+  install, and without it the rpm helper died on its import before its
+  first event — so an update run marked every system package as failed
+  within seconds, for no stated reason. The helpers now report a missing
+  binding through the event protocol, the plugin asks them at startup
+  (`selftest`) and shows a banner naming the package and the command that
+  installs it, and a run that cannot start says so once instead of
+  blaming each package.
+- **The final DankMaterialShell pass stays inside its own scope.** That
+  pass runs through the update daemon, whose upgrade command means
+  "everything pending" — so after a failed system pass it quietly
+  installed those packages too: minutes without visible progress, and
+  packages that ended up installed while the log recorded them as
+  failed. The pass now carries an ignore list of everything it is not
+  responsible for.
+- Failed rows carry the tool's own words. The card shows the short
+  reason and offers **Show details** for the verbatim output; the action
+  log keeps both, so a failure can still be reported after the fact.
+- The action log is reconciled with the system: a package that failed
+  before the shell pass but did arrive is recorded as updated, and a run
+  torn down by a shell reload no longer leaves a stray "0 packages
+  updated" entry.
+- Update cards pack their chips, buttons and status icons into one
+  cluster against the right edge, aligned with each other.
+- A fresh install starts at **Notify only** instead of Off — finding
+  updates and saying nothing helps nobody. An explicit Off is kept.
+
 ## 0.4.0 — 2026-08-07
 
 - **Experimental Debian/Ubuntu and Arch support.** The plugin now detects

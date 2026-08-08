@@ -691,7 +691,7 @@ FloatingWindow {
                             description: Tr.t("Notify when updates are found, and optionally install Flatpak updates automatically. System packages always ask first.")
                             options: Object.keys(autoMap).map(k => Tr.t(k))
                             currentValue: {
-                                const mode = win.widgetRoot ? win.widgetRoot.autoUpdateMode : "off";
+                                const mode = win.widgetRoot ? win.widgetRoot.autoUpdateMode : "notify";
                                 for (const label in autoMap) {
                                     if (autoMap[label] === mode)
                                         return Tr.t(label);
@@ -1348,6 +1348,84 @@ FloatingWindow {
                         backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
                         textColor: Theme.buttonText
                         onClicked: Qt.openUrlExternally(win.githubUrl + "/issues")
+                    }
+                }
+            }
+        }
+
+        // ── Package-helper missing ──────────────────────────────────────────
+        // Without the package manager's Python bindings no system package can
+        // be installed, updated or removed. Say so up front and name the fix,
+        // rather than letting every transaction fail with its own excuse.
+        Rectangle {
+            Layout.fillWidth: true
+            visible: Backend.packageHelperBroken
+            implicitHeight: helperMissingColumn.implicitHeight + Theme.spacingM * 2
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.error, 0.10)
+            border.width: 1
+            border.color: Theme.withAlpha(Theme.error, 0.30)
+
+            ColumnLayout {
+                id: helperMissingColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingM
+                spacing: Theme.spacingS
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingM
+
+                    DankIcon {
+                        name: "error"
+                        size: 20
+                        color: Theme.error
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: Tr.t("%1 is missing — system packages cannot be installed or updated until it is there.").arg(Backend.packageHelperRequirement)
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceText
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Item {
+                        implicitWidth: helperRetryButton.width
+                        implicitHeight: helperRetryButton.height
+
+                        DankButton {
+                            id: helperRetryButton
+                            buttonHeight: 28
+                            horizontalPadding: Theme.spacingM
+                            iconName: "refresh"
+                            iconSize: 14
+                            text: Tr.t("Check again")
+                            backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                            textColor: Theme.buttonText
+                            onClicked: Backend.checkPackageHelper()
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: helperHintText.implicitHeight + Theme.spacingS * 2
+                    radius: Theme.cornerRadius / 2
+                    color: Theme.withAlpha(Theme.surfaceVariant, 0.6)
+
+                    StyledText {
+                        id: helperHintText
+                        anchors.fill: parent
+                        anchors.margins: Theme.spacingS
+                        text: Backend.packageHelperInstallHint
+                        font.family: Theme.monoFontFamily
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceText
+                        wrapMode: Text.WrapAnywhere
                     }
                 }
             }
@@ -2019,6 +2097,7 @@ FloatingWindow {
                     return win.store.infoFor(rowData.pkg);
                 }
                 itemState: win.engine.stateFor(rowData.pkg)
+                errorDetail: win.engine.runErrorDetails && rowData.pkg ? win.engine.errorDetailFor(rowData.pkg) : ""
                 store: win.store
                 engineBusy: win.engine.running
                 held: rowData.ignored === true || win.store.isHeld(rowData.pkg)

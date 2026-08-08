@@ -23,6 +23,61 @@ Item {
         return ["pkexec", "python3", packageHelper, action].concat(specs);
     }
 
+    // ── Helper readiness ────────────────────────────────────────────────────
+    // The helpers need their package manager's Python bindings, which are a
+    // separate package on every distro and are not part of a default install
+    // (a Fedora system has dnf5 without python3-libdnf5). Ask the helper
+    // itself — unprivileged, no transaction — so a run can say what is
+    // missing instead of reporting every package as mysteriously failed.
+
+    // "" while unknown, "ok", or the helper's reason it cannot run
+    property string packageHelperStatus: ""
+    readonly property bool packageHelperReady: packageHelperStatus === "ok"
+    readonly property bool packageHelperBroken: packageHelperStatus !== "" && packageHelperStatus !== "ok"
+    readonly property string packageHelperError: packageHelperBroken ? packageHelperStatus : ""
+
+    // The distro package providing what the helper imports, for the hint
+    readonly property string packageHelperRequirement: backendId === "apt" ? "python3-apt" : (backendId === "pacman" ? "pyalpm" : "python3-libdnf5")
+
+    // Shell command that installs it, offered as copyable text (never run
+    // by the plugin: installing the package manager's own bindings through
+    // the package manager it cannot drive yet belongs in a terminal)
+    readonly property string packageHelperInstallHint: backendId === "apt" ? "sudo apt install python3-apt" : (backendId === "pacman" ? "sudo pacman -S --needed pyalpm" : "sudo dnf install python3-libdnf5")
+
+    function checkPackageHelper() {
+        if (selftestProcess.running)
+            return;
+        selftestProcess._reason = "";
+        selftestProcess.command = ["python3", packageHelper, "selftest"];
+        selftestProcess.running = true;
+    }
+
+    onBackendIdChanged: checkPackageHelper()
+    Component.onCompleted: checkPackageHelper()
+
+    Process {
+        id: selftestProcess
+
+        property string _reason: ""
+
+        stdout: SplitParser {
+            onRead: line => {
+                let event;
+                try {
+                    event = JSON.parse(line);
+                } catch (e) {
+                    return;
+                }
+                if (event.event === "error" && event.message)
+                    selftestProcess._reason = event.message;
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            backend.packageHelperStatus = exitCode === 0 ? "ok" : (_reason || Tr.t("the package helper could not start"));
+        }
+    }
+
     // Installed-version listing used for post-run verification; both
     // backends print "name<TAB>version" lines.
     function installedVersionsCommand(names) {

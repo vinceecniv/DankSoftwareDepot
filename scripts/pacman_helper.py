@@ -3,24 +3,34 @@
 protocol documented in PROTOCOL.md — the Arch counterpart of
 rpm_helper.py.
 
-Usage: pacman_helper.py <install|remove|upgrade|plan> <name>...
+Usage: pacman_helper.py <install|remove|upgrade|plan|selftest> <name>...
 
 Transactions need root (run via pkexec); `plan` resolves against the
-existing sync databases and works unprivileged. `downgrade` is not
-offered: pacman keeps no version history in its repositories (that is
-the Arch Linux Archive's job, out of scope here). Official repositories
-only — AUR packages are never touched.
+existing sync databases and works unprivileged, and `selftest` only
+reports whether the bindings are present. `downgrade` is not offered:
+pacman keeps no version history in its repositories (that is the Arch
+Linux Archive's job, out of scope here). Official repositories only —
+AUR packages are never touched.
 """
 import json
 import re
 import sys
 
-import pyalpm
-
 
 def emit(obj):
     sys.stdout.write(json.dumps(obj) + "\n")
     sys.stdout.flush()
+
+
+# Missing bindings must be reported inside the protocol: an import that kills
+# the process ends the stream before its first event, and the caller can only
+# guess that every package failed. See the same guard in rpm_helper.py.
+try:
+    import pyalpm
+except ImportError as exc:
+    emit({"event": "error", "message": "pyalpm is not installed (%s)" % exc})
+    emit({"event": "done", "ok": False, "failed": sys.argv[2:]})
+    sys.exit(1)
 
 
 def init_handle():
@@ -175,6 +185,10 @@ def run(action, specs):
 
 
 def main():
+    # Reaching this point means the bindings imported: the answer selftest exists for
+    if len(sys.argv) == 2 and sys.argv[1] == "selftest":
+        emit({"event": "done", "ok": True, "failed": []})
+        return 0
     if len(sys.argv) < 3 or sys.argv[1] not in ("install", "remove", "upgrade", "plan"):
         print(__doc__, file=sys.stderr)
         return 2

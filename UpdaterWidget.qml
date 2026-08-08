@@ -187,7 +187,10 @@ PluginComponent {
     }
 
     // ── Automatic updates: off | notify | auto (auto-install flatpaks) ──────
-    readonly property string autoUpdateMode: pluginData.autoUpdateMode || "off"
+    // A fresh install starts at "notify": finding updates and saying nothing
+    // is the one behaviour nobody asks for. An explicit "off" is stored and
+    // kept.
+    readonly property string autoUpdateMode: pluginData.autoUpdateMode || "notify"
     property int _lastNotifiedCount: 0
 
     function _afterCheck() {
@@ -403,13 +406,23 @@ PluginComponent {
                 continue;
             }
             const st = engine.itemStates[ri.key] || {};
-            doneItems.push({
+            const isSystem = ri.pkg.repo !== "flatpak" && ri.pkg.repo !== "firmware" && ri.pkg.repo !== "appimage";
+            const item = {
                 name: store.displayName(ri.pkg),
                 from: ri.pkg.fromVersion || "",
                 to: ri.pkg.toVersion || "",
                 source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : "System")),
-                status: st.status || ""
-            });
+                status: st.status || "",
+                reason: st.status === "error" ? (st.detail || "") : "",
+                error: engine.runErrorDetails[ri.key] || ""
+            };
+            // The shell pass runs after this snapshot is taken; a system row
+            // that failed before it may still arrive. Carry the package name
+            // so the replay can ask the package database instead of
+            // preserving a verdict that the rest of the run has outrun.
+            if (isSystem)
+                item.base = base;
+            doneItems.push(item);
         }
         if (shellPkgs.length > 0)
             _stashShellRunLog(shellPkgs, doneItems);
@@ -427,7 +440,15 @@ PluginComponent {
         const stash = pluginData.pendingShellRunLog;
         if (!stash || !(stash.shell || []).length)
             return;
-        replayVerifyProcess.command = Backend.installedVersionsCommand(stash.shell.map(s => s.base));
+        // Ask about the shell packages and about every system row that was
+        // still failing when the snapshot was taken — the shell pass sits
+        // between the two moments and can have changed the answer.
+        const names = stash.shell.map(s => s.base);
+        for (const it of stash.items || []) {
+            if (it.status === "error" && it.base)
+                names.push(it.base);
+        }
+        replayVerifyProcess.command = Backend.installedVersionsCommand(names);
         replayVerifyProcess.running = true;
     }
 
@@ -444,16 +465,30 @@ PluginComponent {
                         (installed[parts[0].trim()] = installed[parts[0].trim()] || []).push(parts[1].trim());
                 }
                 const noEpoch = v => (v || "").replace(/^\d+:/, "");
-                const items = (stash.items || []).slice();
+                const arrived = (base, to) => {
+                    const want = noEpoch(to);
+                    return want !== "" && (installed[base] || []).some(evr => noEpoch(evr) === want);
+                };
+                // A row that failed before the shell pass but carries its
+                // target version now did arrive — the log records what the
+                // system says, not what the run last believed.
+                const items = (stash.items || []).map(it => {
+                    if (it.status !== "error" || !it.base || !arrived(it.base, it.to))
+                        return it;
+                    const fixed = Object.assign({}, it, {
+                        status: "done"
+                    });
+                    delete fixed.reason;
+                    delete fixed.error;
+                    return fixed;
+                });
                 for (const s of stash.shell || []) {
-                    const want = noEpoch(s.to);
-                    const ok = want !== "" && (installed[s.base] || []).some(evr => noEpoch(evr) === want);
                     items.push({
                         name: s.name,
                         from: s.from,
                         to: s.to,
                         source: "System",
-                        status: ok ? "done" : "error"
+                        status: arrived(s.base, s.to) ? "done" : "error"
                     });
                 }
                 let done = 0;
@@ -484,9 +519,17 @@ PluginComponent {
                 from: ri.pkg.fromVersion || "",
                 to: ri.pkg.toVersion || "",
                 source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : "System")),
-                status: st.status || ""
+                status: st.status || "",
+                // Short reason for reading, tool output for reporting
+                reason: st.status === "error" ? (st.detail || "") : "",
+                error: engine.runErrorDetails[ri.key] || ""
             };
         });
+        // A run always has items; an empty list means this is the tail of a
+        // torn-down run (the shell reload), whose real entry the replay
+        // writes. Logging it would leave a stray "0 packages updated".
+        if (items.length === 0)
+            return;
         let type = "update";
         let title = (engine.completedCount === 1 ? Tr.t("Updated %1 package") : Tr.t("Updated %1 packages")).arg(engine.completedCount);
         if (engine.phase === "cancelled") {

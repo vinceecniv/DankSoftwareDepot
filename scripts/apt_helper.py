@@ -3,11 +3,12 @@
 protocol documented in PROTOCOL.md — the Debian counterpart of
 rpm_helper.py.
 
-Usage: apt_helper.py <install|remove|upgrade|downgrade|plan> <spec>...
+Usage: apt_helper.py <install|remove|upgrade|downgrade|plan|selftest> <spec>...
 
 Specs are package names; `downgrade` (and pinned installs) accept the apt
 form `name=version`. Transactions need root (run via pkexec); `plan` only
-resolves against the existing package lists and works unprivileged.
+resolves against the existing package lists and works unprivileged, and
+`selftest` only reports whether the bindings are present.
 
 Protocol notes specific to this backend:
 - dpkg reports overall transaction percent, not per-package percent; the
@@ -19,13 +20,22 @@ import json
 import os
 import sys
 
-import apt
-import apt.progress.base
-
 
 def emit(obj):
     sys.stdout.write(json.dumps(obj) + "\n")
     sys.stdout.flush()
+
+
+# Missing bindings must be reported inside the protocol: an import that kills
+# the process ends the stream before its first event, and the caller can only
+# guess that every package failed. See the same guard in rpm_helper.py.
+try:
+    import apt
+    import apt.progress.base
+except ImportError as exc:
+    emit({"event": "error", "message": "python3-apt is not installed (%s)" % exc})
+    emit({"event": "done", "ok": False, "failed": sys.argv[2:]})
+    sys.exit(1)
 
 
 class FetchProgress(apt.progress.base.AcquireProgress):
@@ -198,6 +208,10 @@ def run(action, specs):
 
 
 def main():
+    # Reaching this point means the bindings imported: the answer selftest exists for
+    if len(sys.argv) == 2 and sys.argv[1] == "selftest":
+        emit({"event": "done", "ok": True, "failed": []})
+        return 0
     if len(sys.argv) < 3 or sys.argv[1] not in ("install", "remove", "upgrade", "downgrade", "plan"):
         print(__doc__, file=sys.stderr)
         return 2
