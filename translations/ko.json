@@ -311,5 +311,6 @@
     "Type to search updates, installed software, the log and commands": "입력하여 업데이트, 설치된 소프트웨어, 기록, 명령을 검색",
     "Nothing matches \"%1\"": "'%1'과(와) 일치하는 항목이 없습니다",
     "Commands": "명령",
-    "Search \"%1\" in Install": "'설치'에서 '%1' 검색"
+    "Search \"%1\" in Install": "'설치'에서 '%1' 검색",
+    "Search everything": "전체 검색"
 }

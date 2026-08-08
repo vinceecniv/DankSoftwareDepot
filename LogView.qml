@@ -13,6 +13,9 @@ Item {
     property string searchText: ""
     property var expandedKeys: ({})
 
+    // The command palette lives in the window; the views only ask
+    signal paletteRequested()
+
     function focusSearch() {
         searchField.forceActiveFocus();
     }
@@ -158,6 +161,14 @@ Item {
             id: searchField
             Layout.fillWidth: true
             placeholderText: Tr.t("Search the action log…")
+
+            HotkeyHint {
+                anchors.right: parent.right
+                anchors.rightMargin: Theme.spacingM
+                anchors.verticalCenter: parent.verticalCenter
+                visible: parent.text === ""
+                onActivated: view.paletteRequested()
+            }
             leftIconName: "search"
             showClearButton: true
             onTextChanged: view.searchText = text

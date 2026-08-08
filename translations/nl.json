@@ -311,5 +311,6 @@
     "Type to search updates, installed software, the log and commands": "Typ om te zoeken in updates, geïnstalleerde software, het logboek en opdrachten",
     "Nothing matches \"%1\"": "Niets komt overeen met \"%1\"",
     "Commands": "Opdrachten",
-    "Search \"%1\" in Install": "Zoek \"%1\" in Installeren"
+    "Search \"%1\" in Install": "Zoek \"%1\" in Installeren",
+    "Search everything": "Zoek in alles"
 }

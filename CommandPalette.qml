@@ -19,6 +19,11 @@ Item {
     property var results: []
     property string query: ""
     property int current: 0
+    // TIJDELIJK: zichtbare meting, omdat console.log uit dit bestand nergens aankomt
+    property int debugPresses: 0
+    property int debugClicks: 0
+    property int rebuilds: 0
+    property int debugEnters: 0
 
     signal accepted(int index)
     signal dismissed
@@ -51,6 +56,33 @@ Item {
             current = Math.max(0, results.length - 1);
     }
 
+    // Navigation goes through the text field's own hooks. A TextInput claims
+    // Up, Down and Return — via ShortcutOverride, precisely so shortcuts
+    // cannot hijack typing — so neither an ancestor's Keys handler nor a
+    // Shortcut ever sees them. DankTextField exposes the way in:
+    // ignoreUpDownKeys lets the arrows through to keyForwardTargets, and
+    // its `accepted` signal is Return.
+    Item {
+        id: keyRelay
+
+        Keys.onPressed: event => {
+            switch (event.key) {
+            case Qt.Key_Down:
+                palette._move(1);
+                event.accepted = true;
+                break;
+            case Qt.Key_Up:
+                palette._move(-1);
+                event.accepted = true;
+                break;
+            case Qt.Key_Escape:
+                palette.close();
+                event.accepted = true;
+                break;
+            }
+        }
+    }
+
     // Click anywhere outside to dismiss; the scrim also swallows clicks that
     // would otherwise land on the window behind it
     Rectangle {
@@ -77,9 +109,11 @@ Item {
         border.width: 1
         border.color: Theme.withAlpha(Theme.outline, 0.2)
 
-        // Swallow clicks so they do not reach the dismiss scrim underneath
-        MouseArea {
-            anchors.fill: parent
+        // A TapHandler instead of a filling MouseArea: it stops a click on
+        // the sheet's own background from reaching the dismiss scrim without
+        // standing between the list rows and the mouse.
+        TapHandler {
+            gesturePolicy: TapHandler.ReleaseWithinBounds
         }
 
         ColumnLayout {
@@ -93,32 +127,22 @@ Item {
                 Layout.fillWidth: true
                 placeholderText: Tr.t("Search everything…")
                 leftIconName: "search"
+                // The palette's field is the only thing on a large empty
+                // sheet; the default tones are pitched for a field sitting
+                // among other content and read as barely there here
+                placeholderColor: Theme.surfaceVariantText
+                normalBorderColor: Theme.withAlpha(Theme.outline, 0.45)
+                ignoreUpDownKeys: true
+                keyForwardTargets: [keyRelay]
                 onTextChanged: {
                     palette.query = text;
+                    // A fresh query preselects its first result, so Enter
+                    // always means "the obvious one"
                     palette.current = 0;
                 }
-
-                Keys.onPressed: event => {
-                    switch (event.key) {
-                    case Qt.Key_Down:
-                        palette._move(1);
-                        event.accepted = true;
-                        break;
-                    case Qt.Key_Up:
-                        palette._move(-1);
-                        event.accepted = true;
-                        break;
-                    case Qt.Key_Return:
-                    case Qt.Key_Enter:
-                        if (palette.results.length > 0)
-                            palette.accepted(palette.current);
-                        event.accepted = true;
-                        break;
-                    case Qt.Key_Escape:
-                        palette.close();
-                        event.accepted = true;
-                        break;
-                    }
+                onAccepted: {
+                    if (palette.results.length > 0)
+                        palette.accepted(palette.current);
                 }
             }
 
@@ -131,6 +155,8 @@ Item {
                 spacing: 1
                 model: palette.results
                 visible: palette.results.length > 0
+                currentIndex: palette.current
+                highlightMoveDuration: 0
 
                 delegate: Rectangle {
                     id: row
@@ -160,23 +186,24 @@ Item {
                     }
 
                     Rectangle {
+                        id: rowBody
+
+                        readonly property bool selected: row.ListView.isCurrentItem
+
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
                         height: 40
                         radius: Theme.cornerRadius / 2
-                        color: palette.current === row.index ? Theme.withAlpha(Theme.primary, 0.14) : (rowHover.hovered ? Theme.withAlpha(Theme.surfaceVariantText, 0.08) : "transparent")
+                        // Unmistakable rather than tasteful: in a palette the
+                        // selection is the only thing telling you what Enter
+                        // will do, and a 14% tint said nothing at all
+                        color: selected ? Theme.withAlpha(Theme.primary, 0.28) : (rowHover.containsMouse ? Theme.withAlpha(Theme.surfaceVariantText, 0.10) : "transparent")
 
-                        HoverHandler {
-                            id: rowHover
-                            onHoveredChanged: {
-                                if (hovered)
-                                    palette.current = row.index;
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Theme.shortDuration
                             }
-                        }
-
-                        TapHandler {
-                            onTapped: palette.accepted(row.index)
                         }
 
                         RowLayout {
@@ -196,7 +223,8 @@ Item {
                             StyledText {
                                 text: row.modelData.title || ""
                                 font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.surfaceText
+                                font.weight: rowBody.selected ? Font.DemiBold : Font.Normal
+                                color: rowBody.selected ? Theme.primary : Theme.surfaceText
                                 elide: Text.ElideRight
                                 Layout.maximumWidth: 300
                             }
@@ -210,7 +238,33 @@ Item {
                             }
                         }
                     }
+
+                    // Last child of the delegate root and filling it: the same
+                    // shape the Installed tab uses, where clicking a row has
+                    // worked all along. Nested inside the row's inner
+                    // rectangle it received nothing at all.
+                    MouseArea {
+                        id: rowHover
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onEntered: palette.debugEnters++
+                        onPressed: mouse => palette.debugPresses++
+                        onClicked: {
+                            palette.debugClicks++;
+                            palette.accepted(row.index);
+                        }
+                    }
                 }
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                text: "sel=" + palette.current + "  press=" + palette.debugPresses + "  click=" + palette.debugClicks + "  enter=" + palette.debugEnters + "  idx0=" + (palette.results.length > 0 ? "ok" : "-")
+                font.pixelSize: Theme.fontSizeSmall - 1
+                color: Theme.warning
             }
 
             StyledText {

@@ -15,4 +15,5 @@ InstallView 1.0 InstallView.qml
 FirmwareView 1.0 FirmwareView.qml
 LogView 1.0 LogView.qml
 CommandPalette 1.0 CommandPalette.qml
+HotkeyHint 1.0 HotkeyHint.qml
 AppDetailsDialog 1.0 AppDetailsDialog.qml

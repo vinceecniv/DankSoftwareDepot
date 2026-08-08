@@ -311,5 +311,6 @@
     "Type to search updates, installed software, the log and commands": "Skriv för att söka i uppdateringar, installerad programvara, loggen och kommandon",
     "Nothing matches \"%1\"": "Inget matchar \"%1\"",
     "Commands": "Kommandon",
-    "Search \"%1\" in Install": "Sök \"%1\" i Installera"
+    "Search \"%1\" in Install": "Sök \"%1\" i Installera",
+    "Search everything": "Sök i allt"
 }

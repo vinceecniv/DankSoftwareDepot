@@ -264,14 +264,18 @@ FloatingWindow {
         id: windowOverlayLayer
         anchors.fill: parent
         z: 150
-    }
 
-    CommandPalette {
-        id: palette
-        anchors.fill: parent
-        z: 200
-        results: win.paletteResults
-        onAccepted: index => win.runPaletteResult(index)
+        // Inside the overlay layer rather than beside it: the detail popups
+        // live here and their clicks have always worked, while an identically
+        // built palette one level up received no mouse events at all.
+        CommandPalette {
+            id: palette
+            anchors.fill: parent
+            z: 200
+            results: win.paletteResults
+            rebuilds: win.paletteRebuilds
+            onAccepted: index => win.runPaletteResult(index)
+        }
     }
 
     // ── About popup (info icon in the header) ───────────────────────────────
@@ -1163,7 +1167,10 @@ FloatingWindow {
     // Searches what the window already holds, so results appear as you type
     // with no process to wait for. Anything that would need a repository
     // search is handed to the Install tab rather than reimplemented here.
+    property int paletteRebuilds: 0
+
     readonly property var paletteResults: {
+        win.paletteRebuilds++;
         const query = palette.query.trim().toLowerCase();
         const out = [];
         const add = (group, icon, title, subtitle, colour, kind, payload) => {
@@ -1287,9 +1294,13 @@ FloatingWindow {
     }
 
     function runPaletteResult(index) {
+        console.log("[palette] runPaletteResult", index);
         const item = win.paletteResults[index];
-        if (!item)
+        if (!item) {
+            console.log("[palette] geen item op index", index);
             return;
+        }
+        console.log("[palette] soort:", item.kind);
         palette.visible = false;
         switch (item.kind) {
         case "check":
@@ -1493,6 +1504,17 @@ FloatingWindow {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.spacingXS
+
+                // Discoverable by looking: the palette's only permanent
+                // affordance, with the shortcut in its tooltip
+                DankActionButton {
+                    buttonSize: 36
+                    iconName: "search"
+                    iconSize: 20
+                    iconColor: Theme.surfaceText
+                    tooltipText: Tr.t("Search everything") + " · Ctrl+K"
+                    onClicked: palette.open()
+                }
 
                 DankActionButton {
                     id: windowRefreshButton
@@ -2225,6 +2247,7 @@ FloatingWindow {
             active: false
 
             sourceComponent: InstalledView {
+                onPaletteRequested: palette.open()
                 store: win.store
                 engine: win.engine
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
@@ -2243,6 +2266,7 @@ FloatingWindow {
             active: false
 
             sourceComponent: InstallView {
+                onPaletteRequested: palette.open()
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
                 refreshSerial: win.softwareSerial
                 overlayParent: windowOverlayLayer
@@ -2272,6 +2296,7 @@ FloatingWindow {
             active: false
 
             sourceComponent: LogView {
+                onPaletteRequested: palette.open()
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
             }
         }

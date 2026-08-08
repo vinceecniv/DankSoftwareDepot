@@ -311,5 +311,6 @@
     "Type to search updates, installed software, the log and commands": "Введите, чтобы искать обновления, установленные программы, журнал и команды",
     "Nothing matches \"%1\"": "Ничего не найдено по «%1»",
     "Commands": "Команды",
-    "Search \"%1\" in Install": "Искать «%1» в Установке"
+    "Search \"%1\" in Install": "Искать «%1» в Установке",
+    "Search everything": "Искать везде"
 }

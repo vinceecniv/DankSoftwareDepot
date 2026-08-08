@@ -43,6 +43,9 @@ Item {
         searchField.forceActiveFocus();
     }
 
+    // The command palette lives in the window; the views only ask
+    signal paletteRequested()
+
     function focusSearch() {
         searchField.forceActiveFocus();
     }
@@ -773,6 +776,14 @@ Item {
                 id: searchField
                 Layout.fillWidth: true
                 placeholderText: Tr.t("Search new software (%1 repos + Flathub)…").arg(Backend.systemRepoLabel)
+
+                HotkeyHint {
+                    anchors.right: parent.right
+                    anchors.rightMargin: Theme.spacingM
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: parent.text === ""
+                    onActivated: view.paletteRequested()
+                }
                 leftIconName: "search"
                 showClearButton: true
                 onTextChanged: view.searchText = text

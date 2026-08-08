@@ -311,5 +311,6 @@
     "Type to search updates, installed software, the log and commands": "Nhập để tìm trong bản cập nhật, phần mềm đã cài, nhật ký và lệnh",
     "Nothing matches \"%1\"": "Không có gì khớp \"%1\"",
     "Commands": "Lệnh",
-    "Search \"%1\" in Install": "Tìm \"%1\" trong Cài đặt"
+    "Search \"%1\" in Install": "Tìm \"%1\" trong Cài đặt",
+    "Search everything": "Tìm mọi thứ"
 }
