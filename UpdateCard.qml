@@ -116,19 +116,13 @@ Rectangle {
                 Layout.fillWidth: true
                 spacing: 2
 
-                RowLayout {
+                StyledText {
                     Layout.fillWidth: true
-                    spacing: Theme.spacingS
-
-                    StyledText {
-                        Layout.fillWidth: true
-                        text: card.prettyName
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: Font.Medium
-                        color: Theme.surfaceText
-                        elide: Text.ElideRight
-                    }
-
+                    text: card.prettyName
+                    font.pixelSize: Theme.fontSizeMedium
+                    font.weight: Font.Medium
+                    color: Theme.surfaceText
+                    elide: Text.ElideRight
                 }
 
                 StyledText {
