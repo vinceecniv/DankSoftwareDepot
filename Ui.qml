@@ -25,6 +25,13 @@ Item {
         return luminance > 0.179 ? Qt.rgba(0, 0, 0, 0.87) : "#FFFFFF";
     }
 
+    // Linear blend between two colours, for gradients that have to be built
+    // out of separate items rather than a single fill.
+    function mix(from, to, t) {
+        const k = Math.max(0, Math.min(1, t));
+        return Qt.rgba(from.r + (to.r - from.r) * k, from.g + (to.g - from.g) * k, from.b + (to.b - from.b) * k, from.a + (to.a - from.a) * k);
+    }
+
     // Search-field caret: hidden while the field is empty (focus is already
     // visible through the field border); once text is entered a normally
     // blinking caret appears. Custom cursorDelegates don't blink by

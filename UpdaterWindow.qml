@@ -3027,6 +3027,9 @@ FloatingWindow {
                                     // which a bitmap or a gradient could not
                                     bars: true,
                                     icon: "",
+                                    // Vito's own gradient, coral into violet
+                                    gradientFrom: "#FF6B5E",
+                                    gradientTo: "#7C3AED",
                                     accent: Theme.tertiary,
                                     url: "https://vito.talk"
                                 }
@@ -3086,11 +3089,15 @@ FloatingWindow {
 
                                             delegate: Rectangle {
                                                 required property int modelData
+                                                required property int index
 
                                                 width: 2.5
                                                 height: modelData
                                                 radius: 1.25
-                                                color: chipHover.hovered ? supportChip.modelData.accent : Theme.surfaceVariantText
+                                                // Five separate bars cannot share one fill, so each
+                                                // takes its own point along Vito's gradient — the
+                                                // blend reads across the mark as one sweep
+                                                color: chipHover.hovered ? Ui.mix(supportChip.modelData.gradientFrom, supportChip.modelData.gradientTo, index / 4) : Theme.surfaceVariantText
 
                                                 Behavior on color {
                                                     ColorAnimation {
