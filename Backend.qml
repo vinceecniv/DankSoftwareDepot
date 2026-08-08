@@ -39,10 +39,64 @@ Item {
     // The distro package providing what the helper imports, for the hint
     readonly property string packageHelperRequirement: backendId === "apt" ? "python3-apt" : (backendId === "pacman" ? "pyalpm" : "python3-libdnf5")
 
-    // Shell command that installs it, offered as copyable text (never run
-    // by the plugin: installing the package manager's own bindings through
-    // the package manager it cannot drive yet belongs in a terminal)
+    // The same install, shown as a command for anyone who would rather run
+    // it themselves
     readonly property string packageHelperInstallHint: backendId === "apt" ? "sudo apt install python3-apt" : (backendId === "pacman" ? "sudo pacman -S --needed pyalpm" : "sudo dnf install python3-libdnf5")
+
+    // Bootstrapping the bindings cannot go through the helper that needs
+    // them, so this one install runs the package manager's command line
+    // directly — the only place in the plugin that does.
+    readonly property var packageHelperInstallCommand: {
+        if (backendId === "apt")
+            return ["pkexec", "apt-get", "install", "-y", "python3-apt"];
+        if (backendId === "pacman")
+            return ["pkexec", "pacman", "-S", "--needed", "--noconfirm", "pyalpm"];
+        return ["pkexec", "dnf", "install", "-y", "python3-libdnf5"];
+    }
+
+    property bool packageHelperInstalling: false
+    // Why the last install attempt failed, "" when there was none
+    property string packageHelperInstallError: ""
+
+    function installPackageHelper() {
+        if (packageHelperInstalling)
+            return;
+        packageHelperInstallError = "";
+        packageHelperInstalling = true;
+        installProcess._output = "";
+        installProcess.command = packageHelperInstallCommand;
+        installProcess.running = true;
+    }
+
+    Process {
+        id: installProcess
+
+        property string _output: ""
+
+        stdout: SplitParser {
+            onRead: line => {
+                const trimmed = (line || "").trim();
+                if (trimmed !== "")
+                    installProcess._output = trimmed;
+            }
+        }
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const trimmed = (text || "").trim();
+                if (trimmed !== "")
+                    installProcess._output = trimmed;
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            backend.packageHelperInstalling = false;
+            if (exitCode !== 0)
+                backend.packageHelperInstallError = exitCode === 126 || exitCode === 127 ? Tr.t("the authorisation was refused") : (_output || Tr.t("the installation failed"));
+            // Either way the selftest, not the exit code, decides
+            backend.checkPackageHelper();
+        }
+    }
 
     function checkPackageHelper() {
         if (selftestProcess.running)

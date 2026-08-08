@@ -1387,30 +1387,33 @@ FloatingWindow {
 
                     StyledText {
                         Layout.fillWidth: true
-                        text: Tr.t("%1 is missing — system packages cannot be installed or updated until it is there.").arg(Backend.packageHelperRequirement)
+                        text: Backend.packageHelperInstalling ? Tr.t("Installing %1…").arg(Backend.packageHelperRequirement) : Tr.t("%1 is missing — system packages cannot be installed or updated until it is there.").arg(Backend.packageHelperRequirement)
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.surfaceText
                         wrapMode: Text.WordWrap
                     }
 
                     Item {
-                        implicitWidth: helperRetryButton.width
-                        implicitHeight: helperRetryButton.height
+                        visible: !Backend.packageHelperInstalling
+                        implicitWidth: helperInstallButton.width
+                        implicitHeight: helperInstallButton.height
 
                         DankButton {
-                            id: helperRetryButton
+                            id: helperInstallButton
                             buttonHeight: 28
                             horizontalPadding: Theme.spacingM
-                            iconName: "refresh"
+                            iconName: "download"
                             iconSize: 14
-                            text: Tr.t("Check again")
-                            backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
-                            textColor: Theme.buttonText
-                            onClicked: Backend.checkPackageHelper()
+                            text: Tr.t("Install")
+                            backgroundColor: Theme.primary
+                            textColor: Ui.onColor(Theme.primary)
+                            onClicked: Backend.installPackageHelper()
                         }
                     }
                 }
 
+                // The same install as a command, for anyone who would rather
+                // watch it happen in a terminal
                 Rectangle {
                     Layout.fillWidth: true
                     implicitHeight: helperHintText.implicitHeight + Theme.spacingS * 2
@@ -1427,6 +1430,17 @@ FloatingWindow {
                         color: Theme.surfaceText
                         wrapMode: Text.WrapAnywhere
                     }
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    visible: Backend.packageHelperInstallError !== ""
+                    text: Backend.packageHelperInstallError
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    color: Theme.error
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 3
+                    elide: Text.ElideRight
                 }
             }
         }

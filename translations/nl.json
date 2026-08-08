@@ -268,5 +268,7 @@
     "%1 is missing — system packages cannot be installed or updated until it is there.": "%1 ontbreekt — systeempakketten kunnen niet worden geïnstalleerd of bijgewerkt zolang het er niet is.",
     "Check again": "Opnieuw controleren",
     "Show details": "Toon details",
-    "Hide details": "Verberg details"
+    "Hide details": "Verberg details",
+    "Installing %1…": "%1 installeren…",
+    "the installation failed": "de installatie is mislukt"
 }

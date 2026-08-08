@@ -268,5 +268,7 @@
     "%1 is missing — system packages cannot be installed or updated until it is there.": "缺少 %1 — 在安装它之前无法安装或更新系统软件包。",
     "Check again": "重新检查",
     "Show details": "显示详情",
-    "Hide details": "隐藏详情"
+    "Hide details": "隐藏详情",
+    "Installing %1…": "正在安装 %1…",
+    "the installation failed": "安装失败"
 }

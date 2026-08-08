@@ -268,5 +268,7 @@
     "%1 is missing — system packages cannot be installed or updated until it is there.": "%1 fehlt — Systempakete können nicht installiert oder aktualisiert werden, solange es fehlt.",
     "Check again": "Erneut prüfen",
     "Show details": "Details anzeigen",
-    "Hide details": "Details ausblenden"
+    "Hide details": "Details ausblenden",
+    "Installing %1…": "%1 wird installiert…",
+    "the installation failed": "die Installation ist fehlgeschlagen"
 }

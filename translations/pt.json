@@ -268,5 +268,7 @@
     "%1 is missing — system packages cannot be installed or updated until it is there.": "Falta %1 — os pacotes do sistema não podem ser instalados nem atualizados enquanto ele não existir.",
     "Check again": "Verificar novamente",
     "Show details": "Mostrar detalhes",
-    "Hide details": "Ocultar detalhes"
+    "Hide details": "Ocultar detalhes",
+    "Installing %1…": "A instalar %1…",
+    "the installation failed": "a instalação falhou"
 }

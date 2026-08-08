@@ -268,5 +268,7 @@
     "%1 is missing — system packages cannot be installed or updated until it is there.": "%1 saknas — systempaket kan inte installeras eller uppdateras förrän det finns.",
     "Check again": "Kontrollera igen",
     "Show details": "Visa detaljer",
-    "Hide details": "Dölj detaljer"
+    "Hide details": "Dölj detaljer",
+    "Installing %1…": "Installerar %1…",
+    "the installation failed": "installationen misslyckades"
 }
