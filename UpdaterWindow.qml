@@ -1111,6 +1111,19 @@ FloatingWindow {
         return out;
     }
 
+    // Whether the footer has anything to offer. "Deferred" counts as busy:
+    // the click already committed a run and is waiting on the pre-run check,
+    // so the button flips to Cancel immediately. Between a finished run and
+    // its trailing check the stale list would re-offer Update All for a few
+    // seconds — that window is suppressed.
+    readonly property bool updateAllBusy: engine.running || engine.deferred
+    readonly property bool showUpdateAll: {
+        if (updateAllBusy)
+            return true;
+        const settling = engine.phase !== "idle" && SystemUpdateService.isChecking;
+        return effectiveCount > 0 && !settling;
+    }
+
     // Section headers carry the same iconography the rows use, so a group is
     // recognisable before its title is read. The run groups say what is
     // happening; the idle sections say what kind of software it is.
@@ -2782,9 +2795,16 @@ FloatingWindow {
         }
 
         // ── Footer buttons (standard DMS button styling) ────────────────────
+        // The whole row goes when it has nothing to offer, not just the
+        // button inside it: a layout skips invisible items, but a visible
+        // wrapper around a hidden button keeps reserving its height — which
+        // made the dashboard start scrolling a button's worth too early.
+        // The condition lives on the window because a child's `visible`
+        // follows its parent's, so a row that hid itself by reading the
+        // button could never come back.
         RowLayout {
             Layout.fillWidth: true
-            visible: tabs.currentIndex === 0
+            visible: tabs.currentIndex === 0 && win.showUpdateAll
             spacing: Theme.spacingM
 
             Item {
@@ -2798,15 +2818,8 @@ FloatingWindow {
                 DankButton {
                     id: windowUpdateAllButton
 
-                    // Deferred counts as busy: the click already committed a
-                    // run (waiting on the pre-run check), so flip to Cancel
-                    // immediately
-                    readonly property bool busyRun: win.engine.running || win.engine.deferred
-                    // Between a finished run and its trailing check the stale
-                    // list would re-offer "Update All" for a few seconds
-                    readonly property bool settling: win.engine.phase !== "idle" && !busyRun && SystemUpdateService.isChecking
+                    readonly property bool busyRun: win.updateAllBusy
 
-                    visible: busyRun || (win.effectiveCount > 0 && !settling)
                     text: busyRun ? Tr.t("Cancel") : (Tr.t("Update All") + ((win.widgetRoot && win.widgetRoot.updateSizeText !== "") ? " · " + win.widgetRoot.updateSizeText : ""))
                     iconName: busyRun ? "close" : "download"
                     backgroundColor: busyRun ? Theme.errorPressed : Theme.buttonBg
