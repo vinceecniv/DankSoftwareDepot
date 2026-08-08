@@ -59,13 +59,20 @@ YAML_CATALOG_GLOBS = (
 )
 
 
-def catalog_paths():
+def distro_catalog_paths():
+    """The distro's own AppStream catalog, without the flatpak remotes —
+    that is a separate source with its own lifecycle."""
     paths = []
     for pattern in XML_CATALOG_GLOBS:
         paths += glob.glob(pattern)
     if BACKEND == "apt":
         for pattern in YAML_CATALOG_GLOBS:
             paths += glob.glob(pattern)
+    return sorted(set(paths))
+
+
+def catalog_paths():
+    paths = distro_catalog_paths()
     for base in ("/var/lib/flatpak/appstream", os.path.expanduser("~/.local/share/flatpak/appstream")):
         paths += glob.glob(os.path.join(base, "*", "*", "active", "appstream.xml.gz"))
         paths += glob.glob(os.path.join(base, "*", "*", "active", "appstream.xml"))
@@ -1739,6 +1746,12 @@ def run_featured():
 
 
 def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "--catalog-status":
+        # Whether the distro's AppStream catalog is installed at all, asked
+        # through the same globs the enrichment uses so the answer can never
+        # drift from what the app actually reads
+        json.dump({"catalogs": len(distro_catalog_paths())}, sys.stdout)
+        return
     if len(sys.argv) >= 3 and sys.argv[1] == "--changelog":
         run_changelog(sys.argv[2])
         return

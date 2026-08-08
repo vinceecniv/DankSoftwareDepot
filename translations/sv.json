@@ -270,5 +270,6 @@
     "Show details": "Visa detaljer",
     "Hide details": "Dölj detaljer",
     "Installing %1…": "Installerar %1…",
-    "the installation failed": "installationen misslyckades"
+    "the installation failed": "installationen misslyckades",
+    "%1 is missing — app names, icons and release notes stay limited without it.": "%1 saknas — appnamn, ikoner och versionsinformation förblir begränsade utan det."
 }

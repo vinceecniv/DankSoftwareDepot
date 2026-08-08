@@ -39,32 +39,134 @@ Item {
     // The distro package providing what the helper imports, for the hint
     readonly property string packageHelperRequirement: backendId === "apt" ? "python3-apt" : (backendId === "pacman" ? "pyalpm" : "python3-libdnf5")
 
-    // The same install, shown as a command for anyone who would rather run
-    // it themselves
-    readonly property string packageHelperInstallHint: backendId === "apt" ? "sudo apt install python3-apt" : (backendId === "pacman" ? "sudo pacman -S --needed pyalpm" : "sudo dnf install python3-libdnf5")
-
-    // Bootstrapping the bindings cannot go through the helper that needs
-    // them, so this one install runs the package manager's command line
-    // directly — the only place in the plugin that does.
-    readonly property var packageHelperInstallCommand: {
-        if (backendId === "apt")
-            return ["pkexec", "apt-get", "install", "-y", "python3-apt"];
-        if (backendId === "pacman")
-            return ["pkexec", "pacman", "-S", "--needed", "--noconfirm", "pyalpm"];
-        return ["pkexec", "dnf", "install", "-y", "python3-libdnf5"];
+    function checkPackageHelper() {
+        if (selftestProcess.running)
+            return;
+        selftestProcess._reason = "";
+        selftestProcess.command = ["python3", packageHelper, "selftest"];
+        selftestProcess.running = true;
     }
 
-    property bool packageHelperInstalling: false
-    // Why the last install attempt failed, "" when there was none
-    property string packageHelperInstallError: ""
+    onBackendIdChanged: checkRequirements()
+    Component.onCompleted: checkRequirements()
 
-    function installPackageHelper() {
-        if (packageHelperInstalling)
+    function checkRequirements() {
+        checkPackageHelper();
+        checkAppstream();
+    }
+
+    Process {
+        id: selftestProcess
+
+        property string _reason: ""
+
+        stdout: SplitParser {
+            onRead: line => {
+                let event;
+                try {
+                    event = JSON.parse(line);
+                } catch (e) {
+                    return;
+                }
+                if (event.event === "error" && event.message)
+                    selftestProcess._reason = event.message;
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            backend.packageHelperStatus = exitCode === 0 ? "ok" : (_reason || Tr.t("the package helper could not start"));
+        }
+    }
+
+    // ── AppStream catalog ───────────────────────────────────────────────────
+    // Names, icons, screenshots and release notes for system packages all
+    // come from the distro's AppStream catalog, which is its own package and
+    // is missing often enough to be worth saying out loud. Unlike the
+    // bindings this only makes the app poorer, never broken — the list falls
+    // back to package summaries and the icons in the desktop entries.
+
+    // "" while unknown, "ok" or "missing"
+    property string appstreamStatus: ""
+    readonly property bool appstreamMissing: appstreamStatus === "missing"
+
+    readonly property string appstreamRequirement: backendId === "apt" ? "appstream" : (backendId === "pacman" ? "archlinux-appstream-data" : "appstream-data")
+
+    function checkAppstream() {
+        if (catalogStatusProcess.running)
             return;
-        packageHelperInstallError = "";
-        packageHelperInstalling = true;
+        catalogStatusProcess.command = ["python3", Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--catalog-status"];
+        catalogStatusProcess.running = true;
+    }
+
+    Process {
+        id: catalogStatusProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let count = -1;
+                try {
+                    count = (JSON.parse(text) || {}).catalogs;
+                } catch (e) {
+                }
+                // An unreadable answer is not evidence of a missing catalog
+                if (count >= 0)
+                    backend.appstreamStatus = count > 0 ? "ok" : "missing";
+            }
+        }
+    }
+
+    // ── Missing requirements ────────────────────────────────────────────────
+    // What the plugin needs from the distro and does not have. The window
+    // renders one row per entry; `blocking` separates "nothing works" from
+    // "less to show".
+    readonly property var missingRequirements: {
+        const missing = [];
+        if (packageHelperBroken)
+            missing.push({
+                id: "helper",
+                blocking: true,
+                package: packageHelperRequirement,
+                detail: packageHelperError
+            });
+        if (appstreamMissing)
+            missing.push({
+                id: "appstream",
+                blocking: false,
+                package: appstreamRequirement,
+                detail: ""
+            });
+        return missing;
+    }
+
+    // ── Installing a missing requirement ────────────────────────────────────
+    // Bootstrapping cannot go through the transaction helper — it may be the
+    // very thing that is missing — so these installs run the package
+    // manager's command line directly. The only place in the plugin that does.
+
+    function _installWords(pkg) {
+        if (backendId === "apt")
+            return ["apt-get", "install", "-y", pkg];
+        if (backendId === "pacman")
+            return ["pacman", "-S", "--needed", "--noconfirm", pkg];
+        return ["dnf", "install", "-y", pkg];
+    }
+
+    function installHintFor(pkg) {
+        return "sudo " + _installWords(pkg).join(" ");
+    }
+
+    // id of the requirement being installed, "" when idle
+    property string installingRequirement: ""
+    // Why the last install failed, "" when there was none
+    property string requirementInstallError: ""
+
+    function installRequirement(id, pkg) {
+        if (installingRequirement !== "")
+            return;
+        requirementInstallError = "";
+        installingRequirement = id;
         installProcess._output = "";
-        installProcess.command = packageHelperInstallCommand;
+        installProcess.command = ["pkexec"].concat(_installWords(pkg));
         installProcess.running = true;
     }
 
@@ -90,45 +192,15 @@ Item {
         }
 
         onExited: (exitCode, exitStatus) => {
-            backend.packageHelperInstalling = false;
+            const which = backend.installingRequirement;
+            backend.installingRequirement = "";
             if (exitCode !== 0)
-                backend.packageHelperInstallError = exitCode === 126 || exitCode === 127 ? Tr.t("the authorisation was refused") : (_output || Tr.t("the installation failed"));
-            // Either way the selftest, not the exit code, decides
-            backend.checkPackageHelper();
-        }
-    }
-
-    function checkPackageHelper() {
-        if (selftestProcess.running)
-            return;
-        selftestProcess._reason = "";
-        selftestProcess.command = ["python3", packageHelper, "selftest"];
-        selftestProcess.running = true;
-    }
-
-    onBackendIdChanged: checkPackageHelper()
-    Component.onCompleted: checkPackageHelper()
-
-    Process {
-        id: selftestProcess
-
-        property string _reason: ""
-
-        stdout: SplitParser {
-            onRead: line => {
-                let event;
-                try {
-                    event = JSON.parse(line);
-                } catch (e) {
-                    return;
-                }
-                if (event.event === "error" && event.message)
-                    selftestProcess._reason = event.message;
-            }
-        }
-
-        onExited: (exitCode, exitStatus) => {
-            backend.packageHelperStatus = exitCode === 0 ? "ok" : (_reason || Tr.t("the package helper could not start"));
+                backend.requirementInstallError = exitCode === 126 || exitCode === 127 ? Tr.t("the authorisation was refused") : (_output || Tr.t("the installation failed"));
+            // Either way the check, not the exit code, decides
+            if (which === "appstream")
+                backend.checkAppstream();
+            else
+                backend.checkPackageHelper();
         }
     }
 

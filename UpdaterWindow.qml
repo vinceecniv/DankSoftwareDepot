@@ -1353,21 +1353,25 @@ FloatingWindow {
             }
         }
 
-        // ── Package-helper missing ──────────────────────────────────────────
-        // Without the package manager's Python bindings no system package can
-        // be installed, updated or removed. Say so up front and name the fix,
-        // rather than letting every transaction fail with its own excuse.
+        // ── Missing requirements ────────────────────────────────────────────
+        // What the plugin needs from the distro and does not have, each with
+        // the package that fixes it. Two kinds live here: the package-manager
+        // bindings, without which no system package can be touched at all,
+        // and the AppStream catalog, without which apps merely look poorer.
+        // Both are separate distro packages that a default install can lack,
+        // and both used to be invisible.
         Rectangle {
             Layout.fillWidth: true
-            visible: Backend.packageHelperBroken
-            implicitHeight: helperMissingColumn.implicitHeight + Theme.spacingM * 2
+            visible: Backend.missingRequirements.length > 0
+            implicitHeight: requirementsColumn.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.error, 0.10)
+            readonly property color accent: Backend.missingRequirements.some(r => r.blocking) ? Theme.error : Theme.warning
+            color: Theme.withAlpha(accent, 0.10)
             border.width: 1
-            border.color: Theme.withAlpha(Theme.error, 0.30)
+            border.color: Theme.withAlpha(accent, 0.30)
 
             ColumnLayout {
-                id: helperMissingColumn
+                id: requirementsColumn
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
@@ -1375,67 +1379,89 @@ FloatingWindow {
                 anchors.rightMargin: Theme.spacingM
                 spacing: Theme.spacingS
 
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Theme.spacingM
+                Repeater {
+                    model: Backend.missingRequirements
 
-                    DankIcon {
-                        name: "error"
-                        size: 20
-                        color: Theme.error
-                    }
+                    delegate: ColumnLayout {
+                        id: requirementRow
 
-                    StyledText {
+                        required property var modelData
+
+                        readonly property bool installing: Backend.installingRequirement === modelData.id
+
                         Layout.fillWidth: true
-                        text: Backend.packageHelperInstalling ? Tr.t("Installing %1…").arg(Backend.packageHelperRequirement) : Tr.t("%1 is missing — system packages cannot be installed or updated until it is there.").arg(Backend.packageHelperRequirement)
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceText
-                        wrapMode: Text.WordWrap
-                    }
+                        spacing: Theme.spacingXS
 
-                    Item {
-                        visible: !Backend.packageHelperInstalling
-                        implicitWidth: helperInstallButton.width
-                        implicitHeight: helperInstallButton.height
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingM
 
-                        DankButton {
-                            id: helperInstallButton
-                            buttonHeight: 28
-                            horizontalPadding: Theme.spacingM
-                            iconName: "download"
-                            iconSize: 14
-                            text: Tr.t("Install")
-                            backgroundColor: Theme.primary
-                            textColor: Theme.primaryText
-                            onClicked: Backend.installPackageHelper()
+                            DankIcon {
+                                name: requirementRow.modelData.blocking ? "error" : "info"
+                                size: 20
+                                color: requirementRow.modelData.blocking ? Theme.error : Theme.warning
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: {
+                                    const pkg = requirementRow.modelData.package;
+                                    if (requirementRow.installing)
+                                        return Tr.t("Installing %1…").arg(pkg);
+                                    if (requirementRow.modelData.blocking)
+                                        return Tr.t("%1 is missing — system packages cannot be installed or updated until it is there.").arg(pkg);
+                                    return Tr.t("%1 is missing — app names, icons and release notes stay limited without it.").arg(pkg);
+                                }
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.surfaceText
+                                wrapMode: Text.WordWrap
+                            }
+
+                            Item {
+                                visible: Backend.installingRequirement === ""
+                                implicitWidth: requirementInstallButton.width
+                                implicitHeight: requirementInstallButton.height
+
+                                DankButton {
+                                    id: requirementInstallButton
+                                    buttonHeight: 28
+                                    horizontalPadding: Theme.spacingM
+                                    iconName: "download"
+                                    iconSize: 14
+                                    text: Tr.t("Install")
+                                    backgroundColor: requirementRow.modelData.blocking ? Theme.primary : Theme.withAlpha(Theme.buttonBg, 0.9)
+                                    textColor: requirementRow.modelData.blocking ? Theme.primaryText : Theme.buttonText
+                                    onClicked: Backend.installRequirement(requirementRow.modelData.id, requirementRow.modelData.package)
+                                }
+                            }
                         }
-                    }
-                }
 
-                // The same install as a command, for anyone who would rather
-                // watch it happen in a terminal
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: helperHintText.implicitHeight + Theme.spacingS * 2
-                    radius: Theme.cornerRadius / 2
-                    color: Theme.withAlpha(Theme.surfaceVariant, 0.6)
+                        // The same install as a command, for anyone who would
+                        // rather watch it happen in a terminal
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: requirementHint.implicitHeight + Theme.spacingS * 2
+                            radius: Theme.cornerRadius / 2
+                            color: Theme.withAlpha(Theme.surfaceVariant, 0.6)
 
-                    StyledText {
-                        id: helperHintText
-                        anchors.fill: parent
-                        anchors.margins: Theme.spacingS
-                        text: Backend.packageHelperInstallHint
-                        font.family: Theme.monoFontFamily
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceText
-                        wrapMode: Text.WrapAnywhere
+                            StyledText {
+                                id: requirementHint
+                                anchors.fill: parent
+                                anchors.margins: Theme.spacingS
+                                text: Backend.installHintFor(requirementRow.modelData.package)
+                                font.family: Theme.monoFontFamily
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.surfaceText
+                                wrapMode: Text.WrapAnywhere
+                            }
+                        }
                     }
                 }
 
                 StyledText {
                     Layout.fillWidth: true
-                    visible: Backend.packageHelperInstallError !== ""
-                    text: Backend.packageHelperInstallError
+                    visible: Backend.requirementInstallError !== ""
+                    text: Backend.requirementInstallError
                     font.pixelSize: Theme.fontSizeSmall - 1
                     color: Theme.error
                     wrapMode: Text.WordWrap

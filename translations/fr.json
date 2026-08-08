@@ -270,5 +270,6 @@
     "Show details": "Afficher les détails",
     "Hide details": "Masquer les détails",
     "Installing %1…": "Installation de %1…",
-    "the installation failed": "l'installation a échoué"
+    "the installation failed": "l'installation a échoué",
+    "%1 is missing — app names, icons and release notes stay limited without it.": "%1 est absent — les noms d'applications, les icônes et les notes de version resteront limités."
 }

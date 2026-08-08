@@ -11,9 +11,16 @@ in-app when the plugin offers its own update.
   first event — so an update run marked every system package as failed
   within seconds, for no stated reason. The helpers now report a missing
   binding through the event protocol, the plugin asks them at startup
-  (`selftest`) and shows a banner naming the package and the command that
-  installs it, and a run that cannot start says so once instead of
-  blaming each package.
+  (`selftest`) and shows a card naming the package, with a button that
+  installs it and the command for anyone who would rather do it in a
+  terminal. A run that cannot start says so once instead of blaming each
+  package.
+- The same card reports a **missing AppStream catalog**
+  (`appstream-data`, `appstream`, `archlinux-appstream-data`), which is
+  what gives system packages their real names, icons and release notes
+  and is just as easy to be without. That one is a note rather than an
+  error: the plugin falls back to package summaries and desktop-entry
+  icons, so apps still look like apps.
 - **The final DankMaterialShell pass stays inside its own scope.** That
   pass runs through the update daemon, whose upgrade command means
   "everything pending" — so after a failed system pass it quietly

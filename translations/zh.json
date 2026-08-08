@@ -270,5 +270,6 @@
     "Show details": "显示详情",
     "Hide details": "隐藏详情",
     "Installing %1…": "正在安装 %1…",
-    "the installation failed": "安装失败"
+    "the installation failed": "安装失败",
+    "%1 is missing — app names, icons and release notes stay limited without it.": "缺少 %1 — 没有它，应用名称、图标和更新说明都会受限。"
 }
