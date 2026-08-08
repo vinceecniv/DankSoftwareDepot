@@ -922,6 +922,9 @@ PluginComponent {
 
             DankIcon {
                 id: hPillIcon
+                // Spins during a check: distance-field rendering survives
+                // rotation, the default pixel-grid hinting does not
+                smoothTransform: true
                 name: root._pillIcon
                 color: root._pillColor
                 size: root.iconSize
@@ -957,6 +960,9 @@ PluginComponent {
 
             DankIcon {
                 id: vPillIcon
+                // Spins during a check: distance-field rendering survives
+                // rotation, the default pixel-grid hinting does not
+                smoothTransform: true
                 name: root._pillIcon
                 color: root._pillColor
                 size: root.iconSize
@@ -1364,6 +1370,8 @@ PluginComponent {
 
                         DankIcon {
                             id: popoutEmptyIcon
+                            // Spins during a check — see hPillIcon
+                            smoothTransform: true
                             anchors.centerIn: parent
                             visible: !popoutLogoImage.visible
                             name: (SystemUpdateService.isChecking || emptyStateArea.containsMouse) ? "refresh" : "task_alt"

@@ -2451,6 +2451,12 @@ FloatingWindow {
                                         return SystemUpdateService.hasError ? "error" : "task_alt";
                                     }
                                     size: 40
+                                    // This one spins. DankIcon draws glyphs with
+                                    // native hinting by default, which snaps them
+                                    // to the pixel grid — fine standing still,
+                                    // ragged once rotated. smoothTransform swaps
+                                    // in distance-field rendering, which turns.
+                                    smoothTransform: true
                                     color: {
                                         if (Theme.isLightMode)
                                             return "white";
