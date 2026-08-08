@@ -274,5 +274,6 @@
     "%1 is missing — app names, icons and release notes stay limited without it.": "%1 saknas — appnamn, ikoner och versionsinformation förblir begränsade utan det.",
     "In progress": "Pågår",
     "Waiting": "Väntar",
-    "Completed": "Klart"
+    "Completed": "Klart",
+    "View in log": "Visa i loggen"
 }

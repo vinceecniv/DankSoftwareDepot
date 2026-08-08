@@ -274,5 +274,6 @@
     "%1 is missing — app names, icons and release notes stay limited without it.": "Brakuje %1 — bez tego nazwy aplikacji, ikony i informacje o wydaniu pozostaną ograniczone.",
     "In progress": "W toku",
     "Waiting": "Oczekujące",
-    "Completed": "Ukończone"
+    "Completed": "Ukończone",
+    "View in log": "Pokaż w dzienniku"
 }

@@ -274,5 +274,6 @@
     "%1 is missing — app names, icons and release notes stay limited without it.": "%1 fehlt — App-Namen, Symbole und Versionshinweise bleiben ohne dieses Paket eingeschränkt.",
     "In progress": "In Arbeit",
     "Waiting": "Wartend",
-    "Completed": "Abgeschlossen"
+    "Completed": "Abgeschlossen",
+    "View in log": "Im Protokoll ansehen"
 }

@@ -274,5 +274,6 @@
     "%1 is missing — app names, icons and release notes stay limited without it.": "%1 ontbreekt — app-namen, iconen en release notes blijven zonder dit beperkt.",
     "In progress": "Nu bezig",
     "Waiting": "Wachtend",
-    "Completed": "Voltooid"
+    "Completed": "Voltooid",
+    "View in log": "Bekijk in logboek"
 }

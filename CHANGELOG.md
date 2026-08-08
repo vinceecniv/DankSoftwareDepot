@@ -31,6 +31,14 @@ in-app when the plugin offers its own update.
 - Failed rows carry the tool's own words. The card shows the short
   reason and offers **Show details** for the verbatim output; the action
   log keeps both, so a failure can still be reported after the fact.
+- **A failure outlives the run panel.** A package that failed is still a
+  pending update, so it comes back in the list — and now it brings its
+  reason with it, restored after the shell reload that a DankMaterialShell
+  pass causes. The verdict is dropped as soon as the package stops being
+  pending, so a stale failure can never haunt a package that has since
+  been updated. The result panel also links straight to its own entry in
+  the log, and its "%1 updated · %2 failed" summary now actually appears
+  after a failed run — it was written for a phase that run never reaches.
 - The action log is reconciled with the system: a package that failed
   before the shell pass but did arrive is recorded as updated, and a run
   torn down by a shell reload no longer leaves a stray "0 packages

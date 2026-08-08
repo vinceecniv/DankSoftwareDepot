@@ -17,6 +17,20 @@ Item {
         searchField.forceActiveFocus();
     }
 
+    // Open the newest entry, for the jump from a finished run: the thing you
+    // came to read should already be open when you arrive.
+    function expandNewest() {
+        const entries = (logger && logger.entries) || [];
+        if (entries.length === 0)
+            return;
+        const newest = entries[entries.length - 1];
+        const updated = Object.assign({}, expandedKeys);
+        updated[String(newest.ts) + "/" + (newest.type || "")] = true;
+        expandedKeys = updated;
+        searchText = "";
+        logList.positionViewAtBeginning();
+    }
+
     function iconFor(type) {
         switch (type) {
         case "install":

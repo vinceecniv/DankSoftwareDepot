@@ -428,9 +428,92 @@ PluginComponent {
             _stashShellRunLog(shellPkgs, doneItems);
     }
 
+    // ── Failure reasons outlive the run panel ───────────────────────────────
+    // A package that failed is still a pending update, so it comes back in
+    // the list — but the reason lived only in the engine, which the shell
+    // reload after a dms pass throws away. Exactly the runs where knowing
+    // why matters most. Persist the failures and hand them back to the
+    // engine at the next start, so the card keeps carrying its own story.
+    function _saveFailures() {
+        const failures = [];
+        for (const ri of engine.runItems || []) {
+            const state = engine.itemStates[ri.key] || {};
+            if (state.status !== "error")
+                continue;
+            failures.push({
+                key: ri.key,
+                name: ri.pkg.name || "",
+                detail: state.detail || "",
+                error: engine.runErrorDetails[ri.key] || ""
+            });
+        }
+        PluginService.savePluginData("dankSoftwareDepot", "lastRunFailures", failures.length > 0 ? {
+            ts: Math.floor(Date.now() / 1000),
+            items: failures
+        } : {});
+    }
+
+    property bool _restoredFailures: false
+    // Keys restored from a previous run — pruned once the package stops
+    // being a pending update, never touched while a run is live
+    property var _restoredKeys: []
+
+    function _restoreFailures() {
+        if (_restoredFailures || Object.keys(pluginData || {}).length === 0)
+            return;
+        _restoredFailures = true;
+        const saved = pluginData.lastRunFailures;
+        const items = (saved && saved.items) || [];
+        if (items.length === 0)
+            return;
+        const states = Object.assign({}, engine.itemStates);
+        const details = Object.assign({}, engine.runErrorDetails);
+        const keys = [];
+        for (const item of items) {
+            states[item.key] = {
+                status: "error",
+                fraction: 0,
+                detail: item.detail || ""
+            };
+            if (item.error)
+                details[item.key] = item.error;
+            keys.push(item.key);
+        }
+        engine.itemStates = states;
+        engine.runErrorDetails = details;
+        _restoredKeys = keys;
+    }
+
+    // A restored failure is only true until the package is updated by
+    // something else; once it is no longer pending, drop the verdict.
+    function _pruneRestoredFailures() {
+        if (_restoredKeys.length === 0 || engine.running || !_serviceHasState)
+            return;
+        const pending = new Set((pendingUpdates || []).map(pkg => store.keyFor(pkg)));
+        // Only system and flatpak keys are answerable from this list;
+        // firmware and AppImages have their own sources
+        const stale = _restoredKeys.filter(key => (key.startsWith("system/") || key.startsWith("flatpak/")) && !pending.has(key));
+        if (stale.length === 0)
+            return;
+        const states = Object.assign({}, engine.itemStates);
+        const details = Object.assign({}, engine.runErrorDetails);
+        for (const key of stale) {
+            delete states[key];
+            delete details[key];
+        }
+        engine.itemStates = states;
+        engine.runErrorDetails = details;
+        _restoredKeys = _restoredKeys.filter(key => pending.has(key));
+        if (_restoredKeys.length === 0)
+            PluginService.savePluginData("dankSoftwareDepot", "lastRunFailures", {});
+    }
+
     property bool _replayedPendingLog: false
 
-    onPluginDataChanged: _replayPendingRunLog()
+    onPluginDataChanged: {
+        _replayPendingRunLog();
+        _restoreFailures();
+    }
 
     function _replayPendingRunLog() {
         // An empty object means the host hasn't delivered the settings yet
@@ -554,14 +637,17 @@ PluginComponent {
         appimageUpdates: root.appimageUpdates
 
         // The dms pass is about to reload the shell — stash the log entry
-        // it would otherwise swallow
+        // and the failure reasons it would otherwise swallow
         onPhaseChanged: {
-            if (phase === "dms")
+            if (phase === "dms") {
                 root._stashFromEngine();
+                root._saveFailures();
+            }
         }
 
         onFinished: ok => {
             root.confirmArmed = false;
+            root._saveFailures();
             root._logRun();
             eolProcess.running = true;
             if (engine.completedCount > 0) {
@@ -665,6 +751,7 @@ PluginComponent {
             store.refresh(pendingUpdates);
             _reconcileSnapshot();
         }
+        _pruneRestoredFailures();
     }
 
     // A restored snapshot can contain updates installed in the last moments

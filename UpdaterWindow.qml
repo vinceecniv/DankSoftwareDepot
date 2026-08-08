@@ -894,6 +894,16 @@ FloatingWindow {
         focusCurrentTab();
     }
 
+    // Jump from a finished run to its own entry in the log, where the full
+    // per-package detail and the tools' own words live.
+    function openLatestLogEntry() {
+        openTab(4);
+        Qt.callLater(() => {
+            if (logLoader.item)
+                logLoader.item.expandNewest();
+        });
+    }
+
     // Move keyboard focus into the freshly shown tab; tabs with a search
     // field get input focus on that field directly.
     function focusCurrentTab() {
@@ -2026,12 +2036,29 @@ FloatingWindow {
                         elide: Text.ElideRight
                     }
 
+                    // A run that ends with failures ends in the "failed"
+                    // phase, so this summary has to cover that phase too —
+                    // its failure half used to be unreachable
                     StyledText {
-                        visible: !win.engine.running && win.engine.phase === "done"
+                        visible: !win.engine.running && (win.engine.phase === "done" || win.engine.phase === "failed")
                         text: Tr.t("%1 updated").arg(win.engine.completedCount) + (win.engine.failedCount > 0 ? " · " + Tr.t("%1 failed").arg(win.engine.failedCount) : "")
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.Medium
                         color: win.engine.failedCount > 0 ? Ui.failColor : Theme.success
+                    }
+
+                    // Whatever happens to this panel — dismissed, or swept
+                    // away by the shell reloading — the log keeps the run
+                    DankButton {
+                        visible: !win.engine.running && win.engine.phase !== "idle" && win.engine.failedCount > 0
+                        buttonHeight: 26
+                        horizontalPadding: Theme.spacingM
+                        iconName: "history"
+                        iconSize: 14
+                        text: Tr.t("View in log")
+                        backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                        textColor: Theme.buttonText
+                        onClicked: win.openLatestLogEntry()
                     }
 
                     DankActionButton {

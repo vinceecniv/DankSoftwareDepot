@@ -274,5 +274,6 @@
     "%1 is missing — app names, icons and release notes stay limited without it.": "缺少 %1 — 没有它，应用名称、图标和更新说明都会受限。",
     "In progress": "进行中",
     "Waiting": "等待中",
-    "Completed": "已完成"
+    "Completed": "已完成",
+    "View in log": "在日志中查看"
 }
