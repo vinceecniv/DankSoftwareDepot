@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Window
 import Quickshell
 import Quickshell.Io
 import qs.Common
@@ -11,6 +12,14 @@ import qs.Widgets
 // toplevel window, independent of the bar popout.
 FloatingWindow {
     id: win
+
+    // Whether the window has keyboard focus. FloatingWindow has no `active`
+    // of its own, but the attached property works on any item inside it.
+    readonly property bool focused: focusProbe.Window.active === true
+
+    Item {
+        id: focusProbe
+    }
 
     required property var store
     required property var engine
@@ -902,7 +911,7 @@ FloatingWindow {
     // to the Updates tab after a few minutes.
     Timer {
         interval: 3 * 60 * 1000
-        running: win.visible && win.active === false
+        running: win.visible && !win.focused
         onTriggered: tabs.currentIndex = 0
     }
 
@@ -920,6 +929,51 @@ FloatingWindow {
     onFirmwareEnabledChanged: {
         if (!firmwareEnabled && tabs.currentIndex >= tabIds.length)
             tabs.currentIndex = 0;
+    }
+
+    // Opening an app that is already open should bring it to you, not appear
+    // to do nothing because the window sits behind three others. A Wayland
+    // window cannot raise itself and the window API has no call for it, so
+    // the compositor is asked instead; where we cannot ask, the surface is
+    // re-mapped, which every compositor treats as a window that just opened.
+    function activate() {
+        if (!visible) {
+            visible = true;
+            return;
+        }
+        if (minimized)
+            minimized = false;
+        if (focused)
+            return;
+        if (CompositorService.isNiri) {
+            const match = (NiriService.windows || []).find(w => w.title === win.title);
+            if (match) {
+                NiriService.focusWindow(match.id);
+                return;
+            }
+        }
+        if (CompositorService.isHyprland) {
+            Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow", "title:^" + win.title + "$"]);
+            return;
+        }
+        visible = false;
+        Qt.callLater(() => win.visible = true);
+    }
+
+    // The loaded view behind a tab id, for the handful of places that drive a
+    // tab from outside it
+    function tabView(id) {
+        switch (id) {
+        case 1:
+            return installedLoader.item;
+        case 2:
+            return installLoader.item;
+        case 3:
+            return firmwareLoader.item;
+        case 4:
+            return logLoader.item;
+        }
+        return null;
     }
 
     function openTab(id) {

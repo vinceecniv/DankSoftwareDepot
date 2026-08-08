@@ -851,6 +851,7 @@ PluginComponent {
         function open(): void {
             // Always land on the Updates tab — also when the window was
             // already open on another tab (notification click)
+            updaterWindow.activate();
             updaterWindow.openTab(0);
         }
 
@@ -863,6 +864,7 @@ PluginComponent {
         }
 
         function tab(index: int): void {
+            updaterWindow.activate();
             updaterWindow.openTab(index);
         }
 
