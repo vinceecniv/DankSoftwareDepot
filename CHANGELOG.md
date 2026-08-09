@@ -3,6 +3,17 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.6.6 — 2026-08-09
+
+- Updates from Copr repositories no longer fail with a silent
+  "nothing to do": the update check refreshes repository metadata, but
+  the transaction resolved against the cached view — up to 48 hours old
+  for Coprs — so a freshly offered build could be invisible to the very
+  run that was supposed to install it. The rpm helper now refreshes
+  metadata before every transaction, the same way the check does.
+- A run that genuinely resolves to nothing is reported as such per
+  package, instead of as "the package helper could not start".
+
 ## 0.6.5 — 2026-08-08
 
 - **Software sources, as a panel rather than as a wiki page.** The Install
