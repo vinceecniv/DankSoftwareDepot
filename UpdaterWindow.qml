@@ -2364,38 +2364,49 @@ FloatingWindow {
 
             // The shared tab bar does carry a state layer, but at surfaceTint
             // 0.08 it is invisible against this window. Draw a clearer one on
-            // top: a HoverHandler never swallows clicks, so the bar keeps
-            // handling those itself.
-            Repeater {
-                model: tabs.model.length
+            // top. One bar-wide HoverHandler drives a single sliding
+            // highlight: per-tab handlers latched their hovered state when
+            // the pointer left along certain paths, leaving every visited
+            // tab lit. A HoverHandler never swallows clicks, so the bar
+            // keeps handling those itself.
+            HoverHandler {
+                id: tabsHoverHandler
+            }
 
-                Rectangle {
-                    id: tabHover
+            Rectangle {
+                id: tabHoverOverlay
 
-                    required property int index
-                    readonly property int tabCount: Math.max(1, tabs.model.length)
-                    readonly property real tabWidth: (tabs.width - tabs.spacing * Math.max(0, tabCount - 1)) / tabCount
+                readonly property int tabCount: Math.max(1, tabs.model.length)
+                readonly property real tabWidth: (tabs.width - tabs.spacing * Math.max(0, tabCount - 1)) / tabCount
+                // Follow the pointer only while hovered, so the highlight
+                // fades out in place instead of jumping to the first tab
+                property int hoverIndex: 0
+                readonly property real pointerX: tabsHoverHandler.point.position.x
 
-                    x: index * (tabWidth + tabs.spacing)
-                    y: 0
-                    width: tabWidth
-                    height: tabs.tabHeight
-                    radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.primary, 0.14)
-                    // Fades, never hides: an invisible item receives no hover
-                    // events, so `visible: opacity > 0` would latch it off
-                    // forever. A fully transparent item still gets them.
-                    opacity: hoverHandler.hovered ? 1 : 0
+                onPointerXChanged: {
+                    if (tabsHoverHandler.hovered)
+                        hoverIndex = Math.max(0, Math.min(tabCount - 1, Math.floor(pointerX / (tabWidth + tabs.spacing))));
+                }
 
-                    HoverHandler {
-                        id: hoverHandler
+                x: hoverIndex * (tabWidth + tabs.spacing)
+                y: 0
+                width: tabWidth
+                height: tabs.tabHeight
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.primary, 0.14)
+                opacity: tabsHoverHandler.hovered ? 1 : 0
+
+                Behavior on x {
+                    NumberAnimation {
+                        duration: Theme.shortDuration
+                        easing.type: Theme.standardEasing
                     }
+                }
 
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: Theme.shortDuration
-                            easing.type: Theme.standardEasing
-                        }
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Theme.shortDuration
+                        easing.type: Theme.standardEasing
                     }
                 }
             }
