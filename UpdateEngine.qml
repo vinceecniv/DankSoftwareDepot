@@ -796,6 +796,14 @@ Item {
                 _setError(key, event.message || Tr.t("failed"), event.message || "");
             break;
         }
+        case "done": {
+            // A nothing-to-do ending means the helper ran fine but resolved
+            // no work — that must not read as "could not start"; the
+            // per-package verification supplies the honest per-row outcome.
+            if (event.nothingToDo === true)
+                _helperSawPlan = true;
+            break;
+        }
         case "error": {
             _helperError = event.message || "";
             break;

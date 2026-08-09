@@ -207,6 +207,16 @@ def run(action, specs, dry_run=False):
             base.get_config().get_cacheonly_option().set("all")
         except Exception:
             pass
+    else:
+        # Force a metadata refresh (dnf5 --refresh equivalent): the update
+        # was discovered by the daemon's refreshed check, but this cache
+        # follows metadata_expire — 48h for Coprs — and a transaction
+        # against the stale view ends in a silent "nothing to do" (a Copr
+        # build the daemon offered simply doesn't exist here yet).
+        try:
+            base.get_config().get_metadata_expire_option().set("0")
+        except Exception:
+            pass
     base.setup()
 
     downloads = DownloadProgress()
