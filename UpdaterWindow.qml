@@ -2589,6 +2589,18 @@ FloatingWindow {
             Component.onCompleted: Ui.softenScrollbar(cardsList)
             header: win.dashboardMode ? dashboardHeaderComponent : null
 
+            // A starting run regroups the list with the in-progress work on
+            // top — jump there, or a user who had scrolled down watches
+            // nothing happen
+            Connections {
+                target: win.engine
+
+                function onRunningChanged() {
+                    if (win.engine.running)
+                        cardsList.positionViewAtBeginning();
+                }
+            }
+
             // The dashboard header makes originY negative, and DankListView's
             // wheel handler floors its scroll limit at 0 instead of the true
             // bottom edge — letting the dashboard be wheeled into empty space
