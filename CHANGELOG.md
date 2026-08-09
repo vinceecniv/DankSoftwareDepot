@@ -3,6 +3,13 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.6.7 — 2026-08-09
+
+- Tab hover is one sliding highlight that follows the pointer and fades
+  where it is — visited tabs no longer keep a leftover glow
+- When an update run starts, the list jumps to the top where the
+  in-progress group is, also for a user who had scrolled down
+
 ## 0.6.6 — 2026-08-09
 
 - Updates from Copr repositories no longer fail with a silent
