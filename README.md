@@ -233,7 +233,9 @@ minimal markup subset before rendering.
 
 ## Development
 
-This plugin is developed with [Claude Code](https://claude.com/claude-code).
+This plugin is developed with [Claude Code](https://claude.com/claude-code)
+and built with [Vito](https://vito.talk) — voice-driven development
+([GitHub](https://github.com/vinceecniv/Vito)).
 
 ## License
 
