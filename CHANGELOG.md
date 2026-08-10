@@ -3,6 +3,49 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.7.7 — 2026-08-10
+
+- **Double-click an AppImage and it opens here.** On by default, so a
+  downloaded AppImage lands in this window instead of nowhere — a fresh
+  download is not
+  executable, so double-clicking it normally does nothing at all. The
+  image is read before anything is offered, from a temporary copy so
+  your file is left exactly as it was, and the question matches what it
+  turns out to be: install this, or replace the build you already have.
+  Which one it is comes from the name inside the image rather than the
+  file name, because a download is called `Foo-1.2.3-x86_64.AppImage`
+  and the app is called Foo. Installing from a file or URL and this both
+  use the same dialog now, instead of a row wedged into the toolbar and
+  a card above the results. The association is claimed once and only
+  when `.appimage` is going spare — another app already holding it was
+  somebody's choice and is left alone — and *Open .appimage files with
+  this app* in settings takes it back or hands it over at any time.
+- **The launcher entry did nothing when you clicked it.** It called
+  `dms` by name, and a launcher hands a program the session's `PATH`,
+  not the wider one a terminal builds — and `dms ipc` needs `qs` on it
+  as well. Worse, `dms ipc call` exits successfully even when it reached
+  nobody, so nothing anywhere said so. The entry now runs a small shim
+  that looks in the usual places, treats any answer as the failure it
+  is, and puts the reason in a notification. An entry from an older
+  version is rewritten by itself the next time the window opens; there
+  is nothing to redo by hand.
+- **A package that finished installing said so at once, with all the
+  others.** Each package reports its own completion and that was thrown
+  away, so a run of two hundred kept every row under "In progress" with
+  its progress bar full until the verification pass at the end moved
+  them all together. Rows now move to Completed when their own install
+  finishes, and the verification still has the last word.
+- **The date beside a release heading was barely readable in dark
+  mode.** The update banner rendered its headings once and baked that
+  moment's colours into them, while the text around them kept following
+  the theme — so switching to dark left the date a light-mode grey on a
+  dark card. The notes are derived now, and follow the theme like
+  everything else.
+- **A check pulses around the logo instead of spinning over it.** The
+  Dank penguin used to be replaced by a rotating arrow for the seconds
+  you were most likely looking at it. It stays, and the two rings from
+  the shell's own System Check page pulse around it.
+
 ## 0.7.6 — 2026-08-10
 
 - **Packages built from git now have release notes too.** A package from
