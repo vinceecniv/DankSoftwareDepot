@@ -3,6 +3,33 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.7.6 — 2026-08-10
+
+- **Packages built from git now have release notes too.** A package from
+  a `*-git` Copr, or an AUR `-git` build, carries a commit count and a
+  short hash where a release number would be — so AppStream has no
+  release to describe and the rpm changelog records only the rebuild.
+  The details popup was emptiest for exactly the packages that change
+  most. It now asks the upstream repository, which the package itself
+  names in its URL field. Updating to a tagged release shows that
+  release's published notes, plus any release skipped on the way there
+  if the version being replaced was a release as well. Updating from one
+  build of a branch to another shows the commits in between instead,
+  newest first, without the merge commits that name the same changes
+  twice. There is a line to the release or comparison page for the rest.
+- **What upstream wrote is still not allowed to be markup.** Release
+  bodies go through the same reduction as AppStream notes and a little
+  further: embedded HTML is dropped rather than displayed as its own
+  source, tables are left out where there is one column to draw them in,
+  GitHub's `> [!NOTE]` is named instead of quoted, and links keep their
+  words and lose their target. Notes running to several screens are cut
+  at a block boundary, never mid-sentence.
+- **A package that is not built from git never reaches the network.**
+  The version decides that before any request is made, so this costs
+  nothing on ordinary updates. Answers are kept for a day; a failed
+  lookup is not kept, because a moment without network should not mean a
+  day without notes.
+
 ## 0.7.5 — 2026-08-10
 
 - **Copr is searchable from the Install tab.** A package built in Copr is
