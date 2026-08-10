@@ -3,6 +3,36 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.6.8 — 2026-08-10
+
+- **"python3-libdnf5 is missing" was sometimes simply wrong** (#3). On a
+  Fedora 44 machine where the package was installed, every system update
+  failed on a binding the app said was absent. The helpers are started as
+  `python3 <script>`, which is whatever PATH means in the shell's process
+  — a pyenv shim, a uv or conda environment, an activated virtualenv —
+  and the bindings are installed into the system interpreter and nowhere
+  else. A helper that cannot import its binding now hands the command to
+  a system interpreter that can, outside that environment. All five
+  bindings are covered: libdnf5, python-apt, pyalpm, PyGObject and
+  PyYAML.
+- **A Flatpak run could die before its first word.** PyGObject's import
+  in the flatpak helper was not guarded at all, so on a wrong interpreter
+  the process ended before any event: the run reported that everything
+  failed and could say nothing about why. On every distribution, not only
+  on Fedora.
+- **A failure that is counted is now a failure that is shown** (#2). A
+  Flatpak transaction touches refs the pending list never mentioned —
+  extensions, themes, drivers, runtimes pulled along. When one of those
+  failed, the counter went up and the reason was dropped for want of a
+  row, so a run could end in "1 failed" with every line it showed in
+  green and nothing to read anywhere. Such a failure now gets a row, with
+  the ref's name and the transaction's own words. The same hole is closed
+  where a whole installation's transaction fails, where the helper exits
+  non-zero, and where a system dependency the resolver pulled in fails.
+- When a binding still cannot be loaded, the card names the interpreter
+  that could not load it and no longer asserts that the package is
+  missing — a diagnosis that cannot be contradicted is worse than none.
+
 ## 0.6.7 — 2026-08-09
 
 - Tab hover is one sliding highlight that follows the pointer and fades
