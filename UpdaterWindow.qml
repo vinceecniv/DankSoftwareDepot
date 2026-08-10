@@ -89,6 +89,50 @@ FloatingWindow {
         });
     }
 
+    // Opened from a name in the log. It shows what is known about the package
+    // and its changelog; the actions belong to the tabs that own the package,
+    // not to a record of something that already happened.
+    AppDetailsDialog {
+        id: logDialog
+
+        property string base: ""
+        property bool isRpm: false
+
+        releasesTitle: Tr.t("What's new")
+        changelogLoading: isRpm && win.store.changelogs[base] === undefined
+        changelog: isRpm ? (win.store.changelogs[base] || "") : ""
+    }
+
+    function openLogPackageDetails(item) {
+        // Older entries carry only the name, which for a system package is
+        // the package name anyway
+        const id = item.id || item.name || "";
+        if (id === "")
+            return;
+        const isFlatpak = (item.repo || "") === "flatpak" || (item.source || "") === "Flatpak";
+        const isRpm = !isFlatpak && (item.repo || "") !== "appimage" && (item.repo || "") !== "firmware";
+        const base = win.store.stripArch(id);
+        logDialog.base = base;
+        logDialog.isRpm = isRpm;
+        if (isRpm)
+            win.store.fetchChangelog(base);
+        const info = win.store.infoFor({
+            name: id,
+            repo: isFlatpak ? "flatpak" : (item.repo || "system")
+        });
+        logDialog.open({
+            id: id,
+            name: item.name || id,
+            summary: (info && info.summary) || "",
+            iconPath: (info && info.icon) || "",
+            homepage: (info && info.homepage) || "",
+            versionLabel: (item.from && item.to) ? (item.from + " → " + item.to) : (item.to || item.from || ""),
+            origin: item.source || "",
+            isFlatpak: isFlatpak,
+            sources: []
+        });
+    }
+
     AppDetailsDialog {
         id: updatesDialog
 
@@ -2513,6 +2557,7 @@ FloatingWindow {
 
             sourceComponent: LogView {
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
+                onPackageActivated: item => win.openLogPackageDetails(item)
             }
         }
 

@@ -21,6 +21,11 @@ Item {
         searchField.forceActiveFocus();
     }
 
+    // A package name in the log leads to the same details popup the tabs use:
+    // the log is where you notice a version you did not expect, and reading
+    // its changelog should not mean finding the package again by hand.
+    signal packageActivated(var item)
+
     function focusSearch() {
         searchField.forceActiveFocus();
     }
@@ -436,11 +441,32 @@ Item {
                                     }
 
                                     StyledText {
+                                        // Entries written before the log kept
+                                        // ids have only a display name. A name
+                                        // without spaces is a package name in
+                                        // practice, so those still lead
+                                        // somewhere; "GNU Image Manipulation
+                                        // Program" would lead nowhere and stays
+                                        // plain text.
+                                        readonly property bool linkable: (itemRow.modelData.id || "") !== "" || /^\S{2,}$/.test(itemRow.modelData.name || "")
+
                                         text: itemRow.modelData.name || ""
                                         font.pixelSize: Theme.fontSizeSmall
-                                        color: Theme.surfaceText
+                                        wrapMode: Text.NoWrap
+                                        font.underline: linkable && nameArea.containsMouse
+                                        color: linkable && nameArea.containsMouse ? Theme.primary : Theme.surfaceText
                                         elide: Text.ElideRight
                                         Layout.maximumWidth: 260
+
+                                        MouseArea {
+                                            id: nameArea
+                                            anchors.fill: parent
+                                            anchors.margins: -2
+                                            enabled: parent.linkable
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: view.packageActivated(itemRow.modelData)
+                                        }
                                     }
 
                                     StyledText {
@@ -452,8 +478,17 @@ Item {
                                         }
                                         font.pixelSize: Theme.fontSizeSmall
                                         color: Theme.surfaceVariantText
+                                        // StyledText wraps by default, so a
+                                        // long version broke at the arrow while
+                                        // the row still had room to its right.
+                                        // fillWidth capped at the natural width
+                                        // means: take what you need and no
+                                        // more, and shorten only when the row
+                                        // really is too narrow.
+                                        wrapMode: Text.NoWrap
                                         elide: Text.ElideMiddle
-                                        Layout.maximumWidth: 240
+                                        Layout.fillWidth: true
+                                        Layout.maximumWidth: implicitWidth
                                     }
 
                                     StyledText {
@@ -461,6 +496,7 @@ Item {
                                         text: "· " + (itemRow.modelData.reason || "")
                                         font.pixelSize: Theme.fontSizeSmall - 1
                                         color: Theme.error
+                                        wrapMode: Text.NoWrap
                                         elide: Text.ElideRight
                                         Layout.maximumWidth: 260
                                     }

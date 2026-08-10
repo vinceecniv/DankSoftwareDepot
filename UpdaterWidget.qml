@@ -413,6 +413,10 @@ PluginComponent {
             const isSystem = ri.pkg.repo !== "flatpak" && ri.pkg.repo !== "firmware" && ri.pkg.repo !== "appimage";
             const item = {
                 name: store.displayName(ri.pkg),
+                // The id the package is known by, so the log can lead back to
+                // it: the name above is for reading, not for looking up
+                id: ri.pkg.name || "",
+                repo: ri.pkg.repo || "",
                 from: ri.pkg.fromVersion || "",
                 to: ri.pkg.toVersion || "",
                 source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : "System")),
@@ -744,6 +748,8 @@ PluginComponent {
                 for (const s of stash.shell || []) {
                     items.push({
                         name: s.name,
+                        id: s.base || s.name,
+                        repo: "system",
                         from: s.from,
                         to: s.to,
                         source: "System",

@@ -352,6 +352,8 @@ Item {
         appimageMutationProcess._logTitle = Tr.t("Uninstalled %1").arg(name);
         appimageMutationProcess._logItem = {
             name: name,
+            id: id,
+            repo: "appimage",
             from: "",
             to: "",
             source: "AppImage"
@@ -544,6 +546,8 @@ Item {
         mutationProcess._logTitle = Tr.t("Uninstalled %1").arg(_flatpakDisplayName(id));
         mutationProcess._logItem = {
             name: _flatpakDisplayName(id),
+            id: id,
+            repo: "flatpak",
             from: _flatpakInstalledVersion(id),
             to: "",
             source: "Flatpak"

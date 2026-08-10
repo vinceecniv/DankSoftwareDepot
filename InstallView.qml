@@ -197,6 +197,8 @@ Item {
                 if (view.logger)
                     view.logger.record("install", Tr.t("Installed %1").arg(_label), [{
                         name: _label,
+                        id: _label,
+                        repo: "appimage",
                         from: "",
                         to: "",
                         source: "AppImage",
@@ -448,6 +450,8 @@ Item {
         installIcon = itemIcon || "";
         lastInstallResult = "";
         installProcess._label = itemName;
+        // The ref is what the log needs to lead back to this app later
+        installProcess._id = source.ref || "";
         installProcess._source = source.kind === "flatpak" ? "Flatpak" : "System";
         installStep = 0;
         installFraction = 0.02;
@@ -726,6 +730,7 @@ Item {
         id: installProcess
 
         property string _label: ""
+        property string _id: ""
         property string _source: ""
 
         stdout: SplitParser {
@@ -747,6 +752,8 @@ Item {
                 if (view.logger) {
                     view.logger.record("install", Tr.t("Installed %1").arg(installProcess._label), [{
                         name: installProcess._label,
+                        id: installProcess._id || installProcess._label,
+                        repo: installProcess._source === "Flatpak" ? "flatpak" : "system",
                         from: "",
                         to: "",
                         source: installProcess._source,
