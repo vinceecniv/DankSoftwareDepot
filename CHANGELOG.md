@@ -3,6 +3,38 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.7.5 — 2026-08-10
+
+- **Copr is searchable from the Install tab.** A package built in Copr is
+  invisible to dnf until its project is enabled, so it could never turn
+  up in a search — you had to know the Copr to find the package that
+  would have told you about it. There is now a "Search Copr" button
+  under the search field: one deliberate press, because it asks the Copr
+  hub rather than this machine. Results are listed apart, under the name
+  of the individual who builds them, and only from projects that build
+  for this Fedora and architecture. Installing one adds its repository
+  as part of the same transaction, so it asks for a password once
+  instead of twice, and the "Installed" chip goes to the project the
+  package actually came from — five Coprs can build the same name.
+- **"Chroot not found in the given Copr project" now says what it
+  means.** Adding a Copr that has no build for your Fedora answered with
+  dnf's download progress, that sentence, and a screenful of EPEL chroot
+  names, cut off mid-list. It says "This Copr has no builds for Fedora
+  44 (x86_64)" instead, and the progress lines no longer arrive as the
+  first line of an error.
+- **Atomic Fedora is supported, experimentally.** Silverblue, Kinoite,
+  Bazzite and Bluefin were being handed to libdnf5, which cannot write
+  `/usr`. They are their own backend now, driven through `rpm-ostree`:
+  installing layers a package, removing unlayers one, and an update is
+  the whole deployment rather than a choice of packages. Nothing takes
+  effect until the next boot, so a finished transaction says "takes
+  effect after reboot" and raises the reboot notice instead of claiming
+  the package is in use. Removing something that came with the image is
+  refused with the reason. Software sources work there too — the
+  repository list, the switches and adding a Copr no longer need dnf to
+  be installed, which also fixes the sources list on a Fedora without
+  `python3-libdnf5`.
+
 ## 0.7.0 — 2026-08-10
 
 - **The update notice now covers every version you skipped.** It showed
