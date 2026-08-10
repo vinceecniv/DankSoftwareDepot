@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Io
 import qs.Common
 import qs.Widgets
 
@@ -162,9 +163,36 @@ Item {
         };
     }
 
+    // ── What this log cannot account for ────────────────────────────────────
+    // The package database knows when everything last arrived; this log knows
+    // what the plugin did. The difference is somebody else — dnf-automatic, a
+    // terminal, another software centre — and without saying so, a log reads
+    // like a complete record when it is only a record of one window.
+    property var outside: null
+    property bool outsideExpanded: false
+    property int refreshSerial: 0
+
+    onRefreshSerialChanged: outsideProcess.running = true
+
+    Process {
+        id: outsideProcess
+        command: ["python3", Qt.resolvedUrl("scripts/reconcile.py").toString().replace("file://", "")]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    view.outside = JSON.parse(text);
+                } catch (e) {
+                    view.outside = null;
+                }
+            }
+        }
+    }
+
     Component.onCompleted: {
         Ui.steadyCursorFor(searchField);
         Ui.softenScrollbar(logList);
+        outsideProcess.running = true;
     }
 
     ColumnLayout {
@@ -253,6 +281,107 @@ Item {
 
                 Item {
                     Layout.fillWidth: true
+                }
+            }
+        }
+
+        // ── Changed by something that is not this app ───────────────────────
+        Rectangle {
+            Layout.fillWidth: true
+            visible: view.searchText === "" && view.outside !== null && (view.outside.packages || 0) > 0
+            implicitHeight: outsideColumn.implicitHeight + Theme.spacingM * 2
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.warning, 0.10)
+
+            HoverHandler {
+                cursorShape: Qt.PointingHandCursor
+            }
+
+            TapHandler {
+                onTapped: view.outsideExpanded = !view.outsideExpanded
+            }
+
+            ColumnLayout {
+                id: outsideColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingM
+                anchors.topMargin: Theme.spacingM
+                spacing: Theme.spacingXS
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.spacingS
+
+                    DankIcon {
+                        name: "help"
+                        size: 18
+                        color: Theme.warning
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: {
+                            const info = view.outside || ({});
+                            const count = info.packages || 0;
+                            const head = count === 1 ? Tr.t("1 package changed outside this app") : Tr.t("%1 packages changed outside this app").arg(count);
+                            return (info.occasions || 0) > 1 ? head + " · " + Tr.t("on %1 occasions").arg(info.occasions) : head;
+                        }
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.DemiBold
+                        color: Theme.surfaceText
+                        elide: Text.ElideRight
+                    }
+
+                    StyledText {
+                        visible: (view.outside ? (view.outside.lastTs || 0) : 0) > 0
+                        text: view.formatWhen(view.outside ? view.outside.lastTs : 0)
+                        font.pixelSize: Theme.fontSizeSmall - 1
+                        color: Theme.surfaceVariantText
+                    }
+
+                    DankIcon {
+                        name: view.outsideExpanded ? "expand_less" : "expand_more"
+                        size: 18
+                        color: Theme.surfaceVariantText
+                    }
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    visible: view.outsideExpanded
+                    text: Tr.t("Something other than this app installed or updated them — a terminal, an automatic-update timer, another software centre. Only system packages are compared, and only back to where this log starts.")
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    color: Theme.surfaceVariantText
+                    wrapMode: Text.WordWrap
+                }
+
+                Repeater {
+                    model: view.outsideExpanded ? ((view.outside || {}).samples || []) : []
+
+                    delegate: RowLayout {
+                        required property var modelData
+
+                        Layout.fillWidth: true
+                        spacing: Theme.spacingS
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: modelData.name
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            font.family: Theme.monoFontFamily || "monospace"
+                            color: Theme.surfaceText
+                            elide: Text.ElideRight
+                        }
+
+                        StyledText {
+                            text: view.formatWhen(modelData.ts)
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            color: Theme.surfaceVariantText
+                        }
+                    }
                 }
             }
         }
@@ -588,7 +717,7 @@ Item {
                 StyledText {
                     anchors.horizontalCenter: parent.horizontalCenter
                     visible: view.searchText.trim() === ""
-                    text: Tr.t("Updates, installs and removals will appear here (kept for 90 days)")
+                    text: Tr.t("Updates, installs and removals will appear here (kept for two years)")
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.withAlpha(Theme.surfaceVariantText, 0.7)
                 }

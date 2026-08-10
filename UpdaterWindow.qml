@@ -147,6 +147,8 @@ FloatingWindow {
 
         // "" for anything not built from git, which is what keeps the
         // section — and the network call behind it — off every other package
+        advisory: (win.widgetRoot && rowPkg) ? (win.widgetRoot.advisories[rowBase] || null) : null
+
         readonly property string rowGitKey: rowPkg ? win.store.gitNotesKey(rowBase, rowPkg.fromVersion, rowPkg.toVersion) : ""
         readonly property var rowGitNotes: rowGitKey !== "" ? (win.store.gitNotes[rowGitKey] || null) : null
 
@@ -2447,6 +2449,21 @@ FloatingWindow {
                     color: Theme.surfaceText
                     elide: Text.ElideRight
                 }
+
+                // How many of them close a hole. The number was already being
+                // worked out and never said out loud.
+                StyledText {
+                    visible: win.widgetRoot !== null && win.widgetRoot.securityCount > 0
+                    text: {
+                        const total = win.widgetRoot ? win.widgetRoot.securityCount : 0;
+                        const held = win.widgetRoot ? win.widgetRoot.heldSecurityCount : 0;
+                        const base = total === 1 ? Tr.t("1 security fix") : Tr.t("%1 security fixes").arg(total);
+                        return held > 0 ? base + " · " + Tr.t("%1 held back").arg(held) : base;
+                    }
+                    font.pixelSize: Theme.fontSizeSmall
+                    font.weight: Font.DemiBold
+                    color: (win.widgetRoot && win.widgetRoot.heldSecurityCount > 0) ? Ui.failColor : Theme.error
+                }
             }
         }
 
@@ -2763,6 +2780,7 @@ FloatingWindow {
 
             sourceComponent: LogView {
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
+                refreshSerial: win.softwareSerial
                 onPackageActivated: item => win.openLogPackageDetails(item)
             }
         }
@@ -3624,6 +3642,14 @@ FloatingWindow {
                             }
                         }
 
+                        // A year read back out of the action log. Spanning
+                        // both columns: it is sentences, not a column of
+                        // numbers like the four cards above.
+                        RetrospectCard {
+                            Layout.fillWidth: true
+                            Layout.columnSpan: parent.columns
+                            log: win.widgetRoot ? (win.widgetRoot.actionLogger.entries || []) : []
+                        }
                     }
 
                     // ── Reclaimable space ───────────────────────────────────

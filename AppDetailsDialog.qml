@@ -40,6 +40,10 @@ Item {
     property string gitNotesUrl: ""      // release or compare page upstream
     property int gitNotesMore: 0         // commits or blocks left unshown
     property int gitNotesCommits: 0
+    // {type, severity, ids} from updateinfo. The CVE numbers were being
+    // fetched with the rest and thrown away; this is the one place with room
+    // to print them, and the one place someone would look them up from.
+    property var advisory: null
     property var previousVersions: []    // [{label, payload}]
     property bool versionsLoading: false
     property bool noOlderVersions: false
@@ -937,6 +941,41 @@ Item {
                             }
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
+                        }
+                    }
+
+                    // What this update is rated, and what it closes
+                    RowLayout {
+                        width: parent.width
+                        spacing: Theme.spacingS
+                        visible: dialog.advisory !== null && (dialog.advisory.type || "") === "security"
+
+                        DankIcon {
+                            Layout.alignment: Qt.AlignTop
+                            name: "shield"
+                            size: 16
+                            color: Ui.failColor
+                        }
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: {
+                                if (!dialog.advisory)
+                                    return "";
+                                const severity = (dialog.advisory.severity || "").toLowerCase();
+                                const names = ({
+                                        critical: Tr.t("Critical"),
+                                        important: Tr.t("Important"),
+                                        moderate: Tr.t("Moderate"),
+                                        low: Tr.t("Low")
+                                    });
+                                const label = names[severity] || Tr.t("Security");
+                                const ids = dialog.advisory.ids || [];
+                                return ids.length > 0 ? Tr.t("Security fix, rated %1 — %2").arg(label.toLowerCase()).arg(ids.join(", ")) : Tr.t("Security fix, rated %1").arg(label.toLowerCase());
+                            }
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceText
+                            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         }
                     }
 

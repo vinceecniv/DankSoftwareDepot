@@ -27,6 +27,30 @@ Rectangle {
 
     readonly property bool isSecurity: advisory !== null && advisory.type === "security"
 
+    // updateinfo grades its security advisories, and the grade is the part
+    // that decides whether this waits until tonight. It was being fetched and
+    // dropped: every fix read "Security", from a moderate library bump to a
+    // critical hole in the browser you are reading this in.
+    readonly property string severityLabel: {
+        if (!isSecurity)
+            return "";
+        switch ((advisory.severity || "").toLowerCase()) {
+        case "critical":
+            return Tr.t("Critical");
+        case "important":
+            return Tr.t("Important");
+        case "moderate":
+            return Tr.t("Moderate");
+        case "low":
+            return Tr.t("Low");
+        }
+        return Tr.t("Security");
+    }
+
+    // Only the top two earn the full red. Below that it is still a security
+    // fix, but shouting about all of them is how nobody hears any of them.
+    readonly property bool isUrgent: isSecurity && ["critical", "important"].indexOf((advisory.severity || "").toLowerCase()) !== -1
+
     signal updateRequested
     signal holdToggleRequested
     signal detailsRequested
@@ -254,15 +278,15 @@ Rectangle {
                     Layout.preferredWidth: securityChipText.implicitWidth + 14
                     Layout.preferredHeight: 18
                     radius: 9
-                    color: Theme.withAlpha(Theme.error, 0.18)
+                    color: card.isUrgent ? Theme.withAlpha(Theme.error, 0.18) : Theme.withAlpha(Theme.warning, 0.18)
 
                     StyledText {
                         id: securityChipText
                         anchors.centerIn: parent
-                        text: Tr.t("Security")
+                        text: card.severityLabel
                         font.pixelSize: Theme.fontSizeSmall - 2
                         font.weight: Font.Medium
-                        color: Ui.failColor
+                        color: card.isUrgent ? Ui.failColor : Theme.warning
                     }
                 }
 
@@ -361,6 +385,32 @@ Rectangle {
                         }
                     }
                 }
+            }
+        }
+
+        // ── A hold sitting on top of a security fix ─────────────────────────
+        // Holding a package back is a legitimate thing this app encourages,
+        // right up until the update being held is the one that closes a hole.
+        // Nothing said so: the "Held" chip and the "Security" chip sat side by
+        // side on the same card and left the reader to draw the conclusion.
+        RowLayout {
+            Layout.fillWidth: true
+            visible: card.held && card.isSecurity
+            spacing: Theme.spacingXS
+
+            DankIcon {
+                Layout.alignment: Qt.AlignTop
+                name: "warning"
+                size: 14
+                color: card.isUrgent ? Ui.failColor : Theme.warning
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                text: card.isUrgent ? Tr.t("You are holding back a security fix rated %1.").arg(card.severityLabel.toLowerCase()) : Tr.t("You are holding back a security fix.")
+                font.pixelSize: Theme.fontSizeSmall - 1
+                color: card.isUrgent ? Ui.failColor : Theme.warning
+                wrapMode: Text.WordWrap
             }
         }
 

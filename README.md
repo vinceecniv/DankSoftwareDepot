@@ -58,7 +58,14 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   with a hover **Update these** button per section
 - **Held packages**: dnf versionlock/excludepkgs detected automatically,
   plus user-holds via the lock button — never counted or updated,
-  releasable any time
+  releasable any time. A hold sitting on top of a security fix says so on the
+  card, because the one is a reasonable thing to do and the other is what
+  makes it unreasonable
+- **Security advisories** from the distro's updateinfo, read locally with no
+  network: which pending update closes a hole, graded critical / important /
+  moderate / low rather than flattened into one word, with the CVE numbers in
+  the details popup and a count in the summary line — including how many of
+  them are being held back
 - **Automatic updates**: off / notify only / auto-install Flatpaks
 - During a run the list regroups by what is happening — **In progress**,
   **Waiting**, **Completed** (collapsed) — so the packages actually being
@@ -75,6 +82,13 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   (the transaction completes even if the shell reloads mid-way)
 - Up-to-date dashboard: installed-software counts per source, system info,
   recently updated packages and the current updater status at a glance
+- **The last year**, read back out of the action log: how much went through
+  here, across how many runs and how often that works out at, the longest
+  quiet stretch, the biggest single run, the busiest month, and the package
+  you update more often than any other. Counted from the log itself, so it
+  says how far back that log actually reaches rather than presenting a
+  fortnight as a year — and it stays away entirely until there is a stretch
+  worth looking back over
 
 ### 2 · Installed
 - All Flatpak apps, rpm packages and AppImages in one list: live search,
@@ -138,7 +152,16 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - Persistent history of everything the plugin did: update runs, installs,
   uninstalls, restores/downgrades — entries expand to per-package details
   (old → new version, source, result)
-- Searchable; entries are kept for 90 days
+- **What this log cannot account for**: the package database knows when every
+  package last arrived, this log knows what the plugin did, and the difference
+  is somebody else — a terminal, an automatic-update timer, another software
+  centre. A line says how many packages and on how many occasions, expanding
+  to the names and dates. Matched on time rather than on name, so the
+  dependencies that come along with an install count as ours; and never
+  earlier than the log's own first entry, because before that there is nothing
+  to compare against. System packages only
+- Searchable; entries are kept for two years — a window that throws away last
+  winter cannot answer anything about a year
 
 ## AppImages, end to end
 
@@ -325,10 +348,11 @@ anything about you leaves the machine:
 | `LogView.qml` | Action history browser |
 | `AppDetailsDialog.qml` | Shared app-details popup (info, reviews, actions) |
 | `AppimageOfferDialog.qml` | Installing an AppImage from a file or URL — the toolbar button and a double-clicked `.appimage` both land here |
+| `RetrospectCard.qml` | The year the action log remembers, as figures and a few sentences, on the Updates dashboard |
 | `PulseRings.qml` | The shell's System Check pulse, borrowed so a check can happen around the logo instead of over it |
 | `UpdateEngine.qml` | Run orchestration (daemon dnf → libflatpak → fwupd → DMS packages), per-package progress from log lines and dnf-cache bytes |
 | `MetadataStore.qml` | Async enrichment cache + held-state persistence |
-| `ActionLog.qml` | Persistent action history (90-day retention) |
+| `ActionLog.qml` | Persistent action history (two-year retention) |
 | `FirmwareService.qml` | fwupd update detection |
 | `PhaseIndicator.qml` | Material phase stepper |
 | `Tr.qml` | Plugin-local translation singleton |
@@ -345,6 +369,8 @@ anything about you leaves the machine:
 | `scripts/appimage.py` | AppImage catalog, install/replace/update/uninstall, GitHub update sources, adhoc folder scanning, inspecting a file before offering it, and the `.appimage` default-handler association (NDJSON events) |
 | `scripts/repo_backend.py` | Software sources: reads the configured repositories and Flatpak remotes; enable/disable, Copr add/remove/search, RPM Fusion and Flathub (dnf family only; apt and pacman are listed read-only) |
 | `scripts/action_log.py` | Action-log append/prune helper |
+| `scripts/reconcile.py` | Compares package install times against the action log to find what changed outside this app |
+| `scripts/test_reconcile.py` | Checks that comparison against synthetic bursts — dependencies count as ours, an unexplained burst does not |
 | `scripts/open.sh` | What the desktop entry runs: finds `dms` on a launcher's narrower PATH, opens the window or hands over a double-clicked AppImage, and turns a failed call into a notification instead of into silence |
 
 Update detection, check interval and ignored packages remain managed by DMS

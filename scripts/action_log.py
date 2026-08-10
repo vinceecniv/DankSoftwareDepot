@@ -12,7 +12,12 @@ import time
 
 LOG_DIR = os.path.join(os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")), "dankSoftwareDepot")
 LOG_FILE = os.path.join(LOG_DIR, "action-log.json")
-RETENTION_SECONDS = 90 * 24 * 3600
+# Two years rather than the ninety days this started with. The log stopped
+# being only a record of what happened lately the moment the app began
+# looking back over it: a window that throws away last winter cannot answer
+# anything about a year. Measured on a busy machine, roughly 40 kB per week
+# of ordinary use — single-digit megabytes over two years.
+RETENTION_SECONDS = 2 * 365 * 24 * 3600
 
 
 def main():

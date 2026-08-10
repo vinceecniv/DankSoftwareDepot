@@ -632,6 +632,19 @@ PluginComponent {
         return count;
     }
 
+    // Of those, the ones that will not be installed because they are being
+    // held. A count of security fixes is reassuring in the wrong direction if
+    // some of them are never going to run.
+    readonly property int heldSecurityCount: {
+        let count = 0;
+        for (const pkg of pendingUpdates) {
+            const adv = advisories[store.stripArch(pkg.name)];
+            if (adv && adv.type === "security" && store.isHeld(pkg))
+                count++;
+        }
+        return count;
+    }
+
     Timer {
         id: advisoryDebounce
         interval: 2000

@@ -3,7 +3,9 @@ import Quickshell.Io
 
 // Persistent action history: update runs, installs, uninstalls, downgrades.
 // Entries live in ~/.local/share/dankSoftwareDepot/action-log.json; the python
-// helper appends, prunes anything older than 90 days and echoes the log back.
+// helper appends, prunes anything older than the retention window (two
+// years, long enough for the Log tab to look back over one) and echoes the
+// log back.
 Item {
     id: log
 
