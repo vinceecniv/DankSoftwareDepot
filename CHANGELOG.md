@@ -3,6 +3,30 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.7.0 — 2026-08-10
+
+- **The update notice now covers every version you skipped.** It showed
+  the newest release's notes and stopped there, so two versions behind
+  meant one version's notes — the other's fixes stayed invisible. It now
+  gathers every section newer than the installed version and says how
+  many releases that is.
+- **Those notes are read as text, not printed as a file.** CHANGELOG.md
+  is hard wrapped for a terminal, so the banner drew short lines while
+  having twice the width to give, and `**bold**` stood as four asterisks.
+  Continuations are rejoined, bold, code and links become what they mean,
+  and each version heading carries its number in the accent colour. The
+  notes sit in a bounded, scrollable box — several releases do not fit a
+  banner, and cutting them off hides the very fixes that were skipped.
+  The About popup shows them as well.
+- **A new plugin version announces itself**, once per version, the same
+  way new packages do — the banner was only seen by someone who happened
+  to open the window. Respects the "Automatic updates: off" setting.
+- **The dashboard's headings lead where they summarise**: "Installed
+  software" and "Recently updated" are links to their tabs, with a hover
+  underline and a chevron.
+- **The three support links now also sit in About**, stacked and left
+  aligned there, three across on the dashboard.
+
 ## 0.6.9 — 2026-08-10
 
 - **A package name in the log leads to the package.** Hover a name in an
