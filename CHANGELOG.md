@@ -3,6 +3,41 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.7.8 — 2026-08-10
+
+- **The last year, on the dashboard.** A card that reads a year back out
+  of the action log: how much went through here, across how many update
+  runs and how often that works out at, the longest stretch it stayed
+  quiet, the biggest single run, the busiest month, and the package you
+  update more often than any other. It is counted from the log itself,
+  so it says how far back that log actually reaches rather than
+  presenting six weeks as a year — and it stays away entirely until
+  there is a stretch worth looking back over.
+- **The log is kept for two years** instead of ninety days, which is
+  what gives the card something to read. About 40 kB a week of ordinary
+  use, so a few megabytes over the two years.
+- **Security fixes are graded.** The distro says whether a fix is
+  critical, important, moderate or low, and that was being fetched and
+  thrown away — every one of them read simply "Security". The chip now
+  carries the grade, and only the top two are drawn in full red; if
+  everything shouts, nothing is heard. The CVE numbers appear in the
+  details popup, and the summary line says how many of the pending
+  updates are security fixes.
+- **A hold on top of a security fix now says so.** Holding a package
+  back is a reasonable thing to do, right until the update being held is
+  the one that closes a hole. The "Held" and "Security" chips used to
+  sit side by side on the same card and leave you to notice; the card
+  says it in words, and the summary line counts how many security fixes
+  are being held back.
+- **What changed without you.** The package database knows when every
+  package last arrived, this log knows what this app did, and the
+  difference is something else — a terminal, an automatic-update timer,
+  another software centre. The Log tab says how many packages that is
+  and on how many occasions, expanding to names and dates. Packages that
+  came along as dependencies of something you did install count as
+  yours, and nothing before the log's own first entry is counted at all,
+  because there is nothing there to compare against.
+
 ## 0.7.7 — 2026-08-10
 
 - **Double-click an AppImage and it opens here.** On by default, so a
