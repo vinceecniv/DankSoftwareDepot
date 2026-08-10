@@ -3043,12 +3043,19 @@ FloatingWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: Theme.spacingL
 
+                            // Wider than the disc it holds: the pulse rings
+                            // grow past the disc's edge before they fade, and
+                            // they have to land somewhere. 1.87 × the disc is
+                            // the ratio the shell's own System Check page uses
+                            // between its loading box and the circle inside it.
                             Item {
-                                Layout.preferredWidth: 72
-                                Layout.preferredHeight: 72
+                                Layout.preferredWidth: Math.round(72 * 1.87)
+                                Layout.preferredHeight: Math.round(72 * 1.87)
 
                                 Rectangle {
-                                    anchors.fill: parent
+                                    anchors.centerIn: parent
+                                    width: 72
+                                    height: 72
                                     radius: 36
                                     // Light mode: solid primary disc so the white penguin stays visible
                                     color: {
@@ -3064,6 +3071,17 @@ FloatingWindow {
                                     }
                                 }
 
+                                // A check used to hide the logo behind a spinning
+                                // arrow. The shell's own System Check page keeps
+                                // its mark and pulses around it instead, which
+                                // says the same thing without taking the face of
+                                // the app away while it works.
+                                PulseRings {
+                                    id: heroPulse
+                                    anchors.fill: parent
+                                    running: SystemUpdateService.isChecking
+                                }
+
                                 Image {
                                     id: dankLogoImage
                                     anchors.centerIn: parent
@@ -3074,44 +3092,30 @@ FloatingWindow {
                                     sourceSize.height: 92
                                     fillMode: Image.PreserveAspectFit
                                     asynchronous: true
-                                    visible: status === Image.Ready && !SystemUpdateService.isChecking && !windowEmptyArea.containsMouse
+                                    scale: heroPulse.breath
+                                    // Hover swaps in the refresh arrow to say the
+                                    // click does something — but not mid-check,
+                                    // when it does not
+                                    visible: status === Image.Ready && (SystemUpdateService.isChecking || !windowEmptyArea.containsMouse)
                                 }
 
                                 DankIcon {
                                     id: heroStateIcon
                                     anchors.centerIn: parent
                                     visible: !dankLogoImage.visible
+                                    scale: heroPulse.breath
                                     name: {
                                         if (SystemUpdateService.isChecking || windowEmptyArea.containsMouse)
                                             return "refresh";
                                         return SystemUpdateService.hasError ? "error" : "task_alt";
                                     }
                                     size: 40
-                                    // This one spins. DankIcon draws glyphs with
-                                    // native hinting by default, which snaps them
-                                    // to the pixel grid — fine standing still,
-                                    // ragged once rotated. smoothTransform swaps
-                                    // in distance-field rendering, which turns.
-                                    smoothTransform: true
                                     color: {
                                         if (Theme.isLightMode)
                                             return "white";
                                         if (SystemUpdateService.isChecking || windowEmptyArea.containsMouse)
                                             return Theme.primary;
                                         return SystemUpdateService.hasError ? Theme.error : Theme.success;
-                                    }
-
-                                    RotationAnimator on rotation {
-                                        from: 0
-                                        to: 360
-                                        duration: 1000
-                                        loops: Animation.Infinite
-                                        running: SystemUpdateService.isChecking
-
-                                        onRunningChanged: {
-                                            if (!running)
-                                                heroStateIcon.rotation = 0;
-                                        }
                                     }
                                 }
                             }

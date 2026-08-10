@@ -1555,13 +1555,17 @@ PluginComponent {
                     anchors.centerIn: parent
                     spacing: Theme.spacingS
 
+                    // Room for the pulse rings around the 48px disc, at the
+                    // same ratio the window's hero uses
                     Item {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        width: 48
-                        height: 48
+                        width: Math.round(48 * 1.87)
+                        height: Math.round(48 * 1.87)
 
                         Rectangle {
-                            anchors.fill: parent
+                            anchors.centerIn: parent
+                            width: 48
+                            height: 48
                             radius: 24
                             // Light mode: solid primary disc so the white penguin stays visible
                             color: {
@@ -1577,6 +1581,14 @@ PluginComponent {
                             }
                         }
 
+                        // Same treatment as the window's hero: the logo stays
+                        // and the check pulses around it
+                        PulseRings {
+                            id: popoutPulse
+                            anchors.fill: parent
+                            running: SystemUpdateService.isChecking
+                        }
+
                         Image {
                             id: popoutLogoImage
                             anchors.centerIn: parent
@@ -1587,15 +1599,15 @@ PluginComponent {
                             sourceSize.height: 68
                             fillMode: Image.PreserveAspectFit
                             asynchronous: true
-                            visible: status === Image.Ready && !SystemUpdateService.isChecking && !emptyStateArea.containsMouse
+                            scale: popoutPulse.breath
+                            visible: status === Image.Ready && (SystemUpdateService.isChecking || !emptyStateArea.containsMouse)
                         }
 
                         DankIcon {
                             id: popoutEmptyIcon
-                            // Spins during a check — see hPillIcon
-                            smoothTransform: true
                             anchors.centerIn: parent
                             visible: !popoutLogoImage.visible
+                            scale: popoutPulse.breath
                             name: (SystemUpdateService.isChecking || emptyStateArea.containsMouse) ? "refresh" : "task_alt"
                             size: 40
                             color: {
@@ -1604,19 +1616,6 @@ PluginComponent {
                                 if (SystemUpdateService.isChecking || emptyStateArea.containsMouse)
                                     return Theme.primary;
                                 return Theme.success;
-                            }
-
-                            RotationAnimator on rotation {
-                                from: 0
-                                to: 360
-                                duration: 1000
-                                loops: Animation.Infinite
-                                running: SystemUpdateService.isChecking
-
-                                onRunningChanged: {
-                                    if (!running)
-                                        popoutEmptyIcon.rotation = 0;
-                                }
                             }
                         }
                     }

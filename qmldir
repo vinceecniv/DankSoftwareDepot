@@ -10,6 +10,7 @@ MetadataStore 1.0 MetadataStore.qml
 ActionLog 1.0 ActionLog.qml
 FirmwareService 1.0 FirmwareService.qml
 PhaseIndicator 1.0 PhaseIndicator.qml
+PulseRings 1.0 PulseRings.qml
 InstalledView 1.0 InstalledView.qml
 InstallView 1.0 InstallView.qml
 FirmwareView 1.0 FirmwareView.qml
