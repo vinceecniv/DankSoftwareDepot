@@ -371,5 +371,9 @@
     "Test builds of the same applications, before they reach Flathub.": "Ugyanazon alkalmazások tesztváltozatai, mielőtt a Flathubra kerülnének.",
     "Well-known Flatpak sources": "Ismert Flatpak-források",
     "RPM Fusion": "RPM Fusion",
-    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Kodekek, médiaszoftverek és hardvermeghajtók, amelyeket a Fedora maga nem szállíthat. Mindkét tárolót hozzáadja: a nonfree nagyrészt a free-re épül."
+    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Kodekek, médiaszoftverek és hardvermeghajtók, amelyeket a Fedora maga nem szállíthat. Mindkét tárolót hozzáadja: a nonfree nagyrészt a free-re épül.",
+    "%1 could not be loaded — system packages cannot be installed or updated until it can.": "A(z) %1 nem tölthető be — a rendszercsomagok addig nem telepíthetők és nem frissíthetők.",
+    "Flatpak updates": "Flatpak-frissítések",
+    "the Flatpak helper stopped with code %1": "a Flatpak-segéd %1 kóddal állt le",
+    "unknown package": "ismeretlen csomag"
 }

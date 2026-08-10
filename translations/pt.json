@@ -371,5 +371,9 @@
     "Test builds of the same applications, before they reach Flathub.": "Versões de teste dos mesmos aplicativos, antes de chegarem ao Flathub.",
     "Well-known Flatpak sources": "Fontes Flatpak conhecidas",
     "RPM Fusion": "RPM Fusion",
-    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Codecs, software de mídia e drivers de hardware que o Fedora não pode distribuir. Adiciona os dois repositórios: o nonfree se apoia em grande parte no free."
+    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Codecs, software de mídia e drivers de hardware que o Fedora não pode distribuir. Adiciona os dois repositórios: o nonfree se apoia em grande parte no free.",
+    "%1 could not be loaded — system packages cannot be installed or updated until it can.": "Não foi possível carregar %1 — os pacotes do sistema não podem ser instalados nem atualizados até que isso funcione.",
+    "Flatpak updates": "Atualizações Flatpak",
+    "the Flatpak helper stopped with code %1": "o auxiliar do Flatpak parou com o código %1",
+    "unknown package": "pacote desconhecido"
 }

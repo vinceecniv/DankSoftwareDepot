@@ -371,5 +371,9 @@
     "Test builds of the same applications, before they reach Flathub.": "Bản thử nghiệm của cùng ứng dụng, trước khi lên Flathub.",
     "Well-known Flatpak sources": "Nguồn Flatpak quen thuộc",
     "RPM Fusion": "RPM Fusion",
-    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Codec, phần mềm đa phương tiện và trình điều khiển phần cứng mà Fedora không thể tự phân phối. Thêm cả hai kho: nonfree phần lớn dựa trên free."
+    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Codec, phần mềm đa phương tiện và trình điều khiển phần cứng mà Fedora không thể tự phân phối. Thêm cả hai kho: nonfree phần lớn dựa trên free.",
+    "%1 could not be loaded — system packages cannot be installed or updated until it can.": "Không thể nạp %1 — chưa thể cài đặt hay cập nhật gói hệ thống cho tới khi nạp được.",
+    "Flatpak updates": "Cập nhật Flatpak",
+    "the Flatpak helper stopped with code %1": "trình trợ giúp Flatpak dừng với mã %1",
+    "unknown package": "gói không xác định"
 }

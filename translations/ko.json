@@ -371,5 +371,9 @@
     "Test builds of the same applications, before they reach Flathub.": "Flathub에 올라오기 전의 같은 애플리케이션 시험판.",
     "Well-known Flatpak sources": "잘 알려진 Flatpak 소스",
     "RPM Fusion": "RPM Fusion",
-    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Fedora가 직접 제공할 수 없는 코덱, 미디어 소프트웨어, 하드웨어 드라이버. 두 저장소를 모두 추가합니다. nonfree는 대부분 free 위에서 만들어집니다."
+    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Fedora가 직접 제공할 수 없는 코덱, 미디어 소프트웨어, 하드웨어 드라이버. 두 저장소를 모두 추가합니다. nonfree는 대부분 free 위에서 만들어집니다.",
+    "%1 could not be loaded — system packages cannot be installed or updated until it can.": "%1을(를) 불러올 수 없습니다 — 불러올 수 있을 때까지 시스템 패키지를 설치하거나 업데이트할 수 없습니다.",
+    "Flatpak updates": "Flatpak 업데이트",
+    "the Flatpak helper stopped with code %1": "Flatpak 도우미가 코드 %1(으)로 종료됨",
+    "unknown package": "알 수 없는 패키지"
 }

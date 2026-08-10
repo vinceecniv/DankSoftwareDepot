@@ -371,5 +371,9 @@
     "Test builds of the same applications, before they reach Flathub.": "Тестові збірки тих самих програм, перш ніж вони потраплять на Flathub.",
     "Well-known Flatpak sources": "Відомі джерела Flatpak",
     "RPM Fusion": "RPM Fusion",
-    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Кодеки, мультимедійні програми та драйвери пристроїв, які Fedora не може постачати сама. Додає обидва репозиторії: nonfree значною мірою спирається на free."
+    "Codecs, media software and hardware drivers Fedora cannot ship itself. Adds both repositories: most of nonfree builds on free.": "Кодеки, мультимедійні програми та драйвери пристроїв, які Fedora не може постачати сама. Додає обидва репозиторії: nonfree значною мірою спирається на free.",
+    "%1 could not be loaded — system packages cannot be installed or updated until it can.": "Не вдалося завантажити %1 — доки це не запрацює, системні пакунки не можна встановлювати чи оновлювати.",
+    "Flatpak updates": "Оновлення Flatpak",
+    "the Flatpak helper stopped with code %1": "помічник Flatpak завершився з кодом %1",
+    "unknown package": "невідомий пакунок"
 }

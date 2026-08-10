@@ -559,6 +559,7 @@ Item {
         _daemonExpectedEvr = expectedEvr;
         itemStates = states;
         runItems = items;
+        _flatpakRunError = "";
         flatpakBytesDone = 0;
         flatpakSpeed = 0;
         opsDone = 0;
@@ -792,8 +793,7 @@ Item {
             break;
         }
         case "op-error": {
-            if (key)
-                _setError(key, event.message || Tr.t("failed"), event.message || "");
+            _setError(key || _dnfAdopt(event.name || Tr.t("unknown package")), event.message || Tr.t("failed"), event.message || "");
             break;
         }
         case "done": {
@@ -1424,7 +1424,10 @@ Item {
             if (!engine.running)
                 return;
             if (exitCode !== 0 && exitCode !== 130) {
+                // Not a package's failure but the step's, which used to raise
+                // the counter and show nothing at all
                 engine.failedCount++;
+                engine._setError(engine._flatpakAdopt(Tr.t("Flatpak updates")), engine._flatpakRunError || Tr.t("the Flatpak helper stopped with code %1").arg(exitCode), engine._flatpakRunError || "");
             }
             engine._afterFlatpak();
         }
@@ -1583,6 +1586,49 @@ Item {
         }
     }
 
+    // A transaction touches refs the pending list never mentioned: extensions,
+    // themes, drivers, runtimes pulled along. While they succeed that is
+    // nobody's business, but a failure among them used to raise the failed
+    // counter and then vanish — no row, no reason, no log entry, and a run
+    // that said "1 failed" while every line it showed was green. So a failure
+    // without a row gets one.
+    // The helper's own words for a transaction-level failure
+    property string _flatpakRunError: ""
+
+    // Same for the system helper: it can fail on a package the pending list
+    // never showed — a dependency the resolver pulled in
+    function _dnfAdopt(name) {
+        const key = "system/" + name;
+        if (itemStates[key] === undefined) {
+            const items = runItems.slice();
+            items.push({
+                pkg: {
+                    name: name,
+                    repo: "system"
+                },
+                key: key
+            });
+            runItems = items;
+        }
+        return key;
+    }
+
+    function _flatpakAdopt(appid) {
+        const key = "flatpak/" + appid;
+        if (itemStates[key] === undefined) {
+            const items = runItems.slice();
+            items.push({
+                pkg: {
+                    name: appid,
+                    repo: "flatpak"
+                },
+                key: key
+            });
+            runItems = items;
+        }
+        return key;
+    }
+
     function _flatpakKeyFor(appid) {
         if (itemStates["flatpak/" + appid] !== undefined)
             return "flatpak/" + appid;
@@ -1681,14 +1727,27 @@ Item {
             _updateOverall();
             break;
         }
+        case "error": {
+            _flatpakRunError = event.message || "";
+            break;
+        }
         case "op-error": {
             failedCount++;
-            const key = _flatpakKeyFor(event.appid);
-            if (key)
-                _setError(key, event.message || Tr.t("failed"), event.message || "");
+            const key = _flatpakKeyFor(event.appid) || _flatpakAdopt(event.appid);
+            _setError(key, event.message || Tr.t("failed"), event.message || "");
             break;
         }
         case "done": {
+            // A transaction can fail as a whole — the helper then names the
+            // installation it was for, which is no package and would otherwise
+            // be counted without ever being shown
+            for (const name of event.failed || []) {
+                const key = _flatpakKeyFor(name);
+                if (key === "" && itemStates["flatpak/" + name] === undefined) {
+                    failedCount++;
+                    _setError(_flatpakAdopt(name), _flatpakRunError || Tr.t("failed"), _flatpakRunError || "");
+                }
+            }
             // Final exit handling happens in onExited
             break;
         }
