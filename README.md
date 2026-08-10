@@ -196,6 +196,47 @@ dms ipc call dankSoftwareDepot tab 2     # open a specific tab (0-4)
 dms ipc call dankSoftwareDepot check     # trigger an update check
 ```
 
+## Network and privacy
+
+The plugin contains **no tracking of any kind**: no analytics, no telemetry, no
+crash reporting, and no identifier that follows you. There is no server
+belonging to this project — nothing is ever sent to its author.
+
+One request happens without you asking for it: half a minute after the shell
+starts, and once a day after that, the plugin fetches its own `plugin.json` and
+`CHANGELOG.md` from GitHub to see whether a newer version exists. It is a plain
+file fetch with no parameters and nothing identifying, and it is skipped
+entirely when the plugin directory is a symlink (a development checkout).
+Everything else below happens because you opened, checked or pressed
+something.
+
+It does talk to the network, because a software centre without a network is a
+list of things you already have. Everything it contacts, and when:
+
+| Where | What for | When |
+|---|---|---|
+| your configured repositories, Flatpak remotes, LVFS | the package work itself: metadata, downloads, firmware | checking and updating |
+| `raw.githubusercontent.com` | this plugin's own `plugin.json` and `CHANGELOG.md`, to offer its update | 30 seconds after the shell starts, then daily; never on a symlinked install |
+| `odrs.gnome.org` | star ratings and review texts (Open Desktop Ratings Service) | opening an app's details |
+| `flathub.org/api/v2` | install counts, download size, sandbox permissions, verified status | opening a Flatpak app's details |
+| the screenshot URLs in AppStream data | the screenshots themselves, cached locally for 30 days | opening an app's details |
+| `appimage.github.io`, `api.github.com` | the AppImage catalogue and the releases of an AppImage's linked project | the Install tab and AppImage updates |
+| `bodhi.fedoraproject.org` | which Fedora releases are current, for the release-upgrade notice | the upgrade check |
+| `mirrors.rpmfusion.org`, `dl.flathub.org`, `nightly.gnome.org`, `cdn.kde.org`, `registry.fedoraproject.org` | fetching a source you asked to add | only when you press Add in Software sources |
+
+Two details worth stating plainly, because they are the only places where
+anything about you leaves the machine:
+
+- **Reading reviews** sends a `user_hash` that is the same constant for every
+  installation (`sha1("dankSoftwareDepot")`). ODRS requires the field; this
+  one identifies nobody.
+- **Writing a review** is different, and is the only outgoing request that
+  carries anything machine-specific. ODRS deduplicates and moderates by user,
+  so the submission carries a hash of your username and `/etc/machine-id`,
+  along with the display name you type. Leave that field empty and your login
+  name is published instead — which is why the field says so before you press
+  send. Nothing is submitted unless you write a review and press the button.
+
 ## Architecture
 
 | Piece | Role |
@@ -219,6 +260,7 @@ dms ipc call dankSoftwareDepot check     # trigger an update check
 | `scripts/apt_helper.py` | python-apt counterpart of rpm_helper.py — experimental Debian/Ubuntu transaction backend |
 | `scripts/pacman_helper.py` | pyalpm counterpart of rpm_helper.py — experimental Arch transaction backend (official repos, no AUR) |
 | `scripts/pkg_backend.py` | Per-distro metadata backend (search, sizes, inventory, holds, versions, changelogs); apt + pacman implemented, dnf stays in enrich.py. Also answers, for every distro, which packages own a launchable desktop entry |
+| `scripts/check_translations.py` | Checks the 15 catalogs against the QML: identical key sets, every string the UI asks for, placeholders kept, keys nothing calls any more |
 | `scripts/test_dep11.py` | Checks the DEP-11 and apt/pacman changelog paths against real-shaped data, runnable on any distro |
 | `scripts/flatpak_helper.py` | libflatpak transactions (updates & installs) with exact byte progress (NDJSON events) |
 | `scripts/appimage.py` | AppImage catalog, install/update/uninstall, GitHub update sources, adhoc folder scanning (NDJSON events) |

@@ -65,6 +65,20 @@ Item {
     property string updateSourceStatus: ""     // "" | saving | done | error:<msg>
     signal updateSourceSaveRequested(string link)
 
+    // The name a source goes by, not the id it is keyed on: the sizes line
+    // read "fedora: 12 MB download" in every language, next to a translated
+    // sentence. The install button below has always used the kind for this.
+    function sourceLabel(entry) {
+        if (entry.kind === "flatpak")
+            return "Flathub";
+        if (entry.kind === "appimage")
+            return "AppImage";
+        if (entry.kind === "dnf")
+            return Backend.systemRepoLabel;
+        const source = entry.source || "";
+        return source.charAt(0).toUpperCase() + source.slice(1);
+    }
+
     readonly property string updateSourceUrl: updateSourceRepo !== "" ? "https://github.com/" + updateSourceRepo : ""
 
     property string _confirmUninstall: ""
@@ -724,7 +738,7 @@ Item {
                                             parts.push(Tr.t("%1 download").arg(modelData.download));
                                         if (modelData.installed)
                                             parts.push(Tr.t("%1 installed").arg(modelData.installed));
-                                        return modelData.source + ": " + parts.join(" · ");
+                                        return dialog.sourceLabel(modelData) + ": " + parts.join(" · ");
                                     }
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.surfaceVariantText
@@ -1139,7 +1153,19 @@ Item {
                             DankTextField {
                                 id: reviewNameField
                                 Layout.fillWidth: true
-                                placeholderText: Tr.t("Display name (shown with your review)")
+                                // Says what happens if it is left alone: the
+                                // backend falls back to the login name, which
+                                // is a thing worth knowing before you publish
+                                // rather than after
+                                placeholderText: Tr.t("Display name — empty publishes as \"%1\"").arg(Quickshell.env("USER") || "user")
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: Tr.t("Shown publicly with your review. Any name will do — it does not have to be the one you log in with.")
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                color: Theme.surfaceVariantText
+                                wrapMode: Text.WordWrap
                             }
 
                             DankTextField {
