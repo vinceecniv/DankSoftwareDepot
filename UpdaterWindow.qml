@@ -377,8 +377,15 @@ FloatingWindow {
     // update itself runs detached (`dms plugins update` + shell reload)
     // because the reload kills this process tree.
     property string selfUpdateVersion: ""
-    property string selfUpdateNotes: ""
     property bool selfUpdateBusy: false
+    // The raw CHANGELOG and the version to measure it against are what gets
+    // stored; the rich text is derived. It used to be rendered once and kept
+    // as a string, which baked that moment's theme colours into the headings
+    // while the body kept a live binding — switch to dark afterwards and the
+    // body followed, the date stayed a light-mode grey on a dark card.
+    property string selfUpdateMarkdown: ""
+    property string selfUpdateLocalVersion: ""
+    readonly property string selfUpdateNotes: _changelogSince(selfUpdateMarkdown, selfUpdateLocalVersion)
     // Dismissed via the banner's X: stays hidden until a yet newer version
     // appears (persisted in pluginData)
     readonly property string selfUpdateDismissedVersion: (widgetRoot && widgetRoot.pluginData) ? (widgetRoot.pluginData.selfUpdateDismissedVersion || "") : ""
@@ -444,8 +451,22 @@ FloatingWindow {
             }
         }
         flush();
-        _selfUpdateSections = sections;
         return parts.join("");
+    }
+
+    // How many releases those notes cover, counted separately rather than
+    // recorded as a side effect of rendering them: the rendering is a binding
+    // now, and a binding that assigns to another property is a trap
+    function _changelogSections(md, local) {
+        let sections = 0;
+        for (const line of md.split("\n")) {
+            if (line.indexOf("## ") !== 0)
+                continue;
+            const found = line.match(/\d+(?:\.\d+)+/);
+            if (found !== null && _versionNewer(found[0], local))
+                sections++;
+        }
+        return sections;
     }
 
     // The inline marks the changelog actually uses
@@ -455,7 +476,7 @@ FloatingWindow {
 
     // How many releases the notes above cover, so a truncated banner is
     // read as "there is more" rather than as "that was all"
-    property int _selfUpdateSections: 0
+    readonly property int _selfUpdateSections: _changelogSections(selfUpdateMarkdown, selfUpdateLocalVersion)
 
     Timer {
         interval: 30 * 1000
@@ -489,7 +510,8 @@ FloatingWindow {
                 const localVersion = win.pluginManifest.version || "0";
                 if (!remote || !remote.version || !win._versionNewer(remote.version, localVersion))
                     return;
-                win.selfUpdateNotes = win._changelogSince(parts[1] || "", localVersion);
+                win.selfUpdateLocalVersion = localVersion;
+                win.selfUpdateMarkdown = parts[1] || "";
                 win.selfUpdateVersion = remote.version;
                 if (win.widgetRoot)
                     win.widgetRoot.notifyPluginUpdate(remote.version, win._selfUpdateSections);
@@ -896,6 +918,20 @@ FloatingWindow {
 
                         DankToggle {
                             width: parent.width
+                            text: Tr.t("Open .appimage files with this app")
+                            description: Tr.t("Double-clicking an AppImage opens this window, which offers to install it — or to replace the copy you already have. Adds the launcher entry if it is not there yet.")
+                            checked: Backend.appimageHandlerDefault
+                            enabled: Backend.appimageHandlerChecked && !Backend.appimageHandlerBusy && !Backend.launcherEntryBusy
+                            onToggled: checked => {
+                                if (checked)
+                                    Backend.setAppimageHandler();
+                                else
+                                    Backend.clearAppimageHandler();
+                            }
+                        }
+
+                        DankToggle {
+                            width: parent.width
                             text: Tr.t("Bar click opens window")
                             description: Tr.t("Open this window instead of the compact popout when clicking the bar pill.")
                             checked: win.widgetRoot ? win.widgetRoot.pillOpensWindow : false
@@ -1096,6 +1132,7 @@ FloatingWindow {
             // greets you when it comes back
             palette.close();
             Backend.checkLauncherEntry();
+            Backend.checkAppimageHandler();
         }
     }
 
@@ -1166,6 +1203,23 @@ FloatingWindow {
             return logLoader.item;
         }
         return null;
+    }
+
+    // An AppImage opened from the file manager. It lands on the Install tab,
+    // which already owns installing one — the file only needs somewhere to
+    // be asked about.
+    function openAppimageFile(path) {
+        if (!path)
+            return;
+        activate();
+        openTab(2);
+        // The view may have only just been created by openTab, so hand the
+        // file over once it exists rather than at this instant
+        Qt.callLater(() => {
+            const view = tabView(2);
+            if (view && view.offerAppimageFile)
+                view.offerAppimageFile(path);
+        });
     }
 
     function openTab(id) {

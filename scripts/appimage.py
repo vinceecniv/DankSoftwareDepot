@@ -15,6 +15,11 @@ Modes:
   --update-ids <id...>             update registered apps            (NDJSON progress)
   --set-repo <id> [link]           set/clear the GitHub update source (JSON)
   --uninstall <id>                 remove file, desktop entry, icon and record
+  --inspect <path>                 name/version/icon of a file, and the app it
+                                   would replace, without installing (JSON)
+  --replace <id> <path>            put this file in place of a registered app
+  --handler-status                 are we the default for .appimage? (JSON)
+  --handler-set / --handler-clear  become that default, or stop being it
 """
 import glob
 import json
@@ -342,7 +347,7 @@ def download(url, dest, total_hint=0):
 def extract_metadata(appimage_path, app_id):
     """Best-effort icon + desktop info via --appimage-extract (runs the
     AppImage runtime only, not the app)."""
-    info = {"icon": "", "desktopName": "", "categories": ""}
+    info = {"icon": "", "desktopName": "", "categories": "", "version": ""}
     tmp = tempfile.mkdtemp(prefix="dsd-appimage-")
     try:
         subprocess.run([appimage_path, "--appimage-extract"], cwd=tmp,
@@ -359,6 +364,8 @@ def extract_metadata(appimage_path, app_id):
                         icon_name = line.strip()[5:]
                     elif line.startswith("Categories=") and not info["categories"]:
                         info["categories"] = line.strip()[11:]
+                    elif line.startswith("X-AppImage-Version=") and not info["version"]:
+                        info["version"] = line.strip()[19:]
         candidates = []
         diricon = os.path.join(root, ".DirIcon")
         if os.path.exists(diricon):
@@ -635,6 +642,222 @@ def run_uninstall(app_id):
     json.dump({"ok": True}, sys.stdout)
 
 
+# ── Double-clicked AppImages ───────────────────────────────────────────────
+# A file arriving from the file manager is a file and nothing else: no name,
+# no version, and no telling whether it is a new app or a newer build of one
+# that is already here. --inspect answers all three without installing
+# anything, so the window can ask the right question instead of the generic
+# one. --replace is the answer to the second question; --install is the first.
+
+def _version_from_filename(path):
+    """A version out of "Foo-1.2.3-x86_64.AppImage", when the image itself
+    does not say. Architecture and build tags are not versions."""
+    stem = re.sub(r"\.appimage$", "", os.path.basename(path), flags=re.I)
+    for token in re.split(r"[-_]", stem):
+        if re.fullmatch(r"v?\d+(\.\d+)+[a-z0-9.]*", token, flags=re.I):
+            return token.lstrip("vV")
+    return ""
+
+
+def _match_installed(display, path, records):
+    """The registered app this file is a build of, or None.
+
+    Matched on the name inside the image rather than the file name: a
+    download is called Foo-1.2.3-x86_64.AppImage and the app is called Foo,
+    and the version in between is exactly what changes between builds.
+    """
+    wanted = {slugify(display)} if display else set()
+    stem = re.sub(r"\.appimage$", "", os.path.basename(path), flags=re.I)
+    wanted.add(slugify(stem))
+    # Same file name minus the version tail: kdrive-3.6.5 → kdrive
+    trimmed = re.split(r"[-_]v?\d", stem)[0]
+    if trimmed:
+        wanted.add(slugify(trimmed))
+    wanted.discard("")
+    for record in records:
+        if record.get("id") in wanted or slugify(record.get("name", "")) in wanted:
+            return record
+    return None
+
+
+def run_inspect(path):
+    src = os.path.expanduser(path)
+    if not os.path.isfile(src):
+        json.dump({"ok": False, "error": "file not found: " + src}, sys.stdout)
+        return
+
+    # --appimage-extract has to run the image, and a fresh download is not
+    # executable. Inspecting is not installing, so the user's own file is
+    # left exactly as it was found and a temporary copy is run instead.
+    probe, tmpdir = src, ""
+    if not os.access(src, os.X_OK):
+        tmpdir = tempfile.mkdtemp(prefix="dsd-inspect-")
+        probe = os.path.join(tmpdir, os.path.basename(src))
+        try:
+            shutil.copyfile(src, probe)
+            os.chmod(probe, os.stat(probe).st_mode | stat.S_IXUSR)
+        except OSError as exc:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            json.dump({"ok": False, "error": str(exc)}, sys.stdout)
+            return
+
+    stem = re.sub(r"\.appimage$", "", os.path.basename(src), flags=re.I)
+    try:
+        meta = extract_metadata(probe, slugify(stem) or "unknown")
+    finally:
+        if tmpdir:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    display = meta.get("desktopName") or stem
+    records = load_records()
+    match = _match_installed(meta.get("desktopName", ""), src, records + scan_adhoc(records))
+    json.dump({
+        "ok": True,
+        "path": src,
+        "name": display,
+        "version": meta.get("version") or _version_from_filename(src),
+        "icon": meta.get("icon", ""),
+        "sizeBytes": os.path.getsize(src),
+        "executable": os.access(src, os.X_OK),
+        "installed": match,
+    }, sys.stdout)
+
+
+def run_replace(app_id, path):
+    """Put a newer build in place of a registered AppImage, keeping its id,
+    its update source and the desktop entry that already points at it."""
+    src = os.path.expanduser(path)
+    if not os.path.isfile(src):
+        emit({"event": "error", "message": "file not found: " + src})
+        return
+    records = load_records()
+    record = next((r for r in records if r["id"] == app_id), None)
+    adopted = False
+    if record is None:
+        record = next((r for r in scan_adhoc(records) if r["id"] == app_id), None)
+        adopted = record is not None
+    if record is None:
+        emit({"event": "error", "message": "not registered: " + app_id})
+        return
+
+    dest = record.get("file") or os.path.join(APP_DIR, f"{record['name']}.AppImage")
+    emit({"event": "start", "id": app_id, "name": record.get("name", app_id)})
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    # Written beside the target and moved into place: a copy that fails
+    # halfway must not leave a working app truncated
+    staging = dest + ".dsd-new"
+    try:
+        shutil.copyfile(src, staging)
+        os.chmod(staging, os.stat(staging).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        os.replace(staging, dest)
+    except OSError as exc:
+        try:
+            os.unlink(staging)
+        except OSError:
+            pass
+        emit({"event": "error", "message": str(exc)})
+        return
+
+    meta = extract_metadata(dest, app_id)
+    record["file"] = dest
+    record["sizeBytes"] = os.path.getsize(dest)
+    record["installedAt"] = int(time.time())
+    record["source"] = "file"
+    # A build installed by hand is no longer the one the release feed knows
+    record["tag"] = ""
+    if meta.get("icon"):
+        record["icon"] = meta["icon"]
+    if meta.get("categories"):
+        record["categories"] = meta["categories"]
+    write_desktop(record)
+    if adopted:
+        records.append(record)
+    save_records(records)
+    _invalidate_updates_cache()
+    emit({"event": "done", "ok": True, "record": record})
+
+
+# ── Default handler for .appimage files ────────────────────────────────────
+# xdg-mime writes the same file, but it is not everywhere, it cannot unset a
+# default, and it would drop the other handlers on a shared line. This edits
+# only our own name in and out of mimeapps.list.
+
+APPIMAGE_MIME_TYPES = ("application/vnd.appimage", "application/x-iso9660-appimage")
+DEPOT_DESKTOP = "com.danklinux.dankSoftwareDepot.desktop"
+MIMEAPPS = os.path.expanduser("~/.config/mimeapps.list")
+
+
+def _read_mimeapps():
+    import configparser
+    parser = configparser.RawConfigParser()
+    parser.optionxform = str  # MIME types are case-sensitive keys, not options
+    try:
+        parser.read(MIMEAPPS, encoding="utf-8")
+    except (OSError, configparser.Error):
+        pass
+    return parser
+
+
+def _entries(value):
+    return [e for e in (value or "").split(";") if e]
+
+
+def run_handler_status():
+    parser = _read_mimeapps()
+    defaults = {}
+    for mime in APPIMAGE_MIME_TYPES:
+        current = _entries(parser.get("Default Applications", mime, fallback=""))
+        defaults[mime] = current[0] if current else ""
+    json.dump({
+        "isDefault": all(defaults[m] == DEPOT_DESKTOP for m in APPIMAGE_MIME_TYPES),
+        "defaults": defaults,
+        "entryPresent": os.path.isfile(os.path.expanduser(
+            "~/.local/share/applications/" + DEPOT_DESKTOP)),
+    }, sys.stdout)
+
+
+def _write_mimeapps(parser):
+    os.makedirs(os.path.dirname(MIMEAPPS), exist_ok=True)
+    tmp = MIMEAPPS + ".dsd-tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        parser.write(f, space_around_delimiters=False)
+    os.replace(tmp, MIMEAPPS)
+
+
+def run_handler_set():
+    parser = _read_mimeapps()
+    for section in ("Default Applications", "Added Associations"):
+        if not parser.has_section(section):
+            parser.add_section(section)
+        for mime in APPIMAGE_MIME_TYPES:
+            current = _entries(parser.get(section, mime, fallback=""))
+            if DEPOT_DESKTOP in current:
+                current.remove(DEPOT_DESKTOP)
+            parser.set(section, mime, ";".join([DEPOT_DESKTOP] + current) + ";")
+    _write_mimeapps(parser)
+    json.dump({"ok": True}, sys.stdout)
+
+
+def run_handler_clear():
+    parser = _read_mimeapps()
+    for section in ("Default Applications", "Added Associations"):
+        if not parser.has_section(section):
+            continue
+        for mime in APPIMAGE_MIME_TYPES:
+            current = _entries(parser.get(section, mime, fallback=""))
+            if DEPOT_DESKTOP not in current:
+                continue
+            # Only our own name goes: another handler on the same line was
+            # someone else's choice and stays theirs
+            current.remove(DEPOT_DESKTOP)
+            if current:
+                parser.set(section, mime, ";".join(current) + ";")
+            else:
+                parser.remove_option(section, mime)
+    _write_mimeapps(parser)
+    json.dump({"ok": True}, sys.stdout)
+
+
 def main():
     args = sys.argv[1:]
     if not args:
@@ -655,6 +878,16 @@ def main():
         run_update_ids(args[1:])
     elif mode == "--set-repo" and len(args) >= 2:
         run_set_repo(args[1], args[2] if len(args) >= 3 else "")
+    elif mode == "--inspect" and len(args) >= 2:
+        run_inspect(args[1])
+    elif mode == "--replace" and len(args) >= 3:
+        run_replace(args[1], args[2])
+    elif mode == "--handler-status":
+        run_handler_status()
+    elif mode == "--handler-set":
+        run_handler_set()
+    elif mode == "--handler-clear":
+        run_handler_clear()
     elif mode == "--uninstall" and len(args) >= 2:
         run_uninstall(args[1])
     else:

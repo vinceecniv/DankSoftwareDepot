@@ -777,8 +777,15 @@ Item {
             if (!key)
                 break;
             if (event.phase === "install" || event.phase === "remove") {
+                // rpm is finished with this package. It used to stay
+                // "active" with a full bar until the verification pass at
+                // the very end, so a run of two hundred kept every row in
+                // "In progress" — bars all the way to the right, nothing
+                // moving to Completed — and then flipped the lot at once.
+                // The verification still has the last word and can turn any
+                // of these back into an error.
                 _setItem(key, {
-                    status: "active",
+                    status: "done",
                     fraction: 1,
                     detail: ""
                 });
@@ -1371,8 +1378,11 @@ Item {
                     const pct = pctMatch ? Math.min(100, parseInt(pctMatch[1], 10)) / 100 : -1;
                     let fraction = _dnfStage === 1 ? (pct >= 0 ? 0.7 * pct : 0.3) : (pct >= 0 ? 0.7 + 0.3 * pct : 0.8);
                     // recentLog is a rolling window that gets rescanned, so
-                    // older lines reappear — never move a bar backwards.
+                    // older lines reappear — never move a bar backwards, and
+                    // never take a finished row back into progress
                     const prev = itemStates[key];
+                    if (prev && (prev.status === "done" || prev.status === "error"))
+                        continue;
                     if (prev && prev.fraction > fraction)
                         fraction = prev.fraction;
                     let detail = currentDetail;
@@ -1389,8 +1399,12 @@ Item {
                         if (_dnfStage === 1 && size > 1024 * 1024)
                             detail += " · " + formatBytes(size * pct) + " / " + formatBytes(size);
                     }
+                    // A stage-2 line at 100% is this package's own
+                    // transaction step finishing — the same evidence that
+                    // fills its bar, so the row belongs in Completed from
+                    // here rather than at the end of the whole run
                     _setItem(key, {
-                        status: "active",
+                        status: (_dnfStage === 2 && pct >= 1) ? "done" : "active",
                         fraction: fraction,
                         detail: detail
                     });

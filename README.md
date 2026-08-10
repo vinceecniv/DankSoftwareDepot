@@ -5,8 +5,15 @@
 A full software & updates center plugin for
 [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell):
 everything the built-in updater does, plus app logos, release notes, reviews,
-honest per-package progress, an app store, AppImage management, firmware
-support and an action log — and no terminal output anywhere.
+honest per-package progress, an app store, [full AppImage
+management](#appimages-end-to-end), firmware support and an action log — and no
+terminal output anywhere.
+
+Four kinds of software, managed the same way: system packages, Flatpaks,
+AppImages and firmware. Beyond what the system already knows about, it can
+[search Copr](#3--install) for packages no configured repository carries, and
+it can be [the app that opens a downloaded
+`.appimage`](#appimages-end-to-end).
 
 ![screenshot](screenshot.png)
 
@@ -118,12 +125,8 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   changed from here: apt and pacman sources are shown read-only, because an
   apt source is a file plus a signing key and a pacman repo lives in a single
   hand-edited `pacman.conf`.
-- **AppImage support**: searchable catalog (appimage.github.io, 1400+ apps),
-  install straight from the app's GitHub releases or from a local file/URL;
-  icon and desktop entry are extracted; installs into `~/AppImages`
-  (created on first install — the same folder Gearlever uses by default, and
-  its own setting is honoured when it points elsewhere), and existing
-  AppImages are adopted automatically
+- **AppImages** are searched, installed and offered from here alongside
+  everything else — see [AppImages, end to end](#appimages-end-to-end)
 
 ### 4 · Firmware
 - fwupd device inventory: which hardware supports firmware updates, current
@@ -137,13 +140,47 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   (old → new version, source, result)
 - Searchable; entries are kept for 90 days
 
+## AppImages, end to end
+
+An AppImage is a file, not a package: nothing knows it exists, nothing tells
+you when it changes, and deleting it leaves its menu entry behind. The whole
+life of one is handled here, so it is managed software like anything else.
+
+- **Find one**: searchable catalog of the appimage.github.io index (1400+
+  apps), listed next to repo and Flathub results with a source choice when an
+  app ships more than one way
+- **Install one** from the app's own GitHub releases, from a URL, or from a
+  file you already have. They land in `~/AppImages` — created on first install,
+  the same folder Gearlever uses by default, and its own setting is honoured
+  when it points elsewhere
+- **Double-click a downloaded `.appimage`** and the window opens on that file,
+  offering to install it —
+  or to **replace the build already installed** when it recognises one, matched
+  on the name inside the image rather than the version in the file name. A
+  fresh download is never executable, which is exactly the case where
+  double-clicking otherwise does nothing at all; the file is read without being
+  modified. The association is on by default, claimed once and only when
+  `.appimage` is going spare — another app already holding it was somebody's
+  choice and is left alone. Settings → *Open .appimage files with this app*
+  takes it back or hands it over at any time
+- **It shows up like an app**: icon and desktop entry are extracted from the
+  image, so it appears in your launcher with the right name and logo
+- **Existing AppImages are adopted automatically** — the folder is scanned, and
+  images installed before this plugin existed are managed from then on
+- **Updates**: link a GitHub project to any AppImage and its releases become
+  the update channel. Pending AppImage updates appear in the Updates tab and
+  run in their own phase of Update All, with byte progress
+- **Uninstall** takes the file, its desktop entry, its icon and its record
+
 ## Bar widget & popout
 
 - Bar pill with the effective update count (held excluded);
   spinning refresh icon while checking, completed/planned counter during a
   run, restart icon when a reboot is recommended
 - Compact popout: enriched update list, Update All, phase label and
-  current item during a run
+  current item during a run. While a check runs, the Dank logo stays where it
+  is and pulses — the same two rings the shell's own System Check page uses —
+  instead of being replaced by a spinner
 - Optional: hide the pill when up to date, click opens the window directly
 
 ## Languages
@@ -200,8 +237,9 @@ The same by hand, if you would rather (the entry names the icon, so without the
 second step the launcher shows a blank one):
 
 ```bash
-install -Dm644 com.danklinux.dankSoftwareDepot.desktop \
-  ~/.local/share/applications/com.danklinux.dankSoftwareDepot.desktop
+sed "s|@OPEN@|$PWD/scripts/open.sh|" com.danklinux.dankSoftwareDepot.desktop \
+  > ~/.local/share/applications/com.danklinux.dankSoftwareDepot.desktop
+chmod +x scripts/open.sh
 install -Dm644 assets/icons/dank-software-depot-dark.svg \
   ~/.local/share/icons/hicolor/scalable/apps/dank-software-depot.svg
 install -Dm644 assets/icons/dank-software-depot-symbolic.svg \
@@ -209,8 +247,17 @@ install -Dm644 assets/icons/dank-software-depot-symbolic.svg \
 update-desktop-database ~/.local/share/applications
 ```
 
-The entry calls the IPC below, so DMS must be running — it opens the window in
-the shell rather than starting a second process.
+The entry runs `scripts/open.sh`, which calls the IPC below — so DMS must be
+running; it opens the window in the shell rather than starting a second
+process. The shim exists because a launcher gives a program a narrower `PATH`
+than a terminal does, and `dms ipc` needs both `dms` and `qs` on it; and
+because `dms ipc call` answers success even when it reached nobody. Either way
+the entry used to do nothing at all, silently. Now it looks in the usual places
+and, if it still cannot get through, says so in a notification.
+
+An entry written by an older version of the plugin carries no
+`X-DSD-Entry-Version` stamp and is rewritten once, automatically, the next time
+the window opens — there is nothing to redo by hand.
 
 ### IPC
 
@@ -219,6 +266,7 @@ dms ipc call dankSoftwareDepot open      # open the window
 dms ipc call dankSoftwareDepot toggle
 dms ipc call dankSoftwareDepot tab 2     # open a specific tab (0-4)
 dms ipc call dankSoftwareDepot check     # trigger an update check
+dms ipc call dankSoftwareDepot openAppimage /path/to/App.AppImage
 ```
 
 ## Network and privacy
@@ -246,6 +294,7 @@ list of things you already have. Everything it contacts, and when:
 | `flathub.org/api/v2` | install counts, download size, sandbox permissions, verified status | opening a Flatpak app's details |
 | the screenshot URLs in AppStream data | the screenshots themselves, cached locally for 30 days | opening an app's details |
 | `appimage.github.io`, `api.github.com` | the AppImage catalogue and the releases of an AppImage's linked project | the Install tab and AppImage updates |
+| `api.github.com` | for a package built from git, the notes of the release being installed or the commits between two snapshots — the repository comes from the package's own URL field | opening the details of such an update; answers cached a day, and a package not built from git never asks |
 | `bodhi.fedoraproject.org` | which Fedora releases are current, for the release-upgrade notice | the upgrade check |
 | `copr.fedorainfracloud.org` | which Coprs build a package matching your search, and for which Fedora | only when you press Search Copr; answers cached six hours |
 | `mirrors.rpmfusion.org`, `dl.flathub.org`, `nightly.gnome.org`, `cdn.kde.org`, `registry.fedoraproject.org` | fetching a source you asked to add | only when you press Add in Software sources |
@@ -275,6 +324,8 @@ anything about you leaves the machine:
 | `FirmwareView.qml` | fwupd device inventory |
 | `LogView.qml` | Action history browser |
 | `AppDetailsDialog.qml` | Shared app-details popup (info, reviews, actions) |
+| `AppimageOfferDialog.qml` | Installing an AppImage from a file or URL — the toolbar button and a double-clicked `.appimage` both land here |
+| `PulseRings.qml` | The shell's System Check pulse, borrowed so a check can happen around the logo instead of over it |
 | `UpdateEngine.qml` | Run orchestration (daemon dnf → libflatpak → fwupd → DMS packages), per-package progress from log lines and dnf-cache bytes |
 | `MetadataStore.qml` | Async enrichment cache + held-state persistence |
 | `ActionLog.qml` | Persistent action history (90-day retention) |
@@ -291,9 +342,10 @@ anything about you leaves the machine:
 | `scripts/test_dep11.py` | Checks the DEP-11 and apt/pacman changelog paths against real-shaped data, runnable on any distro |
 | `scripts/test_gitnotes.py` | Checks the upstream-notes path for git builds — snapshot versions, markdown reduction, the two forge answers — with the network stubbed |
 | `scripts/flatpak_helper.py` | libflatpak transactions (updates & installs) with exact byte progress (NDJSON events) |
-| `scripts/appimage.py` | AppImage catalog, install/update/uninstall, GitHub update sources, adhoc folder scanning (NDJSON events) |
+| `scripts/appimage.py` | AppImage catalog, install/replace/update/uninstall, GitHub update sources, adhoc folder scanning, inspecting a file before offering it, and the `.appimage` default-handler association (NDJSON events) |
 | `scripts/repo_backend.py` | Software sources: reads the configured repositories and Flatpak remotes; enable/disable, Copr add/remove/search, RPM Fusion and Flathub (dnf family only; apt and pacman are listed read-only) |
 | `scripts/action_log.py` | Action-log append/prune helper |
+| `scripts/open.sh` | What the desktop entry runs: finds `dms` on a launcher's narrower PATH, opens the window or hands over a double-clicked AppImage, and turns a failed call into a notification instead of into silence |
 
 Update detection, check interval and ignored packages remain managed by DMS
 itself (Settings → System Updater); this plugin consumes that state.

@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import qs.Modals.FileBrowser
 import qs.Common
 import qs.Services
 import qs.Widgets
@@ -217,24 +216,22 @@ Item {
         }
     }
 
-    // Inline "install from file or URL" row
-    property bool fileInstallOpen: false
+    // ── Installing an AppImage from a file ───────────────────────────────────
+    // Both ways in end up here: the toolbar button opens the dialog empty,
+    // and a .appimage double-clicked in the file manager opens it on that
+    // file. The dialog does the reading and the asking; running the install
+    // stays here, where the progress, the log entry and the refresh live.
+    AppimageOfferDialog {
+        id: offerDialog
 
-    // DMS-native file browser for picking an existing .AppImage
-    Loader {
-        id: appimagePickerLoader
-        active: false
+        parent: view.overlayParent || view
+        busy: view.appimageBusy !== ""
 
-        sourceComponent: FileBrowserModal {
-            browserTitle: Tr.t("Choose an AppImage file")
-            browserIcon: "note_add"
-            browserType: "generic"
-            fileExtensions: ["*.AppImage", "*.appimage"]
+        onInstallRequested: (args, label) => view.installAppimage(args, label)
+    }
 
-            onFileSelected: path => {
-                fileInstallField.text = path.replace("file://", "");
-            }
-        }
+    function offerAppimageFile(path) {
+        offerDialog.openWithFile(path);
     }
 
     // ── Instant search ───────────────────────────────────────────────────────
@@ -926,9 +923,9 @@ Item {
                 buttonSize: 34
                 iconName: "note_add"
                 iconSize: 18
-                iconColor: view.fileInstallOpen ? Theme.primary : Theme.surfaceText
+                iconColor: offerDialog.showing ? Theme.primary : Theme.surfaceText
                 tooltipText: Tr.t("Install AppImage from file or URL")
-                onClicked: view.fileInstallOpen = !view.fileInstallOpen
+                onClicked: offerDialog.open()
             }
         }
 
@@ -1026,50 +1023,6 @@ Item {
                     backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
                     textColor: Theme.surfaceText
                     onClicked: view.searchCopr()
-                }
-            }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            visible: view.fileInstallOpen
-            spacing: Theme.spacingS
-
-            DankTextField {
-                id: fileInstallField
-                Layout.fillWidth: true
-                placeholderText: Tr.t("Path or URL of an .AppImage…")
-                showClearButton: true
-            }
-
-            DankActionButton {
-                buttonSize: 32
-                iconName: "folder_open"
-                iconSize: 17
-                iconColor: Theme.surfaceText
-                tooltipText: Tr.t("Choose an AppImage file")
-                onClicked: {
-                    appimagePickerLoader.active = true;
-                    if (appimagePickerLoader.item)
-                        appimagePickerLoader.item.open();
-                }
-            }
-
-            DankButton {
-                buttonHeight: 32
-                horizontalPadding: Theme.spacingM
-                iconName: "download"
-                iconSize: 14
-                text: Tr.t("Install")
-                backgroundColor: Theme.buttonBg
-                textColor: Theme.buttonText
-                enabled: fileInstallField.text.trim() !== "" && view.appimageBusy === ""
-                onClicked: {
-                    const source = fileInstallField.text.trim();
-                    const base = source.split("/").pop().replace(/\.appimage$/i, "");
-                    view.installAppimage(["--install", source], base || "AppImage");
-                    view.fileInstallOpen = false;
-                    fileInstallField.clear();
                 }
             }
         }

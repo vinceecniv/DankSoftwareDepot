@@ -24,6 +24,34 @@ PluginComponent {
     // decision, not something to be asked again on the next window open
     readonly property bool launcherPromptDone: pluginData.launcherPromptDone === true
 
+    // Opening a downloaded .appimage is what someone installing a software
+    // centre expects it to do, so the association is claimed once rather than
+    // waited for — but only once, and only when the type is going spare. If
+    // another app already holds it that was a choice, and if you switch ours
+    // off it stays off; the flag below is what makes both true.
+    readonly property bool appimageHandlerClaimed: pluginData.appimageHandlerClaimed === true
+
+    Timer {
+        // Nothing claims anything until the current association is known, so
+        // this keeps asking rather than acting on an unanswered question
+        interval: 8000
+        repeat: true
+        running: !root.appimageHandlerClaimed
+        onTriggered: {
+            if (!Backend.appimageHandlerChecked) {
+                Backend.checkAppimageHandler();
+                return;
+            }
+            PluginService.savePluginData("dankSoftwareDepot", "appimageHandlerClaimed", true);
+            if (Backend.appimageHandlerDefault || Backend.appimageHandlerOther !== "")
+                return;
+            Backend.setAppimageHandler();
+            // The association needs a desktop entry to point at, so one is
+            // written — which answers the launcher question by doing it
+            PluginService.savePluginData("dankSoftwareDepot", "launcherPromptDone", true);
+        }
+    }
+
     property bool confirmArmed: false
 
     // Last known update list, persisted across restarts: the daemon loses
@@ -910,6 +938,12 @@ PluginComponent {
         function tab(index: int): void {
             updaterWindow.activate();
             updaterWindow.openTab(index);
+        }
+
+        // Sent by the desktop entry when an .appimage file is opened with
+        // this app — see scripts/open.sh
+        function openAppimage(path: string): void {
+            updaterWindow.openAppimageFile(path);
         }
 
         function updateFlatpakOne(appid: string): void {

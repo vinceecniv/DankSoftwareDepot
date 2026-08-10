@@ -3,9 +3,19 @@ Type=Application
 Name=Dank Software Depot
 GenericName=Software Center
 Comment=Updates, software install and firmware for DankMaterialShell
-Exec=dms ipc call dankSoftwareDepot open
+# @OPEN@ is replaced with the absolute path of scripts/open.sh when the entry
+# is installed: a launcher's PATH is not the one a terminal has, and the shim
+# turns a failed call into a notification instead of into nothing at all.
+Exec=@OPEN@ %f
 Icon=dank-software-depot
 Terminal=false
 Categories=System;Settings;PackageManager;
-Keywords=updates;software;packages;flatpak;firmware;install;
+Keywords=updates;software;packages;flatpak;firmware;install;appimage;
+MimeType=application/vnd.appimage;application/x-iso9660-appimage;
 StartupNotify=false
+# Bumped whenever this file changes shape. An entry already sitting in the
+# user's home carries the stamp it was written with, which is how a plugin
+# update can tell a current entry from one it has to rewrite — nobody goes
+# looking in ~/.local/share/applications to find out why a click stopped
+# working.
+X-DSD-Entry-Version=2

@@ -364,18 +364,34 @@ Item {
     readonly property string pluginDir: Qt.resolvedUrl(".").toString().replace("file://", "").replace(/\/$/, "")
     readonly property string launcherEntryName: "com.danklinux.dankSoftwareDepot.desktop"
 
+    // Must match X-DSD-Entry-Version in the .desktop file
+    readonly property string launcherEntryVersion: "2"
+
     property bool launcherEntryPresent: false
     // Until the first check answers, the UI should claim neither state
     property bool launcherEntryChecked: false
     property bool launcherEntryBusy: false
     property string launcherEntryError: ""
+    // An entry written by an older version of the plugin. It is rewritten
+    // without asking: the user already said yes to having one, and the one
+    // they have calls `dms` by a name their launcher may not resolve.
+    property bool _launcherEntryRepaired: false
 
     function checkLauncherEntry() {
         if (launcherCheckProcess.running)
             return;
-        launcherCheckProcess.command = ["sh", "-c", "test -f \"$HOME/.local/share/applications/" + launcherEntryName + "\""];
+        launcherCheckProcess._stamp = "";
+        launcherCheckProcess.command = ["sh", "-c", "f=\"$HOME/.local/share/applications/" + launcherEntryName + "\"; test -f \"$f\" || exit 1; sed -n 's/^X-DSD-Entry-Version=//p' \"$f\" | head -1"];
         launcherCheckProcess.running = true;
     }
+
+    // The icon is installed too: the entry names it, and without it the
+    // launcher shows a blank tile next to a perfectly good name. Exec is
+    // rewritten to the absolute path of scripts/open.sh — the entry used to
+    // call `dms` by name, which a launcher looks up in the session PATH
+    // rather than the one a terminal builds, and when it was not there,
+    // clicking the entry did nothing whatsoever.
+    readonly property string _entryInstallCommand: "set -e; src='" + pluginDir + "'; apps=\"$HOME/.local/share/applications\"; icons=\"$HOME/.local/share/icons/hicolor\"; mkdir -p \"$apps\"; chmod +x \"$src/scripts/open.sh\"; sed \"s|@OPEN@|$src/scripts/open.sh|\" \"$src/" + launcherEntryName + "\" > \"$apps/" + launcherEntryName + "\"; chmod 644 \"$apps/" + launcherEntryName + "\"; install -Dm644 \"$src/assets/icons/dank-software-depot-dark.svg\" \"$icons/scalable/apps/dank-software-depot.svg\"; install -Dm644 \"$src/assets/icons/dank-software-depot-symbolic.svg\" \"$icons/symbolic/apps/dank-software-depot-symbolic.svg\"; update-desktop-database \"$apps\" 2>/dev/null || true"
 
     function installLauncherEntry() {
         if (launcherEntryBusy)
@@ -383,9 +399,7 @@ Item {
         launcherEntryError = "";
         launcherEntryBusy = true;
         launcherProcess._output = "";
-        // The icon is installed too: the entry names it, and without it the
-        // launcher shows a blank tile next to a perfectly good name
-        launcherProcess.command = ["sh", "-c", "set -e; src='" + pluginDir + "'; apps=\"$HOME/.local/share/applications\"; icons=\"$HOME/.local/share/icons/hicolor\"; install -Dm644 \"$src/" + launcherEntryName + "\" \"$apps/" + launcherEntryName + "\"; install -Dm644 \"$src/assets/icons/dank-software-depot-dark.svg\" \"$icons/scalable/apps/dank-software-depot.svg\"; install -Dm644 \"$src/assets/icons/dank-software-depot-symbolic.svg\" \"$icons/symbolic/apps/dank-software-depot-symbolic.svg\"; update-desktop-database \"$apps\" 2>/dev/null || true"];
+        launcherProcess.command = ["sh", "-c", _entryInstallCommand];
         launcherProcess.running = true;
     }
 
@@ -402,9 +416,23 @@ Item {
     Process {
         id: launcherCheckProcess
 
+        property string _stamp: ""
+
+        stdout: StdioCollector {
+            onStreamFinished: launcherCheckProcess._stamp = text.trim()
+        }
+
         onExited: (exitCode, exitStatus) => {
             backend.launcherEntryPresent = exitCode === 0;
             backend.launcherEntryChecked = true;
+            // An entry from before this version names `dms` directly and
+            // declares no MIME types — it cannot open the window on a
+            // machine whose launcher has a narrower PATH, and it can never
+            // be the AppImage handler. Rewrite it once.
+            if (exitCode === 0 && _stamp !== backend.launcherEntryVersion && !backend._launcherEntryRepaired) {
+                backend._launcherEntryRepaired = true;
+                backend.installLauncherEntry();
+            }
         }
     }
 
@@ -421,6 +449,85 @@ Item {
             backend.launcherEntryBusy = false;
             if (exitCode !== 0)
                 backend.launcherEntryError = _output || Tr.t("the launcher entry could not be written");
+            backend.checkLauncherEntry();
+            backend.checkAppimageHandler();
+        }
+    }
+
+    // ── Default handler for .appimage files ────────────────────────────────
+    // Double-clicking an AppImage lands in this window, which then offers to
+    // install it — or to replace the copy already installed. The association
+    // is written into the user's own mimeapps.list and taken back out again;
+    // it needs the desktop entry to exist, so switching it on writes that
+    // too rather than failing on a file nobody told the user about.
+
+    readonly property string appimageScript: pluginDir + "/scripts/appimage.py"
+
+    property bool appimageHandlerDefault: false
+    property bool appimageHandlerChecked: false
+    property bool appimageHandlerBusy: false
+    // Whoever holds the association when it is not us. Something else having
+    // claimed .appimage — Gearlever, an archive manager — is a choice
+    // somebody made, and the one-time claim below leaves it alone.
+    property string appimageHandlerOther: ""
+
+    function checkAppimageHandler() {
+        if (handlerStatusProcess.running)
+            return;
+        handlerStatusProcess.command = ["python3", appimageScript, "--handler-status"];
+        handlerStatusProcess.running = true;
+    }
+
+    function setAppimageHandler() {
+        if (appimageHandlerBusy)
+            return;
+        appimageHandlerBusy = true;
+        // The entry is (re)written in the same breath: being the default for
+        // a file type means nothing without something for it to point at,
+        // and an entry from an older version has no MimeType line at all
+        handlerProcess.command = ["sh", "-c", _entryInstallCommand + "; python3 '" + appimageScript + "' --handler-set"];
+        handlerProcess.running = true;
+    }
+
+    function clearAppimageHandler() {
+        if (appimageHandlerBusy)
+            return;
+        appimageHandlerBusy = true;
+        handlerProcess.command = ["python3", appimageScript, "--handler-clear"];
+        handlerProcess.running = true;
+    }
+
+    Process {
+        id: handlerStatusProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let status = null;
+                try {
+                    status = JSON.parse(text);
+                } catch (e) {
+                    status = null;
+                }
+                backend.appimageHandlerDefault = status !== null && status.isDefault === true;
+                const held = (status && status.defaults) ? (status.defaults["application/vnd.appimage"] || "") : "";
+                backend.appimageHandlerOther = (held === "" || backend.appimageHandlerDefault) ? "" : held;
+                backend.appimageHandlerChecked = true;
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            // No output to parse (python missing, script unreadable): the
+            // switch still has to stop saying "checking"
+            backend.appimageHandlerChecked = true;
+        }
+    }
+
+    Process {
+        id: handlerProcess
+
+        onExited: (exitCode, exitStatus) => {
+            backend.appimageHandlerBusy = false;
+            backend.checkAppimageHandler();
             backend.checkLauncherEntry();
         }
     }
