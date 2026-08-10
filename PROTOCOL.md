@@ -111,6 +111,7 @@ Debian family `scripts/pkg_backend.py` provides the apt implementations.
 | Reboot recommendation | kernel/glibc/… name pattern | linux-image/libc6/… pattern (`Backend.rebootPackagePattern`) |
 | Distro upgrade notice | Bodhi (Fedora releases) | not offered |
 | Package changelogs | dnf/rpm changelog | `/usr/share/doc/<pkg>/changelog.Debian.gz` — the installed version, read locally |
+| Notes for git builds | upstream GitHub, keyed on the rpm URL field | same, keyed on `pkg_backend.package_info` homepage |
 | AppStream catalog for system apps | Fedora swcatalog XML | DEP-11 YAML from apt's lists and the appstream cache |
 
 The pacman column of `pkg_backend.py` mirrors the same functions via a

@@ -14,6 +14,9 @@ Data sources: AppStream catalogs (distro + flatpak remotes), with a `dnf repoque
 fallback for rpm packages that have no AppStream component.
 
 Alternate mode:  enrich.py --changelog <pkg>   → plain-text rpm changelog (top entries).
+Alternate mode:  enrich.py --gitnotes <pkg> <from-evr> <to-evr>
+                 → release notes / commits from the upstream forge, for
+                   packages built from git (see run_gitnotes).
 """
 
 import glob
@@ -614,6 +617,311 @@ def run_changelog(pkg):
     except (OSError, subprocess.SubprocessError) as exc:
         print(f"(changelog unavailable: {exc})", file=sys.stderr)
         sys.exit(1)
+
+
+# ── Release notes for packages built from git ──────────────────────────────
+# A package from a *-git copr or an AUR -git PKGBUILD has no release to
+# describe: its version is a commit count and a short hash, so AppStream
+# carries no <release> for it and the rpm changelog records only the rebuild.
+# Upstream does know, and the package manager already knows where upstream
+# lives (the rpm URL field), so ask the forge for what the distro cannot say:
+# the notes of the release being installed, or the commits between the two
+# snapshots when both sides are builds of a branch.
+
+GITNOTES_CACHE = os.path.join(CACHE_DIR, "gitnotes-cache.json")
+GITNOTES_MAX_COMMITS = 40
+GITNOTES_MAX_CHARS = 6000
+
+# "0.0.git.4350.3f6cd0b5" (copr), "1.2^git20260808.abc1234" (Fedora snapshot
+# convention), "2.0.0.r1234.abc1234" (AUR -git)
+GIT_MARKER_RE = re.compile(r"(?:^|[.^~+_-])(?:git|r\d+\.)", re.I)
+# A hash never gets confused with the commit count or date stamp beside it:
+# all-digit tokens are rejected below, not matched loosely here.
+HASH_RE = re.compile(r"(?<![0-9a-z])([0-9a-f]{7,40})(?![0-9a-z])", re.I)
+
+
+def evr_version(evr):
+    """Version part of an EVR — no epoch, no release."""
+    v = re.sub(r"^\d+:", "", (evr or "").strip())
+    return v.rsplit("-", 1)[0] if "-" in v else v
+
+
+def snapshot_hash(version):
+    """Short commit hash of a git-snapshot version, "" for a real release."""
+    if not version or not GIT_MARKER_RE.search(version):
+        return ""
+    found = ""
+    for match in HASH_RE.finditer(version):
+        token = match.group(1)
+        # 4350 is the commit count, 20260808 the date it was built; neither
+        # is the commit, and a hash that happens to be all digits is rarer
+        # than the two things it would be mistaken for
+        if token.isdigit():
+            continue
+        found = token.lower()
+    return found
+
+
+def github_repo(url):
+    """"owner/repo" for a GitHub URL, "" for anything else."""
+    match = re.match(r"https?://(?:www\.)?github\.com/([^/\s]+)/([^/\s#?]+)", (url or "").strip())
+    if not match:
+        return ""
+    return match.group(1) + "/" + re.sub(r"\.git$", "", match.group(2))
+
+
+def package_url(name):
+    """Upstream URL the package manager records, available build first."""
+    if BACKEND != "dnf":
+        return (pkg_backend.package_info(name) or {}).get("homepage", "")
+    url = dnf_fallback({name}).get(name, {}).get("homepage", "")
+    if url:
+        return url
+    # Dropped from every enabled repo but still installed
+    try:
+        res = subprocess.run(["rpm", "-q", "--qf", "%{url}", name],
+                             capture_output=True, text=True, timeout=15,
+                             env={**os.environ, "LC_ALL": "C"})
+        return res.stdout.strip() if res.returncode == 0 else ""
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+
+def markdown_inline(text):
+    """Inline marks of a release body, on text that is escaped first.
+
+    Links keep their words and lose their target, and embedded HTML is
+    dropped before the escape rather than shown as its own source: these
+    notes are written by whoever owns the repository, and the same rule holds
+    as for AppStream — no upstream markup reaches the Qt renderer intact.
+    """
+    import html as htmlmod
+    stripped = re.sub(r"</?[a-zA-Z][^>]*>", "", text)
+    out = htmlmod.escape(stripped)
+    out = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", out)
+    out = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", out)
+    out = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", out)
+    out = re.sub(r"(?<![\w*])\*([^*]+)\*(?![\w*])", r"<i>\1</i>", out)
+    out = re.sub(r"(?<!\w)_([^_]+)_(?!\w)", r"<i>\1</i>", out)
+    out = re.sub(r"`([^`]+)`", r"<code>\1</code>", out)
+    return out.strip()
+
+
+def markdown_notes_html(md, limit=GITNOTES_MAX_CHARS):
+    """Reduce a release body to the safe HTML subset, cut to a popup's worth.
+
+    Returns (html, dropped_blocks): a body that runs to several screens is
+    truncated at a block boundary rather than mid-sentence, and the caller
+    says so instead of pretending that was all of it.
+    """
+    import html as htmlmod
+    blocks = []
+    para, items, code = [], [], []
+    fenced = False
+
+    def flush_para():
+        if para:
+            blocks.append("<p>" + markdown_inline(" ".join(para)) + "</p>")
+            para.clear()
+
+    def flush():
+        flush_para()
+        if items:
+            blocks.append("<ul>" + "".join("<li>" + i + "</li>" for i in items) + "</ul>")
+            items.clear()
+        if code:
+            blocks.append("<p><code>" + "<br>".join(htmlmod.escape(c) for c in code) + "</code></p>")
+            code.clear()
+
+    for raw in (md or "").replace("\r\n", "\n").split("\n"):
+        line = raw.strip()
+        if line.startswith("```") or line.startswith("~~~"):
+            flush()
+            fenced = not fenced
+            continue
+        if fenced:
+            code.append(raw.rstrip())
+            continue
+        # A quote is content; its markers are not. GitHub's alert syntax
+        # ("> [!NOTE]") names the box it would have been drawn in.
+        while line.startswith(">"):
+            line = line[1:].strip()
+        alert = re.match(r"\[!(\w+)\]\s*(.*)", line)
+        if alert:
+            rest = alert.group(2).strip()
+            line = alert.group(1).capitalize() + ":" + (" " + rest if rest else "")
+        if not line:
+            flush()
+            continue
+        # A table loses its columns in a one-column popup and reads as a row
+        # of pipes; the prose around it carries the same news
+        if line.startswith("|"):
+            flush_para()
+            continue
+        if re.fullmatch(r"[-=*_ ]{3,}", line):
+            continue  # horizontal rule or setext underline
+        heading = re.match(r"#{1,6}\s+(.*)", line)
+        if heading:
+            flush()
+            blocks.append("<p><b>" + markdown_inline(heading.group(1)) + "</b></p>")
+            continue
+        bullet = re.match(r"(?:[-*+]|\d+[.)])\s+(.*)", line)
+        if bullet:
+            flush_para()
+            items.append(markdown_inline(bullet.group(1)))
+            continue
+        if items:
+            items[-1] += " " + markdown_inline(line)
+        else:
+            para.append(line)
+    flush()
+
+    blocks = [b for b in blocks if re.sub(r"<[^>]+>", "", b).strip()]
+
+    kept, total = [], 0
+    for block in blocks:
+        if total and total + len(block) > limit:
+            return "".join(kept), len(blocks) - len(kept)
+        kept.append(block)
+        total += len(block)
+    return "".join(kept), 0
+
+
+def github_commits(repo, old, new):
+    """Commits between two snapshot builds, newest first."""
+    data = _http_json(f"https://api.github.com/repos/{repo}/compare/{old}...{new}", timeout=20)
+    subjects = []
+    for commit in reversed(data.get("commits") or []):
+        subject = ((commit.get("commit") or {}).get("message") or "").split("\n")[0].strip()
+        # A merge commit names the pull request whose commits are listed
+        # right below it — the same change, twice
+        if subject and not subject.startswith("Merge "):
+            subjects.append(subject)
+    if not subjects:
+        return {"kind": "", "error": "no commits"}
+    total = data.get("total_commits") or len(subjects)
+    shown = subjects[:GITNOTES_MAX_COMMITS]
+    date = 0
+    if data.get("commits"):
+        author = ((data["commits"][-1].get("commit") or {}).get("author") or {})
+        date = normalize_date(author.get("date", ""))
+    import html as htmlmod
+    return {
+        "kind": "commits",
+        "commitCount": total,
+        "more": max(0, total - len(shown)),
+        "url": data.get("html_url") or f"https://github.com/{repo}/compare/{old}...{new}",
+        "releases": [{
+            "version": new,
+            "date": date,
+            "notesHtml": "<ul>" + "".join("<li>" + htmlmod.escape(s) + "</li>" for s in shown) + "</ul>",
+            "newer": True,
+        }],
+    }
+
+
+def tag_version(tag):
+    return re.sub(r"^v(?=\d)", "", (tag or "").strip())
+
+
+def tags_match(tag, version):
+    """Same release, allowing for a tag and a package version that disagree
+    about trailing zeros (tag v26.04.0 packaged as 26.04)."""
+    if not tag or not version:
+        return False
+    return tag == version or tag.startswith(version + ".") or version.startswith(tag + ".")
+
+
+def github_releases(repo, from_version, to_version):
+    """Published notes for the release being installed, plus any release
+    skipped between the two versions."""
+    data = _http_json(f"https://api.github.com/repos/{repo}/releases?per_page=30", timeout=20)
+    if not isinstance(data, list):
+        return {"kind": "", "error": "no releases"}
+    published = [r for r in data if not r.get("draft")]
+    target = evr_version(to_version)
+    previous = "" if snapshot_hash(evr_version(from_version)) else evr_version(from_version)
+
+    wanted = []
+    for rel in published:
+        tag = tag_version(rel.get("tag_name") or "")
+        if tags_match(tag, target):
+            wanted.append(rel)
+        elif previous and version_newer(tag, previous) and not version_newer(tag, target):
+            # A version skipped along the way: its fixes are being installed
+            # too, and they are the ones nobody has read
+            wanted.append(rel)
+    if not wanted:
+        return {"kind": "", "error": "no release matching " + target}
+
+    wanted.sort(key=lambda r: version_key(tag_version(r.get("tag_name") or "")), reverse=True)
+    releases, dropped = [], 0
+    for rel in wanted[:MAX_RELEASES]:
+        notes, more = markdown_notes_html(rel.get("body") or "")
+        dropped += more
+        releases.append({
+            "version": tag_version(rel.get("tag_name") or ""),
+            "date": normalize_date(rel.get("published_at") or ""),
+            "notesHtml": notes,
+            "newer": True,
+        })
+    return {
+        "kind": "release",
+        "more": dropped,
+        "url": wanted[0].get("html_url") or f"https://github.com/{repo}/releases",
+        "releases": releases,
+    }
+
+
+def run_gitnotes(pkg, from_evr, to_evr):
+    """enrich.py --gitnotes <pkg> <from-evr> <to-evr> → notes from the forge."""
+    import time
+    name = strip_arch(pkg)
+    from_version = evr_version(from_evr)
+    to_version = evr_version(to_evr)
+    empty = {"kind": "", "repo": "", "url": "", "releases": [], "more": 0}
+
+    # Only packages that actually track a branch pay for a network round trip
+    if not snapshot_hash(from_version) and not snapshot_hash(to_version):
+        json.dump({**empty, "error": "not a git build"}, sys.stdout)
+        return
+
+    key = "|".join((name, from_evr or "", to_evr or ""))
+    cache = _load_daily_cache(GITNOTES_CACHE)
+    if key in cache["data"]:
+        json.dump(cache["data"][key], sys.stdout)
+        return
+
+    repo = github_repo(package_url(name))
+    if not repo:
+        json.dump({**empty, "error": "no GitHub repository for " + name}, sys.stdout)
+        return
+
+    try:
+        to_hash = snapshot_hash(to_version)
+        if to_hash:
+            from_hash = snapshot_hash(from_version)
+            out = (github_commits(repo, from_hash, to_hash) if from_hash
+                   else {"kind": "", "error": "no commit to compare from"})
+        else:
+            out = github_releases(repo, from_version, to_version)
+    except Exception as exc:
+        # Rate limit, no network, a repository that moved and no longer
+        # answers: the changelog below still shows, so say nothing loudly
+        json.dump({**empty, "repo": repo, "error": str(exc)}, sys.stdout)
+        return
+
+    out = {**empty, **out, "repo": repo}
+    if not cache["ts"]:
+        cache["ts"] = time.time()
+    cache["data"][key] = out
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(GITNOTES_CACHE, "w") as f:
+            json.dump(cache, f)
+    except OSError:
+        pass
+    json.dump(out, sys.stdout)
 
 
 APPSTREAM_MAX_AGE = 24 * 3600
@@ -1756,6 +2064,9 @@ def main():
         return
     if len(sys.argv) >= 3 and sys.argv[1] == "--changelog":
         run_changelog(sys.argv[2])
+        return
+    if len(sys.argv) >= 5 and sys.argv[1] == "--gitnotes":
+        run_gitnotes(sys.argv[2], sys.argv[3], sys.argv[4])
         return
     if len(sys.argv) >= 3 and sys.argv[1] == "--search":
         run_search(sys.argv[2])

@@ -43,6 +43,10 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - Rich update cards: logo, name, summary, `old → new` versions, repo chip,
   homepage link, expandable sanitized release notes (AppStream releases for
   apps, rpm changelog fallback), per-app update button
+- **Packages built from git** (a `*-git` Copr, an AUR `-git` build) have no
+  release for the distro to describe, so their notes come from the upstream
+  forge instead: the published notes of the release being installed, or the
+  commits between the two snapshots when both sides are builds of a branch
 - Sections (Applications / System / Runtimes / Firmware / Held)
   with a hover **Update these** button per section
 - **Held packages**: dnf versionlock/excludepkgs detected automatically,
@@ -277,7 +281,7 @@ anything about you leaves the machine:
 | `FirmwareService.qml` | fwupd update detection |
 | `PhaseIndicator.qml` | Material phase stepper |
 | `Tr.qml` | Plugin-local translation singleton |
-| `scripts/enrich.py` | AppStream parsing, dnf fallbacks, holds detection, search index, featured storefront, ODRS ratings, caching, sanitizing |
+| `scripts/enrich.py` | AppStream parsing, dnf fallbacks, holds detection, search index, featured storefront, ODRS ratings, upstream notes for git builds, caching, sanitizing |
 | `scripts/rpm_helper.py` | libdnf5 transactions (install/remove/upgrade/downgrade) with exact byte progress (NDJSON events, see PROTOCOL.md) |
 | `scripts/ostree_helper.py` | rpm-ostree counterpart of rpm_helper.py — experimental atomic-Fedora backend (layering, staged until reboot) |
 | `scripts/apt_helper.py` | python-apt counterpart of rpm_helper.py — experimental Debian/Ubuntu transaction backend |
@@ -285,6 +289,7 @@ anything about you leaves the machine:
 | `scripts/pkg_backend.py` | Per-distro metadata backend (search, sizes, inventory, holds, versions, changelogs); apt + pacman implemented, dnf stays in enrich.py. Also answers, for every distro, which packages own a launchable desktop entry |
 | `scripts/check_translations.py` | Checks the 15 catalogs against the QML: identical key sets, every string the UI asks for, placeholders kept, keys nothing calls any more |
 | `scripts/test_dep11.py` | Checks the DEP-11 and apt/pacman changelog paths against real-shaped data, runnable on any distro |
+| `scripts/test_gitnotes.py` | Checks the upstream-notes path for git builds — snapshot versions, markdown reduction, the two forge answers — with the network stubbed |
 | `scripts/flatpak_helper.py` | libflatpak transactions (updates & installs) with exact byte progress (NDJSON events) |
 | `scripts/appimage.py` | AppImage catalog, install/update/uninstall, GitHub update sources, adhoc folder scanning (NDJSON events) |
 | `scripts/repo_backend.py` | Software sources: reads the configured repositories and Flatpak remotes; enable/disable, Copr add/remove/search, RPM Fusion and Flathub (dnf family only; apt and pacman are listed read-only) |

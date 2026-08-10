@@ -59,8 +59,12 @@ FloatingWindow {
         const isFlatpak = pkg.repo === "flatpak";
         const base = win.store.stripArch(pkg.name || "");
         const newer = (info && info.releases) ? info.releases.filter(r => r.newer && (r.notesHtml || r.version)).slice(0, 5) : [];
-        if (!isFlatpak && !isFirmware && newer.length === 0)
+        if (!isFlatpak && !isFirmware && newer.length === 0) {
             win.store.fetchChangelog(base);
+            // Nothing in AppStream and, for a git build, nothing in the
+            // changelog either — the notes exist, just not in the distro
+            win.store.fetchGitNotes(base, pkg.fromVersion, pkg.toVersion);
+        }
         updatesDialog.rowData = rowData;
         updatesDialog.releases = newer;
         let versionLabel = pkg.toVersion || "";
@@ -141,9 +145,20 @@ FloatingWindow {
         readonly property bool rowIsRpm: rowPkg !== null && rowPkg.repo !== "flatpak" && rowPkg.repo !== "firmware"
         readonly property string rowBase: rowPkg ? win.store.stripArch(rowPkg.name || "") : ""
 
+        // "" for anything not built from git, which is what keeps the
+        // section — and the network call behind it — off every other package
+        readonly property string rowGitKey: rowPkg ? win.store.gitNotesKey(rowBase, rowPkg.fromVersion, rowPkg.toVersion) : ""
+        readonly property var rowGitNotes: rowGitKey !== "" ? (win.store.gitNotes[rowGitKey] || null) : null
+
         releasesTitle: Tr.t("What's new")
         changelogLoading: rowIsRpm && releases.length === 0 && win.store.changelogs[rowBase] === undefined
         changelog: (rowIsRpm && releases.length === 0) ? (win.store.changelogs[rowBase] || "") : ""
+        gitNotesLoading: rowGitKey !== "" && releases.length === 0 && rowGitNotes === null
+        gitReleases: rowGitNotes ? (rowGitNotes.releases || []) : []
+        gitNotesKind: rowGitNotes ? (rowGitNotes.kind || "") : ""
+        gitNotesUrl: rowGitNotes ? (rowGitNotes.url || "") : ""
+        gitNotesMore: rowGitNotes ? (rowGitNotes.more || 0) : 0
+        gitNotesCommits: rowGitNotes ? (rowGitNotes.commitCount || 0) : 0
         showHoldToggle: {
             if (!rowData)
                 return false;

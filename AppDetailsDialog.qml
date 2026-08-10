@@ -31,6 +31,15 @@ Item {
     property string releasesTitle: Tr.t("Release notes")
     property string changelog: ""        // rpm changelog text
     property bool changelogLoading: false
+    // Upstream notes for a package built from git, where the distro has none
+    // to give: either the release being installed, or the commits between two
+    // snapshots of the branch. See MetadataStore.fetchGitNotes().
+    property var gitReleases: []         // [{version, date, notesHtml}]
+    property bool gitNotesLoading: false
+    property string gitNotesKind: ""     // "release" | "commits" | ""
+    property string gitNotesUrl: ""      // release or compare page upstream
+    property int gitNotesMore: 0         // commits or blocks left unshown
+    property int gitNotesCommits: 0
     property var previousVersions: []    // [{label, payload}]
     property bool versionsLoading: false
     property bool noOlderVersions: false
@@ -983,6 +992,110 @@ Item {
                                 color: Theme.surfaceText
                                 wrapMode: Text.WordWrap
                             }
+                        }
+                    }
+
+                    // Upstream notes for a git build. The distro has nothing
+                    // to say about a commit, so this comes from the forge the
+                    // package is built from.
+                    StyledText {
+                        visible: dialog.gitNotesLoading || dialog.gitReleases.length > 0
+                        text: dialog.gitNotesKind === "commits" ? Tr.t("Commits since your build") : Tr.t("What's new upstream")
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.weight: Font.DemiBold
+                        color: Theme.surfaceText
+                    }
+
+                    StyledText {
+                        visible: dialog.gitNotesLoading
+                        text: Tr.t("Asking upstream…")
+                        font.pixelSize: Theme.fontSizeSmall - 1
+                        color: Theme.surfaceVariantText
+                    }
+
+                    Repeater {
+                        model: dialog.gitReleases
+
+                        delegate: Column {
+                            required property var modelData
+
+                            width: bodyColumn.width
+                            spacing: 2
+
+                            RowLayout {
+                                spacing: Theme.spacingS
+
+                                Rectangle {
+                                    Layout.preferredWidth: gitVersionChip.implicitWidth + 14
+                                    Layout.preferredHeight: 18
+                                    radius: 9
+                                    color: Theme.withAlpha(Theme.primary, 0.12)
+
+                                    StyledText {
+                                        id: gitVersionChip
+                                        anchors.centerIn: parent
+                                        text: modelData.version || ""
+                                        font.pixelSize: Theme.fontSizeSmall - 2
+                                        font.family: dialog.gitNotesKind === "commits" ? (Theme.monoFontFamily || "monospace") : Theme.fontFamily
+                                        color: Theme.primary
+                                    }
+                                }
+
+                                StyledText {
+                                    visible: dialog.gitNotesKind === "commits" && dialog.gitNotesCommits > 0
+                                    text: Tr.t("%1 commits").arg(dialog.gitNotesCommits)
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    color: Theme.surfaceVariantText
+                                }
+
+                                StyledText {
+                                    visible: (modelData.date || 0) > 0
+                                    text: modelData.date > 0 ? new Date(modelData.date * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat) : ""
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    color: Theme.surfaceVariantText
+                                }
+                            }
+
+                            StyledText {
+                                width: parent.width
+                                text: modelData.notesHtml || ("<i>" + Tr.t("No release notes published.") + "</i>")
+                                textFormat: Text.RichText
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.surfaceText
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                    }
+
+                    // Notes long enough to be cut short are worth finishing
+                    // somewhere, and the page they came from is the place
+                    RowLayout {
+                        width: parent.width
+                        spacing: Theme.spacingXS
+                        visible: dialog.gitNotesUrl !== "" && dialog.gitReleases.length > 0
+
+                        DankIcon {
+                            name: "open_in_new"
+                            size: 13
+                            color: Theme.primary
+                        }
+
+                        StyledText {
+                            text: dialog.gitNotesMore > 0 && dialog.gitNotesKind === "commits" ? Tr.t("%1 more commits upstream").arg(dialog.gitNotesMore) : (dialog.gitNotesMore > 0 ? Tr.t("Read the rest upstream") : Tr.t("Open upstream"))
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            color: Theme.primary
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
+                        HoverHandler {
+                            cursorShape: Qt.PointingHandCursor
+                        }
+
+                        TapHandler {
+                            onTapped: Qt.openUrlExternally(dialog.gitNotesUrl)
                         }
                     }
 

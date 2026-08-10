@@ -17,6 +17,9 @@ Item {
     signal enriched
     // "<basename>" -> plain-text rpm changelog (lazy-loaded)
     property var changelogs: ({})
+    // gitNotesKey() -> {kind, repo, url, releases, more, commitCount} for
+    // packages built from git (lazy-loaded, network)
+    property var gitNotes: ({})
     property bool loading: false
 
     readonly property string scriptDir: Qt.resolvedUrl("scripts/").toString().replace("file://", "")
@@ -155,6 +158,62 @@ Item {
         changelogProcess.running = true;
     }
 
+    // ── Release notes for packages built from git ───────────────────────────
+    // A *-git copr build or an AUR -git package carries a commit count and a
+    // short hash where a release number would be, so AppStream has no release
+    // to show and the rpm changelog only records the rebuild. enrich.py asks
+    // the upstream forge instead; this pattern only decides whether that
+    // round trip is worth making, and the script parses the version for real.
+    readonly property var gitVersionPattern: /(?:^|[.^~+_-])(?:git|r\d+\.)/i
+
+    function gitNotesKey(pkgName, fromVersion, toVersion) {
+        if (!pkgName)
+            return "";
+        if (!gitVersionPattern.test(fromVersion || "") && !gitVersionPattern.test(toVersion || ""))
+            return "";
+        return stripArch(pkgName) + "|" + (fromVersion || "") + "|" + (toVersion || "");
+    }
+
+    // Opening a second package while the first is still being asked about
+    // used to drop the request, and its section then said "asking" for as
+    // long as the popup stayed open. They queue instead.
+    property var _gitQueue: []
+
+    function fetchGitNotes(pkgName, fromVersion, toVersion) {
+        const key = gitNotesKey(pkgName, fromVersion, toVersion);
+        if (key === "" || gitNotes[key] !== undefined)
+            return;
+        const request = {
+            key: key,
+            name: stripArch(pkgName),
+            from: fromVersion || "",
+            to: toVersion || ""
+        };
+        if (gitNotesProcess.running || gitNotesProcess._target === key) {
+            if (gitNotesProcess._target !== key && !_gitQueue.some(q => q.key === key))
+                _gitQueue = _gitQueue.concat([request]);
+            return;
+        }
+        _startGitNotes(request);
+    }
+
+    // First answer wins: the collector records the parsed result, and the
+    // exit that follows it must not overwrite that with an empty one
+    function _recordGitNotes(key, result) {
+        if (key === "" || gitNotes[key] !== undefined)
+            return;
+        const updated = Object.assign({}, gitNotes);
+        updated[key] = result;
+        gitNotes = updated;
+    }
+
+    function _startGitNotes(request) {
+        gitNotesProcess._target = request.key;
+        gitNotesProcess.command = ["python3", scriptDir + "enrich.py", "--gitnotes",
+                                   request.name, request.from, request.to];
+        gitNotesProcess.running = true;
+    }
+
     Process {
         id: enrichProcess
 
@@ -192,6 +251,42 @@ Item {
                 const updated = Object.assign({}, store.changelogs);
                 updated[changelogProcess._target] = text.trim() || "";
                 store.changelogs = updated;
+            }
+        }
+    }
+
+    Process {
+        id: gitNotesProcess
+
+        property string _target: ""
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let result = null;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    result = null;
+                }
+                if (result)
+                    store._recordGitNotes(gitNotesProcess._target, result);
+            }
+        }
+
+        // The queue moves on from here rather than from the stdout collector:
+        // the next run may only start once this one has actually exited, and
+        // a package that produced no answer at all is recorded as asked so
+        // its section stops waiting
+        onExited: {
+            store._recordGitNotes(gitNotesProcess._target, {
+                kind: "",
+                releases: []
+            });
+            gitNotesProcess._target = "";
+            if (store._gitQueue.length > 0) {
+                const next = store._gitQueue[0];
+                store._gitQueue = store._gitQueue.slice(1);
+                store._startGitNotes(next);
             }
         }
     }
