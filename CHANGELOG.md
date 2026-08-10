@@ -3,6 +3,33 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.6.9 — 2026-08-10
+
+- **A package name in the log leads to the package.** Hover a name in an
+  expanded log entry and it underlines; click it and the same details
+  popup the tabs use opens, changelog included. The log is where you
+  notice a version you did not expect, and reading up on it no longer
+  means finding the package again by hand. Entries now record what a
+  package is called as well as what it is displayed as; older entries
+  still work where the name is a package name.
+- **A "Network and privacy" section in the README**, listing every
+  outgoing connection the plugin makes and when. There is no tracking of
+  any kind and no server belonging to this project, but there is more
+  traffic than "updates and a version check": ratings and reviews from
+  ODRS, Flathub's app data, screenshots from AppStream URLs, the AppImage
+  catalogue. Two details are stated plainly — reading reviews sends a
+  constant hash that identifies nobody, and submitting one is the single
+  request carrying anything machine-specific.
+- **The review form says what happens if you leave the name empty**:
+  your login name is published. It used to be a silent fallback.
+- **A translation checker** (`scripts/check_translations.py`): identical
+  key sets across the fifteen catalogs, every string the UI asks for,
+  placeholders kept in each translation, and keys nothing calls any more.
+  It found the details popup printing a raw source id — "fedora: 12 MB
+  download" next to translated text in every language — and ten dead keys.
+- A long version no longer wraps onto a second line in the log while the
+  row still has room to its right.
+
 ## 0.6.8 — 2026-08-10
 
 - **"python3-libdnf5 is missing" was sometimes simply wrong** (#3). On a
