@@ -14,6 +14,7 @@ InstalledView 1.0 InstalledView.qml
 InstallView 1.0 InstallView.qml
 FirmwareView 1.0 FirmwareView.qml
 LogView 1.0 LogView.qml
+SupportChips 1.0 SupportChips.qml
 CommandPalette 1.0 CommandPalette.qml
 PaletteRow 1.0 PaletteRow.qml
 RepositoriesDialog 1.0 RepositoriesDialog.qml

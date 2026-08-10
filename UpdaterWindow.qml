@@ -3188,8 +3188,22 @@ FloatingWindow {
                                 anchors.topMargin: Theme.spacingM
                                 spacing: Theme.spacingS
 
+                                // The card's heading is the way into the tab
+                                // it summarises. Handlers rather than a
+                                // MouseArea: a filling MouseArea inside a
+                                // layout would be laid out as a column of its
+                                // own and anchor-clash with it.
                                 RowLayout {
                                     spacing: Theme.spacingS
+
+                                    HoverHandler {
+                                        id: installedCardHover
+                                        cursorShape: Qt.PointingHandCursor
+                                    }
+
+                                    TapHandler {
+                                        onTapped: win.openTab(1)
+                                    }
 
                                     DankIcon {
                                         name: "apps"
@@ -3201,7 +3215,21 @@ FloatingWindow {
                                         text: Tr.t("Installed software")
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.weight: Font.DemiBold
-                                        color: Theme.surfaceText
+                                        font.underline: installedCardHover.hovered
+                                        color: installedCardHover.hovered ? Theme.primary : Theme.surfaceText
+                                    }
+
+                                    DankIcon {
+                                        name: "chevron_right"
+                                        size: 16
+                                        color: Theme.primary
+                                        opacity: installedCardHover.hovered ? 1 : 0
+
+                                        Behavior on opacity {
+                                            NumberAnimation {
+                                                duration: Theme.shortDuration
+                                            }
+                                        }
                                     }
                                 }
 
@@ -3281,8 +3309,22 @@ FloatingWindow {
                                 anchors.topMargin: Theme.spacingM
                                 spacing: Theme.spacingS
 
+                                // The card's heading is the way into the tab
+                                // it summarises. Handlers rather than a
+                                // MouseArea: a filling MouseArea inside a
+                                // layout would be laid out as a column of its
+                                // own and anchor-clash with it.
                                 RowLayout {
                                     spacing: Theme.spacingS
+
+                                    HoverHandler {
+                                        id: recentCardHover
+                                        cursorShape: Qt.PointingHandCursor
+                                    }
+
+                                    TapHandler {
+                                        onTapped: win.openTab(4)
+                                    }
 
                                     DankIcon {
                                         name: "history"
@@ -3294,7 +3336,21 @@ FloatingWindow {
                                         text: Tr.t("Recently updated")
                                         font.pixelSize: Theme.fontSizeMedium
                                         font.weight: Font.DemiBold
-                                        color: Theme.surfaceText
+                                        font.underline: recentCardHover.hovered
+                                        color: recentCardHover.hovered ? Theme.primary : Theme.surfaceText
+                                    }
+
+                                    DankIcon {
+                                        name: "chevron_right"
+                                        size: 16
+                                        color: Theme.primary
+                                        opacity: recentCardHover.hovered ? 1 : 0
+
+                                        Behavior on opacity {
+                                            NumberAnimation {
+                                                duration: Theme.shortDuration
+                                            }
+                                        }
                                     }
                                 }
 
@@ -3476,133 +3532,11 @@ FloatingWindow {
                     }
 
                     // ── Support links ───────────────────────────────────────
-                    // Only on the dashboard, where nothing else needs doing.
-                    // Deliberately quiet: a plugin asking for votes and stars
-                    // should not outshout the software it is reporting on.
-                    RowLayout {
-                        Layout.fillWidth: true
+                    // Only on the dashboard, where nothing else needs doing
+                    SupportChips {
+                        Layout.alignment: Qt.AlignHCenter
                         Layout.topMargin: Theme.spacingXS
-                        spacing: Theme.spacingS
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
-
-                        Repeater {
-                            model: [
-                                {
-                                    text: Tr.t("Upvote plugin in Directory"),
-                                    icon: "thumb_up",
-                                    accent: Theme.primary,
-                                    url: "https://github.com/AvengeMedia/dms-plugin-registry/issues/720"
-                                },
-                                {
-                                    text: Tr.t("Star on GitHub"),
-                                    icon: "star",
-                                    accent: Theme.warning,
-                                    url: "https://github.com/vinceecniv/DankSoftwareDepot"
-                                },
-                                {
-                                    text: Tr.t("Built with Vito"),
-                                    // Vito's own mark, drawn rather than
-                                    // loaded: as bars it inherits the chip's
-                                    // colour and hover like the other two,
-                                    // which a bitmap or a gradient could not
-                                    bars: true,
-                                    icon: "",
-                                    // Vito's own gradient, coral into violet
-                                    gradientFrom: "#FF6B5E",
-                                    gradientTo: "#7C3AED",
-                                    accent: Theme.tertiary,
-                                    url: "https://vito.talk"
-                                }
-                            ]
-
-                            delegate: Rectangle {
-                                id: supportChip
-
-                                required property var modelData
-
-                                implicitWidth: supportChipRow.implicitWidth + Theme.spacingM * 2
-                                implicitHeight: 26
-                                radius: height / 2
-                                color: chipHover.hovered ? Theme.withAlpha(Theme.surfaceVariantText, 0.16) : Theme.withAlpha(Theme.surfaceVariantText, 0.08)
-
-                                HoverHandler {
-                                    id: chipHover
-                                    cursorShape: Qt.PointingHandCursor
-                                }
-
-                                TapHandler {
-                                    onTapped: Qt.openUrlExternally(supportChip.modelData.url)
-                                }
-
-                                RowLayout {
-                                    id: supportChipRow
-                                    anchors.centerIn: parent
-                                    spacing: Theme.spacingXS
-
-                                    // Takes its own colour and fills in on
-                                    // hover — enough to feel alive, while the
-                                    // chip stays quiet at rest
-                                    DankIcon {
-                                        visible: supportChip.modelData.icon !== ""
-                                        name: supportChip.modelData.icon
-                                        size: 13
-                                        filled: chipHover.hovered
-                                        color: chipHover.hovered ? supportChip.modelData.accent : Theme.surfaceVariantText
-
-                                        Behavior on color {
-                                            ColorAnimation {
-                                                duration: Theme.shortDuration
-                                            }
-                                        }
-                                    }
-
-                                    // Vito's five bars, at the proportions of
-                                    // its own mark (12 wide on a 20 pitch,
-                                    // 20/36/56/36/20 tall)
-                                    Row {
-                                        visible: supportChip.modelData.bars === true
-                                        spacing: 2
-                                        Layout.alignment: Qt.AlignVCenter
-
-                                        Repeater {
-                                            model: [4, 7, 11, 7, 4]
-
-                                            delegate: Rectangle {
-                                                required property int modelData
-                                                required property int index
-
-                                                width: 2.5
-                                                height: modelData
-                                                radius: 1.25
-                                                // Five separate bars cannot share one fill, so each
-                                                // takes its own point along Vito's gradient — the
-                                                // blend reads across the mark as one sweep
-                                                color: chipHover.hovered ? Ui.mix(supportChip.modelData.gradientFrom, supportChip.modelData.gradientTo, index / 4) : Theme.surfaceVariantText
-
-                                                Behavior on color {
-                                                    ColorAnimation {
-                                                        duration: Theme.shortDuration
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    StyledText {
-                                        text: supportChip.modelData.text
-                                        font.pixelSize: Theme.fontSizeSmall - 1
-                                        color: Theme.surfaceVariantText
-                                    }
-                                }
-                            }
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
+                        repoUrl: win.githubUrl
                     }
                 }
             }
