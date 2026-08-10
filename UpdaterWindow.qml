@@ -1820,7 +1820,7 @@ FloatingWindow {
                                     if (requirementRow.installing)
                                         return Tr.t("Installing %1…").arg(pkg);
                                     if (requirementRow.modelData.blocking)
-                                        return Tr.t("%1 is missing — system packages cannot be installed or updated until it is there.").arg(pkg);
+                                        return Tr.t("%1 could not be loaded — system packages cannot be installed or updated until it can.").arg(pkg);
                                     return Tr.t("%1 is missing — app names, icons and release notes stay limited without it.").arg(pkg);
                                 }
                                 font.pixelSize: Theme.fontSizeSmall
@@ -1845,6 +1845,21 @@ FloatingWindow {
                                     onClicked: Backend.installRequirement(requirementRow.modelData.id, requirementRow.modelData.package)
                                 }
                             }
+                        }
+
+                        // The helper's own words. Without them a report of
+                        // "missing" is unfalsifiable — and it was wrong at
+                        // least once, on a machine where the package was
+                        // installed but a virtualenv's python could not see it
+                        StyledText {
+                            Layout.fillWidth: true
+                            visible: (requirementRow.modelData.detail || "") !== ""
+                            text: requirementRow.modelData.detail || ""
+                            font.pixelSize: Theme.fontSizeSmall - 2
+                            color: Theme.surfaceVariantText
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 3
+                            elide: Text.ElideRight
                         }
 
                         // The same install as a command, for anyone who would

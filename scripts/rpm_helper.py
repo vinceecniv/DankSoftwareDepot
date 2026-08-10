@@ -40,11 +40,18 @@ def emit(obj):
 # working dnf5 system does not necessarily carry. Dying on the import would
 # end the stream before its first event, leaving the caller with nothing to
 # report but "every package failed" — so answer in the protocol instead.
+import interp
+
+interp.ensure("libdnf5")
+
 try:
     import libdnf5
 except ImportError as exc:
+    # Says which interpreter could not see it, because "not installed" is a
+    # claim about the system and this is only ever a fact about one process
     emit({"event": "error",
-          "message": "python3-libdnf5 is not installed (%s)" % exc})
+          "message": "python3-libdnf5 cannot be imported by %s (%s)"
+                     % (interp.describe(), exc)})
     emit({"event": "done", "ok": False, "failed": sys.argv[2:]})
     sys.exit(1)
 

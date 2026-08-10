@@ -328,6 +328,8 @@ def scan_yaml_catalog(path, wanted):
     PyYAML; where it is missing the XML catalogs and the apt fallbacks still
     carry the list, only without AppStream descriptions."""
     try:
+        import interp
+        interp.ensure("yaml")
         import yaml
     except ImportError:
         return []

@@ -265,7 +265,6 @@
     "the package helper could not start": "не удалось запустить помощник пакетов",
     "the authorisation was refused": "в авторизации отказано",
     "%1 is missing — install it to update system packages": "Отсутствует %1 — установите его, чтобы обновлять системные пакеты",
-    "%1 is missing — system packages cannot be installed or updated until it is there.": "Отсутствует %1 — пока его нет, системные пакеты нельзя устанавливать и обновлять.",
     "Check again": "Проверить ещё раз",
     "Show details": "Показать подробности",
     "Hide details": "Скрыть подробности",

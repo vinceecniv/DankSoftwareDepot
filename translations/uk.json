@@ -265,7 +265,6 @@
     "the package helper could not start": "не вдалося запустити помічник пакетів",
     "the authorisation was refused": "в авторизації відмовлено",
     "%1 is missing — install it to update system packages": "Бракує %1 — встановіть його, щоб оновлювати системні пакети",
-    "%1 is missing — system packages cannot be installed or updated until it is there.": "Бракує %1 — доки його немає, системні пакети не можна встановлювати чи оновлювати.",
     "Check again": "Перевірити ще раз",
     "Show details": "Показати подробиці",
     "Hide details": "Сховати подробиці",

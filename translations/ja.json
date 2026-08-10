@@ -265,7 +265,6 @@
     "the package helper could not start": "パッケージヘルパーを起動できませんでした",
     "the authorisation was refused": "認証が拒否されました",
     "%1 is missing — install it to update system packages": "%1 がありません。システムパッケージを更新するにはインストールしてください",
-    "%1 is missing — system packages cannot be installed or updated until it is there.": "%1 がありません。導入されるまでシステムパッケージのインストールと更新はできません。",
     "Check again": "再確認",
     "Show details": "詳細を表示",
     "Hide details": "詳細を隠す",

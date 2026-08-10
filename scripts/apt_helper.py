@@ -29,11 +29,19 @@ def emit(obj):
 # Missing bindings must be reported inside the protocol: an import that kills
 # the process ends the stream before its first event, and the caller can only
 # guess that every package failed. See the same guard in rpm_helper.py.
+import interp
+
+interp.ensure("apt")
+
 try:
     import apt
     import apt.progress.base
 except ImportError as exc:
-    emit({"event": "error", "message": "python3-apt is not installed (%s)" % exc})
+    # Names the interpreter: "not installed" is a claim about the system,
+    # and this is only ever a fact about one process
+    emit({"event": "error",
+          "message": "python3-apt cannot be imported by %s (%s)"
+                     % (interp.describe(), exc)})
     emit({"event": "done", "ok": False, "failed": sys.argv[2:]})
     sys.exit(1)
 

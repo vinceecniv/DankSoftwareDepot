@@ -50,6 +50,10 @@ def detect():
 
 def _alpm():
     """Read-only libalpm handle over the on-disk databases."""
+    # The bindings live in the system interpreter's site-packages only; if the
+    # one running this is a virtualenv or a pyenv shim, hand the command over
+    import interp
+    interp.ensure("pyalpm")
     import pyalpm
     handle = pyalpm.Handle("/", "/var/lib/pacman")
     for path in glob.glob("/var/lib/pacman/sync/*.db"):
@@ -74,6 +78,8 @@ def _human(size):
 
 
 def _cache():
+    import interp
+    interp.ensure("apt")
     import apt
     return apt.Cache()
 

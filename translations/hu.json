@@ -265,7 +265,6 @@
     "the package helper could not start": "a csomagsegéd nem tudott elindulni",
     "the authorisation was refused": "az engedélyezést elutasították",
     "%1 is missing — install it to update system packages": "Hiányzik: %1 — telepítse a rendszercsomagok frissítéséhez",
-    "%1 is missing — system packages cannot be installed or updated until it is there.": "Hiányzik: %1 — amíg nincs meg, a rendszercsomagok nem telepíthetők és nem frissíthetők.",
     "Check again": "Ellenőrzés újra",
     "Show details": "Részletek megjelenítése",
     "Hide details": "Részletek elrejtése",

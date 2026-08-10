@@ -265,7 +265,6 @@
     "the package helper could not start": "der Paket-Helfer konnte nicht starten",
     "the authorisation was refused": "die Autorisierung wurde verweigert",
     "%1 is missing — install it to update system packages": "%1 fehlt — installieren Sie es, um Systempakete zu aktualisieren",
-    "%1 is missing — system packages cannot be installed or updated until it is there.": "%1 fehlt — Systempakete können nicht installiert oder aktualisiert werden, solange es fehlt.",
     "Check again": "Erneut prüfen",
     "Show details": "Details anzeigen",
     "Hide details": "Details ausblenden",

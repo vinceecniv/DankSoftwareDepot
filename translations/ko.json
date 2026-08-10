@@ -265,7 +265,6 @@
     "the package helper could not start": "패키지 도우미를 시작할 수 없습니다",
     "the authorisation was refused": "권한 승인이 거부되었습니다",
     "%1 is missing — install it to update system packages": "%1이(가) 없습니다. 시스템 패키지를 업데이트하려면 설치하세요",
-    "%1 is missing — system packages cannot be installed or updated until it is there.": "%1이(가) 없습니다. 설치되기 전에는 시스템 패키지를 설치하거나 업데이트할 수 없습니다.",
     "Check again": "다시 확인",
     "Show details": "자세히 보기",
     "Hide details": "자세히 숨기기",

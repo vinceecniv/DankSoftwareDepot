@@ -265,7 +265,6 @@
     "the package helper could not start": "không khởi động được trình trợ giúp gói",
     "the authorisation was refused": "quyền truy cập bị từ chối",
     "%1 is missing — install it to update system packages": "Thiếu %1 — hãy cài đặt để cập nhật gói hệ thống",
-    "%1 is missing — system packages cannot be installed or updated until it is there.": "Thiếu %1 — chưa có nó thì không thể cài hoặc cập nhật gói hệ thống.",
     "Check again": "Kiểm tra lại",
     "Show details": "Xem chi tiết",
     "Hide details": "Ẩn chi tiết",

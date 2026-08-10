@@ -265,7 +265,6 @@
     "the package helper could not start": "pakethjälpen kunde inte starta",
     "the authorisation was refused": "behörigheten nekades",
     "%1 is missing — install it to update system packages": "%1 saknas — installera det för att uppdatera systempaket",
-    "%1 is missing — system packages cannot be installed or updated until it is there.": "%1 saknas — systempaket kan inte installeras eller uppdateras förrän det finns.",
     "Check again": "Kontrollera igen",
     "Show details": "Visa detaljer",
     "Hide details": "Dölj detaljer",

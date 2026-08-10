@@ -26,14 +26,31 @@ import json
 import signal
 import sys
 
-import gi
-gi.require_version("Flatpak", "1.0")
-from gi.repository import Flatpak, Gio, GLib  # noqa: E402
+import interp
 
 
 def emit(obj):
     sys.stdout.write(json.dumps(obj) + "\n")
     sys.stdout.flush()
+
+
+# PyGObject and the Flatpak typelib are distribution packages living in the
+# system interpreter; a pyenv shim or an activated virtualenv cannot see them.
+# Hand the command over rather than die, and if it still fails, say so inside
+# the protocol — an import that kills the process ends the stream before its
+# first event, and the caller can only report that everything failed.
+interp.ensure("gi")
+
+try:
+    import gi
+    gi.require_version("Flatpak", "1.0")
+    from gi.repository import Flatpak, Gio, GLib  # noqa: E402
+except (ImportError, ValueError) as exc:
+    emit({"event": "error",
+          "message": "the Flatpak bindings could not be loaded by %s (%s)"
+                     % (interp.describe(), exc)})
+    emit({"event": "done", "ok": False, "failed": []})
+    sys.exit(1)
 
 
 def appid_of(ref_str):

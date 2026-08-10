@@ -77,6 +77,8 @@ def list_dnf_repos():
     repos = []
     owner = _repo_files()
     try:
+        import interp
+        interp.ensure("libdnf5")
         import libdnf5
 
         base = libdnf5.base.Base()

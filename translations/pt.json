@@ -265,7 +265,6 @@
     "the package helper could not start": "o auxiliar de pacotes não conseguiu iniciar",
     "the authorisation was refused": "a autorização foi recusada",
     "%1 is missing — install it to update system packages": "Falta %1 — instale-o para atualizar pacotes do sistema",
-    "%1 is missing — system packages cannot be installed or updated until it is there.": "Falta %1 — os pacotes do sistema não podem ser instalados nem atualizados enquanto ele não existir.",
     "Check again": "Verificar novamente",
     "Show details": "Mostrar detalhes",
     "Hide details": "Ocultar detalhes",
