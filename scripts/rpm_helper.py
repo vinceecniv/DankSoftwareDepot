@@ -22,7 +22,13 @@ for a password. `selftest` only reports whether the bindings are present,
 so callers can ask before starting a transaction.
 
 Usage: rpm_helper.py [plan] <install|remove|upgrade|downgrade> <spec>...
+       rpm_helper.py install --copr <owner/project> <spec>...
        rpm_helper.py selftest
+
+`--copr` enables that Copr project before resolving, so installing something
+found in Copr is one transaction and one password rather than two. It is an
+rpm-only option: Copr is a dnf-family thing and no other helper has an
+equivalent.
 
 This event protocol is deliberately package-manager-agnostic: an apt or
 pacman helper implementing the same events would slot into the same UI.
@@ -205,7 +211,32 @@ def _action_string(tp):
         return str(tp.get_action())
 
 
-def run(action, specs, dry_run=False):
+def enable_copr(project):
+    """Add a Copr repository as part of the transaction that needs it.
+
+    Search can offer a package from a Copr nobody has enabled yet, and the
+    repository is the smaller half of installing it. Doing it here keeps the
+    whole thing to one authorisation: a second pkexec for the repository
+    would ask for a password twice for what the user did once.
+    """
+    import subprocess
+
+    emit({"event": "status", "message": "repos"})
+    result = subprocess.run(["dnf", "-y", "copr", "enable", project],
+                            capture_output=True, text=True)
+    if result.returncode != 0:
+        reason = (result.stderr or result.stdout or "").strip().splitlines()
+        emit({"event": "error",
+              "message": "could not enable the Copr %s: %s"
+                         % (project, reason[-1] if reason else "unknown error")})
+        return False
+    return True
+
+
+def run(action, specs, dry_run=False, copr=""):
+    if copr and not dry_run and not enable_copr(copr):
+        emit({"event": "done", "ok": False, "failed": list(specs)})
+        return 1
     base = libdnf5.base.Base()
     base.load_config()
     if dry_run:
@@ -384,11 +415,15 @@ def main():
     dry_run = bool(argv) and argv[0] == "plan"
     if dry_run:
         argv = argv[1:]
-    if len(argv) < 2 or argv[0] not in ACTIONS:
+    copr = ""
+    if len(argv) > 2 and argv[1] == "--copr":
+        copr = argv[2]
+        argv = [argv[0]] + argv[3:]
+    if len(argv) < 2 or argv[0] not in ACTIONS or (copr and argv[0] != "install"):
         print(__doc__, file=sys.stderr)
         return 2
     try:
-        return run(argv[0], argv[1:], dry_run)
+        return run(argv[0], argv[1:], dry_run, copr)
     except Exception as exc:  # any library error must still end the stream cleanly
         emit({"event": "error", "message": str(exc)})
         emit({"event": "done", "ok": False, "failed": argv[1:]})

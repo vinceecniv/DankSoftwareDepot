@@ -368,5 +368,15 @@
     "Display name — empty publishes as \"%1\"": "显示名称 —— 留空将以“%1”发布",
     "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "会随你的评价公开显示。任何名称都可以，不必是你的登录名。",
     "%1 releases since yours": "自你的版本以来有 %1 个发行版",
-    "Version %1 is available": "版本 %1 可用"
+    "Version %1 is available": "版本 %1 可用",
+    "Search Copr": "搜索 Copr",
+    "Searching Copr…": "正在搜索 Copr…",
+    "Copr could not be reached.": "无法连接到 Copr。",
+    "%1 found in Copr, listed below": "在 Copr 中找到 %1 个，见下方",
+    "Nothing in Copr for \"%1\"": "Copr 中没有 \"%1\" 的结果",
+    "Not here? Copr has builds by individuals, for software Fedora does not ship.": "没找到？Copr 提供由个人构建的软件包，涵盖 Fedora 未收录的软件。",
+    "Copr · built by individuals": "Copr · 由个人构建",
+    "This Copr has no builds for %1.": "该 Copr 没有面向 %1 的构建。",
+    "Fedora Rawhide": "Fedora Rawhide",
+    "takes effect after reboot": "重启后生效"
 }

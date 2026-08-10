@@ -11,16 +11,29 @@ import Quickshell.Io
 Item {
     id: backend
 
-    // "dnf" (Fedora/RHEL family, default), "apt" (Debian/Ubuntu family)
-    // or "pacman" (Arch family)
+    // "dnf" (Fedora/RHEL family, default), "apt" (Debian/Ubuntu family),
+    // "pacman" (Arch family) or "ostree" (an atomic Fedora: Silverblue,
+    // Kinoite, Bazzite, Bluefin — rpm packages, but no rpm transactions)
     property string backendId: "dnf"
 
+    // An atomic system is not a mutable one with a read-only /usr. Nothing
+    // installs into the running system; rpm-ostree writes the next boot, and
+    // several things below are different because of it rather than despite it.
+    readonly property bool atomic: backendId === "ostree"
+
     // Transaction helper implementing the NDJSON event protocol
-    readonly property string packageHelper: Qt.resolvedUrl("scripts/" + (backendId === "apt" ? "apt_helper.py" : (backendId === "pacman" ? "pacman_helper.py" : "rpm_helper.py"))).toString().replace("file://", "")
+    readonly property string packageHelper: Qt.resolvedUrl("scripts/" + (backendId === "apt" ? "apt_helper.py" : (backendId === "pacman" ? "pacman_helper.py" : (atomic ? "ostree_helper.py" : "rpm_helper.py")))).toString().replace("file://", "")
 
     // Command for a privileged helper transaction
     function helperCommand(action, specs) {
         return ["pkexec", "python3", packageHelper, action].concat(specs);
+    }
+
+    // The same install, preceded by adding the Copr the package lives in —
+    // one transaction, so one password. Both Fedora helpers take it: layering
+    // a Copr package on an atomic system is the same two steps.
+    function coprInstallCommand(project, specs) {
+        return ["pkexec", "python3", packageHelper, "install", "--copr", project].concat(specs);
     }
 
     // Which updates are security fixes. Only the dnf family ships updateinfo
@@ -51,8 +64,10 @@ Item {
     readonly property bool packageHelperBroken: packageHelperStatus !== "" && packageHelperStatus !== "ok"
     readonly property string packageHelperError: packageHelperBroken ? packageHelperStatus : ""
 
-    // The distro package providing what the helper imports, for the hint
-    readonly property string packageHelperRequirement: backendId === "apt" ? "python3-apt" : (backendId === "pacman" ? "pyalpm" : "python3-libdnf5")
+    // The distro package providing what the helper imports, for the hint.
+    // The atomic answer is the tool itself: that helper drives a command
+    // line, which every image has, rather than bindings it might not.
+    readonly property string packageHelperRequirement: backendId === "apt" ? "python3-apt" : (backendId === "pacman" ? "pyalpm" : (atomic ? "rpm-ostree" : "python3-libdnf5"))
 
     function checkPackageHelper() {
         if (selftestProcess.running)
@@ -163,6 +178,10 @@ Item {
             return ["apt-get", "install", "-y", pkg];
         if (backendId === "pacman")
             return ["pacman", "-S", "--needed", "--noconfirm", pkg];
+        // Layered, and in effect after the next boot — there is no other way
+        // to add a package to an atomic system
+        if (atomic)
+            return ["rpm-ostree", "install", "--idempotent", pkg];
         return ["dnf", "install", "-y", pkg];
     }
 
@@ -250,6 +269,10 @@ Item {
             return ["pkexec", "apt-get", "clean"];
         if (backendId === "pacman")
             return ["pkexec", "pacman", "-Scc", "--noconfirm"];
+        // rpm-ostree keeps its own caches: -m the rpm-md metadata, -p a
+        // deployment staged but not booted into
+        if (atomic)
+            return ["pkexec", "rpm-ostree", "cleanup", "-m"];
         return ["pkexec", "dnf", "clean", "packages"];
     }
 
@@ -274,11 +297,19 @@ Item {
     function availableVersionsCommand(name) {
         if (backendId === "apt" || backendId === "pacman")
             return ["python3", metadataHelper, "versions", name];
+        // An atomic image has no dnf to ask, and no per-package downgrade to
+        // offer even if it answered: going back is the previous deployment
+        if (atomic)
+            return ["true"];
         return ["sh", "-c", "LC_ALL=C dnf -Cq repoquery --qf '%{version}-%{release}\\n' " + name + " 2>/dev/null | sort -uV"];
     }
 
     // Packages whose update warrants the reboot recommendation
     readonly property var rebootPackagePattern: {
+        // Every change is staged for the next boot here, so every change is
+        // one the reboot notice is about
+        if (atomic)
+            return /./;
         if (backendId === "apt")
             return /^(linux-image|linux-firmware|systemd|libc6|dbus|mesa|grub|shim|intel-microcode|amd64-microcode|nvidia)/;
         if (backendId === "pacman")
@@ -287,7 +318,7 @@ Item {
     }
 
     // Human label of the system package source ("Install from %1")
-    readonly property string systemRepoLabel: backendId === "apt" ? "Debian" : (backendId === "pacman" ? "Arch" : "Fedora")
+    readonly property string systemRepoLabel: backendId === "apt" ? "Debian" : (backendId === "pacman" ? "Arch" : (atomic ? "Fedora Atomic" : "Fedora"))
 
     // ── Software sources ────────────────────────────────────────────────────
     // Which repositories exist, and the few changes worth offering from a UI.
@@ -306,6 +337,21 @@ Item {
     function repoUserCommand(args) {
         return ["python3", repoHelper].concat(args);
     }
+
+    // What Copr has built for this system, for software that is in no
+    // repository the machine has configured yet. Unprivileged: it asks the
+    // Copr hub, it changes nothing.
+    function coprSearchCommand(query) {
+        return ["python3", repoHelper, "copr-search", query];
+    }
+
+    // Copr builds per chroot, and the search asks for this machine's own —
+    // fedora-44-x86_64. Only a Fedora (or something built on one: Nobara,
+    // Bazzite, Ultramarine) has one. The rest of the dnf family are RHEL and
+    // its rebuilds, which name Fedora in ID_LIKE without being it, and would
+    // be offered a search that cannot answer.
+    property bool fedoraFamily: false
+    readonly property bool hasCopr: (backendId === "dnf" || atomic) && fedoraFamily
 
     // ── Launcher entry ──────────────────────────────────────────────────────
     // Enabling the plugin puts a widget in the bar; it cannot put an entry in
@@ -379,6 +425,26 @@ Item {
         }
     }
 
+    // ostree creates this file when the system booted from a deployment. It
+    // is the one answer that does not depend on what the image calls itself:
+    // Silverblue says ID=fedora, Bazzite says ID=bazzite, and an ordinary
+    // Fedora that happens to have rpm-ostree installed is not atomic at all.
+    property bool _ostreeBooted: false
+
+    FileView {
+        path: "/run/ostree-booted"
+
+        onLoaded: {
+            backend._ostreeBooted = true;
+            if (backend.backendId === "dnf")
+                backend.backendId = "ostree";
+        }
+
+        onLoadFailed: error => {
+            backend._ostreeBooted = false;
+        }
+    }
+
     FileView {
         path: "/etc/os-release"
 
@@ -388,6 +454,11 @@ Item {
                 backend.backendId = "apt";
             else if (/(^|\n)(ID|ID_LIKE)=.*(arch|manjaro)/im.test(os))
                 backend.backendId = "pacman";
+            else if (backend._ostreeBooted)
+                backend.backendId = "ostree";
+            // RHEL and its rebuilds say ID_LIKE="rhel fedora", so naming
+            // Fedora is not enough to be one
+            backend.fedoraFamily = /(^|\n)(ID|ID_LIKE)=.*fedora/im.test(os) && !/(^|\n)(ID|ID_LIKE)=.*(rhel|centos)/im.test(os);
         }
     }
 }

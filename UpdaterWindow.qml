@@ -2643,6 +2643,10 @@ FloatingWindow {
                 refreshSerial: win.softwareSerial
                 overlayParent: windowOverlayLayer
                 onSoftwareMutated: win.softwareSerial++
+                onStagedChange: {
+                    if (win.widgetRoot)
+                        win.widgetRoot.noteStagedChange();
+                }
             }
         }
 
@@ -2660,6 +2664,10 @@ FloatingWindow {
                 overlayParent: windowOverlayLayer
                 onSoftwareMutated: win.softwareSerial++
                 onSourcesRequested: sourcesDialog.open()
+                onStagedChange: {
+                    if (win.widgetRoot)
+                        win.widgetRoot.noteStagedChange();
+                }
             }
         }
 

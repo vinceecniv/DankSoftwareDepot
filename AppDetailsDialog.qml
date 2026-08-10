@@ -1494,7 +1494,9 @@ Item {
                             horizontalPadding: Theme.spacingM
                             iconName: "download"
                             iconSize: 14
-                            text: modelData.kind === "flatpak" ? Tr.t("Install from Flathub") : (modelData.kind === "appimage" ? Tr.t("Install AppImage") : Tr.t("Install from %1").arg(Backend.systemRepoLabel))
+                            // A Copr is named after the person who builds it,
+                            // which is the part worth reading on the button
+                            text: modelData.kind === "flatpak" ? Tr.t("Install from Flathub") : (modelData.kind === "appimage" ? Tr.t("Install AppImage") : Tr.t("Install from %1").arg(modelData.kind === "copr" ? modelData.project : Backend.systemRepoLabel))
                             backgroundColor: modelData.kind === "flatpak" ? Theme.buttonBg : Theme.secondaryContainer
                             textColor: modelData.kind === "flatpak" ? Theme.buttonText : Theme.surfaceText
                             enabled: !dialog.busy

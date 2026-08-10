@@ -368,5 +368,15 @@
     "Display name — empty publishes as \"%1\"": "Visningsnamn — tomt publiceras som ”%1”",
     "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Visas offentligt tillsammans med din recension. Vilket namn som helst duger — det behöver inte vara ditt inloggningsnamn.",
     "%1 releases since yours": "%1 utgåvor sedan din",
-    "Version %1 is available": "Version %1 finns"
+    "Version %1 is available": "Version %1 finns",
+    "Search Copr": "Sök i Copr",
+    "Searching Copr…": "Söker i Copr…",
+    "Copr could not be reached.": "Copr kunde inte nås.",
+    "%1 found in Copr, listed below": "%1 hittades i Copr, nedan",
+    "Nothing in Copr for \"%1\"": "Inget i Copr för \"%1\"",
+    "Not here? Copr has builds by individuals, for software Fedora does not ship.": "Inte här? Copr har paket byggda av enskilda personer, för programvara som Fedora inte levererar.",
+    "Copr · built by individuals": "Copr · byggt av enskilda personer",
+    "This Copr has no builds for %1.": "Detta Copr har inga byggen för %1.",
+    "Fedora Rawhide": "Fedora Rawhide",
+    "takes effect after reboot": "träder i kraft efter omstart"
 }

@@ -368,5 +368,15 @@
     "Display name — empty publishes as \"%1\"": "Weergavenaam — leeg publiceert als \"%1\"",
     "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Wordt openbaar bij je review getoond. Elke naam mag — het hoeft niet de naam te zijn waarmee je inlogt.",
     "%1 releases since yours": "%1 uitgaven sinds die van jou",
-    "Version %1 is available": "Versie %1 is beschikbaar"
+    "Version %1 is available": "Versie %1 is beschikbaar",
+    "Search Copr": "Copr doorzoeken",
+    "Searching Copr…": "Copr doorzoeken…",
+    "Copr could not be reached.": "Copr is niet bereikbaar.",
+    "%1 found in Copr, listed below": "%1 gevonden in Copr, hieronder",
+    "Nothing in Copr for \"%1\"": "Niets in Copr voor \"%1\"",
+    "Not here? Copr has builds by individuals, for software Fedora does not ship.": "Niet gevonden? Copr bevat pakketten van individuen, voor software die Fedora niet meelevert.",
+    "Copr · built by individuals": "Copr · gebouwd door individuen",
+    "This Copr has no builds for %1.": "Deze Copr heeft geen builds voor %1.",
+    "Fedora Rawhide": "Fedora Rawhide",
+    "takes effect after reboot": "actief na herstarten"
 }

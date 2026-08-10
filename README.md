@@ -1,6 +1,6 @@
 # <picture><source media="(prefers-color-scheme: dark)" srcset="assets/icons/dank-software-depot-dark.svg"><img src="assets/icons/dank-software-depot-light.svg" alt="" width="42"></picture> Dank Software Depot
 
-**Beta** · **Fedora-based distros (Debian/Ubuntu & Arch experimental)** · English / Nederlands / Deutsch / Français / Español / Português / Italiano / Polski / Svenska / Українська / Русский / Magyar / 日本語 / 한국어 / Tiếng Việt / 中文
+**Beta** · **Fedora-based distros (atomic Fedora, Debian/Ubuntu & Arch experimental)** · English / Nederlands / Deutsch / Français / Español / Português / Italiano / Polski / Svenska / Українська / Русский / Magyar / 日本語 / 한국어 / Tiếng Việt / 中文
 
 A full software & updates center plugin for
 [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell):
@@ -26,6 +26,16 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   scope (official Arch repos only). The app shows an experimental banner
   on these distros and warns on unsupported ones. Flatpak, AppImage and
   firmware support are distro-agnostic.
+- **An atomic Fedora (Silverblue, Kinoite, Bazzite, Bluefin) is
+  experimental too.** Detected by `/run/ostree-booted` and driven through
+  `rpm-ostree` instead of libdnf5: installing layers a package, removing
+  unlayers one, and an update is the whole deployment rather than a
+  choice of packages. Everything lands in the *next* boot, so a finished
+  transaction says "takes effect after reboot" and raises the reboot
+  notice instead of claiming the package is in use. Removing something
+  that came with the image is refused with a reason — that needs an
+  override, which is a different promise. See PROTOCOL.md for the whole
+  table of differences.
 
 ## The five tabs
 
@@ -81,6 +91,15 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   (e.g. `playerctl`) are found too
 - **Source choice** when an app ships from multiple sources
   (system repo / Flathub / AppImage)
+- **Search Copr** for software no configured repository has. Nothing in Copr
+  can turn up in a local search — a package there is invisible to dnf until
+  its project is enabled — so the Install tab offers the search as one
+  deliberate press rather than a request per keystroke. Results are listed
+  apart, under the name of the individual who builds them, and only from
+  projects that build for this Fedora and architecture: a Copr that stopped at
+  the previous release cannot be enabled here and is not offered. Installing
+  one adds its repository as part of the same transaction, so it asks for a
+  password once rather than twice
 - ODRS star ratings with review counts
 - Live install progress: package-manager library and libflatpak events are
   turned into a progress panel with app icon, phase text and a transaction-
@@ -135,12 +154,14 @@ language by dropping a new `translations/<lang>.json` next to the others.
 
 ## Requirements
 
-- A Fedora-based distribution — or Debian/Ubuntu or Arch (experimental)
+- A Fedora-based distribution — or an atomic Fedora, Debian/Ubuntu or Arch
+  (all three experimental)
 - DMS ≥ 1.5 with the `sysupdate` daemon capability
 - `python3`, `python3-gobject` + libflatpak GIR
 - `flatpak`, optionally `fwupd`
 - Package-manager bindings for your distro:
   - Fedora: `python3-libdnf5` (**not** part of a default install)
+  - Atomic Fedora: nothing extra — `rpm-ostree` is the image's own tool
   - Debian/Ubuntu: `python3-apt` (usually preinstalled)
   - Arch: `pyalpm`
 
@@ -222,6 +243,7 @@ list of things you already have. Everything it contacts, and when:
 | the screenshot URLs in AppStream data | the screenshots themselves, cached locally for 30 days | opening an app's details |
 | `appimage.github.io`, `api.github.com` | the AppImage catalogue and the releases of an AppImage's linked project | the Install tab and AppImage updates |
 | `bodhi.fedoraproject.org` | which Fedora releases are current, for the release-upgrade notice | the upgrade check |
+| `copr.fedorainfracloud.org` | which Coprs build a package matching your search, and for which Fedora | only when you press Search Copr; answers cached six hours |
 | `mirrors.rpmfusion.org`, `dl.flathub.org`, `nightly.gnome.org`, `cdn.kde.org`, `registry.fedoraproject.org` | fetching a source you asked to add | only when you press Add in Software sources |
 
 Two details worth stating plainly, because they are the only places where
@@ -257,6 +279,7 @@ anything about you leaves the machine:
 | `Tr.qml` | Plugin-local translation singleton |
 | `scripts/enrich.py` | AppStream parsing, dnf fallbacks, holds detection, search index, featured storefront, ODRS ratings, caching, sanitizing |
 | `scripts/rpm_helper.py` | libdnf5 transactions (install/remove/upgrade/downgrade) with exact byte progress (NDJSON events, see PROTOCOL.md) |
+| `scripts/ostree_helper.py` | rpm-ostree counterpart of rpm_helper.py — experimental atomic-Fedora backend (layering, staged until reboot) |
 | `scripts/apt_helper.py` | python-apt counterpart of rpm_helper.py — experimental Debian/Ubuntu transaction backend |
 | `scripts/pacman_helper.py` | pyalpm counterpart of rpm_helper.py — experimental Arch transaction backend (official repos, no AUR) |
 | `scripts/pkg_backend.py` | Per-distro metadata backend (search, sizes, inventory, holds, versions, changelogs); apt + pacman implemented, dnf stays in enrich.py. Also answers, for every distro, which packages own a launchable desktop entry |
@@ -264,7 +287,7 @@ anything about you leaves the machine:
 | `scripts/test_dep11.py` | Checks the DEP-11 and apt/pacman changelog paths against real-shaped data, runnable on any distro |
 | `scripts/flatpak_helper.py` | libflatpak transactions (updates & installs) with exact byte progress (NDJSON events) |
 | `scripts/appimage.py` | AppImage catalog, install/update/uninstall, GitHub update sources, adhoc folder scanning (NDJSON events) |
-| `scripts/repo_backend.py` | Software sources: reads the configured repositories and Flatpak remotes; enable/disable, Copr add/remove, RPM Fusion and Flathub (dnf family only; apt and pacman are listed read-only) |
+| `scripts/repo_backend.py` | Software sources: reads the configured repositories and Flatpak remotes; enable/disable, Copr add/remove/search, RPM Fusion and Flathub (dnf family only; apt and pacman are listed read-only) |
 | `scripts/action_log.py` | Action-log append/prune helper |
 
 Update detection, check interval and ignored packages remain managed by DMS

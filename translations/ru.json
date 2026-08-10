@@ -368,5 +368,15 @@
     "Display name — empty publishes as \"%1\"": "Отображаемое имя — если пусто, будет опубликовано как «%1»",
     "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Показывается публично рядом с вашим отзывом. Подойдёт любое имя — не обязательно то, под которым вы входите в систему.",
     "%1 releases since yours": "%1 выпусков с вашей версии",
-    "Version %1 is available": "Доступна версия %1"
+    "Version %1 is available": "Доступна версия %1",
+    "Search Copr": "Искать в Copr",
+    "Searching Copr…": "Поиск в Copr…",
+    "Copr could not be reached.": "Не удалось связаться с Copr.",
+    "%1 found in Copr, listed below": "Найдено в Copr: %1, ниже",
+    "Nothing in Copr for \"%1\"": "В Copr ничего нет по запросу «%1»",
+    "Not here? Copr has builds by individuals, for software Fedora does not ship.": "Не нашли? В Copr есть сборки от отдельных людей — для программ, которых Fedora не поставляет.",
+    "Copr · built by individuals": "Copr · сборки отдельных людей",
+    "This Copr has no builds for %1.": "В этом Copr нет сборок для %1.",
+    "Fedora Rawhide": "Fedora Rawhide",
+    "takes effect after reboot": "вступит в силу после перезагрузки"
 }

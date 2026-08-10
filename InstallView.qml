@@ -29,6 +29,10 @@ Item {
     // Fired after a successful install so other views can refresh their lists
     signal softwareMutated()
 
+    // Fired when what was installed only exists in the next deployment, so
+    // the window can raise its reboot notice (atomic systems)
+    signal stagedChange()
+
     // The sources panel lives in the window, because it is about the whole
     // system rather than about this tab — but this is where you stand when
     // the question comes up
@@ -81,7 +85,7 @@ Item {
         showInstallButtons: true
         installedChipVisible: entry ? view.isInstalled(entry) : false
         showOpenButton: entry !== null && entry.sources.some(s => s.kind === "flatpak" && view.installedFlatpaks.has(s.ref.toLowerCase()))
-        busy: entry ? entry.sources.some(s => s.ref !== "" && s.ref === view.busyAction) : false
+        busy: entry ? entry.sources.some(s => s.ref !== "" && view.sourceKey(s) === view.busyAction) : false
         busyDetail: view.installProgress
         busyFraction: view.installFraction
 
@@ -247,8 +251,35 @@ Item {
     // True while the async dnf name search hasn't answered for the current query
     readonly property bool moreResultsPending: searchMode && dnfExtrasQuery !== searchText.trim()
 
+    // ── Copr ─────────────────────────────────────────────────────────────────
+    // Nothing in Copr is part of any index this machine has: a package built
+    // there stays invisible to search until its project is enabled, which is
+    // the wrong way round for software nobody has found yet. Asking the hub
+    // is therefore possible — but on request, not on every keystroke: it is
+    // someone else's server and it takes seconds, not milliseconds.
+    property var coprResults: []
+    property string coprQuery: ""     // the query coprResults answer
+    property string coprError: ""
+    property bool coprSearching: false
+
+    function searchCopr() {
+        const query = searchText.trim();
+        if (query.length < 2 || coprProcess.running)
+            return;
+        coprError = "";
+        coprSearching = true;
+        coprProcess._query = query;
+        coprProcess.command = Backend.coprSearchCommand(query);
+        coprProcess.running = true;
+    }
+
     onSearchTextChanged: {
         dnfDebounce.restart();
+        // Results belong to the query they were asked for
+        if (searchText.trim() !== coprQuery) {
+            coprResults = [];
+            coprError = "";
+        }
     }
 
     Timer {
@@ -327,11 +358,19 @@ Item {
             }, s.item));
     }
 
+    readonly property var filterKinds: ["", "flatpak", "dnf", "appimage", "copr"]
+
     function matchesSourceFilter(item) {
         if (sourceFilter === 0)
             return true;
-        const wanted = sourceFilter === 1 ? "flatpak" : (sourceFilter === 3 ? "appimage" : "dnf");
+        const wanted = filterKinds[sourceFilter] || "dnf";
         return item.sources.some(s => s.kind === wanted);
+    }
+
+    // Two Coprs can build a package of the same name, so what is busy is this
+    // project's copy of it rather than the name
+    function sourceKey(source) {
+        return source.kind === "copr" ? source.project + ":" + source.ref : source.ref;
     }
 
     readonly property bool searchMode: searchText.trim().length >= 2
@@ -407,6 +446,23 @@ Item {
                         data: item
                     });
             }
+            // Copr answers are kept apart rather than mixed in: they come from
+            // a person rather than from the distribution, and that is the
+            // first thing worth knowing about them
+            if (coprQuery === query && coprResults.length > 0) {
+                const coprRows = coprResults.filter(item => matchesSourceFilter(item));
+                if (coprRows.length > 0) {
+                    rows.push({
+                        type: "header",
+                        label: "Copr · built by individuals"
+                    });
+                    for (const item of coprRows)
+                        rows.push({
+                            type: "app",
+                            data: item
+                        });
+                }
+            }
             return rows;
         }
         for (const group of featured) {
@@ -432,6 +488,11 @@ Item {
                 return true;
             if (source.kind === "dnf" && installedRpms.has(source.ref))
                 return true;
+            // A Copr row is installed only when the package on the machine
+            // came out of that Copr: five of them can build the same name,
+            // and the name alone would mark all five
+            if (source.kind === "copr" && source.installed === true)
+                return true;
             if (source.kind === "appimage" && installedAppimages.has(item.id))
                 return true;
         }
@@ -446,7 +507,7 @@ Item {
                 Qt.openUrlExternally(source.download);
             return;
         }
-        busyAction = source.ref;
+        busyAction = sourceKey(source);
         installIcon = itemIcon || "";
         lastInstallResult = "";
         installProcess._label = itemName;
@@ -458,6 +519,7 @@ Item {
         _fpOpCount = 0;
         _fpOpsDone = 0;
         _helperError = "";
+        _staged = false;
         if (source.kind === "flatpak") {
             // The flatpak CLI is silent when piped; the libflatpak helper
             // emits NDJSON progress events instead (same one updates use).
@@ -466,8 +528,10 @@ Item {
         } else {
             // rpm installs run through the backend helper: real per-package
             // byte progress as NDJSON events instead of scraping dnf output.
+            // A package found in Copr brings its repository with it, added by
+            // the same privileged run so it costs one password, not two.
             installProgress = Tr.t("Waiting for authorization…");
-            installProcess.command = Backend.helperCommand("install", [source.ref]);
+            installProcess.command = (source.kind === "copr" && !source.enabled) ? Backend.coprInstallCommand(source.project, [source.ref]) : Backend.helperCommand("install", [source.ref]);
         }
         installProcess.running = true;
     }
@@ -548,6 +612,34 @@ Item {
                     view.dnfExtrasQuery = dnfProcess._query;
                 } catch (e) {
                 }
+            }
+        }
+    }
+
+    Process {
+        id: coprProcess
+
+        property string _query: ""
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const answer = JSON.parse(text);
+                    view.coprResults = answer.items || [];
+                    view.coprError = answer.error || "";
+                } catch (e) {
+                    view.coprResults = [];
+                    view.coprError = Tr.t("Copr could not be reached.");
+                }
+                view.coprQuery = coprProcess._query;
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            view.coprSearching = false;
+            if (exitCode !== 0 && view.coprQuery !== coprProcess._query) {
+                view.coprError = Tr.t("Copr could not be reached.");
+                view.coprQuery = coprProcess._query;
             }
         }
     }
@@ -653,11 +745,19 @@ Item {
         case "error":
             _helperError = event.message || "";
             break;
+        case "done":
+            // rpm-ostree writes the next boot rather than this one, and says
+            // so. Claiming the package is ready would be a claim about a
+            // system that does not have it yet.
+            _staged = event.staged === true;
+            break;
         }
     }
 
     // Last error message from a helper, shown with the failure result
     property string _helperError: ""
+    // The helper wrote a deployment that takes effect at the next boot
+    property bool _staged: false
 
     function _installLine(raw) {
         const line = raw.trim();
@@ -747,7 +847,7 @@ Item {
             view.installStep = 0;
             view.installFraction = 0;
             view.installIcon = "";
-            view.lastInstallResult = exitCode === 0 ? Tr.t("%1 installed ✓").arg(installProcess._label) : (Tr.t("%1 failed (exit %2)").arg(installProcess._label).arg(exitCode) + (view._helperError !== "" ? " · " + view._helperError : ""));
+            view.lastInstallResult = exitCode === 0 ? (Tr.t("%1 installed ✓").arg(installProcess._label) + (view._staged ? " · " + Tr.t("takes effect after reboot") : "")) : (Tr.t("%1 failed (exit %2)").arg(installProcess._label).arg(exitCode) + (view._helperError !== "" ? " · " + view._helperError : ""));
             if (exitCode === 0) {
                 if (view.logger) {
                     view.logger.record("install", Tr.t("Installed %1").arg(installProcess._label), [{
@@ -761,6 +861,13 @@ Item {
                     }]);
                 }
                 view.softwareMutated();
+                if (view._staged)
+                    view.stagedChange();
+                // Which Copr a package came from, and which Coprs are
+                // configured, both just changed. The answer is cached, so
+                // asking again costs nothing.
+                if (view.coprQuery !== "" && view.coprQuery === view.searchText.trim())
+                    view.searchCopr();
             }
             installedProcess.running = true;
             resultClearTimer.restart();
@@ -832,7 +939,7 @@ Item {
             spacing: Theme.spacingM
 
             DankButtonGroup {
-                model: [Tr.t("All"), "Flathub", "Fedora", "AppImage"]
+                model: Backend.hasCopr ? [Tr.t("All"), "Flathub", Backend.systemRepoLabel, "AppImage", "Copr"] : [Tr.t("All"), "Flathub", Backend.systemRepoLabel, "AppImage"]
                 currentIndex: view.sourceFilter
                 onSelectionChanged: (index, selected) => {
                     if (selected)
@@ -857,6 +964,68 @@ Item {
                             return;
                         }
                     }
+                }
+            }
+        }
+
+        // ── Copr, on request ─────────────────────────────────────────────────
+        // The one search that leaves the machine, so it is the one search that
+        // has to be asked for. What it finds is built by individuals, which is
+        // said here rather than after the fact.
+        Rectangle {
+            Layout.fillWidth: true
+            visible: view.searchMode && Backend.hasCopr
+            implicitHeight: coprRow.implicitHeight + Theme.spacingS * 2
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+
+            RowLayout {
+                id: coprRow
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingS
+                spacing: Theme.spacingS
+
+                DankIcon {
+                    name: "person"
+                    size: 16
+                    color: Theme.surfaceVariantText
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: {
+                        if (view.coprSearching)
+                            return Tr.t("Searching Copr…");
+                        if (view.coprError !== "")
+                            return Tr.t("Copr could not be reached.");
+                        if (view.coprQuery === view.searchText.trim())
+                            return view.coprResults.length > 0 ? Tr.t("%1 found in Copr, listed below").arg(view.coprResults.length) : Tr.t("Nothing in Copr for \"%1\"").arg(view.coprQuery);
+                        return Tr.t("Not here? Copr has builds by individuals, for software Fedora does not ship.");
+                    }
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: view.coprError !== "" ? Theme.error : Theme.surfaceVariantText
+                    elide: Text.ElideRight
+                }
+
+                DankSpinner {
+                    visible: view.coprSearching
+                    size: 16
+                }
+
+                DankButton {
+                    visible: !view.coprSearching && view.coprQuery !== view.searchText.trim()
+                    buttonHeight: 26
+                    horizontalPadding: Theme.spacingM
+                    iconName: "search"
+                    iconSize: 13
+                    text: Tr.t("Search Copr")
+                    backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
+                    textColor: Theme.surfaceText
+                    onClicked: view.searchCopr()
                 }
             }
         }
@@ -1066,7 +1235,7 @@ Item {
 
                 readonly property var app: rowData.data || ({})
                 readonly property bool installed: app.sources ? view.isInstalled(app) : false
-                readonly property bool busy: app.sources ? app.sources.some(s => s.ref !== "" && (s.ref === view.busyAction || (view.appimageBusy !== "" && s.kind === "appimage" && view.appimageBusy === app.name))) : false
+                readonly property bool busy: app.sources ? app.sources.some(s => s.ref !== "" && (view.sourceKey(s) === view.busyAction || (view.appimageBusy !== "" && s.kind === "appimage" && view.appimageBusy === app.name))) : false
 
                 implicitHeight: resultContent.implicitHeight + Theme.spacingS * 2
                 radius: Theme.cornerRadius
@@ -1172,8 +1341,16 @@ Item {
 
                         StyledText {
                             Layout.fillWidth: true
-                            visible: (resultRow.app.summary || "") !== ""
-                            text: resultRow.app.summary || ""
+                            visible: text !== ""
+                            // Which Copr a package comes out of is the first
+                            // thing to know about it, so it leads the line
+                            text: {
+                                const summary = resultRow.app.summary || "";
+                                const copr = (resultRow.app.sources || []).find(s => s.kind === "copr");
+                                if (!copr)
+                                    return summary;
+                                return summary !== "" ? copr.project + " · " + summary : copr.project;
+                            }
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
                             elide: Text.ElideRight
@@ -1213,8 +1390,8 @@ Item {
                             horizontalPadding: Theme.spacingM
                             iconName: modelData.kind === "appimage" && !modelData.repo ? "open_in_new" : "download"
                             iconSize: 13
-                            text: modelData.kind === "flatpak" ? "Flathub" : (modelData.kind === "appimage" ? "AppImage" : "Fedora")
-                            backgroundColor: modelData.kind === "flatpak" ? Theme.buttonBg : (modelData.kind === "appimage" ? Theme.withAlpha(Theme.tertiary, 0.25) : Theme.secondaryContainer)
+                            text: modelData.kind === "flatpak" ? "Flathub" : (modelData.kind === "appimage" ? "AppImage" : (modelData.kind === "copr" ? "Copr" : Backend.systemRepoLabel))
+                            backgroundColor: modelData.kind === "flatpak" ? Theme.buttonBg : (modelData.kind === "appimage" ? Theme.withAlpha(Theme.tertiary, 0.25) : (modelData.kind === "copr" ? Theme.withAlpha(Theme.primary, 0.22) : Theme.secondaryContainer))
                             textColor: modelData.kind === "flatpak" ? Theme.buttonText : Theme.surfaceText
                             enabled: !resultRow.busy && view.busyAction === "" && view.appimageBusy === ""
                             onClicked: view.install(modelData, resultRow.app.name, resultRow.app.icon || "")

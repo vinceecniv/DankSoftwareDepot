@@ -368,5 +368,15 @@
     "Display name — empty publishes as \"%1\"": "Tên hiển thị — để trống sẽ đăng là \"%1\"",
     "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Hiển thị công khai cùng đánh giá của bạn. Tên nào cũng được — không nhất thiết là tên đăng nhập.",
     "%1 releases since yours": "%1 bản phát hành kể từ bản của bạn",
-    "Version %1 is available": "Đã có phiên bản %1"
+    "Version %1 is available": "Đã có phiên bản %1",
+    "Search Copr": "Tìm trong Copr",
+    "Searching Copr…": "Đang tìm trong Copr…",
+    "Copr could not be reached.": "Không thể kết nối tới Copr.",
+    "%1 found in Copr, listed below": "Tìm thấy %1 trong Copr, bên dưới",
+    "Nothing in Copr for \"%1\"": "Không có gì trong Copr cho \"%1\"",
+    "Not here? Copr has builds by individuals, for software Fedora does not ship.": "Không có ở đây? Copr có các bản dựng của cá nhân, cho phần mềm mà Fedora không phát hành.",
+    "Copr · built by individuals": "Copr · do cá nhân xây dựng",
+    "This Copr has no builds for %1.": "Copr này không có bản dựng cho %1.",
+    "Fedora Rawhide": "Fedora Rawhide",
+    "takes effect after reboot": "có hiệu lực sau khi khởi động lại"
 }

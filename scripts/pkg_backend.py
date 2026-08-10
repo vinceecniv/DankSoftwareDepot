@@ -505,7 +505,8 @@ def changelog(name):
 # removed, and the download cache. Both are safe to lose and neither shows up
 # anywhere until a disk fills.
 
-CACHE_DIRS = ("/var/cache/libdnf5", "/var/cache/dnf", "/var/cache/apt/archives", "/var/cache/pacman/pkg")
+CACHE_DIRS = ("/var/cache/libdnf5", "/var/cache/dnf", "/var/cache/rpm-ostree",
+              "/var/cache/apt/archives", "/var/cache/pacman/pkg")
 # Only downloaded packages count. The rest of these directories is repository
 # metadata, which the next update check downloads straight back — deleting it
 # is churn, not reclaimed space, and `clean packages` does not touch it either.

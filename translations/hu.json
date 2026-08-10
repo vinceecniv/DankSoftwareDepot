@@ -368,5 +368,15 @@
     "Display name — empty publishes as \"%1\"": "Megjelenített név — üresen „%1” néven jelenik meg",
     "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Nyilvánosan megjelenik az értékelése mellett. Bármilyen név megfelel — nem kell a bejelentkezési nevének lennie.",
     "%1 releases since yours": "%1 kiadás az Öné óta",
-    "Version %1 is available": "A(z) %1 verzió elérhető"
+    "Version %1 is available": "A(z) %1 verzió elérhető",
+    "Search Copr": "Keresés a Coprban",
+    "Searching Copr…": "Keresés a Coprban…",
+    "Copr could not be reached.": "A Copr nem érhető el.",
+    "%1 found in Copr, listed below": "%1 találat a Coprban, lásd lent",
+    "Nothing in Copr for \"%1\"": "Nincs találat a Coprban erre: „%1”",
+    "Not here? Copr has builds by individuals, for software Fedora does not ship.": "Nincs itt? A Copr magánszemélyek csomagjait kínálja olyan szoftverekhez, amelyeket a Fedora nem szállít.",
+    "Copr · built by individuals": "Copr · magánszemélyek építik",
+    "This Copr has no builds for %1.": "Ehhez a Coprhoz nincs csomag %1 rendszerhez.",
+    "Fedora Rawhide": "Fedora Rawhide",
+    "takes effect after reboot": "újraindítás után lép életbe"
 }

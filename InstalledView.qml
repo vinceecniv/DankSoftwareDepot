@@ -24,6 +24,10 @@ Item {
     // Fired after a successful uninstall/restore so other views can refresh
     signal softwareMutated()
 
+    // Fired when the change only exists in the next deployment, so the window
+    // can raise its reboot notice (atomic systems)
+    signal stagedChange()
+
     // Set from the command palette, so a query typed there carries over
     // into the tab that can search it properly
     function setQuery(text) {
@@ -571,6 +575,7 @@ Item {
         busyAction = "downgrade:" + id;
         mutationProgress = Tr.t("Waiting for authorization…");
         mutationFraction = 0.02;
+        _staged = false;
         mutationProcess._logType = "downgrade";
         mutationProcess._logTitle = Tr.t("Restored previous version of %1").arg(_flatpakDisplayName(id));
         mutationProcess._logItem = {
@@ -599,6 +604,7 @@ Item {
         busyAction = "uninstall:" + name;
         mutationProgress = Tr.t("Waiting for authorization…");
         mutationFraction = 0.02;
+        _staged = false;
         mutationProcess._logType = "uninstall";
         mutationProcess._logTitle = Tr.t("Uninstalled %1").arg(displayName || name);
         mutationProcess._logItem = {
@@ -615,6 +621,7 @@ Item {
         busyAction = "downgrade:" + name;
         mutationProgress = Tr.t("Waiting for authorization…");
         mutationFraction = 0.02;
+        _staged = false;
         mutationProcess._logType = "downgrade";
         mutationProcess._logTitle = Tr.t("Downgraded %1").arg(name);
         mutationProcess._logItem = {
@@ -795,8 +802,17 @@ Item {
                 mutationProgress = Tr.t("Downloading") + " · " + Math.round(overall * 100) + "%";
             }
             break;
+        case "done":
+            // On an atomic system the package is gone from the next
+            // deployment, not from the running one — it will still be in
+            // this list until the machine reboots, which the notice explains
+            _staged = event.staged === true;
+            break;
         }
     }
+
+    // The helper wrote a deployment that takes effect at the next boot
+    property bool _staged: false
 
     // Short progress message from a raw dnf5/flatpak output line, with labels
     // that fit removals and downgrades alike. dnf5 piped output: "Updating and
@@ -886,6 +902,8 @@ Item {
                 }
                 // The serial bump this triggers reloads our own list too
                 view.softwareMutated();
+                if (view._staged)
+                    view.stagedChange();
             } else {
                 view.reload();
             }

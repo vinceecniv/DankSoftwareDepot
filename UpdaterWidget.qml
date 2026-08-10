@@ -323,6 +323,18 @@ PluginComponent {
         }
     }
 
+    // A transaction that only exists in the next deployment. On an atomic
+    // system that is every install and every removal, so the tabs say so
+    // rather than each inventing its own way to explain it.
+    function noteStagedChange() {
+        if (_bootId === "")
+            return;
+        PluginService.savePluginData("dankSoftwareDepot", "rebootFlag", {
+            bootId: _bootId,
+            recommended: true
+        });
+    }
+
     function dismissReboot() {
         PluginService.savePluginData("dankSoftwareDepot", "rebootFlag", {});
         confirmReboot = false;

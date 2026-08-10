@@ -368,5 +368,15 @@
     "Display name — empty publishes as \"%1\"": "표시 이름 — 비워 두면 \"%1\"(으)로 게시됩니다",
     "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "리뷰와 함께 공개적으로 표시됩니다. 어떤 이름이든 괜찮으며, 로그인 이름일 필요는 없습니다.",
     "%1 releases since yours": "현재 버전 이후 릴리스 %1개",
-    "Version %1 is available": "버전 %1 사용 가능"
+    "Version %1 is available": "버전 %1 사용 가능",
+    "Search Copr": "Copr 검색",
+    "Searching Copr…": "Copr 검색 중…",
+    "Copr could not be reached.": "Copr에 연결할 수 없습니다.",
+    "%1 found in Copr, listed below": "Copr에서 %1개를 찾았습니다, 아래 목록",
+    "Nothing in Copr for \"%1\"": "Copr에 \"%1\" 결과가 없습니다",
+    "Not here? Copr has builds by individuals, for software Fedora does not ship.": "여기에 없나요? Copr에는 Fedora가 제공하지 않는 소프트웨어를 개인이 빌드한 패키지가 있습니다.",
+    "Copr · built by individuals": "Copr · 개인이 빌드",
+    "This Copr has no builds for %1.": "이 Copr에는 %1용 빌드가 없습니다.",
+    "Fedora Rawhide": "Fedora Rawhide",
+    "takes effect after reboot": "재부팅 후에 적용됩니다"
 }

@@ -24,7 +24,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DYNAMIC_PATTERNS = (
     r"sortOptions: \[(?P<body>.*?)\]",
 )
-DYNAMIC_LITERALS = {"Off", "Notify only", "Auto-install Flatpaks"}
+DYNAMIC_LITERALS = {"Off", "Notify only", "Auto-install Flatpaks",
+                    # the Copr group heading, translated where rows are drawn
+                    "Copr · built by individuals"}
 # Storefront categories come from AppStream data, not from the source
 CATEGORY_KEYS = {
     "Most popular", "Browsers", "Communication", "Development", "Games",

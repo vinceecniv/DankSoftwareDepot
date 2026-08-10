@@ -368,5 +368,15 @@
     "Display name — empty publishes as \"%1\"": "表示名 — 空欄なら「%1」として公開されます",
     "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "レビューとともに公開されます。名前は自由で、ログイン名である必要はありません。",
     "%1 releases since yours": "あなたのバージョン以降 %1 件のリリース",
-    "Version %1 is available": "バージョン %1 が利用できます"
+    "Version %1 is available": "バージョン %1 が利用できます",
+    "Search Copr": "Copr を検索",
+    "Searching Copr…": "Copr を検索中…",
+    "Copr could not be reached.": "Copr に接続できませんでした。",
+    "%1 found in Copr, listed below": "Copr で %1 件見つかりました（下に表示）",
+    "Nothing in Copr for \"%1\"": "Copr に「%1」はありません",
+    "Not here? Copr has builds by individuals, for software Fedora does not ship.": "見つかりませんか？ Copr には、Fedora が配布していないソフトウェアの個人ビルドがあります。",
+    "Copr · built by individuals": "Copr · 個人によるビルド",
+    "This Copr has no builds for %1.": "この Copr には %1 向けのビルドがありません。",
+    "Fedora Rawhide": "Fedora Rawhide",
+    "takes effect after reboot": "再起動後に有効になります"
 }

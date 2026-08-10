@@ -8,6 +8,7 @@ Three helpers implement the protocol today:
 | Helper | Library | Covers |
 |---|---|---|
 | `scripts/rpm_helper.py` | libdnf5 (python3-libdnf5) | rpm install / remove / upgrade / downgrade / plan |
+| `scripts/ostree_helper.py` | rpm-ostree (command line) | atomic Fedora: layering, removal and whole-deployment upgrades |
 | `scripts/apt_helper.py` | python-apt (python3-apt) | deb install / remove / upgrade / downgrade / plan |
 | `scripts/pacman_helper.py` | pyalpm | pacman install / remove / upgrade / plan (official repos only, no AUR) |
 | `scripts/flatpak_helper.py` | libflatpak (gi) | flatpak update / install (+ eol listing) |
@@ -34,6 +35,12 @@ manager-agnostic — the QML layer needs no changes per backend. See
   *before* asking for a password: the helper runs under `pkexec`, which
   prompts when the process starts, so a plan produced inside the real run
   would arrive after the authentication it is meant to inform.
+- One rpm-only option: `install --copr <owner/project> <spec>...` enables
+  that Copr before resolving, so a package found by the Copr search costs
+  one authorisation instead of two (the repository and the install are one
+  thing to the person pressing the button). It is refused with any other
+  action and skipped under `plan`, which is unprivileged. No other helper
+  has an equivalent, because no other family has Copr.
 - stdout carries only NDJSON events. stderr is free-form (never parsed).
 - Exit code 0 on success, 1 on failure, 2 on usage errors. Regardless of
   the exit path, the last event on stdout is always `done`.
@@ -54,7 +61,7 @@ ignored by consumers (forward compatibility).
 | `script` | `name` | A scriptlet/hook of that package is running |
 | `warning` | `message` | Non-fatal problem worth surfacing in logs |
 | `error` | `message` | Fatal problem (resolution, transaction). Followed by `done` |
-| `done` | `ok`, `failed: [spec]`, `nothingToDo`? | Always the final event |
+| `done` | `ok`, `failed: [spec]`, `nothingToDo`?, `staged`? | Always the final event. `staged: true` means the transaction succeeded but changed the *next* boot rather than the running system — an image-based helper's answer, and the UI says so instead of claiming the package is in use |
 
 Phases: `download`, `install`, `remove`. Package managers without a
 distinct download phase simply never emit it.
@@ -116,6 +123,24 @@ reads its AppStream catalog from the same XML paths as Fedora, filled by
 transactions: read-only awareness (update notices via the AUR RPC) is a
 possible later step; building or installing AUR packages from a GUI is
 not — the interactive PKGBUILD review exists for safety.
+
+### An atomic Fedora is a fourth backend, not a broken third
+
+Silverblue, Kinoite, Bazzite and Bluefin run rpm packages but no rpm
+transactions: `/usr` belongs to the image. `Backend.qml` detects them by
+`/run/ostree-booted` — the one answer that does not depend on what the
+image calls itself — and routes to `scripts/ostree_helper.py`.
+
+| Area | mutable Fedora | atomic Fedora |
+|---|---|---|
+| Install / remove | libdnf5 transaction | `rpm-ostree install` / `uninstall`, layered, live at the next boot |
+| Upgrade | per package | the whole deployment; the specs are reported, the transaction is the image |
+| Downgrade / previous versions | `dnf repoquery` + `downgrade` | refused: going back is the previous deployment (`rpm-ostree rollback`) |
+| Plan | resolved unprivileged against the cache | answered from what was asked: rpm-ostree resolves inside its daemon, which asks polkit even for `--dry-run` |
+| Repository list & switches | libdnf5 | the `.repo` files themselves (`repo_backend.list_repo_files`) |
+| Adding a Copr | `dnf copr enable` | the hub's own `.repo` file, fetched and written — the same file under the same name |
+| Removing a base package | ordinary removal | refused with a reason: it needs `rpm-ostree override remove`, which changes what the image is |
+| After a successful run | in use | `done` carries `staged: true`, the UI says "takes effect after reboot" and raises the reboot notice |
 
 Two notes on the metadata sources, both of which apply to Fedora too:
 changelogs and AppStream data are only as present as their distro

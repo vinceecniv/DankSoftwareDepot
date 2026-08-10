@@ -73,6 +73,8 @@ Item {
         busyLabel = label;
         adminProcess._label = logTitle || "";
         adminProcess._detail = "";
+        adminProcess._code = "";
+        adminProcess._chroot = "";
         adminProcess.command = command;
         adminProcess.running = true;
     }
@@ -191,11 +193,21 @@ Item {
         }
     }
 
+    // "fedora-44-x86_64" said the way people say it
+    function chrootLabel(chroot) {
+        const parts = /^fedora-([^-]+)-(.+)$/.exec(chroot);
+        if (!parts)
+            return chroot;
+        return (parts[1] === "rawhide" ? Tr.t("Fedora Rawhide") : "Fedora " + parts[1]) + " (" + parts[2] + ")";
+    }
+
     Process {
         id: adminProcess
 
         property string _label: ""
         property string _detail: ""
+        property string _code: ""
+        property string _chroot: ""
 
         stdout: SplitParser {
             onRead: line => {
@@ -205,8 +217,11 @@ Item {
                 } catch (e) {
                     return;
                 }
-                if (event.event === "op-error" || event.event === "error")
+                if (event.event === "op-error" || event.event === "error") {
                     adminProcess._detail = event.detail || event.message || "";
+                    adminProcess._code = event.code || "";
+                    adminProcess._chroot = event.chroot || "";
+                }
             }
         }
 
@@ -218,7 +233,12 @@ Item {
                 // pkexec's own refusal, which is not a failure of the change
                 dialog.error = Tr.t("The authorisation was refused.");
             } else if (exitCode !== 0) {
-                dialog.error = adminProcess._detail !== "" ? adminProcess._detail : Tr.t("The change could not be made.");
+                // dnf answers the chroot case with the project's entire chroot
+                // list, mostly EPEL, which buries the one fact that matters
+                if (adminProcess._code === "copr-no-chroot")
+                    dialog.error = Tr.t("This Copr has no builds for %1.").arg(dialog.chrootLabel(adminProcess._chroot));
+                else
+                    dialog.error = adminProcess._detail !== "" ? adminProcess._detail : Tr.t("The change could not be made.");
             } else if (dialog.logger && adminProcess._label !== "") {
                 dialog.logger.record("sources", adminProcess._label, []);
             }
