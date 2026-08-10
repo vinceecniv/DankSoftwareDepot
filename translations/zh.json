@@ -366,5 +366,7 @@
     "the Flatpak helper stopped with code %1": "Flatpak 助手以代码 %1 退出",
     "unknown package": "未知软件包",
     "Display name — empty publishes as \"%1\"": "显示名称 —— 留空将以“%1”发布",
-    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "会随你的评价公开显示。任何名称都可以，不必是你的登录名。"
+    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "会随你的评价公开显示。任何名称都可以，不必是你的登录名。",
+    "%1 releases since yours": "自你的版本以来有 %1 个发行版",
+    "Version %1 is available": "版本 %1 可用"
 }

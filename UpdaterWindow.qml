@@ -379,22 +379,68 @@ FloatingWindow {
         return false;
     }
 
-    function _changelogSection(md, version) {
+    // Everything that happened since the installed version, not only the
+    // newest release: skipping two versions used to mean skipping their notes,
+    // and someone updating from 0.6.5 to 0.6.9 was told about 0.6.9 alone.
+    //
+    // Rendered as rich text rather than shown raw. The changelog is hard
+    // wrapped at about 72 columns for reading in a terminal, so printing it
+    // verbatim kept the lines short while the banner had twice that width to
+    // give — and left **bold** standing as four asterisks.
+    function _changelogSince(md, local) {
         const lines = md.split("\n");
-        const out = [];
-        let inSection = false;
+        const parts = [];
+        let taking = false;
+        let sections = 0;
+        let para = "";
+        let indented = false;
+
+        const flush = () => {
+            if (para.trim() === "")
+                return;
+            parts.push("<div style=\"margin-left:" + (indented ? 26 : 12) + "px; margin-bottom:3px; text-indent:-10px\">• " + _notesInline(para.trim()) + "</div>");
+            para = "";
+        };
+
         for (const line of lines) {
             if (line.indexOf("## ") === 0) {
-                if (inSection)
-                    break;
-                inSection = line.indexOf(version) !== -1;
+                flush();
+                const found = line.match(/\d+(?:\.\d+)+/);
+                taking = found !== null && _versionNewer(found[0], local);
+                if (taking) {
+                    const heading = line.replace(/^##\s*/, "").trim().split(" — ");
+                    parts.push("<div style=\"margin-top:" + (sections === 0 ? 0 : 12) + "px; margin-bottom:5px\">" + "<font color=\"" + Theme.primary + "\" size=\"+1\"><b>" + heading[0] + "</b></font>" + (heading.length > 1 ? " <font color=\"" + Theme.surfaceVariantText + "\">· " + heading[1] + "</font>" : "") + "</div>");
+                    sections++;
+                }
                 continue;
             }
-            if (inSection)
-                out.push(line);
+            if (!taking)
+                continue;
+            const bullet = line.match(/^(\s*)[-*]\s+(.*)$/);
+            if (bullet) {
+                flush();
+                indented = bullet[1].length >= 2;
+                para = bullet[2];
+            } else if (line.trim() === "") {
+                flush();
+            } else {
+                // A wrapped continuation of the bullet above
+                para += (para === "" ? "" : " ") + line.trim();
+            }
         }
-        return out.join("\n").trim();
+        flush();
+        _selfUpdateSections = sections;
+        return parts.join("");
     }
+
+    // The inline marks the changelog actually uses
+    function _notesInline(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<font face=\"" + Theme.monoFontFamily + "\">$1</font>").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+    }
+
+    // How many releases the notes above cover, so a truncated banner is
+    // read as "there is more" rather than as "that was all"
+    property int _selfUpdateSections: 0
 
     Timer {
         interval: 30 * 1000
@@ -428,8 +474,10 @@ FloatingWindow {
                 const localVersion = win.pluginManifest.version || "0";
                 if (!remote || !remote.version || !win._versionNewer(remote.version, localVersion))
                     return;
+                win.selfUpdateNotes = win._changelogSince(parts[1] || "", localVersion);
                 win.selfUpdateVersion = remote.version;
-                win.selfUpdateNotes = win._changelogSection(parts[1] || "", remote.version);
+                if (win.widgetRoot)
+                    win.widgetRoot.notifyPluginUpdate(remote.version, win._selfUpdateSections);
             }
         }
     }
@@ -585,8 +633,40 @@ FloatingWindow {
                                 }
                             }
                         }
-                    }
-                }
+                        StyledText {
+                            Layout.fillWidth: true
+                            visible: win._selfUpdateSections > 1
+                            text: Tr.t("%1 releases since yours").arg(win._selfUpdateSections)
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            font.weight: Font.DemiBold
+                            color: Theme.surfaceVariantText
+                        }
+
+                        // What changed, where someone came looking for it.
+                        // Bounded and scrollable for the same reason as the
+                        // banner: several releases' notes do not fit a card.
+                        DankFlickable {
+                            id: aboutNotesView
+
+                            Component.onCompleted: Ui.softenScrollbar(aboutNotesView)
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: Math.min(aboutNotesText.implicitHeight, 160)
+                            visible: win.selfUpdateNotes !== ""
+                            clip: true
+                            contentHeight: aboutNotesText.implicitHeight
+
+                            StyledText {
+                                id: aboutNotesText
+
+                                width: aboutNotesView.width
+                                textFormat: Text.RichText
+                                text: win.selfUpdateNotes
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                color: Theme.surfaceVariantText
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                    }                }
 
                 StyledText {
                     text: Tr.t("By %1 · MIT license").arg(win.pluginManifest.author || "") + " · " + Tr.t("requires DMS %1").arg(win.pluginManifest.requires_dms || "")
@@ -626,6 +706,31 @@ FloatingWindow {
                         backgroundColor: Theme.buttonBg
                         textColor: Theme.buttonText
                         onClicked: Qt.openUrlExternally(win.githubUrl)
+                    }
+                }
+
+                // The same three links as the dashboard. Someone who opened
+                // About went looking for who made this, which is exactly the
+                // moment the question is welcome.
+                //
+                // Wrapped in a plain Item because the card's height comes from
+                // this column's implicitHeight, and a nested layout does not
+                // contribute one — the chips ended up below the card's own
+                // rounded corner.
+                Item {
+                    Layout.fillWidth: true
+                    implicitHeight: aboutChips.chipCount * aboutChips.chipHeight + (aboutChips.chipCount - 1) * Theme.spacingXS
+
+                    SupportChips {
+                        id: aboutChips
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        columns: 1
+                        // Everything else in this card starts at the left
+                        // margin, including the button right above
+                        chipAlignment: Qt.AlignLeft
+                        repoUrl: win.githubUrl
                     }
                 }
             }
@@ -2109,13 +2214,37 @@ FloatingWindow {
 
                 StyledText {
                     Layout.fillWidth: true
-                    visible: win.selfUpdateNotes !== ""
-                    text: win.selfUpdateNotes
-                    font.pixelSize: Theme.fontSizeSmall
+                    visible: win._selfUpdateSections > 1
+                    text: Tr.t("%1 releases since yours").arg(win._selfUpdateSections)
+                    font.pixelSize: Theme.fontSizeSmall - 1
+                    font.weight: Font.DemiBold
                     color: Theme.surfaceVariantText
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: 10
-                    elide: Text.ElideRight
+                }
+
+                // Several releases' notes can be long, and cutting them off
+                // hides exactly the fixes someone skipped. Bounded height with
+                // a scrollbar instead: the banner stays a banner, and the
+                // notes stay complete.
+                DankFlickable {
+                    id: selfUpdateNotesView
+
+                    Component.onCompleted: Ui.softenScrollbar(selfUpdateNotesView)
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.min(selfUpdateNotesText.implicitHeight, 220)
+                    visible: win.selfUpdateNotes !== ""
+                    clip: true
+                    contentHeight: selfUpdateNotesText.implicitHeight
+
+                    StyledText {
+                        id: selfUpdateNotesText
+
+                        width: selfUpdateNotesView.width
+                        textFormat: Text.RichText
+                        text: win.selfUpdateNotes
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceVariantText
+                        wrapMode: Text.WordWrap
+                    }
                 }
             }
         }

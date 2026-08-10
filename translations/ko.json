@@ -366,5 +366,7 @@
     "the Flatpak helper stopped with code %1": "Flatpak 도우미가 코드 %1(으)로 종료됨",
     "unknown package": "알 수 없는 패키지",
     "Display name — empty publishes as \"%1\"": "표시 이름 — 비워 두면 \"%1\"(으)로 게시됩니다",
-    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "리뷰와 함께 공개적으로 표시됩니다. 어떤 이름이든 괜찮으며, 로그인 이름일 필요는 없습니다."
+    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "리뷰와 함께 공개적으로 표시됩니다. 어떤 이름이든 괜찮으며, 로그인 이름일 필요는 없습니다.",
+    "%1 releases since yours": "현재 버전 이후 릴리스 %1개",
+    "Version %1 is available": "버전 %1 사용 가능"
 }

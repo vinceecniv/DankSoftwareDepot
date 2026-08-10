@@ -366,5 +366,7 @@
     "the Flatpak helper stopped with code %1": "der Flatpak-Helfer endete mit Code %1",
     "unknown package": "unbekanntes Paket",
     "Display name — empty publishes as \"%1\"": "Anzeigename — leer erscheint als „%1“",
-    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Wird öffentlich bei Ihrer Bewertung angezeigt. Jeder Name ist möglich — er muss nicht Ihr Anmeldename sein."
+    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Wird öffentlich bei Ihrer Bewertung angezeigt. Jeder Name ist möglich — er muss nicht Ihr Anmeldename sein.",
+    "%1 releases since yours": "%1 Versionen seit Ihrer",
+    "Version %1 is available": "Version %1 ist verfügbar"
 }

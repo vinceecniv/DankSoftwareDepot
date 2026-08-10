@@ -366,5 +366,7 @@
     "the Flatpak helper stopped with code %1": "Flatpak ヘルパーがコード %1 で終了しました",
     "unknown package": "不明なパッケージ",
     "Display name — empty publishes as \"%1\"": "表示名 — 空欄なら「%1」として公開されます",
-    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "レビューとともに公開されます。名前は自由で、ログイン名である必要はありません。"
+    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "レビューとともに公開されます。名前は自由で、ログイン名である必要はありません。",
+    "%1 releases since yours": "あなたのバージョン以降 %1 件のリリース",
+    "Version %1 is available": "バージョン %1 が利用できます"
 }

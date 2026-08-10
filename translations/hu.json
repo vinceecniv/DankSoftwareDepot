@@ -366,5 +366,7 @@
     "the Flatpak helper stopped with code %1": "a Flatpak-segéd %1 kóddal állt le",
     "unknown package": "ismeretlen csomag",
     "Display name — empty publishes as \"%1\"": "Megjelenített név — üresen „%1” néven jelenik meg",
-    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Nyilvánosan megjelenik az értékelése mellett. Bármilyen név megfelel — nem kell a bejelentkezési nevének lennie."
+    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Nyilvánosan megjelenik az értékelése mellett. Bármilyen név megfelel — nem kell a bejelentkezési nevének lennie.",
+    "%1 releases since yours": "%1 kiadás az Öné óta",
+    "Version %1 is available": "A(z) %1 verzió elérhető"
 }

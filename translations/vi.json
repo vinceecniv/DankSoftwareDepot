@@ -366,5 +366,7 @@
     "the Flatpak helper stopped with code %1": "trình trợ giúp Flatpak dừng với mã %1",
     "unknown package": "gói không xác định",
     "Display name — empty publishes as \"%1\"": "Tên hiển thị — để trống sẽ đăng là \"%1\"",
-    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Hiển thị công khai cùng đánh giá của bạn. Tên nào cũng được — không nhất thiết là tên đăng nhập."
+    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Hiển thị công khai cùng đánh giá của bạn. Tên nào cũng được — không nhất thiết là tên đăng nhập.",
+    "%1 releases since yours": "%1 bản phát hành kể từ bản của bạn",
+    "Version %1 is available": "Đã có phiên bản %1"
 }

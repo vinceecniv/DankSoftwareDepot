@@ -197,6 +197,35 @@ PluginComponent {
     readonly property string autoUpdateMode: pluginData.autoUpdateMode || "notify"
     property int _lastNotifiedCount: 0
 
+    // One desktop notification, from the two places that have something to
+    // announce. Clicking the body (action "default") or the Open button opens
+    // the window: notify-send --action waits and prints the chosen action, and
+    // the detached shell turns that into the plugin's own IPC call.
+    function notify(summary, body) {
+        const iconFile = Qt.resolvedUrl("assets/icons/dank-software-depot-" + (Theme.isLightMode ? "light" : "dark") + ".svg").toString().replace("file://", "");
+        // One action, not two: `default` is what a click on the body triggers,
+        // and naming a second one only added a duplicate button next to it.
+        // The body line is optional — an empty argument would draw an empty
+        // line, so the two shapes are separate calls.
+        Quickshell.execDetached(["sh", "-c", "if [ -n \"$4\" ]; then chosen=$(notify-send -a 'Dank Software Depot' -i \"$1\" -A default=\"$2\" \"$3\" \"$4\"); else chosen=$(notify-send -a 'Dank Software Depot' -i \"$1\" -A default=\"$2\" \"$3\"); fi; [ -n \"$chosen\" ] && dms ipc call dankSoftwareDepot open", "notify", iconFile, Tr.t("Open"), summary, body || ""]);
+    }
+
+    // A new version of the plugin deserves the same courtesy as new packages:
+    // the banner is only seen by someone who happens to open the window.
+    // Announced once per version — the check runs at every shell start, and a
+    // notification repeated on every restart is a notification switched off.
+    function notifyPluginUpdate(version, releases) {
+        if (version === "" || autoUpdateMode === "off")
+            return;
+        if ((pluginData.selfUpdateNotifiedVersion || "") === version)
+            return;
+        PluginService.savePluginData("dankSoftwareDepot", "selfUpdateNotifiedVersion", version);
+        // The notification already carries the app's name and icon above the
+        // text; repeating it in the summary only spent the width the summary
+        // has, and it has little
+        notify(Tr.t("Version %1 is available").arg(version), releases > 1 ? Tr.t("%1 releases since yours").arg(releases) : "");
+    }
+
     function _afterCheck() {
         const count = effectiveCount;
         if (count === 0) {
@@ -207,13 +236,7 @@ PluginComponent {
             return;
         if (count !== _lastNotifiedCount) {
             _lastNotifiedCount = count;
-            const text = (count === 1 ? Tr.t("%1 update available") : Tr.t("%1 updates available")).arg(count);
-            const iconFile = Qt.resolvedUrl("assets/icons/dank-software-depot-" + (Theme.isLightMode ? "light" : "dark") + ".svg").toString().replace("file://", "");
-            // Clicking the notification body (action "default") or its Open
-            // button opens the main window: notify-send --action waits and
-            // prints the chosen action, the detached shell turns that into
-            // the plugin's own IPC call.
-            Quickshell.execDetached(["sh", "-c", "chosen=$(notify-send -a 'Dank Software Depot' -i \"$1\" -A default=\"$2\" -A open=\"$2\" \"$3\"); [ -n \"$chosen\" ] && dms ipc call dankSoftwareDepot open", "notify", iconFile, Tr.t("Open"), text]);
+            notify((count === 1 ? Tr.t("%1 update available") : Tr.t("%1 updates available")).arg(count));
         }
         if (autoUpdateMode === "auto" && !engine.running && !SystemUpdateService.isUpgrading) {
             const hasFlatpaks = (SystemUpdateService.availableUpdates || []).some(pkg => pkg.repo === "flatpak");

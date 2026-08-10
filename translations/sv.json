@@ -366,5 +366,7 @@
     "the Flatpak helper stopped with code %1": "Flatpak-hjälparen avslutades med kod %1",
     "unknown package": "okänt paket",
     "Display name — empty publishes as \"%1\"": "Visningsnamn — tomt publiceras som ”%1”",
-    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Visas offentligt tillsammans med din recension. Vilket namn som helst duger — det behöver inte vara ditt inloggningsnamn."
+    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Visas offentligt tillsammans med din recension. Vilket namn som helst duger — det behöver inte vara ditt inloggningsnamn.",
+    "%1 releases since yours": "%1 utgåvor sedan din",
+    "Version %1 is available": "Version %1 finns"
 }

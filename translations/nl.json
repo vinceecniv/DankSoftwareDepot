@@ -366,5 +366,7 @@
     "the Flatpak helper stopped with code %1": "de Flatpak-helper stopte met code %1",
     "unknown package": "onbekend pakket",
     "Display name — empty publishes as \"%1\"": "Weergavenaam — leeg publiceert als \"%1\"",
-    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Wordt openbaar bij je review getoond. Elke naam mag — het hoeft niet de naam te zijn waarmee je inlogt."
+    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Wordt openbaar bij je review getoond. Elke naam mag — het hoeft niet de naam te zijn waarmee je inlogt.",
+    "%1 releases since yours": "%1 uitgaven sinds die van jou",
+    "Version %1 is available": "Versie %1 is beschikbaar"
 }

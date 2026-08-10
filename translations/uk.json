@@ -366,5 +366,7 @@
     "the Flatpak helper stopped with code %1": "помічник Flatpak завершився з кодом %1",
     "unknown package": "невідомий пакунок",
     "Display name — empty publishes as \"%1\"": "Показуване ім’я — якщо порожньо, буде опубліковано як «%1»",
-    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Показується публічно поруч із вашим відгуком. Підійде будь-яке ім’я — воно не мусить збігатися з іменем входу."
+    "Shown publicly with your review. Any name will do — it does not have to be the one you log in with.": "Показується публічно поруч із вашим відгуком. Підійде будь-яке ім’я — воно не мусить збігатися з іменем входу.",
+    "%1 releases since yours": "%1 випусків від вашої версії",
+    "Version %1 is available": "Доступна версія %1"
 }
