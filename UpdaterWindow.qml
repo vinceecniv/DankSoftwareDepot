@@ -2846,16 +2846,24 @@ FloatingWindow {
 
                     // Whatever happens to this panel — dismissed, or swept
                     // away by the shell reloading — the log keeps the run
-                    DankButton {
-                        visible: !win.engine.running && win.engine.phase !== "idle" && win.engine.failedCount > 0
-                        buttonHeight: 26
-                        horizontalPadding: Theme.spacingM
-                        iconName: "history"
-                        iconSize: 14
-                        text: Tr.t("View in log")
-                        backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
-                        textColor: Theme.buttonText
-                        onClicked: win.openLatestLogEntry()
+                    // Wrapper Item: DankButton sizes itself through `width`, which a layout does not read
+                    Item {
+                        Layout.preferredWidth: viewInLogButton.width
+                        Layout.preferredHeight: viewInLogButton.height
+                        visible: viewInLogButton.visible
+
+                        DankButton {
+                            id: viewInLogButton
+                            visible: !win.engine.running && win.engine.phase !== "idle" && win.engine.failedCount > 0
+                            buttonHeight: 26
+                            horizontalPadding: Theme.spacingM
+                            iconName: "history"
+                            iconSize: 14
+                            text: Tr.t("View in log")
+                            backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                            textColor: Theme.buttonText
+                            onClicked: win.openLatestLogEntry()
+                        }
                     }
 
                     DankActionButton {
@@ -3162,8 +3170,16 @@ FloatingWindow {
                                     width: 46
                                     height: 46
                                     source: (win.dashboard && win.dashboard.dankLogo) ? "file://" + win.dashboard.dankLogo : ""
-                                    sourceSize.width: 92
-                                    sourceSize.height: 92
+                                    // An SVG is rasterised once at sourceSize
+                                    // and then scaled like a bitmap. 92 was
+                                    // exactly twice the drawn size, which is
+                                    // right until the pulse blows it up by a
+                                    // tenth on a HiDPI screen — 101 device
+                                    // pixels out of a 92-pixel raster, softest
+                                    // at the peak of every breath. Ask for
+                                    // what the peak actually needs.
+                                    sourceSize.width: Math.ceil(width * 1.1 * Screen.devicePixelRatio)
+                                    sourceSize.height: Math.ceil(height * 1.1 * Screen.devicePixelRatio)
                                     fillMode: Image.PreserveAspectFit
                                     asynchronous: true
                                     scale: heroPulse.breath
@@ -3177,6 +3193,11 @@ FloatingWindow {
                                     id: heroStateIcon
                                     anchors.centerIn: parent
                                     visible: !dankLogoImage.visible
+                                    // Scaled by the same breath, and a glyph
+                                    // hinted to the pixel grid does not survive
+                                    // being scaled any better than it survived
+                                    // being rotated in the bar pill
+                                    smoothTransform: true
                                     scale: heroPulse.breath
                                     name: {
                                         if (SystemUpdateService.isChecking || windowEmptyArea.containsMouse)
