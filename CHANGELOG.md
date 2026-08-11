@@ -3,6 +3,27 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.8.0 — 2026-08-11
+
+- **A GPG key is no longer reported as a package that changed behind your
+  back.** rpm keeps every imported repository key as a pseudo-package
+  called `gpg-pubkey`, install time and all, so adding a Copr or RPM
+  Fusion made the log's "changed outside this app" card announce two
+  strangers — in a card whose entire purpose is to be trusted when it
+  does go off.
+- **Four buttons stood outside their own margin.** DankButton sizes
+  itself by writing `width`, which a layout does not read, so a row
+  believed its buttons were nothing wide and put the last one past the
+  edge. Reported on the AppImage dialog's Replace button; the same shape
+  was then found and fixed for "View in log", "Search Copr" and the
+  Save button of an AppImage's update source.
+- **The pulsing badge stays sharp.** Its SVG was rasterised at exactly
+  twice the drawn size, which the pulse then blew past by a tenth — the
+  logo was softest at the peak of every breath. It now asks for what the
+  peak needs, at your display's scale. The icon that stands in for the
+  logo on hover gets the treatment the spinning bar icon got long ago:
+  glyphs hinted to the pixel grid do not survive being scaled.
+
 ## 0.7.9 — 2026-08-11
 
 Both fixes in this release come from reports by @kmf — thanks for the
