@@ -105,7 +105,7 @@ Item {
 
     Process {
         id: appimageIndexProcess
-        command: ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--index"]
+        command: [Backend.python, Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--index"]
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -143,7 +143,7 @@ Item {
 
     Process {
         id: appimageListProcess
-        command: ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--list"]
+        command: [Backend.python, Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--list"]
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -168,7 +168,7 @@ Item {
         appimageBusy = label;
         lastInstallResult = "";
         appimageInstallProcess._label = label;
-        appimageInstallProcess.command = ["python3", scriptPath.replace("enrich.py", "appimage.py")].concat(args);
+        appimageInstallProcess.command = [Backend.python, scriptPath.replace("enrich.py", "appimage.py")].concat(args);
         appimageInstallProcess.running = true;
     }
 
@@ -297,7 +297,7 @@ Item {
             return;
         }
         dnfProcess._query = query;
-        dnfProcess.command = ["python3", scriptPath, "--search-dnf", query];
+        dnfProcess.command = [Backend.python, scriptPath, "--search-dnf", query];
         dnfProcess.running = true;
     }
 
@@ -521,7 +521,7 @@ Item {
             // The flatpak CLI is silent when piped; the libflatpak helper
             // emits NDJSON progress events instead (same one updates use).
             installProgress = Tr.t("Starting…");
-            installProcess.command = ["python3", scriptPath.replace("enrich.py", "flatpak_helper.py"), "install", source.source, source.ref];
+            installProcess.command = [Backend.python, scriptPath.replace("enrich.py", "flatpak_helper.py"), "install", source.source, source.ref];
         } else {
             // rpm installs run through the backend helper: real per-package
             // byte progress as NDJSON events instead of scraping dnf output.
@@ -563,7 +563,7 @@ Item {
 
     Process {
         id: featuredProcess
-        command: ["python3", view.scriptPath, "--featured"]
+        command: [Backend.python, view.scriptPath, "--featured"]
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -590,7 +590,7 @@ Item {
             }
         }
 
-        command: ["python3", view.scriptPath, "--qml-index"]
+        command: [Backend.python, view.scriptPath, "--qml-index"]
 
         onExited: (exitCode, exitStatus) => {
             view.indexLoading = false;

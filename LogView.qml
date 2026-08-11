@@ -176,7 +176,7 @@ Item {
 
     Process {
         id: outsideProcess
-        command: ["python3", Qt.resolvedUrl("scripts/reconcile.py").toString().replace("file://", "")]
+        command: [Backend.python, Qt.resolvedUrl("scripts/reconcile.py").toString().replace("file://", "")]
 
         stdout: StdioCollector {
             onStreamFinished: {

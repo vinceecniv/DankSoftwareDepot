@@ -21,19 +21,42 @@ Item {
     // several things below are different because of it rather than despite it.
     readonly property bool atomic: backendId === "ostree"
 
+    // The interpreter every helper runs under.
+    //
+    // Not the bare name: `pkexec python3 …` resolves python3 through PATH, and
+    // on a machine with Homebrew (or pyenv, or conda) first on PATH that means
+    // running a user-writable interpreter as root — reported in issue #3,
+    // where the polkit prompt read /home/linuxbrew/.linuxbrew/bin/python3.
+    // Unprivileged calls gain from it too: the distro's bindings live in the
+    // system interpreter, so starting there saves the helpers a hand-over.
+    property string python: "python3"
+
+    Process {
+        running: true
+        command: ["sh", "-c", "for p in /usr/bin/python3 /bin/python3 /usr/local/bin/python3; do [ -x \"$p\" ] && { printf %s \"$p\"; exit 0; }; done; command -v python3"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const found = (text || "").trim();
+                if (found !== "")
+                    backend.python = found;
+            }
+        }
+    }
+
     // Transaction helper implementing the NDJSON event protocol
     readonly property string packageHelper: Qt.resolvedUrl("scripts/" + (backendId === "apt" ? "apt_helper.py" : (backendId === "pacman" ? "pacman_helper.py" : (atomic ? "ostree_helper.py" : "rpm_helper.py")))).toString().replace("file://", "")
 
     // Command for a privileged helper transaction
     function helperCommand(action, specs) {
-        return ["pkexec", "python3", packageHelper, action].concat(specs);
+        return ["pkexec", python, packageHelper, action].concat(specs);
     }
 
     // The same install, preceded by adding the Copr the package lives in —
     // one transaction, so one password. Both Fedora helpers take it: layering
     // a Copr package on an atomic system is the same two steps.
     function coprInstallCommand(project, specs) {
-        return ["pkexec", "python3", packageHelper, "install", "--copr", project].concat(specs);
+        return ["pkexec", python, packageHelper, "install", "--copr", project].concat(specs);
     }
 
     // Which updates are security fixes. Only the dnf family ships updateinfo
@@ -42,13 +65,13 @@ Item {
     readonly property bool hasAdvisories: backendId === "dnf"
 
     function advisoryCommand(names) {
-        return ["python3", packageHelper, "advisories"].concat(names);
+        return [python, packageHelper, "advisories"].concat(names);
     }
 
     // The same transaction, resolved but not run: no root, no changes, so
     // the consequences can be shown before the password is asked for.
     function planCommand(action, specs) {
-        return ["python3", packageHelper, "plan", action].concat(specs);
+        return [python, packageHelper, "plan", action].concat(specs);
     }
 
     // ── Helper readiness ────────────────────────────────────────────────────
@@ -73,7 +96,7 @@ Item {
         if (selftestProcess.running)
             return;
         selftestProcess._reason = "";
-        selftestProcess.command = ["python3", packageHelper, "selftest"];
+        selftestProcess.command = [python, packageHelper, "selftest"];
         selftestProcess.running = true;
     }
 
@@ -82,7 +105,55 @@ Item {
 
     function checkRequirements() {
         checkPackageHelper();
+        checkFlatpakHelper();
         checkAppstream();
+    }
+
+    // ── Flatpak readiness ───────────────────────────────────────────────────
+    // The Flatpak helper needs PyGObject *and* the Flatpak typelib, which are
+    // two packages — and on Debian and Ubuntu the typelib
+    // (gir1.2-flatpak-1.0) does not come with flatpak itself. Reported in
+    // issue #2: Flatpak updates failed on Ubuntu until it was installed by
+    // hand, which nothing told the user to do.
+    readonly property string flatpakHelper: Qt.resolvedUrl("scripts/flatpak_helper.py").toString().replace("file://", "")
+
+    property string flatpakHelperStatus: ""
+    readonly property bool flatpakHelperBroken: flatpakHelperStatus !== "" && flatpakHelperStatus !== "ok"
+    readonly property string flatpakHelperError: flatpakHelperBroken ? flatpakHelperStatus : ""
+
+    // Naming both is deliberate: one of the two is usually already there, and
+    // installing the pair is what actually fixes it
+    readonly property string flatpakRequirement: backendId === "apt" ? "gir1.2-flatpak-1.0 python3-gi" : (backendId === "pacman" ? "python-gobject" : "python3-gobject-base")
+
+    function checkFlatpakHelper() {
+        if (flatpakSelftestProcess.running)
+            return;
+        flatpakSelftestProcess._reason = "";
+        flatpakSelftestProcess.command = [python, flatpakHelper, "selftest"];
+        flatpakSelftestProcess.running = true;
+    }
+
+    Process {
+        id: flatpakSelftestProcess
+
+        property string _reason: ""
+
+        stdout: SplitParser {
+            onRead: line => {
+                let event;
+                try {
+                    event = JSON.parse(line);
+                } catch (e) {
+                    return;
+                }
+                if (event.event === "error" && event.message)
+                    flatpakSelftestProcess._reason = event.message;
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            backend.flatpakHelperStatus = exitCode === 0 ? "ok" : (_reason || Tr.t("the Flatpak helper could not start"));
+        }
     }
 
     Process {
@@ -124,7 +195,7 @@ Item {
     function checkAppstream() {
         if (catalogStatusProcess.running)
             return;
-        catalogStatusProcess.command = ["python3", Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--catalog-status"];
+        catalogStatusProcess.command = [python, Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--catalog-status"];
         catalogStatusProcess.running = true;
     }
 
@@ -158,6 +229,13 @@ Item {
                 package: packageHelperRequirement,
                 detail: packageHelperError
             });
+        if (flatpakHelperBroken)
+            missing.push({
+                id: "flatpak",
+                blocking: false,
+                package: flatpakRequirement,
+                detail: flatpakHelperError
+            });
         if (appstreamMissing)
             missing.push({
                 id: "appstream",
@@ -174,15 +252,18 @@ Item {
     // manager's command line directly. The only place in the plugin that does.
 
     function _installWords(pkg) {
+        // A requirement can name more than one package — the Flatpak bindings
+        // are two on Debian — so the string is a list, not an argument
+        const names = String(pkg).split(/\s+/).filter(n => n !== "");
         if (backendId === "apt")
-            return ["apt-get", "install", "-y", pkg];
+            return ["apt-get", "install", "-y"].concat(names);
         if (backendId === "pacman")
-            return ["pacman", "-S", "--needed", "--noconfirm", pkg];
+            return ["pacman", "-S", "--needed", "--noconfirm"].concat(names);
         // Layered, and in effect after the next boot — there is no other way
         // to add a package to an atomic system
         if (atomic)
-            return ["rpm-ostree", "install", "--idempotent", pkg];
-        return ["dnf", "install", "-y", pkg];
+            return ["rpm-ostree", "install", "--idempotent"].concat(names);
+        return ["dnf", "install", "-y"].concat(names);
     }
 
     function installHintFor(pkg) {
@@ -253,13 +334,13 @@ Item {
     // Full installed inventory as "name<TAB>version<TAB>bytes<TAB>installtime"
     function installedTableCommand() {
         if (backendId === "apt" || backendId === "pacman")
-            return ["python3", metadataHelper, "installed-table"];
+            return [python, metadataHelper, "installed-table"];
         return ["sh", "-c", "rpm -qa --qf '%{NAME}\\t%{VERSION}-%{RELEASE}\\t%{SIZE}\\t%{INSTALLTIME}\\n' 2>/dev/null | sort"];
     }
 
     // What could be freed: packages nothing needs any more, and the cache
     function cleanupScanCommand() {
-        return ["python3", metadataHelper, "cleanup-scan"];
+        return [python, metadataHelper, "cleanup-scan"];
     }
 
     // Emptying the download cache is a plain package-manager chore with no
@@ -278,13 +359,13 @@ Item {
 
     // Did the user ask for this package, and what would miss it if it went
     function provenanceCommand(name) {
-        return ["python3", metadataHelper, "provenance", name];
+        return [python, metadataHelper, "provenance", name];
     }
 
     // Installed packages that own a launchable desktop entry — the ones a
     // user installed to actually run. Distro-agnostic; the helper branches.
     function desktopOwnersCommand() {
-        return ["python3", metadataHelper, "desktop-owners"];
+        return [python, metadataHelper, "desktop-owners"];
     }
 
     // Shell fragment printing one installed package name per line (embedded
@@ -296,7 +377,7 @@ Item {
     // (newest first, installed flagged) — consumers branch on the shape.
     function availableVersionsCommand(name) {
         if (backendId === "apt" || backendId === "pacman")
-            return ["python3", metadataHelper, "versions", name];
+            return [python, metadataHelper, "versions", name];
         // An atomic image has no dnf to ask, and no per-package downgrade to
         // offer even if it answered: going back is the previous deployment
         if (atomic)
@@ -327,22 +408,22 @@ Item {
     readonly property string repoHelper: Qt.resolvedUrl("scripts/repo_backend.py").toString().replace("file://", "")
 
     function repoListCommand() {
-        return ["python3", repoHelper, "list", backendId];
+        return [python, repoHelper, "list", backendId];
     }
 
     function repoAdminCommand(args) {
-        return ["pkexec", "python3", repoHelper].concat(args);
+        return ["pkexec", python, repoHelper].concat(args);
     }
 
     function repoUserCommand(args) {
-        return ["python3", repoHelper].concat(args);
+        return [python, repoHelper].concat(args);
     }
 
     // What Copr has built for this system, for software that is in no
     // repository the machine has configured yet. Unprivileged: it asks the
     // Copr hub, it changes nothing.
     function coprSearchCommand(query) {
-        return ["python3", repoHelper, "copr-search", query];
+        return [python, repoHelper, "copr-search", query];
     }
 
     // Copr builds per chroot, and the search asks for this machine's own —
@@ -474,7 +555,7 @@ Item {
     function checkAppimageHandler() {
         if (handlerStatusProcess.running)
             return;
-        handlerStatusProcess.command = ["python3", appimageScript, "--handler-status"];
+        handlerStatusProcess.command = [python, appimageScript, "--handler-status"];
         handlerStatusProcess.running = true;
     }
 
@@ -493,7 +574,7 @@ Item {
         if (appimageHandlerBusy)
             return;
         appimageHandlerBusy = true;
-        handlerProcess.command = ["python3", appimageScript, "--handler-clear"];
+        handlerProcess.command = [python, appimageScript, "--handler-clear"];
         handlerProcess.running = true;
     }
 

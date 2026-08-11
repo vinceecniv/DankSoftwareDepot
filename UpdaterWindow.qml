@@ -1073,7 +1073,7 @@ FloatingWindow {
         if (now - _dashFetchedAt < 60 * 1000 || dashboardProcess.running)
             return;
         _dashFetchedAt = now;
-        dashboardProcess.command = ["python3", Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--dashboard"];
+        dashboardProcess.command = [Backend.python, Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--dashboard"];
         dashboardProcess.running = true;
     }
 
@@ -2041,6 +2041,8 @@ FloatingWindow {
                                         return Tr.t("Installing %1…").arg(pkg);
                                     if (requirementRow.modelData.blocking)
                                         return Tr.t("%1 could not be loaded — system packages cannot be installed or updated until it can.").arg(pkg);
+                                    if (requirementRow.modelData.id === "flatpak")
+                                        return Tr.t("%1 is missing — Flatpak apps cannot be updated or installed without it.").arg(pkg);
                                     return Tr.t("%1 is missing — app names, icons and release notes stay limited without it.").arg(pkg);
                                 }
                                 font.pixelSize: Theme.fontSizeSmall

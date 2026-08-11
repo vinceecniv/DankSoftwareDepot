@@ -110,7 +110,7 @@ Item {
         updateSourceStatus = "";
         if ((appData.sources || []).some(s => s.kind === "flatpak" || s.kind === "dnf")) {
             loading = true;
-            infoProcess.command = ["python3", scriptPath, "--appinfo", JSON.stringify({
+            infoProcess.command = [Backend.python, scriptPath, "--appinfo", JSON.stringify({
                 id: appData.id,
                 sources: appData.sources || []
             })];
@@ -158,7 +158,7 @@ Item {
         reviewStatus = "sending";
         if (displayName !== "")
             PluginService.savePluginData("dankSoftwareDepot", "reviewerName", displayName);
-        reviewProcess.command = ["python3", scriptPath, "--submit-review", JSON.stringify({
+        reviewProcess.command = [Backend.python, scriptPath, "--submit-review", JSON.stringify({
             app_id: appData.id,
             rating: reviewStars,
             summary: summaryText,

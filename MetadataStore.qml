@@ -145,7 +145,7 @@ Item {
 
     function _runEnrich(request) {
         loading = true;
-        enrichProcess.command = ["python3", scriptDir + "enrich.py", request];
+        enrichProcess.command = [Backend.python, scriptDir + "enrich.py", request];
         enrichProcess.running = true;
     }
 
@@ -154,7 +154,7 @@ Item {
         if (changelogs[base] !== undefined || changelogProcess.running)
             return;
         changelogProcess._target = base;
-        changelogProcess.command = ["python3", scriptDir + "enrich.py", "--changelog", base];
+        changelogProcess.command = [Backend.python, scriptDir + "enrich.py", "--changelog", base];
         changelogProcess.running = true;
     }
 
@@ -209,7 +209,7 @@ Item {
 
     function _startGitNotes(request) {
         gitNotesProcess._target = request.key;
-        gitNotesProcess.command = ["python3", scriptDir + "enrich.py", "--gitnotes",
+        gitNotesProcess.command = [Backend.python, scriptDir + "enrich.py", "--gitnotes",
                                    request.name, request.from, request.to];
         gitNotesProcess.running = true;
     }

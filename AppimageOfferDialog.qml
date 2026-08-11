@@ -68,7 +68,7 @@ Item {
         if (path === "" || sourceIsUrl || inspectProcess.running)
             return;
         inspecting = true;
-        inspectProcess.command = ["python3", scriptPath, "--inspect", path];
+        inspectProcess.command = [Backend.python, scriptPath, "--inspect", path];
         inspectProcess.running = true;
     }
 

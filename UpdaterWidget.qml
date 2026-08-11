@@ -133,7 +133,7 @@ PluginComponent {
             updateSizes = null;
             return;
         }
-        sizesProcess.command = ["python3", Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--update-sizes", JSON.stringify({
+        sizesProcess.command = [Backend.python, Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--update-sizes", JSON.stringify({
             flatpak: flatpaks,
             rpm: rpms
         })];
@@ -159,7 +159,7 @@ PluginComponent {
 
     Process {
         id: appimageCheckProcess
-        command: ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--check-updates"]
+        command: [Backend.python, Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--check-updates"]
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -177,7 +177,7 @@ PluginComponent {
 
     Process {
         id: eolProcess
-        command: ["python3", Qt.resolvedUrl("scripts/flatpak_helper.py").toString().replace("file://", ""), "eol"]
+        command: [Backend.python, Qt.resolvedUrl("scripts/flatpak_helper.py").toString().replace("file://", ""), "eol"]
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -195,7 +195,7 @@ PluginComponent {
 
     Process {
         id: distroProcess
-        command: ["python3", Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--distro-upgrade"]
+        command: [Backend.python, Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--distro-upgrade"]
 
         stdout: StdioCollector {
             onStreamFinished: {

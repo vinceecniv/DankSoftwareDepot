@@ -597,7 +597,7 @@ Item {
 
     function _startAppimage() {
         phase = "appimage";
-        const cmd = ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--update-ids"];
+        const cmd = [Backend.python, Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--update-ids"];
         for (const ai of _appimageItems)
             cmd.push(ai.id);
         appimageProcess.command = cmd;
@@ -982,7 +982,7 @@ Item {
 
     function _startFlatpak() {
         phase = "flatpak";
-        const cmd = ["python3", Qt.resolvedUrl("scripts/flatpak_helper.py").toString().replace("file://", ""), "update"];
+        const cmd = [Backend.python, Qt.resolvedUrl("scripts/flatpak_helper.py").toString().replace("file://", ""), "update"];
         for (const id of _flatpakIds)
             cmd.push(id);
         flatpakProcess.command = cmd;

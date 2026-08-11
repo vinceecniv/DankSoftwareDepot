@@ -38,7 +38,7 @@ Item {
             _queue.push(entry);
             return;
         }
-        proc.command = entry ? ["python3", scriptPath, JSON.stringify(entry)] : ["python3", scriptPath];
+        proc.command = entry ? [Backend.python, scriptPath, JSON.stringify(entry)] : [Backend.python, scriptPath];
         proc.running = true;
     }
 

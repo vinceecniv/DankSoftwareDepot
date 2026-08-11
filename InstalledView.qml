@@ -133,7 +133,7 @@ Item {
 
         onUpdateSourceSaveRequested: link => {
             updateSourceStatus = "saving";
-            appimageRepoProcess.command = ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--set-repo", entryId, link];
+            appimageRepoProcess.command = [Backend.python, Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--set-repo", entryId, link];
             appimageRepoProcess.running = true;
         }
 
@@ -273,7 +273,7 @@ Item {
             _enrichPending = true;
             return;
         }
-        enrichProcess.command = ["python3", Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), JSON.stringify(request)];
+        enrichProcess.command = [Backend.python, Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), JSON.stringify(request)];
         enrichProcess.running = true;
     }
 
@@ -289,7 +289,7 @@ Item {
 
     Process {
         id: appimageListProcess
-        command: ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--list"]
+        command: [Backend.python, Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--list"]
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -362,7 +362,7 @@ Item {
             to: "",
             source: "AppImage"
         };
-        appimageMutationProcess.command = ["python3", Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--uninstall", id];
+        appimageMutationProcess.command = [Backend.python, Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--uninstall", id];
         appimageMutationProcess.running = true;
     }
 
