@@ -15,7 +15,8 @@ AppImages and firmware. Beyond what the system already knows about, it can
 it can be [the app that opens a downloaded
 `.appimage`](#appimages-end-to-end).
 
-![screenshot](screenshot.png)
+![The Updates tab: pending updates as cards, graded by severity, with a size
+and removal summary above Update All](screenshot.png)
 
 Built on top of the DMS system update service (the `dms` daemon does update
 detection and dnf transactions; polkit prompts appear through the DMS agent).
@@ -90,6 +91,10 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   fortnight as a year — and it stays away entirely until there is a stretch
   worth looking back over
 
+| ![A run in progress: phase stepper, downloaded bytes, and a progress bar per package](screenshots/update-in-progress.png) | ![The up-to-date dashboard with installed-software counts, system info and recently updated packages](screenshots/updates-dashboard.png) |
+|---|---|
+| **A run in progress.** The list regroups around what is happening, and every row carries its own byte-accurate progress bar. | **Nothing to do.** Counts per source, system information, what was updated recently — and the reboot banner when one is recommended. |
+
 ### 2 · Installed
 - All Flatpak apps, rpm packages and AppImages in one list: live search,
   source filter, sorting (name / largest / recently updated) with sizes
@@ -107,6 +112,10 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   popup and its releases become the update channel
 - Live progress on every mutation: phase text and an animated progress bar
   ("Loading repositories…", "Removing 2/3 · 67%", …)
+
+| ![The Installed tab: search, source filters, applications grouped before supporting packages](screenshots/installed-library.png) | ![The details popup for VLC with screenshots, description, sandbox permissions and reviews](screenshots/app-details.png) |
+|---|---|
+| **Everything installed, in one list.** Flatpaks, system packages and AppImages together, applications first. | **The details popup**, shared with the Install tab: screenshots, permissions, install counts and ODRS reviews. |
 
 ### 3 · Install
 - **Popular-software storefront** before you search: most-reviewed apps
@@ -142,11 +151,18 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - **AppImages** are searched, installed and offered from here alongside
   everything else — see [AppImages, end to end](#appimages-end-to-end)
 
+| ![The Install tab storefront: popular apps by category with ratings and a source button per app](screenshots/install-storefront.png) | ![The Software sources dialog with Flatpak remotes, well-known sources to add, and repository switches](screenshots/software-sources.png) |
+|---|---|
+| **The storefront** before you type anything: most-reviewed apps by category, with the source to install from on the row itself. | **Software sources.** Flatpak remotes, one-click Flathub and RPM Fusion, and the configured repositories with debug and source ones folded away. |
+
 ### 4 · Firmware
 - fwupd device inventory: which hardware supports firmware updates, current
   versions, on-demand LVFS release notes
 - Pending firmware updates appear in the Updates tab and run in the firmware
   phase of Update All
+
+![The Firmware tab: fwupd devices with vendor, current firmware version and an updatable
+chip](screenshots/firmware-devices.png)
 
 ### 5 · Log
 - Persistent history of everything the plugin did: update runs, installs,
@@ -162,6 +178,10 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   to compare against. System packages only
 - Searchable; entries are kept for two years — a window that throws away last
   winter cannot answer anything about a year
+
+| ![The Log tab: a timeline of update runs, installs and removals, with a notice about packages changed outside the app](screenshots/log-history.png) | ![A changelog popup listing the CVEs a Chromium update closes](screenshots/security-changelog.png) |
+|---|---|
+| **What happened, and when.** Grouped by day, with the packages that changed outside this app called out separately. | **What an entry closes.** Release notes and rpm changelogs, CVE numbers included, read from what is already on the machine. |
 
 ## AppImages, end to end
 
@@ -195,6 +215,9 @@ life of one is handled here, so it is managed software like anything else.
   run in their own phase of Update All, with byte progress
 - **Uninstall** takes the file, its desktop entry, its icon and its record
 
+![Double-clicking an .appimage opens this dialog, which recognises the build already installed
+and offers to replace it](screenshots/appimage-install.png)
+
 ## Bar widget & popout
 
 - Bar pill with the effective update count (held excluded);
@@ -205,6 +228,16 @@ life of one is handled here, so it is managed software like anything else.
   is and pulses — the same two rings the shell's own System Check page uses —
   instead of being replaced by a spinner
 - Optional: hide the pill when up to date, click opens the window directly
+
+## Settings & command palette
+
+Everything the plugin decides for itself lives in one dialog behind the gear;
+everything it can do is one **Ctrl+K** away. Check interval and ignored
+packages stay with DMS, and the dialog links straight to them.
+
+| ![The plugin settings dialog with switches for the bar pill, firmware, the launcher entry and the .appimage association](screenshots/plugin-settings.png) | ![The command palette listing tabs, check for updates, software sources and settings](screenshots/command-palette.png) |
+|---|---|
+| **Plugin settings.** What the pill shows, whether firmware joins Update All, the launcher entry, and who opens `.appimage` files. | **Ctrl+K.** Every tab, the actions around them, and the two dialogs — without going looking for a button. |
 
 ## Languages
 
