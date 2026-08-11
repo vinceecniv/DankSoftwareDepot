@@ -417,5 +417,7 @@
     "Copr · built by individuals": "Copr · 由个人构建",
     "This Copr has no builds for %1.": "该 Copr 没有面向 %1 的构建。",
     "Fedora Rawhide": "Fedora Rawhide",
-    "takes effect after reboot": "重启后生效"
+    "takes effect after reboot": "重启后生效",
+    "%1 is missing — Flatpak apps cannot be updated or installed without it.": "缺少 %1 —— 没有它就无法更新或安装 Flatpak 应用。",
+    "the Flatpak helper could not start": "无法启动 Flatpak 助手"
 }

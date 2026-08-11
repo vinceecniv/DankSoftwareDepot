@@ -417,5 +417,7 @@
     "Copr · built by individuals": "Copr · von Einzelpersonen gebaut",
     "This Copr has no builds for %1.": "Dieses Copr hat keine Pakete für %1.",
     "Fedora Rawhide": "Fedora Rawhide",
-    "takes effect after reboot": "wirkt nach dem Neustart"
+    "takes effect after reboot": "wirkt nach dem Neustart",
+    "%1 is missing — Flatpak apps cannot be updated or installed without it.": "%1 fehlt — ohne dieses Paket lassen sich Flatpak-Anwendungen nicht aktualisieren oder installieren.",
+    "the Flatpak helper could not start": "der Flatpak-Helfer konnte nicht starten"
 }

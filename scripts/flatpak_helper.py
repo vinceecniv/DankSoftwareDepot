@@ -288,6 +288,12 @@ def run_eol_check():
 
 
 def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "selftest":
+        # Reaching here means gi imported and the Flatpak typelib resolved:
+        # the two halves that are separate packages on Debian and Ubuntu,
+        # where gir1.2-flatpak-1.0 does not come with flatpak itself.
+        emit({"event": "done", "ok": True, "failed": []})
+        return
     if len(sys.argv) >= 2 and sys.argv[1] == "eol":
         run_eol_check()
         return

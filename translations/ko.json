@@ -417,5 +417,7 @@
     "Copr · built by individuals": "Copr · 개인이 빌드",
     "This Copr has no builds for %1.": "이 Copr에는 %1용 빌드가 없습니다.",
     "Fedora Rawhide": "Fedora Rawhide",
-    "takes effect after reboot": "재부팅 후에 적용됩니다"
+    "takes effect after reboot": "재부팅 후에 적용됩니다",
+    "%1 is missing — Flatpak apps cannot be updated or installed without it.": "%1이(가) 없습니다 — 이것 없이는 Flatpak 앱을 업데이트하거나 설치할 수 없습니다.",
+    "the Flatpak helper could not start": "Flatpak 도우미를 시작할 수 없습니다"
 }

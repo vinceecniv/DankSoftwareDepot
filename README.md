@@ -221,17 +221,23 @@ language by dropping a new `translations/<lang>.json` next to the others.
 - A Fedora-based distribution — or an atomic Fedora, Debian/Ubuntu or Arch
   (all three experimental)
 - DMS ≥ 1.5 with the `sysupdate` daemon capability
-- `python3`, `python3-gobject` + libflatpak GIR
-- `flatpak`, optionally `fwupd`
+- `python3` and `flatpak`, optionally `fwupd`
 - Package-manager bindings for your distro:
   - Fedora: `python3-libdnf5` (**not** part of a default install)
   - Atomic Fedora: nothing extra — `rpm-ostree` is the image's own tool
   - Debian/Ubuntu: `python3-apt` (usually preinstalled)
   - Arch: `pyalpm`
+- Flatpak bindings — PyGObject *and* the Flatpak typelib, which are two
+  packages:
+  - Fedora: `python3-gobject-base` (the typelib comes with `flatpak-libs`)
+  - Debian/Ubuntu: `python3-gi` **and** `gir1.2-flatpak-1.0`, which
+    `flatpak` does not pull in
+  - Arch: `python-gobject`
 
-Without those bindings no system package can be installed, updated or
-removed; the plugin checks for them at startup and offers to install what
-is missing.
+Without the package-manager bindings no system package can be installed,
+updated or removed; without the Flatpak ones no Flatpak can. The plugin
+checks both at startup and offers to install what is missing, naming the
+packages for your distribution.
 
 Optional, for richer app information (names, icons, screenshots and
 release notes for system packages): the AppStream catalog for your
