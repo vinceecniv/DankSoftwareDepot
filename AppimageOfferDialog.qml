@@ -309,25 +309,40 @@ Item {
                     Layout.fillWidth: true
                 }
 
-                DankButton {
-                    buttonHeight: 32
-                    horizontalPadding: Theme.spacingM
-                    text: Tr.t("Cancel")
-                    backgroundColor: Theme.withAlpha(Theme.surfaceVariantText, 0.12)
-                    textColor: Theme.surfaceText
-                    onClicked: dialog.close()
+                // Wrapper Items: DankButton sizes itself through `width`, which
+                // a layout neither reads nor honours — so the last button in
+                // the row ran past the sheet's own margin
+                Item {
+                    Layout.preferredWidth: cancelButton.width
+                    Layout.preferredHeight: cancelButton.height
+
+                    DankButton {
+                        id: cancelButton
+                        buttonHeight: 32
+                        horizontalPadding: Theme.spacingM
+                        text: Tr.t("Cancel")
+                        backgroundColor: Theme.withAlpha(Theme.surfaceVariantText, 0.12)
+                        textColor: Theme.surfaceText
+                        onClicked: dialog.close()
+                    }
                 }
 
-                DankButton {
-                    buttonHeight: 32
-                    horizontalPadding: Theme.spacingM
-                    iconName: dialog.installedMatch ? "sync" : "download"
-                    iconSize: 14
-                    text: dialog.installedMatch ? Tr.t("Replace") : Tr.t("Install")
-                    backgroundColor: Theme.primary
-                    textColor: Theme.primaryText
-                    enabled: dialog.source.trim() !== "" && !dialog.inspecting && !dialog.failed && !dialog.busy
-                    onClicked: dialog.accept()
+                Item {
+                    Layout.preferredWidth: acceptButton.width
+                    Layout.preferredHeight: acceptButton.height
+
+                    DankButton {
+                        id: acceptButton
+                        buttonHeight: 32
+                        horizontalPadding: Theme.spacingM
+                        iconName: dialog.installedMatch ? "sync" : "download"
+                        iconSize: 14
+                        text: dialog.installedMatch ? Tr.t("Replace") : Tr.t("Install")
+                        backgroundColor: Theme.primary
+                        textColor: Theme.primaryText
+                        enabled: dialog.source.trim() !== "" && !dialog.inspecting && !dialog.failed && !dialog.busy
+                        onClicked: dialog.accept()
+                    }
                 }
             }
         }

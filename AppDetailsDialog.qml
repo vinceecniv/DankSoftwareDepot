@@ -805,16 +805,24 @@ Item {
                                 size: 18
                             }
 
-                            DankButton {
-                                buttonHeight: 28
-                                horizontalPadding: Theme.spacingM
-                                iconName: "save"
-                                iconSize: 13
-                                text: Tr.t("Save")
-                                backgroundColor: Theme.buttonBg
-                                textColor: Theme.buttonText
-                                enabled: dialog.updateSourceStatus !== "saving" && repoField.text.trim() !== dialog.updateSourceUrl
-                                onClicked: dialog.updateSourceSaveRequested(repoField.text.trim())
+                            // Wrapper Item: DankButton sizes itself through `width`, which a layout does not read
+                            Item {
+                                Layout.preferredWidth: updateSourceSaveButton.width
+                                Layout.preferredHeight: updateSourceSaveButton.height
+                                visible: updateSourceSaveButton.visible
+
+                                DankButton {
+                                    id: updateSourceSaveButton
+                                    buttonHeight: 28
+                                    horizontalPadding: Theme.spacingM
+                                    iconName: "save"
+                                    iconSize: 13
+                                    text: Tr.t("Save")
+                                    backgroundColor: Theme.buttonBg
+                                    textColor: Theme.buttonText
+                                    enabled: dialog.updateSourceStatus !== "saving" && repoField.text.trim() !== dialog.updateSourceUrl
+                                    onClicked: dialog.updateSourceSaveRequested(repoField.text.trim())
+                                }
                             }
                         }
 

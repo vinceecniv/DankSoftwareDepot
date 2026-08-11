@@ -1013,16 +1013,24 @@ Item {
                     size: 16
                 }
 
-                DankButton {
-                    visible: !view.coprSearching && view.coprQuery !== view.searchText.trim()
-                    buttonHeight: 26
-                    horizontalPadding: Theme.spacingM
-                    iconName: "search"
-                    iconSize: 13
-                    text: Tr.t("Search Copr")
-                    backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
-                    textColor: Theme.surfaceText
-                    onClicked: view.searchCopr()
+                // Wrapper Item: DankButton sizes itself through `width`, which a layout does not read
+                Item {
+                    Layout.preferredWidth: coprSearchButton.width
+                    Layout.preferredHeight: coprSearchButton.height
+                    visible: coprSearchButton.visible
+
+                    DankButton {
+                        id: coprSearchButton
+                        visible: !view.coprSearching && view.coprQuery !== view.searchText.trim()
+                        buttonHeight: 26
+                        horizontalPadding: Theme.spacingM
+                        iconName: "search"
+                        iconSize: 13
+                        text: Tr.t("Search Copr")
+                        backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
+                        textColor: Theme.surfaceText
+                        onClicked: view.searchCopr()
+                    }
                 }
             }
         }
