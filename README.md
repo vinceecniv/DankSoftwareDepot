@@ -426,4 +426,4 @@ and built with [Vito](https://vito.talk) — voice-driven development
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
