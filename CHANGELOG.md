@@ -3,6 +3,29 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.7.9 — 2026-08-11
+
+Both fixes in this release come from reports by @kmf — thanks for the
+screenshots and the follow-up, which is what made the causes findable.
+
+- **The privileged helper no longer runs whatever `python3` means on
+  `PATH`** (#3). The commands were built as `pkexec python3 …`, and pkexec
+  resolves that name through `PATH` — so with Homebrew, pyenv or conda
+  ahead of `/usr/bin`, the interpreter elevated to root was one the user
+  can write to. The system interpreter is now resolved once at startup and
+  named by absolute path everywhere, privileged and not.
+- **Missing Flatpak bindings are reported before a run fails** (#2). The
+  helper needs PyGObject *and* the Flatpak typelib, which are two
+  packages, and on Debian and Ubuntu `gir1.2-flatpak-1.0` does not come
+  with `flatpak`. The startup check now asks the Flatpak helper as well,
+  and a missing binding appears in the requirements card with its own
+  wording and an install button naming the packages for your
+  distribution — `gir1.2-flatpak-1.0` and `python3-gi` on Debian,
+  `python3-gobject-base` on Fedora, `python-gobject` on Arch.
+- A requirement can name more than one package now; the install command
+  passed it as a single argument, which would have looked for one package
+  with a space in its name.
+
 ## 0.7.8 — 2026-08-10
 
 - **The last year, on the dashboard.** A card that reads a year back out
