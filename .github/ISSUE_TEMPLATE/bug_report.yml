@@ -1,0 +1,88 @@
+name: Bug report
+description: Something in the plugin does not do what it says it does
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Four package managers and three experimental distributions sit behind
+        this plugin, so which one you are on usually decides where the fault
+        is. The fields below are the ones that make a report actionable.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what the plugin did, and what you expected instead.
+      placeholder: |
+        Pressed Update All with 12 pending updates. Two Flatpaks finished, the
+        rest stayed on "Waiting" and the run never ended.
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Updates tab → the up-to-date dashboard, under Status. Or `plugin.json`.
+      placeholder: "0.8.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: distro
+    attributes:
+      label: Distribution
+      description: >
+        Everything outside plain Fedora is experimental, which is worth
+        knowing before anything else.
+      options:
+        - Fedora (or Nobara, RHEL/CentOS family)
+        - Atomic Fedora (Silverblue, Kinoite, Bazzite, Bluefin) — experimental
+        - Debian or Ubuntu — experimental
+        - Arch — experimental
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Distribution and DMS version
+      description: The release you are on, and the DMS version (`dms --version`).
+      placeholder: "Fedora 44 · DMS 1.5.2"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: area
+    attributes:
+      label: What kind of software is involved
+      options:
+        - label: System packages (dnf / rpm-ostree / apt / pacman)
+        - label: Flatpak
+        - label: AppImage
+        - label: Firmware (fwupd)
+        - label: None in particular — the window, the bar pill or a translation
+
+  - type: textarea
+    id: details
+    attributes:
+      label: The plugin's own details
+      description: >
+        A failed package keeps the tool's verbatim output one click away under
+        **Show details**, and the Log tab keeps the same detail per entry.
+        That is more useful here than a terminal scrollback. Paste it if there
+        is one.
+      render: text
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Before reporting
+      options:
+        - label: >
+            The plugin did not warn me at startup about missing package-manager
+            or Flatpak bindings (`python3-libdnf5`, `python3-apt`, `pyalpm`,
+            the Flatpak typelib) — see Requirements in the README.
+          required: true

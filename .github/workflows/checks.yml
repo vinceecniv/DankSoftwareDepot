@@ -1,0 +1,69 @@
+name: Checks
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python checks · ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The helpers run on whatever interpreter the distribution ships, so
+        # the range that matters is Debian 12's 3.11 up to a current Fedora.
+        # None of the checks need anything beyond the standard library.
+        python: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Translation catalogs match the QML
+        run: python3 scripts/check_translations.py
+
+      - name: DEP-11 and apt/pacman changelog paths
+        run: python3 scripts/test_dep11.py
+
+      - name: Upstream notes for packages built from git
+        run: python3 scripts/test_gitnotes.py
+
+      - name: Reconciling the action log against install times
+        run: python3 scripts/test_reconcile.py
+
+      - name: The rpm-ostree backend
+        run: python3 scripts/test_ostree_helper.py
+
+      - name: Everything else at least parses
+        run: python3 -m compileall -q scripts
+
+  metadata:
+    name: Release metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: plugin.json is valid and its version has a changelog
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, re, sys
+
+          plugin = json.loads(pathlib.Path("plugin.json").read_text())
+          version = plugin["version"]
+
+          # The in-app update offer shows the section for the version it is
+          # about to install, so a release without one ships a blank notice.
+          changelog = pathlib.Path("CHANGELOG.md").read_text()
+          if not re.search(rf"^## {re.escape(version)} — ", changelog, re.M):
+              sys.exit(f"plugin.json says {version}, CHANGELOG.md has no '## {version} — …' section")
+
+          print(f"plugin.json {version}: valid JSON, changelog section present")
+          PY

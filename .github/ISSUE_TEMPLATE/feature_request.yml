@@ -1,0 +1,38 @@
+name: Feature request
+description: Something the plugin should do and does not
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is missing
+      description: >
+        What you were trying to do, and where the plugin left you. A request
+        described as a situation is easier to answer well than one described
+        as a solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: How you imagine it working
+      description: Optional — if you already have a shape in mind.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where it belongs
+      options:
+        - Updates
+        - Installed
+        - Install (storefront, search, software sources)
+        - Firmware
+        - Log
+        - AppImages
+        - Bar widget or popout
+        - Settings
+        - Translations
+        - Somewhere else
+    validations:
+      required: true
