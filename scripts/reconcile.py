@@ -39,6 +39,12 @@ MATCH_SLACK = 2 * 3600
 SAMPLE_LIMIT = 8
 
 
+# Not packages, whatever the database says. rpm keeps every imported repository
+# key as a pseudo-package called gpg-pubkey, so adding a Copr or RPM Fusion
+# writes "2 packages changed outside this app" about two keys nobody installed.
+NOT_PACKAGES = {"gpg-pubkey"}
+
+
 def install_times():
     """[(name, installtime)] for everything installed, newest first."""
     rows = []
@@ -46,7 +52,7 @@ def install_times():
         try:
             for line in pkg_backend.installed_table().splitlines():
                 fields = line.split("\t")
-                if len(fields) >= 4 and fields[3].isdigit():
+                if len(fields) >= 4 and fields[3].isdigit() and fields[0] not in NOT_PACKAGES:
                     rows.append((fields[0], int(fields[3])))
         except Exception:
             pass
@@ -56,7 +62,7 @@ def install_times():
                              capture_output=True, text=True, timeout=30)
         for line in res.stdout.splitlines():
             fields = line.split("\t")
-            if len(fields) == 2 and fields[1].isdigit():
+            if len(fields) == 2 and fields[1].isdigit() and fields[0] not in NOT_PACKAGES:
                 rows.append((fields[0], int(fields[1])))
     except (OSError, subprocess.SubprocessError):
         pass
