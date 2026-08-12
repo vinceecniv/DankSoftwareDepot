@@ -701,7 +701,7 @@ FloatingWindow {
                             clip: true
                             contentHeight: aboutNotesText.implicitHeight
 
-                            StyledText {
+                            SelectableText {
                                 id: aboutNotesText
 
                                 width: aboutNotesView.width
@@ -2335,7 +2335,7 @@ FloatingWindow {
                     clip: true
                     contentHeight: selfUpdateNotesText.implicitHeight
 
-                    StyledText {
+                    SelectableText {
                         id: selfUpdateNotesText
 
                         width: selfUpdateNotesView.width

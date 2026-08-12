@@ -455,7 +455,7 @@ Item {
                                     }
                                 }
 
-                                StyledText {
+                                SelectableText {
                                     Layout.fillWidth: true
                                     visible: (releaseEntry.modelData.notesHtml || "") !== ""
                                     text: releaseEntry.modelData.notesHtml

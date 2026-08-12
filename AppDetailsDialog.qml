@@ -729,7 +729,7 @@ Item {
                     // sanitized HTML (e.g. AppImage feed), then the plain summary
                     readonly property string effectiveDescription: (dialog.info.descriptionHtml || "") !== "" ? dialog.info.descriptionHtml : (dialog.appData.descriptionHtml || "")
 
-                    StyledText {
+                    SelectableText {
                         width: parent.width
                         visible: bodyColumn.effectiveDescription !== ""
                         text: bodyColumn.effectiveDescription
@@ -1066,7 +1066,7 @@ Item {
                                 }
                             }
 
-                            StyledText {
+                            SelectableText {
                                 width: parent.width
                                 text: modelData.notesHtml || ("<i>" + Tr.t("No release notes published.") + "</i>")
                                 textFormat: Text.RichText
@@ -1138,7 +1138,7 @@ Item {
                                 }
                             }
 
-                            StyledText {
+                            SelectableText {
                                 width: parent.width
                                 text: modelData.notesHtml || ("<i>" + Tr.t("No release notes published.") + "</i>")
                                 textFormat: Text.RichText
@@ -1190,7 +1190,7 @@ Item {
                         color: Theme.surfaceText
                     }
 
-                    StyledText {
+                    SelectableText {
                         width: parent.width
                         visible: dialog.changelogLoading || dialog.changelog !== ""
                         text: dialog.changelogLoading ? Tr.t("Loading changelog…") : dialog.changelog

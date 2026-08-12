@@ -400,6 +400,7 @@ anything about you leaves the machine:
 | `AppDetailsDialog.qml` | Shared app-details popup (info, reviews, actions) |
 | `AppimageOfferDialog.qml` | Installing an AppImage from a file or URL — the toolbar button and a double-clicked `.appimage` both land here |
 | `NewsDialog.qml` | Arch Linux announcements: what is unread, and the archive of everything seen |
+| `SelectableText.qml` | StyledText you can select and copy — used for the blocks worth copying out (release notes and their CVE numbers, changelogs, the verbatim output behind a failure) |
 | `RetrospectCard.qml` | The year the action log remembers, as figures and a few sentences, on the Updates dashboard |
 | `PulseRings.qml` | The shell's System Check pulse, borrowed so a check can happen around the logo instead of over it |
 | `UpdateEngine.qml` | Run orchestration (daemon dnf → libflatpak → fwupd → DMS packages), per-package progress from log lines and dnf-cache bytes |
@@ -432,6 +433,12 @@ itself (Settings → System Updater); this plugin consumes that state.
 
 All release-note/HTML content from external sources is reduced to an escaped
 minimal markup subset before rendering.
+
+**Text you would want to copy can be selected**: release notes and the CVE
+numbers in them, changelogs, an app's description, an announcement, and the
+verbatim tool output behind a failure. Not every label, deliberately — the
+element that can be selected takes the mouse with it, and a card whose title
+was selectable would stop being a card you can click.
 
 ## Development
 

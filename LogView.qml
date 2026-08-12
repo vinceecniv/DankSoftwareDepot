@@ -668,7 +668,7 @@ Item {
                                     radius: Theme.cornerRadius / 2
                                     color: Theme.withAlpha(Theme.surfaceVariant, 0.5)
 
-                                    StyledText {
+                                    SelectableText {
                                         id: rawErrorLabel
                                         anchors.left: parent.left
                                         anchors.right: parent.right

@@ -233,7 +233,7 @@ Item {
                             }
                         }
 
-                        StyledText {
+                        SelectableText {
                             Layout.fillWidth: true
                             visible: newsRow.expanded
                             text: newsRow.modelData.html || ""

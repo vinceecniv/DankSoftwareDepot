@@ -22,4 +22,5 @@ RepositoriesDialog 1.0 RepositoriesDialog.qml
 AppDetailsDialog 1.0 AppDetailsDialog.qml
 AppimageOfferDialog 1.0 AppimageOfferDialog.qml
 NewsDialog 1.0 NewsDialog.qml
+SelectableText 1.0 SelectableText.qml
 RetrospectCard 1.0 RetrospectCard.qml
