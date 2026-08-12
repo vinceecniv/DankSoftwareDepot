@@ -434,9 +434,10 @@ itself (Settings → System Updater); this plugin consumes that state.
 All release-note/HTML content from external sources is reduced to an escaped
 minimal markup subset before rendering.
 
-**Text you would want to copy can be selected**: release notes and the CVE
-numbers in them, changelogs, an app's description, an announcement, and the
-verbatim tool output behind a failure. Not every label, deliberately — the
+**Text you would want to copy can be selected**: in an app's details popup its
+name, the `old → new` version step and the licence; and everywhere, release
+notes and the CVE numbers in them, changelogs, descriptions, announcements and
+the verbatim tool output behind a failure. Not every label, deliberately — the
 element that can be selected takes the mouse with it, and a card whose title
 was selectable would stop being a card you can click.
 

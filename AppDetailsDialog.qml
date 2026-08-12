@@ -504,12 +504,18 @@ Item {
                         Layout.fillWidth: true
                         spacing: Theme.spacingS
 
-                        StyledText {
+                        // The package name is the string most worth copying in
+                        // this window — into a search box, a bug report, a
+                        // command. It wraps rather than elides now, because
+                        // the element that can be selected has no ellipsis and
+                        // a name cut short with no mark saying so is worse
+                        // than a name on two lines.
+                        SelectableText {
                             text: dialog.appData.name || ""
                             font.pixelSize: Theme.fontSizeLarge
                             font.weight: Font.Medium
                             color: Theme.surfaceText
-                            elide: Text.ElideRight
+                            wrapMode: Text.WordWrap
                             Layout.maximumWidth: 360
                         }
 
@@ -588,16 +594,18 @@ Item {
                         spacing: Theme.spacingXS
                         visible: identityLine !== "" || licenseLine !== ""
 
-                        StyledText {
+                        // Version step and developer: the other half of what
+                        // gets pasted somewhere. Both halves of this row share
+                        // the width and wrap, since neither can elide any more.
+                        SelectableText {
                             id: identityText
 
-                            visible: text !== ""
+                            Layout.fillWidth: true
+                            visible: identityRow.identityLine !== ""
                             text: identityRow.identityLine
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
-                            elide: Text.ElideRight
-                            wrapMode: Text.NoWrap
-                            maximumLineCount: 1
+                            wrapMode: Text.WordWrap
                         }
 
                         DankIcon {
@@ -609,7 +617,7 @@ Item {
                             color: Theme.surfaceVariantText
                         }
 
-                        StyledText {
+                        SelectableText {
                             id: licenseText
 
                             Layout.fillWidth: true
@@ -617,9 +625,7 @@ Item {
                             text: identityRow.licenseLine
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
-                            elide: Text.ElideRight
-                            wrapMode: Text.NoWrap
-                            maximumLineCount: 1
+                            wrapMode: Text.WordWrap
                         }
                     }
 

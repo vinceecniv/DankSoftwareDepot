@@ -41,6 +41,12 @@ TextEdit {
         } else if (event.key === Qt.Key_A && (event.modifiers & Qt.ControlModifier)) {
             root.selectAll();
             event.accepted = true;
+        } else if (event.key === Qt.Key_Escape) {
+            // These live inside dialogs that close on Escape. Having clicked
+            // into a line of text is not a reason for that to stop working,
+            // so the selection goes and the key carries on upward.
+            root.deselect();
+            event.accepted = false;
         }
     }
 
