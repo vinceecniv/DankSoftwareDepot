@@ -18,7 +18,7 @@ Item {
 
     // ── Public state ─────────────────────────────────────────────────────────
     property bool running: false
-    // idle | starting | dnf-download | dnf-install | flatpak | done | failed | cancelled
+    // idle | starting | dnf-download | dnf-install | flatpak | verifying | done | failed | cancelled
     property string phase: "idle"
     property real overallFraction: 0
     property int etaSeconds: -1
@@ -28,7 +28,7 @@ Item {
     property int completedCount: 0
     property int plannedCount: 0
     // key ("flatpak/<appid>" | "system/<basename>") -> {status, fraction, detail}
-    // status: pending | active | done | error
+    // status: pending | active | confirming | done | error
     property var itemStates: ({})
     // Snapshot of the items included in the current/last run: [{pkg, key}]
     property var runItems: []
@@ -121,7 +121,7 @@ Item {
             autoDismissTimer.restart();
     }
 
-    // Stepper position for the phase indicator: 0 check, 1 download, 2 install, 3 done
+    // Stepper position: 0 check, 1 download, 2 install, 3 verify, 4 done
     readonly property int phaseStep: {
         switch (phase) {
         case "dnf-download":
@@ -135,10 +135,12 @@ Item {
         case "firmware":
         case "dms":
             return 2;
+        case "verifying":
+            return 3;
         case "done":
         case "failed":
         case "cancelled":
-            return 3;
+            return 4;
         default:
             return 0;
         }
@@ -160,6 +162,8 @@ Item {
             return Tr.t("Updating firmware…");
         case "dms":
             return Tr.t("Updating DankMaterialShell… (shell may reload)");
+        case "verifying":
+            return Tr.t("Confirming what took effect…");
         case "done":
             return failedCount > 0 ? Tr.t("Finished with issues") : Tr.t("Everything up to date");
         case "failed":
@@ -989,6 +993,122 @@ Item {
         flatpakProcess.running = true;
     }
 
+    // ── Confirming that the run took ─────────────────────────────────────────
+    // A transaction saying "installed" and the package no longer being offered
+    // as an update are two different claims, and the second one is the one
+    // worth making. The check that already runs after every run answers it, so
+    // the run is not over when the last byte lands — it is over when that
+    // answer is back. Until then the finished items wait in "confirming"
+    // instead of being declared done, which is also what makes the wait
+    // visible: it used to happen behind a list that already said Completed.
+    //
+    // Only system packages and Flatpaks can be settled this way, because the
+    // daemon's list is what they are checked against. Firmware takes effect at
+    // the next boot and AppImages are not in that list at all, so those finish
+    // the way they always did rather than waiting on an answer that cannot
+    // come.
+    signal verified(int stuck)
+
+    property bool _verifyPending: false
+    property bool _verifySawCheck: false
+
+    function _startVerification() {
+        const states = Object.assign({}, itemStates);
+        let any = false;
+        for (const item of runItems) {
+            const state = states[item.key];
+            if (!state || state.status !== "done")
+                continue;
+            if (item.key.indexOf("system/") !== 0 && item.key.indexOf("flatpak/") !== 0)
+                continue;
+            states[item.key] = Object.assign({}, state, {
+                status: "confirming"
+            });
+            any = true;
+        }
+        if (!any)
+            return false;
+        itemStates = states;
+        _verifyPending = true;
+        _verifySawCheck = false;
+        verifyTimeout.restart();
+        return true;
+    }
+
+    // `judge` is false when the check never produced a fresh answer (it timed
+    // out, or it failed). The pending list is then the one from before the
+    // run, and reading it would accuse every package of not having installed.
+    // Saying nothing is the only honest option left.
+    function _resolveVerification(judge) {
+        if (!_verifyPending)
+            return;
+        verifyTimeout.stop();
+        _verifyPending = false;
+        _verifySawCheck = false;
+
+        const stillPending = new Set();
+        if (judge) {
+            for (const pkg of (SystemUpdateService.availableUpdates || []))
+                stillPending.add(_keyFor(pkg));
+        }
+        const states = Object.assign({}, itemStates);
+        let stuck = 0;
+        for (const key in states) {
+            if (states[key].status !== "confirming")
+                continue;
+            if (judge && stillPending.has(key)) {
+                states[key] = Object.assign({}, states[key], {
+                    status: "error",
+                    detail: Tr.t("still offered as an update after the run")
+                });
+                stuck++;
+            } else {
+                states[key] = Object.assign({}, states[key], {
+                    status: "done"
+                });
+            }
+        }
+        itemStates = states;
+        if (stuck > 0) {
+            failedCount += stuck;
+            completedCount = Math.max(0, completedCount - stuck);
+        }
+        // A result panel dismissed while this was running stays dismissed;
+        // the answer is not a reason to put it back on screen
+        if (phase === "verifying")
+            phase = "done";
+        verified(stuck);
+    }
+
+    Timer {
+        id: verifyTimeout
+        interval: 180000
+        repeat: false
+        onTriggered: engine._resolveVerification(false)
+    }
+
+    Connections {
+        target: SystemUpdateService
+
+        // Either signal can be the one that lands first: a check that takes
+        // time flips isChecking, a cached answer only moves the timestamp.
+        function onIsCheckingChanged() {
+            if (!engine._verifyPending)
+                return;
+            if (SystemUpdateService.isChecking) {
+                engine._verifySawCheck = true;
+                return;
+            }
+            if (engine._verifySawCheck)
+                engine._resolveVerification(!SystemUpdateService.hasError);
+        }
+
+        function onLastCheckUnixChanged() {
+            if (engine._verifyPending && !SystemUpdateService.isChecking)
+                engine._resolveVerification(!SystemUpdateService.hasError);
+        }
+    }
+
     function _finish(finalPhase) {
         running = false;
         etaTimer.stop();
@@ -999,6 +1119,8 @@ Item {
         currentDetail = "";
         if (finalPhase === "done" && failedCount === 0)
             overallFraction = 1;
+        if (finalPhase === "done" && _startVerification())
+            phase = "verifying";
         SystemUpdateService.checkForUpdates();
         // Only a run that finished its work says anything useful about how
         // long that work takes; a cancelled one would drag the estimate down

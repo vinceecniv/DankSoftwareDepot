@@ -3,11 +3,11 @@ import qs.Common
 import qs.Widgets
 
 // Material stepper visualizing the update phases:
-// Check → Download → Install → Done. The active step pulses.
+// Check → Download → Install → Verify → Done. The active step pulses.
 Item {
     id: root
 
-    property int step: 0            // 0..3
+    property int step: 0            // 0.._steps.length - 1
     property bool running: false
     property bool failed: false
     property bool compact: false
@@ -16,8 +16,10 @@ Item {
         { icon: "search", label: Tr.t("Check") },
         { icon: "download", label: Tr.t("Download") },
         { icon: "deployed_code_update", label: Tr.t("Install") },
+        { icon: "fact_check", label: Tr.t("Verify") },
         { icon: failed ? "error" : "check_circle", label: Tr.t("Done") }
     ]
+    readonly property int _lastStep: _steps.length - 1
     readonly property int circleSize: compact ? 26 : 34
     readonly property int lineWidth: compact ? 22 : 40
 
@@ -38,7 +40,7 @@ Item {
                 required property int index
                 readonly property bool isLine: index % 2 === 1
                 readonly property int stepIndex: Math.floor(index / 2)
-                readonly property bool stepDone: stepIndex < root.step || (root.step === 3 && !root.running)
+                readonly property bool stepDone: stepIndex < root.step || (root.step === root._lastStep && !root.running)
                 readonly property bool stepActive: stepIndex === root.step && root.running
 
                 width: isLine ? root.lineWidth : root.circleSize

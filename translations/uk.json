@@ -2,6 +2,7 @@
     "Check": "Перевірка",
     "Download": "Завантаження",
     "Install": "Встановити",
+    "Verify": "Перевірка",
     "Done": "Готово",
     "Preparing update…": "Підготовка оновлення…",
     "Downloading system packages…": "Завантаження системних пакетів…",
@@ -419,5 +420,8 @@
     "Fedora Rawhide": "Fedora Rawhide",
     "takes effect after reboot": "набуде чинності після перезавантаження",
     "%1 is missing — Flatpak apps cannot be updated or installed without it.": "Бракує %1 — без нього програми Flatpak не можна оновлювати чи встановлювати.",
-    "the Flatpak helper could not start": "не вдалося запустити помічник Flatpak"
+    "the Flatpak helper could not start": "не вдалося запустити помічник Flatpak",
+    "Confirming": "Підтвердження",
+    "Confirming what took effect…": "Підтвердження того, що застосовано…",
+    "still offered as an update after the run": "усе ще пропонується як оновлення після виконання"
 }

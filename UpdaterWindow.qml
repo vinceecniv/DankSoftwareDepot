@@ -1052,7 +1052,7 @@ FloatingWindow {
     // the active rows off screen, which is the opposite of the point.
     property var collapsedCats: ({
             "5 · Held packages": true,
-            "3 · Completed": true
+            "4 · Completed": true
         })
 
     function toggleCategory(category) {
@@ -1403,8 +1403,10 @@ FloatingWindow {
             let category = "2 · Waiting";
             if (status === "active")
                 category = "1 · In progress";
+            else if (status === "confirming")
+                category = "3 · Confirming";
             else if (status === "done" || status === "error")
-                category = "3 · Completed";
+                category = "4 · Completed";
             rows.push({
                 pkg: item.pkg,
                 key: item.key,
@@ -1434,7 +1436,7 @@ FloatingWindow {
         const counts = {};
         for (const row of visibleRows)
             counts[row.category] = (counts[row.category] || 0) + 1;
-        const collapsible = ["5 · Held packages", "3 · Completed"];
+        const collapsible = ["5 · Held packages", "4 · Completed"];
         const out = [];
         let current = "";
         for (const row of visibleRows) {
@@ -1672,7 +1674,9 @@ FloatingWindow {
             return "sync";
         case "2 · Waiting":
             return "schedule";
-        case "3 · Completed":
+        case "3 · Confirming":
+            return "fact_check";
+        case "4 · Completed":
             return "check_circle";
         case "2 · System packages":
             return "memory";
@@ -1691,7 +1695,7 @@ FloatingWindow {
         switch (category) {
         case "2 · Waiting":
             return Theme.surfaceVariantText;
-        case "3 · Completed":
+        case "4 · Completed":
             return Theme.success;
         case "5 · Held packages":
             return Theme.warning;
@@ -2807,9 +2811,12 @@ FloatingWindow {
 
                 PhaseIndicator {
                     Layout.alignment: Qt.AlignHCenter
-                    visible: win.engine.running
+                    // Verification is work with nobody at the controls: the
+                    // engine is no longer running, but the stepper has a step
+                    // left and it should be pulsing on it
+                    visible: win.engine.running || win.engine.phase === "verifying"
                     step: win.engine.phaseStep
-                    running: win.engine.running
+                    running: win.engine.running || win.engine.phase === "verifying"
                     failed: win.engine.failedCount > 0
                 }
 

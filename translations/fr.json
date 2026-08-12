@@ -2,6 +2,7 @@
     "Check": "Vérification",
     "Download": "Téléchargement",
     "Install": "Installation",
+    "Verify": "Vérifier",
     "Done": "Terminé",
     "Preparing update…": "Préparation de la mise à jour…",
     "Downloading system packages…": "Téléchargement des paquets système…",
@@ -419,5 +420,8 @@
     "Fedora Rawhide": "Fedora Rawhide",
     "takes effect after reboot": "prend effet après le redémarrage",
     "%1 is missing — Flatpak apps cannot be updated or installed without it.": "%1 est absent — sans lui, les applications Flatpak ne peuvent être ni mises à jour ni installées.",
-    "the Flatpak helper could not start": "l'assistant Flatpak n'a pas pu démarrer"
+    "the Flatpak helper could not start": "l'assistant Flatpak n'a pas pu démarrer",
+    "Confirming": "Confirmation",
+    "Confirming what took effect…": "Confirmation de ce qui a été appliqué…",
+    "still offered as an update after the run": "toujours proposé comme mise à jour après l'exécution"
 }

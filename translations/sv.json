@@ -2,6 +2,7 @@
     "Check": "Kontroll",
     "Download": "Hämtning",
     "Install": "Installation",
+    "Verify": "Verifiera",
     "Done": "Klart",
     "Preparing update…": "Förbereder uppdatering…",
     "Downloading system packages…": "Hämtar systempaket…",
@@ -419,5 +420,8 @@
     "Fedora Rawhide": "Fedora Rawhide",
     "takes effect after reboot": "träder i kraft efter omstart",
     "%1 is missing — Flatpak apps cannot be updated or installed without it.": "%1 saknas — utan det går Flatpak-program varken att uppdatera eller installera.",
-    "the Flatpak helper could not start": "Flatpak-hjälparen kunde inte starta"
+    "the Flatpak helper could not start": "Flatpak-hjälparen kunde inte starta",
+    "Confirming": "Bekräftar",
+    "Confirming what took effect…": "Bekräftar vad som genomfördes…",
+    "still offered as an update after the run": "erbjuds fortfarande som uppdatering efter körningen"
 }

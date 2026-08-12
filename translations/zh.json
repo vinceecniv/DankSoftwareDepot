@@ -2,6 +2,7 @@
     "Check": "检查",
     "Download": "下载",
     "Install": "安装",
+    "Verify": "验证",
     "Done": "完成",
     "Preparing update…": "正在准备更新…",
     "Downloading system packages…": "正在下载系统软件包…",
@@ -419,5 +420,8 @@
     "Fedora Rawhide": "Fedora Rawhide",
     "takes effect after reboot": "重启后生效",
     "%1 is missing — Flatpak apps cannot be updated or installed without it.": "缺少 %1 —— 没有它就无法更新或安装 Flatpak 应用。",
-    "the Flatpak helper could not start": "无法启动 Flatpak 助手"
+    "the Flatpak helper could not start": "无法启动 Flatpak 助手",
+    "Confirming": "确认中",
+    "Confirming what took effect…": "正在确认已生效的更新…",
+    "still offered as an update after the run": "运行后仍被列为可用更新"
 }

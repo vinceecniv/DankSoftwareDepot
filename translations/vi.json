@@ -2,6 +2,7 @@
     "Check": "Kiểm tra",
     "Download": "Tải xuống",
     "Install": "Cài đặt",
+    "Verify": "Xác minh",
     "Done": "Xong",
     "Preparing update…": "Đang chuẩn bị cập nhật…",
     "Downloading system packages…": "Đang tải gói hệ thống…",
@@ -419,5 +420,8 @@
     "Fedora Rawhide": "Fedora Rawhide",
     "takes effect after reboot": "có hiệu lực sau khi khởi động lại",
     "%1 is missing — Flatpak apps cannot be updated or installed without it.": "Thiếu %1 — không có nó thì không thể cập nhật hay cài đặt ứng dụng Flatpak.",
-    "the Flatpak helper could not start": "không thể khởi động trình trợ giúp Flatpak"
+    "the Flatpak helper could not start": "không thể khởi động trình trợ giúp Flatpak",
+    "Confirming": "Đang xác nhận",
+    "Confirming what took effect…": "Đang xác nhận những gì đã được áp dụng…",
+    "still offered as an update after the run": "vẫn được đề xuất cập nhật sau khi chạy"
 }

@@ -2,6 +2,7 @@
     "Check": "Controle",
     "Download": "Downloaden",
     "Install": "Installeren",
+    "Verify": "Verifiëren",
     "Done": "Klaar",
     "Preparing update…": "Update voorbereiden…",
     "Downloading system packages…": "Systeempakketten downloaden…",
@@ -419,5 +420,8 @@
     "Fedora Rawhide": "Fedora Rawhide",
     "takes effect after reboot": "actief na herstarten",
     "%1 is missing — Flatpak apps cannot be updated or installed without it.": "%1 ontbreekt — Flatpak-programma's kunnen zonder dat pakket niet bijgewerkt of geïnstalleerd worden.",
-    "the Flatpak helper could not start": "de Flatpak-helper kon niet starten"
+    "the Flatpak helper could not start": "de Flatpak-helper kon niet starten",
+    "Confirming": "Bevestigen",
+    "Confirming what took effect…": "Bevestigen wat is doorgevoerd…",
+    "still offered as an update after the run": "wordt na de run nog steeds als update aangeboden"
 }

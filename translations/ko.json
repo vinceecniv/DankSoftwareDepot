@@ -2,6 +2,7 @@
     "Check": "확인",
     "Download": "다운로드",
     "Install": "설치",
+    "Verify": "확인",
     "Done": "완료",
     "Preparing update…": "업데이트를 준비하는 중…",
     "Downloading system packages…": "시스템 패키지를 내려받는 중…",
@@ -419,5 +420,8 @@
     "Fedora Rawhide": "Fedora Rawhide",
     "takes effect after reboot": "재부팅 후에 적용됩니다",
     "%1 is missing — Flatpak apps cannot be updated or installed without it.": "%1이(가) 없습니다 — 이것 없이는 Flatpak 앱을 업데이트하거나 설치할 수 없습니다.",
-    "the Flatpak helper could not start": "Flatpak 도우미를 시작할 수 없습니다"
+    "the Flatpak helper could not start": "Flatpak 도우미를 시작할 수 없습니다",
+    "Confirming": "확인 중",
+    "Confirming what took effect…": "적용된 항목을 확인하는 중…",
+    "still offered as an update after the run": "실행 후에도 여전히 업데이트로 표시됨"
 }

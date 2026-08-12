@@ -943,6 +943,14 @@ PluginComponent {
                 root._evaluateReboot();
             }
         }
+
+        // A package the follow-up check still finds pending failed after the
+        // run was already written down, so the persisted failures need saying
+        // again — otherwise the reason is gone at the next shell reload
+        onVerified: stuck => {
+            if (stuck > 0)
+                root._saveFailures();
+        }
     }
 
     UpdaterWindow {
@@ -1444,9 +1452,9 @@ PluginComponent {
 
                     PhaseIndicator {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        visible: engine.running
+                        visible: engine.running || engine.phase === "verifying"
                         step: engine.phaseStep
-                        running: engine.running
+                        running: engine.running || engine.phase === "verifying"
                         failed: engine.failedCount > 0
                         compact: true
                     }

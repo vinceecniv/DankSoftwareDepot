@@ -2,6 +2,7 @@
     "Check": "Ellenőrzés",
     "Download": "Letöltés",
     "Install": "Telepítés",
+    "Verify": "Ellenőrzés",
     "Done": "Kész",
     "Preparing update…": "Frissítés előkészítése…",
     "Downloading system packages…": "Rendszercsomagok letöltése…",
@@ -419,5 +420,8 @@
     "Fedora Rawhide": "Fedora Rawhide",
     "takes effect after reboot": "újraindítás után lép életbe",
     "%1 is missing — Flatpak apps cannot be updated or installed without it.": "Hiányzik: %1 — enélkül a Flatpak alkalmazások nem frissíthetők és nem telepíthetők.",
-    "the Flatpak helper could not start": "a Flatpak-segéd nem tudott elindulni"
+    "the Flatpak helper could not start": "a Flatpak-segéd nem tudott elindulni",
+    "Confirming": "Ellenőrzés alatt",
+    "Confirming what took effect…": "Az érvénybe lépett módosítások ellenőrzése…",
+    "still offered as an update after the run": "a futtatás után is frissítésként jelenik meg"
 }

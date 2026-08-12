@@ -2,6 +2,7 @@
     "Check": "確認",
     "Download": "ダウンロード",
     "Install": "インストール",
+    "Verify": "確認",
     "Done": "完了",
     "Preparing update…": "更新を準備しています…",
     "Downloading system packages…": "システムパッケージをダウンロードしています…",
@@ -419,5 +420,8 @@
     "Fedora Rawhide": "Fedora Rawhide",
     "takes effect after reboot": "再起動後に有効になります",
     "%1 is missing — Flatpak apps cannot be updated or installed without it.": "%1 がありません。これがないと Flatpak アプリの更新もインストールもできません。",
-    "the Flatpak helper could not start": "Flatpak ヘルパーを起動できませんでした"
+    "the Flatpak helper could not start": "Flatpak ヘルパーを起動できませんでした",
+    "Confirming": "確認中",
+    "Confirming what took effect…": "適用された内容を確認しています…",
+    "still offered as an update after the run": "実行後もまだ更新として提示されています"
 }
