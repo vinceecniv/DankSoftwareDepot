@@ -42,6 +42,9 @@ jobs:
       - name: The rpm-ostree backend
         run: python3 scripts/test_ostree_helper.py
 
+      - name: The Arch news feed
+        run: python3 scripts/test_arch_news.py
+
       - name: Everything else at least parses
         run: python3 -m compileall -q scripts
 

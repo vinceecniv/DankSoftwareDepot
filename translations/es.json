@@ -423,5 +423,15 @@
     "the Flatpak helper could not start": "el asistente de Flatpak no pudo iniciarse",
     "Confirming": "Confirmando",
     "Confirming what took effect…": "Confirmando qué se ha aplicado…",
-    "still offered as an update after the run": "sigue apareciendo como actualización tras la ejecución"
+    "still offered as an update after the run": "sigue apareciendo como actualización tras la ejecución",
+    "Arch Linux news": "Noticias de Arch Linux",
+    "Arch Linux has published a news item.": "Arch Linux ha publicado una noticia.",
+    "Arch Linux has published %1 news items.": "Arch Linux ha publicado %1 noticias.",
+    "Read": "Leer",
+    "Read on archlinux.org": "Leer en archlinux.org",
+    "Older news": "Noticias anteriores",
+    "Mark all as read": "Marcar todo como leído",
+    "Nothing new.": "Nada nuevo.",
+    "Nothing here yet.": "Aún no hay nada.",
+    "Could not reach the news feed — showing what was already here.": "No se pudo acceder al canal de noticias: se muestra lo que ya estaba aquí."
 }

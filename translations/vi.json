@@ -423,5 +423,15 @@
     "the Flatpak helper could not start": "không thể khởi động trình trợ giúp Flatpak",
     "Confirming": "Đang xác nhận",
     "Confirming what took effect…": "Đang xác nhận những gì đã được áp dụng…",
-    "still offered as an update after the run": "vẫn được đề xuất cập nhật sau khi chạy"
+    "still offered as an update after the run": "vẫn được đề xuất cập nhật sau khi chạy",
+    "Arch Linux news": "Tin tức Arch Linux",
+    "Arch Linux has published a news item.": "Arch Linux đã đăng một tin.",
+    "Arch Linux has published %1 news items.": "Arch Linux đã đăng %1 tin.",
+    "Read": "Đọc",
+    "Read on archlinux.org": "Đọc trên archlinux.org",
+    "Older news": "Tin cũ hơn",
+    "Mark all as read": "Đánh dấu tất cả đã đọc",
+    "Nothing new.": "Không có gì mới.",
+    "Nothing here yet.": "Chưa có gì ở đây.",
+    "Could not reach the news feed — showing what was already here.": "Không truy cập được nguồn tin — hiển thị những gì đã có sẵn."
 }

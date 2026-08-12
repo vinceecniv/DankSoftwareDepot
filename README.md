@@ -75,6 +75,17 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - A package that fails keeps its reason on its card, including after the
   shell reload a DMS update causes, with the tool's verbatim output one
   click away under **Show details** — the same detail the action log keeps
+- **Arch Linux news**, on the distribution that publishes it. Arch announces in
+  prose, ahead of time, that an update needs a hand — a key imported, a package
+  replaced before the rest will resolve — and a software centre that updates
+  such a system without mentioning it is hiding the one thing the distribution
+  went out of its way to say. A banner appears only when something unread has
+  appeared, because the feed always has *something* in it and an announcement
+  that has been true since spring is not news; the first fetch on a new install
+  marks the backlog read rather than opening with eleven interruptions nobody
+  missed. Items are kept rather than mirrored, so the archive (Ctrl+K → Arch
+  Linux news) still has the announcement that explains the state this machine
+  is in, long after it scrolled off the feed
 - Reboot recommendation banner (kernel/systemd/glibc/firmware) with
   confirm-restart button, persisted per boot
 - End-of-life Flatpak detection and distro-upgrade notice
@@ -358,6 +369,7 @@ list of things you already have. Everything it contacts, and when:
 | `appimage.github.io`, `api.github.com` | the AppImage catalogue and the releases of an AppImage's linked project | the Install tab and AppImage updates |
 | `api.github.com` | for a package built from git, the notes of the release being installed or the commits between two snapshots — the repository comes from the package's own URL field | opening the details of such an update; answers cached a day, and a package not built from git never asks |
 | `bodhi.fedoraproject.org` | which Fedora releases are current, for the release-upgrade notice | the upgrade check |
+| `archlinux.org` | the Arch news feed, for the announcements that ask something of you before an update | on Arch only, at most once every six hours while the window is open |
 | `copr.fedorainfracloud.org` | which Coprs build a package matching your search, and for which Fedora | only when you press Search Copr; answers cached six hours |
 | `mirrors.rpmfusion.org`, `dl.flathub.org`, `nightly.gnome.org`, `cdn.kde.org`, `registry.fedoraproject.org` | fetching a source you asked to add | only when you press Add in Software sources |
 
@@ -387,6 +399,7 @@ anything about you leaves the machine:
 | `LogView.qml` | Action history browser |
 | `AppDetailsDialog.qml` | Shared app-details popup (info, reviews, actions) |
 | `AppimageOfferDialog.qml` | Installing an AppImage from a file or URL — the toolbar button and a double-clicked `.appimage` both land here |
+| `NewsDialog.qml` | Arch Linux announcements: what is unread, and the archive of everything seen |
 | `RetrospectCard.qml` | The year the action log remembers, as figures and a few sentences, on the Updates dashboard |
 | `PulseRings.qml` | The shell's System Check pulse, borrowed so a check can happen around the logo instead of over it |
 | `UpdateEngine.qml` | Run orchestration (daemon dnf → libflatpak → fwupd → DMS packages), per-package progress from log lines and dnf-cache bytes |
@@ -409,6 +422,8 @@ anything about you leaves the machine:
 | `scripts/repo_backend.py` | Software sources: reads the configured repositories and Flatpak remotes; enable/disable, Copr add/remove/search, RPM Fusion and Flathub (dnf family only; apt and pacman are listed read-only) |
 | `scripts/action_log.py` | Action-log append/prune helper |
 | `scripts/reconcile.py` | Compares package install times against the action log to find what changed outside this app |
+| `scripts/arch_news.py` | The Arch news feed: fetch, reduce each announcement to the safe markup subset, keep what scrolls off the feed, track what has been read |
+| `scripts/test_arch_news.py` | Checks that path against a fixture feed with the network stubbed — parsing, the markup reduction, the archive, and that a first run announces nothing |
 | `scripts/test_reconcile.py` | Checks that comparison against synthetic bursts — dependencies count as ours, an unexplained burst does not |
 | `scripts/open.sh` | What the desktop entry runs: finds `dms` on a launcher's narrower PATH, opens the window or hands over a double-clicked AppImage, and turns a failed call into a notification instead of into silence |
 

@@ -423,5 +423,15 @@
     "the Flatpak helper could not start": "Flatpak-hjälparen kunde inte starta",
     "Confirming": "Bekräftar",
     "Confirming what took effect…": "Bekräftar vad som genomfördes…",
-    "still offered as an update after the run": "erbjuds fortfarande som uppdatering efter körningen"
+    "still offered as an update after the run": "erbjuds fortfarande som uppdatering efter körningen",
+    "Arch Linux news": "Nyheter om Arch Linux",
+    "Arch Linux has published a news item.": "Arch Linux har publicerat en nyhet.",
+    "Arch Linux has published %1 news items.": "Arch Linux har publicerat %1 nyheter.",
+    "Read": "Läs",
+    "Read on archlinux.org": "Läs på archlinux.org",
+    "Older news": "Äldre nyheter",
+    "Mark all as read": "Markera alla som lästa",
+    "Nothing new.": "Inget nytt.",
+    "Nothing here yet.": "Inget här ännu.",
+    "Could not reach the news feed — showing what was already here.": "Kunde inte nå nyhetsflödet — visar det som redan fanns."
 }

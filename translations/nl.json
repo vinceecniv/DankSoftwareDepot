@@ -423,5 +423,15 @@
     "the Flatpak helper could not start": "de Flatpak-helper kon niet starten",
     "Confirming": "Bevestigen",
     "Confirming what took effect…": "Bevestigen wat is doorgevoerd…",
-    "still offered as an update after the run": "wordt na de run nog steeds als update aangeboden"
+    "still offered as an update after the run": "wordt na de run nog steeds als update aangeboden",
+    "Arch Linux news": "Arch Linux-nieuws",
+    "Arch Linux has published a news item.": "Arch Linux heeft een nieuwsbericht gepubliceerd.",
+    "Arch Linux has published %1 news items.": "Arch Linux heeft %1 nieuwsberichten gepubliceerd.",
+    "Read": "Lezen",
+    "Read on archlinux.org": "Lezen op archlinux.org",
+    "Older news": "Ouder nieuws",
+    "Mark all as read": "Alles als gelezen markeren",
+    "Nothing new.": "Niets nieuws.",
+    "Nothing here yet.": "Hier staat nog niets.",
+    "Could not reach the news feed — showing what was already here.": "Nieuwsfeed niet bereikbaar — wat er al was, wordt getoond."
 }

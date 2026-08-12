@@ -344,6 +344,13 @@ FloatingWindow {
         logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
     }
 
+    // Arch news. The dialog holds the state whether or not it is on screen —
+    // the banner below asks it how many items are unread.
+    NewsDialog {
+        id: newsDialog
+        anchors.fill: parent
+    }
+
     CommandPalette {
         id: palette
         anchors.fill: parent
@@ -1130,6 +1137,9 @@ FloatingWindow {
         if (visible) {
             tabs.currentIndex = 0;
             refreshDashboard();
+            // Throttled to a few hours inside the script, so this is a
+            // question about state rather than a fetch
+            newsDialog.refresh(false);
             // A palette left open when the window closed must not be what
             // greets you when it comes back
             palette.close();
@@ -1542,6 +1552,11 @@ FloatingWindow {
                 kind: "sources"
             },
             {
+                title: Tr.t("Arch Linux news"),
+                icon: "campaign",
+                kind: "news"
+            },
+            {
                 title: Tr.t("Plugin settings"),
                 icon: "settings",
                 kind: "settings"
@@ -1557,6 +1572,9 @@ FloatingWindow {
             if (command.kind === "tab" && win.tabIds.indexOf(command.payload) === -1)
                 continue;
             if (command.kind === "updateAll" && !win.showUpdateAll)
+                continue;
+            // Nothing to open on a distribution that publishes no such feed
+            if (command.kind === "news" && !newsDialog.supported)
                 continue;
             if (hit(command.title))
                 add(Tr.t("Commands"), command.icon, command.title, "", Theme.primary, command.kind, command.payload);
@@ -1639,6 +1657,11 @@ FloatingWindow {
             break;
         case "sources":
             sourcesDialog.open();
+            break;
+        // From the palette this is the archive: someone asking for it by name
+        // wants the announcement from last spring, not only today's
+        case "news":
+            newsDialog.open(true);
             break;
         case "url":
             Qt.openUrlExternally(item.payload);
@@ -2596,6 +2619,61 @@ FloatingWindow {
                         backgroundColor: Theme.buttonBg
                         textColor: Theme.buttonText
                         onClicked: Qt.openUrlExternally("https://docs.fedoraproject.org/en-US/quick-docs/upgrading-fedora-offline/")
+                    }
+                }
+            }
+        }
+
+        // ── Arch has said something ─────────────────────────────────────────
+        // Only when there is something unread. An announcement that has been
+        // true since spring is not news, and a banner that is always there is
+        // one you stop reading — which would defeat the single case this
+        // exists for: the update that needs a hand before it will go through.
+        Rectangle {
+            Layout.fillWidth: true
+            visible: win.currentTab === 0 && newsDialog.unread > 0
+            implicitHeight: newsRow.implicitHeight + Theme.spacingM * 2
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.warning, 0.12)
+
+            RowLayout {
+                id: newsRow
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: Theme.spacingM
+                anchors.rightMargin: Theme.spacingM
+                spacing: Theme.spacingM
+
+                DankIcon {
+                    name: "campaign"
+                    size: 18
+                    color: Theme.warning
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: newsDialog.unread === 1 ? Tr.t("Arch Linux has published a news item.")
+                                                  : Tr.t("Arch Linux has published %1 news items.").arg(newsDialog.unread)
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.surfaceText
+                    wrapMode: Text.WordWrap
+                }
+
+                Item {
+                    Layout.preferredWidth: newsReadButton.width
+                    Layout.preferredHeight: newsReadButton.height
+
+                    DankButton {
+                        id: newsReadButton
+                        buttonHeight: 28
+                        horizontalPadding: Theme.spacingM
+                        iconName: "campaign"
+                        iconSize: 13
+                        text: Tr.t("Read")
+                        backgroundColor: Theme.buttonBg
+                        textColor: Theme.buttonText
+                        onClicked: newsDialog.open(false)
                     }
                 }
             }

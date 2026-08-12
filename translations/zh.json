@@ -423,5 +423,15 @@
     "the Flatpak helper could not start": "无法启动 Flatpak 助手",
     "Confirming": "确认中",
     "Confirming what took effect…": "正在确认已生效的更新…",
-    "still offered as an update after the run": "运行后仍被列为可用更新"
+    "still offered as an update after the run": "运行后仍被列为可用更新",
+    "Arch Linux news": "Arch Linux 新闻",
+    "Arch Linux has published a news item.": "Arch Linux 发布了一条新闻。",
+    "Arch Linux has published %1 news items.": "Arch Linux 发布了 %1 条新闻。",
+    "Read": "阅读",
+    "Read on archlinux.org": "在 archlinux.org 上阅读",
+    "Older news": "较早的新闻",
+    "Mark all as read": "全部标记为已读",
+    "Nothing new.": "没有新内容。",
+    "Nothing here yet.": "这里还没有内容。",
+    "Could not reach the news feed — showing what was already here.": "无法访问新闻源 — 显示已获取的内容。"
 }

@@ -423,5 +423,15 @@
     "the Flatpak helper could not start": "Flatpak 도우미를 시작할 수 없습니다",
     "Confirming": "확인 중",
     "Confirming what took effect…": "적용된 항목을 확인하는 중…",
-    "still offered as an update after the run": "실행 후에도 여전히 업데이트로 표시됨"
+    "still offered as an update after the run": "실행 후에도 여전히 업데이트로 표시됨",
+    "Arch Linux news": "Arch Linux 소식",
+    "Arch Linux has published a news item.": "Arch Linux가 소식을 게시했습니다.",
+    "Arch Linux has published %1 news items.": "Arch Linux가 소식 %1건을 게시했습니다.",
+    "Read": "읽기",
+    "Read on archlinux.org": "archlinux.org에서 읽기",
+    "Older news": "지난 소식",
+    "Mark all as read": "모두 읽음으로 표시",
+    "Nothing new.": "새 소식이 없습니다.",
+    "Nothing here yet.": "아직 아무것도 없습니다.",
+    "Could not reach the news feed — showing what was already here.": "뉴스 피드에 연결할 수 없어 이미 받아 둔 내용을 표시합니다."
 }

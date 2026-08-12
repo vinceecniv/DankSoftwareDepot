@@ -423,5 +423,15 @@
     "the Flatpak helper could not start": "Flatpak ヘルパーを起動できませんでした",
     "Confirming": "確認中",
     "Confirming what took effect…": "適用された内容を確認しています…",
-    "still offered as an update after the run": "実行後もまだ更新として提示されています"
+    "still offered as an update after the run": "実行後もまだ更新として提示されています",
+    "Arch Linux news": "Arch Linux のお知らせ",
+    "Arch Linux has published a news item.": "Arch Linux がお知らせを公開しました。",
+    "Arch Linux has published %1 news items.": "Arch Linux が %1 件のお知らせを公開しました。",
+    "Read": "読む",
+    "Read on archlinux.org": "archlinux.org で読む",
+    "Older news": "過去のお知らせ",
+    "Mark all as read": "すべて既読にする",
+    "Nothing new.": "新しいお知らせはありません。",
+    "Nothing here yet.": "まだ何もありません。",
+    "Could not reach the news feed — showing what was already here.": "ニュースフィードに接続できませんでした — 既に取得済みの内容を表示しています。"
 }

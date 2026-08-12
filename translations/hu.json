@@ -423,5 +423,15 @@
     "the Flatpak helper could not start": "a Flatpak-segéd nem tudott elindulni",
     "Confirming": "Ellenőrzés alatt",
     "Confirming what took effect…": "Az érvénybe lépett módosítások ellenőrzése…",
-    "still offered as an update after the run": "a futtatás után is frissítésként jelenik meg"
+    "still offered as an update after the run": "a futtatás után is frissítésként jelenik meg",
+    "Arch Linux news": "Arch Linux hírek",
+    "Arch Linux has published a news item.": "Az Arch Linux közzétett egy hírt.",
+    "Arch Linux has published %1 news items.": "Az Arch Linux %1 hírt tett közzé.",
+    "Read": "Elolvasás",
+    "Read on archlinux.org": "Elolvasás az archlinux.org oldalon",
+    "Older news": "Korábbi hírek",
+    "Mark all as read": "Összes megjelölése olvasottként",
+    "Nothing new.": "Nincs újdonság.",
+    "Nothing here yet.": "Még nincs itt semmi.",
+    "Could not reach the news feed — showing what was already here.": "A hírcsatorna nem érhető el — a már meglévő tartalom látható."
 }

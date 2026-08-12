@@ -423,5 +423,15 @@
     "the Flatpak helper could not start": "не удалось запустить помощник Flatpak",
     "Confirming": "Подтверждение",
     "Confirming what took effect…": "Подтверждение того, что применилось…",
-    "still offered as an update after the run": "всё ещё предлагается как обновление после выполнения"
+    "still offered as an update after the run": "всё ещё предлагается как обновление после выполнения",
+    "Arch Linux news": "Новости Arch Linux",
+    "Arch Linux has published a news item.": "Arch Linux опубликовал новость.",
+    "Arch Linux has published %1 news items.": "Arch Linux опубликовал новостей: %1.",
+    "Read": "Читать",
+    "Read on archlinux.org": "Читать на archlinux.org",
+    "Older news": "Старые новости",
+    "Mark all as read": "Отметить всё как прочитанное",
+    "Nothing new.": "Ничего нового.",
+    "Nothing here yet.": "Здесь пока пусто.",
+    "Could not reach the news feed — showing what was already here.": "Не удалось получить ленту новостей — показано то, что уже было загружено."
 }
