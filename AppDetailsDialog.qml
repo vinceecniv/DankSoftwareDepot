@@ -596,7 +596,19 @@ Item {
 
                         // Version step and developer: the other half of what
                         // gets pasted somewhere. Both halves of this row share
-                        // the width and wrap, since neither can elide any more.
+                        // the width and wrap, since neither can elide any more
+                        // — which is also why the developer stays in the same
+                        // text as the version rather than getting a mark of
+                        // its own. A third free-standing segment would need a
+                        // third share of the width, and the row would pull
+                        // itself apart into evenly spaced columns.
+                        DankIcon {
+                            visible: identityRow.identityLine !== ""
+                            name: "tag"
+                            size: 13
+                            color: Theme.surfaceVariantText
+                        }
+
                         SelectableText {
                             id: identityText
 
