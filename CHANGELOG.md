@@ -3,6 +3,54 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.8.1 — 2026-08-12
+
+- **A run is over when the check says so.** Every run ends by asking the
+  daemon to check again, and that check was doing its work behind a list
+  that already said Completed — minutes of it, with only the counter in
+  the header to show for it. Finished items now wait in a **Confirming**
+  group, the stepper has a **Verify** step and pulses on it, and nothing
+  claims the system is up to date until it is known. What makes that
+  worth more than a nicer spinner: a package still offered as an update
+  after its own transaction reported success did not take, and instead
+  of quietly reappearing at some later check it is now marked on the
+  card, with the reason, and counted among the failures.
+- **The details popup opens straight away.** It was consulting the
+  AppStream search index to decide whether a package is in the catalogs
+  at all, and consulting that index means building it when the catalogs
+  have moved — which they do when appstream-data comes down with an
+  update. The bill therefore landed on whoever opened a popup first
+  after updating: measured here, 13.7 seconds in front of a spinner. The
+  index is now built out of sight, and the same popup paints in under a
+  second.
+- **Arch Linux news**, on the distribution that publishes it. Arch
+  announces in prose, before the fact, that an update needs a hand — a
+  key imported, a package replaced before the rest will resolve. A
+  banner appears only when something unread has appeared, and the first
+  fetch on a machine marks the backlog read rather than opening with
+  eleven interruptions nobody missed. Items are kept rather than
+  mirrored, so Ctrl+K → Arch Linux news still has the announcement that
+  explains the state this machine is in, long after it scrolled off the
+  feed.
+- **Text worth copying can be copied.** The CVE numbers in an advisory,
+  a changelog, the verbatim output behind a failed update, an app's name
+  and its `old → new` version step: all readable, none of them
+  selectable. They are now, along with release notes, descriptions and
+  announcements. Not every label — the element that can be selected
+  takes the mouse with it, and a card whose title was selectable would
+  stop being a card you can click.
+- **A licence is free text, not a vocabulary.** Vivaldi's package says
+  its licence is "Multiple, see https://www.vivaldi.com/", and as the
+  third item in a dot-separated line that read like an unfinished
+  sentence. The licence now sits behind a mark that says licence, and
+  the version step behind one of its own, so any value at all reads as
+  what it is.
+- **Gaps that were nobody's spacing.** The drive icon on the sizes line,
+  and the trend icon on the Flathub install counts, sat half a row away
+  from their own sentence: neither the icon nor the text asked for the
+  leftover width, and a layout with no taker splits the slack evenly
+  between its items.
+
 ## 0.8.0 — 2026-08-11
 
 - **A GPG key is no longer reported as a package that changed behind your
