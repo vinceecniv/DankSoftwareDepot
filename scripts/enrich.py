@@ -1990,6 +1990,31 @@ CATEGORY_GROUPS = [
 ]
 
 
+def run_warm_index():
+    """Build the AppStream search index ahead of the first thing that needs it.
+
+    Every path into the catalogs goes through build_search_index, which is a
+    file read when the fingerprint still matches and several seconds of XML
+    parsing when it does not. The catalogs change when appstream-data is
+    updated — that is, during an update run — so without this the cost lands
+    on whoever opens a details popup or the Install tab next, in front of a
+    spinner. A cache hit here costs a process start and nothing else.
+
+    The parsing is CPU the user did not ask for at that moment, so it asks to
+    be scheduled behind everything else.
+    """
+    try:
+        os.nice(5)
+    except (OSError, AttributeError):
+        pass
+    try:
+        paths = catalog_paths()
+        entries = build_search_index(paths, fingerprint(paths))
+        print(json.dumps({"ok": True, "entries": len(entries)}))
+    except Exception as exc:
+        print(json.dumps({"ok": False, "error": str(exc)}))
+
+
 def run_featured():
     """Most-popular software (by ODRS review volume) grouped by category —
     shown in the Install tab before the user types a search."""
@@ -2076,6 +2101,9 @@ def main():
         return
     if len(sys.argv) >= 2 and sys.argv[1] == "--qml-index":
         run_qml_index()
+        return
+    if len(sys.argv) >= 2 and sys.argv[1] == "--warm-index":
+        run_warm_index()
         return
     if len(sys.argv) >= 3 and sys.argv[1] == "--search-dnf":
         run_search_dnf(sys.argv[2])

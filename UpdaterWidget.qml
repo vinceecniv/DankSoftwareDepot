@@ -172,6 +172,31 @@ PluginComponent {
         }
     }
 
+    // ── AppStream search index, warmed out of sight ─────────────────────────
+    // The index is a cache keyed by the catalogs' fingerprint, and everything
+    // that reads AppStream waits on it: the Install tab, and the details popup
+    // for any app. Rebuilding it takes seconds, and it goes stale exactly when
+    // appstream-data comes down with an update — so the bill would otherwise
+    // arrive with the next popup, as a spinner. Warming it costs nothing when
+    // it is still valid.
+    Process {
+        id: warmIndexProcess
+        command: [Backend.python, Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", ""), "--warm-index"]
+    }
+
+    function _warmSearchIndex() {
+        if (!warmIndexProcess.running)
+            warmIndexProcess.running = true;
+    }
+
+    Timer {
+        // Late enough that a shell start is not competing with XML parsing
+        interval: 20000
+        running: true
+        repeat: false
+        onTriggered: root._warmSearchIndex()
+    }
+
     // ── End-of-life components (flatpak refs the remote stopped maintaining)
     property var eolRefs: []
 
@@ -910,6 +935,9 @@ PluginComponent {
             root._saveFailures();
             root._logRun();
             eolProcess.running = true;
+            // A run is the one thing that changes the AppStream catalogs, so
+            // this is where the index is most likely to have just gone stale
+            root._warmSearchIndex();
             if (engine.completedCount > 0) {
                 PluginService.savePluginData("dankSoftwareDepot", "lastUpdateUnix", Math.floor(Date.now() / 1000));
                 root._evaluateReboot();
