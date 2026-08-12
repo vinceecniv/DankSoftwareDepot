@@ -568,22 +568,31 @@ Item {
                     // continuation of the sentence before them; behind a mark
                     // that says "licence", any of them reads as one.
                     RowLayout {
+                        id: identityRow
+
+                        // Computed here rather than read back off the children:
+                        // an item's `visible` is false whenever its parent's
+                        // is, so a row asking its children whether to be shown
+                        // answers itself and latches shut.
+                        readonly property string identityLine: {
+                            const parts = [];
+                            if (dialog.appData.versionLabel)
+                                parts.push(dialog.appData.versionLabel);
+                            if (dialog.info.developer)
+                                parts.push(dialog.info.developer);
+                            return parts.join(" · ");
+                        }
+                        readonly property string licenseLine: dialog.info.license ? dialog.shortLicense(dialog.info.license) : ""
+
                         Layout.fillWidth: true
                         spacing: Theme.spacingXS
-                        visible: identityText.visible || licenseIcon.visible
+                        visible: identityLine !== "" || licenseLine !== ""
 
                         StyledText {
                             id: identityText
 
                             visible: text !== ""
-                            text: {
-                                const parts = [];
-                                if (dialog.appData.versionLabel)
-                                    parts.push(dialog.appData.versionLabel);
-                                if (dialog.info.developer)
-                                    parts.push(dialog.info.developer);
-                                return parts.join(" · ");
-                            }
+                            text: identityRow.identityLine
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
                             elide: Text.ElideRight
@@ -594,7 +603,7 @@ Item {
                         DankIcon {
                             id: licenseIcon
 
-                            visible: licenseText.text !== ""
+                            visible: identityRow.licenseLine !== ""
                             name: "license"
                             size: 13
                             color: Theme.surfaceVariantText
@@ -604,8 +613,8 @@ Item {
                             id: licenseText
 
                             Layout.fillWidth: true
-                            visible: text !== ""
-                            text: dialog.info.license ? dialog.shortLicense(dialog.info.license) : ""
+                            visible: identityRow.licenseLine !== ""
+                            text: identityRow.licenseLine
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
                             elide: Text.ElideRight
