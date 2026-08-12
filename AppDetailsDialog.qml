@@ -559,24 +559,59 @@ Item {
                         }
                     }
 
-                    StyledText {
+                    // Version · developer, then the license behind its own
+                    // icon. A licence field is free text, not a vocabulary:
+                    // next to the SPDX ids sit full names ("GNU General Public
+                    // License v3.0") and whole sentences from third-party
+                    // vendors ("Multiple, see https://www.vivaldi.com/"). As
+                    // the third item in a dot-separated line those read like a
+                    // continuation of the sentence before them; behind a mark
+                    // that says "licence", any of them reads as one.
+                    RowLayout {
                         Layout.fillWidth: true
-                        visible: text !== ""
-                        text: {
-                            const parts = [];
-                            if (dialog.appData.versionLabel)
-                                parts.push(dialog.appData.versionLabel);
-                            if (dialog.info.developer)
-                                parts.push(dialog.info.developer);
-                            if (dialog.info.license)
-                                parts.push(dialog.shortLicense(dialog.info.license));
-                            return parts.join(" · ");
+                        spacing: Theme.spacingXS
+                        visible: identityText.visible || licenseIcon.visible
+
+                        StyledText {
+                            id: identityText
+
+                            visible: text !== ""
+                            text: {
+                                const parts = [];
+                                if (dialog.appData.versionLabel)
+                                    parts.push(dialog.appData.versionLabel);
+                                if (dialog.info.developer)
+                                    parts.push(dialog.info.developer);
+                                return parts.join(" · ");
+                            }
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceVariantText
+                            elide: Text.ElideRight
+                            wrapMode: Text.NoWrap
+                            maximumLineCount: 1
                         }
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceVariantText
-                        elide: Text.ElideRight
-                        wrapMode: Text.NoWrap
-                        maximumLineCount: 1
+
+                        DankIcon {
+                            id: licenseIcon
+
+                            visible: licenseText.text !== ""
+                            name: "license"
+                            size: 13
+                            color: Theme.surfaceVariantText
+                        }
+
+                        StyledText {
+                            id: licenseText
+
+                            Layout.fillWidth: true
+                            visible: text !== ""
+                            text: dialog.info.license ? dialog.shortLicense(dialog.info.license) : ""
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceVariantText
+                            elide: Text.ElideRight
+                            wrapMode: Text.NoWrap
+                            maximumLineCount: 1
+                        }
                     }
 
                     RowLayout {
