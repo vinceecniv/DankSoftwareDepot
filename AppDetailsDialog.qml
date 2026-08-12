@@ -609,10 +609,15 @@ Item {
                             color: Theme.surfaceVariantText
                         }
 
+                        // The leftover width goes to the last item, not this
+                        // one: whoever takes it pushes everything after it
+                        // along, and the licence was ending up adrift in the
+                        // middle of the row. It can still shrink and wrap when
+                        // the row is genuinely too narrow.
                         SelectableText {
                             id: identityText
 
-                            Layout.fillWidth: true
+                            Layout.minimumWidth: 0
                             visible: identityRow.identityLine !== ""
                             text: identityRow.identityLine
                             font.pixelSize: Theme.fontSizeSmall
@@ -632,12 +637,21 @@ Item {
                         SelectableText {
                             id: licenseText
 
-                            Layout.fillWidth: true
+                            Layout.minimumWidth: 0
                             visible: identityRow.licenseLine !== ""
                             text: identityRow.licenseLine
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
                             wrapMode: Text.WordWrap
+                        }
+
+                        // Somebody has to want the leftover width, or the
+                        // layout hands each item an equal share of it. A
+                        // package with no licence to show would otherwise put
+                        // the gap back, in a row that no longer has anything
+                        // on its right to blame.
+                        Item {
+                            Layout.fillWidth: true
                         }
                     }
 
@@ -806,7 +820,13 @@ Item {
                                     color: Theme.surfaceVariantText
                                 }
 
+                                // Without this the row has nothing that wants
+                                // the leftover width, and a layout with no
+                                // taker splits it evenly between its items —
+                                // which put half a row's worth of nothing
+                                // between the drive icon and its own sentence
                                 StyledText {
+                                    Layout.fillWidth: true
                                     text: {
                                         const parts = [];
                                         if (modelData.download)
@@ -998,6 +1018,7 @@ Item {
                         }
 
                         StyledText {
+                            Layout.fillWidth: true
                             text: {
                                 const stats = dialog.info.installStats || {};
                                 const parts = [];
