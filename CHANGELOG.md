@@ -3,6 +3,17 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.4 — 2026-08-13
+
+- **The action log follows the interface language.** Every line was written as
+  a finished sentence, translated at the moment it was recorded, so the log
+  was a record of which language the interface had been in that week: switch
+  to English and yesterday's runs stayed in Dutch. Entries now record what
+  happened rather than the words for it, and the sentence is put together when
+  it is read. Lines written before this keep the language they happened in —
+  the words were all that was saved, so there is nothing to translate them
+  from.
+
 ## 0.9.3 — 2026-08-13
 
 - **The About popup links to the changelog.** It named the version and offered
