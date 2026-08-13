@@ -65,13 +65,16 @@ Item {
 
     // Every change runs the same way: a command, a spinner, a refreshed list.
     // The label is what the log and the busy line say it was.
-    function _run(command, label, logTitle) {
+    // logLabel is {key, args}: the same sentence as logTitle, kept in pieces so
+    // the log can be read back in whatever language the interface is in later
+    function _run(command, label, logTitle, logLabel) {
         if (busy)
             return;
         error = "";
         busy = true;
         busyLabel = label;
         adminProcess._label = logTitle || "";
+        adminProcess._logLabel = logLabel || null;
         adminProcess._detail = "";
         adminProcess._code = "";
         adminProcess._chroot = "";
@@ -80,18 +83,27 @@ Item {
     }
 
     function setRepoEnabled(repo, enabled) {
-        _run(Backend.repoAdminCommand([enabled ? "enable" : "disable", repo.id]), enabled ? Tr.t("Enabling %1…").arg(repo.id) : Tr.t("Disabling %1…").arg(repo.id), enabled ? Tr.t("Enabled the %1 repository").arg(repo.id) : Tr.t("Disabled the %1 repository").arg(repo.id));
+        _run(Backend.repoAdminCommand([enabled ? "enable" : "disable", repo.id]), enabled ? Tr.t("Enabling %1…").arg(repo.id) : Tr.t("Disabling %1…").arg(repo.id), enabled ? Tr.t("Enabled the %1 repository").arg(repo.id) : Tr.t("Disabled the %1 repository").arg(repo.id), {
+            key: enabled ? "Enabled the %1 repository" : "Disabled the %1 repository",
+            args: [repo.id]
+        });
     }
 
     function addCopr(project) {
         const cleaned = project.trim();
         if (cleaned === "")
             return;
-        _run(Backend.repoAdminCommand(["copr-enable", cleaned]), Tr.t("Adding %1…").arg(cleaned), Tr.t("Added the Copr %1").arg(cleaned));
+        _run(Backend.repoAdminCommand(["copr-enable", cleaned]), Tr.t("Adding %1…").arg(cleaned), Tr.t("Added the Copr %1").arg(cleaned), {
+            key: "Added the Copr %1",
+            args: [cleaned]
+        });
     }
 
     function removeCopr(project) {
-        _run(Backend.repoAdminCommand(["copr-remove", project]), Tr.t("Removing %1…").arg(project), Tr.t("Removed the Copr %1").arg(project));
+        _run(Backend.repoAdminCommand(["copr-remove", project]), Tr.t("Removing %1…").arg(project), Tr.t("Removed the Copr %1").arg(project), {
+            key: "Removed the Copr %1",
+            args: [project]
+        });
     }
 
     function addRemote(url) {
@@ -100,11 +112,17 @@ Item {
             return;
         // The name is left to the helper: a .flatpakrepo file names the remote
         // it describes, so asking for one as well would be asking twice
-        _run(Backend.repoUserCommand(["flatpak-add", "", cleaned]), Tr.t("Adding %1…").arg(cleaned), Tr.t("Added a Flatpak remote from %1").arg(cleaned));
+        _run(Backend.repoUserCommand(["flatpak-add", "", cleaned]), Tr.t("Adding %1…").arg(cleaned), Tr.t("Added a Flatpak remote from %1").arg(cleaned), {
+            key: "Added a Flatpak remote from %1",
+            args: [cleaned]
+        });
     }
 
     function addCatalogRemote(entry) {
-        _run(Backend.repoUserCommand(["flatpak-add", entry.name, entry.url]), Tr.t("Adding %1…").arg(entry.title), Tr.t("Added the Flatpak remote %1").arg(entry.title));
+        _run(Backend.repoUserCommand(["flatpak-add", entry.name, entry.url]), Tr.t("Adding %1…").arg(entry.title), Tr.t("Added the Flatpak remote %1").arg(entry.title), {
+            key: "Added the Flatpak remote %1",
+            args: [entry.title]
+        });
     }
 
     // Said here rather than in the helper, so it can be translated
@@ -126,11 +144,17 @@ Item {
 
     function addSuggestion(entry) {
         const title = dialog.suggestionTitle(entry);
-        _run(Backend.repoAdminCommand(["rpmfusion"].concat(entry.flavours || [])), Tr.t("Adding %1…").arg(title), Tr.t("Added %1").arg(title));
+        _run(Backend.repoAdminCommand(["rpmfusion"].concat(entry.flavours || [])), Tr.t("Adding %1…").arg(title), Tr.t("Added %1").arg(title), {
+            key: "Added %1",
+            args: [title]
+        });
     }
 
     function removeRemote(remote) {
-        _run(remote.scope === "system" ? Backend.repoAdminCommand(["flatpak-remove", remote.name, "system"]) : Backend.repoUserCommand(["flatpak-remove", remote.name, "user"]), Tr.t("Removing %1…").arg(remote.name), Tr.t("Removed the Flatpak remote %1").arg(remote.name));
+        _run(remote.scope === "system" ? Backend.repoAdminCommand(["flatpak-remove", remote.name, "system"]) : Backend.repoUserCommand(["flatpak-remove", remote.name, "user"]), Tr.t("Removing %1…").arg(remote.name), Tr.t("Removed the Flatpak remote %1").arg(remote.name), {
+            key: "Removed the Flatpak remote %1",
+            args: [remote.name]
+        });
     }
 
     function suggestionTitle(entry) {
@@ -205,6 +229,7 @@ Item {
         id: adminProcess
 
         property string _label: ""
+        property var _logLabel: null
         property string _detail: ""
         property string _code: ""
         property string _chroot: ""
@@ -240,7 +265,7 @@ Item {
                 else
                     dialog.error = adminProcess._detail !== "" ? adminProcess._detail : Tr.t("The change could not be made.");
             } else if (dialog.logger && adminProcess._label !== "") {
-                dialog.logger.record("sources", adminProcess._label, []);
+                dialog.logger.record("sources", adminProcess._label, [], 0, adminProcess._logLabel);
             }
             dialog.refresh();
         }

@@ -318,6 +318,7 @@ Item {
         id: appimageMutationProcess
 
         property string _logTitle: ""
+        property var _logLabel: null
         property var _logItem: null
 
         stdout: StdioCollector {
@@ -329,7 +330,7 @@ Item {
             if (exitCode === 0) {
                 if (view.logger && _logItem) {
                     _logItem.status = "done";
-                    view.logger.record("uninstall", _logTitle, [_logItem]);
+                    view.logger.record("uninstall", _logTitle, [_logItem], 0, _logLabel);
                 }
                 view.softwareMutated();
             }
@@ -366,6 +367,7 @@ Item {
     function uninstallAppimage(id, name) {
         busyAction = "uninstall:" + id;
         appimageMutationProcess._logTitle = Tr.t("Uninstalled %1").arg(name);
+        appimageMutationProcess._logLabel = { key: "Uninstalled %1", args: [name] };
         appimageMutationProcess._logItem = {
             name: name,
             id: id,
@@ -602,6 +604,7 @@ Item {
         mutationFraction = 0.02;
         mutationProcess._logType = "uninstall";
         mutationProcess._logTitle = Tr.t("Uninstalled %1").arg(_flatpakDisplayName(id));
+        mutationProcess._logLabel = { key: "Uninstalled %1", args: [_flatpakDisplayName(id)] };
         mutationProcess._logItem = {
             name: _flatpakDisplayName(id),
             id: id,
@@ -632,6 +635,7 @@ Item {
         _staged = false;
         mutationProcess._logType = "downgrade";
         mutationProcess._logTitle = Tr.t("Restored previous version of %1").arg(_flatpakDisplayName(id));
+        mutationProcess._logLabel = { key: "Restored previous version of %1", args: [_flatpakDisplayName(id)] };
         mutationProcess._logItem = {
             name: _flatpakDisplayName(id),
             from: _flatpakInstalledVersion(id),
@@ -661,6 +665,7 @@ Item {
         _staged = false;
         mutationProcess._logType = "uninstall";
         mutationProcess._logTitle = Tr.t("Uninstalled %1").arg(displayName || name);
+        mutationProcess._logLabel = { key: "Uninstalled %1", args: [displayName || name] };
         mutationProcess._logItem = {
             name: displayName || name,
             from: "",
@@ -678,6 +683,7 @@ Item {
         _staged = false;
         mutationProcess._logType = "downgrade";
         mutationProcess._logTitle = Tr.t("Downgraded %1").arg(name);
+        mutationProcess._logLabel = { key: "Downgraded %1", args: [name] };
         mutationProcess._logItem = {
             name: name,
             from: "",
@@ -934,6 +940,7 @@ Item {
 
         property string _logType: ""
         property string _logTitle: ""
+        property var _logLabel: null
         property var _logItem: null
 
         stdout: SplitParser {
@@ -952,7 +959,7 @@ Item {
             if (exitCode === 0) {
                 if (view.logger && _logType !== "") {
                     _logItem.status = "done";
-                    view.logger.record(_logType, _logTitle, [_logItem]);
+                    view.logger.record(_logType, _logTitle, [_logItem], 0, _logLabel);
                 }
                 // The serial bump this triggers reloads our own list too
                 view.softwareMutated();

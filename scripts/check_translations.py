@@ -56,6 +56,14 @@ def dynamic_keys(sources):
             keys |= set(re.findall(r'"([^"]+)"', match.group("body")))
     # "3 · Completed" is sorted by its prefix and shown without it
     keys |= {c[4:] for c in re.findall(r'"(\d · [^"]+)"', joined)}
+    # Action-log entries record {key, args} rather than a finished sentence, so
+    # the log can be read back in whatever language is set later. The key is
+    # never written as Tr.t("…") anywhere — it is translated at display time —
+    # which without this would make it look like nothing asks for it.
+    keys |= set(re.findall(r'\bkey: "((?:[^"\\]|\\.)*)"', joined))
+    # ...including the ones a condition chooses between
+    for a, b in re.findall(r'\bkey: [^"\n]+\? "([^"]+)" : "([^"]+)"', joined):
+        keys |= {a, b}
     keys |= set(re.findall(r'source: "([^"]+)"', joined))
     # plugin.json's description is translated the same way
     manifest = os.path.join(ROOT, "plugin.json")

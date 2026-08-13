@@ -241,6 +241,11 @@ chip](screenshots/firmware-devices.png)
   dependencies that come along with an install count as ours; and never
   earlier than the log's own first entry, because before that there is nothing
   to compare against. System packages only
+- **The log follows the interface language.** An entry records what happened
+  as a key and its numbers, not as a finished sentence, so switching language
+  switches the log with it. Entries written before this stay in the language
+  they happened in — the words were all that was saved, so there is nothing to
+  translate them from
 - Searchable; entries are kept for two years — a window that throws away last
   winter cannot answer anything about a year
 

@@ -601,11 +601,17 @@ PluginComponent {
                     return;
                 const freed = root._cleanupBefore - root._cleanupTotal();
                 const title = root._pendingCleanupLog;
+                const label = root._pendingCleanupLabel;
                 const items = root._pendingCleanupItems;
                 root._pendingCleanupLog = "";
+                root._pendingCleanupLabel = null;
                 root._pendingCleanupItems = [];
-                if (freed > 0)
-                    actionLog.record("uninstall", title + " · " + engine.formatBytes(freed), items);
+                if (freed > 0) {
+                    const sized = label ? Object.assign({}, label, {
+                        suffix: engine.formatBytes(freed)
+                    }) : null;
+                    actionLog.record("uninstall", title + " · " + engine.formatBytes(freed), items, 0, sized);
+                }
             }
         }
     }
@@ -615,6 +621,7 @@ PluginComponent {
     // and an action log that reports emptying an empty cache is lying.
     property real _cleanupBefore: 0
     property string _pendingCleanupLog: ""
+    property var _pendingCleanupLabel: null
     property var _pendingCleanupItems: []
 
     function _cleanupTotal() {
@@ -630,6 +637,10 @@ PluginComponent {
         cleanupBusy = "packages";
         _cleanupBefore = _cleanupTotal();
         _pendingCleanupLog = Tr.t("Removed %1 unneeded packages").arg(names.length);
+        _pendingCleanupLabel = {
+            key: "Removed %1 unneeded packages",
+            args: [names.length]
+        };
         _pendingCleanupItems = names.map(n => ({
                     name: n,
                     from: "",
@@ -647,6 +658,10 @@ PluginComponent {
         cleanupBusy = "cache";
         _cleanupBefore = _cleanupTotal();
         _pendingCleanupLog = Tr.t("Emptied the package cache");
+        _pendingCleanupLabel = {
+            key: "Emptied the package cache",
+            args: []
+        };
         _pendingCleanupItems = [];
         cleanupProcess.command = Backend.cleanCacheCommand();
         cleanupProcess.running = true;
@@ -917,8 +932,12 @@ PluginComponent {
                         failed++;
                 }
                 const type = failed > 0 ? "update-failed" : "update";
-                const title = failed > 0 ? Tr.t("Update finished with issues (%1 failed)").arg(failed) : (done === 1 ? Tr.t("Updated %1 package") : Tr.t("Updated %1 packages")).arg(done);
-                actionLog.record(type, title, items, stash.ts || 0);
+                const key = failed > 0 ? "Update finished with issues (%1 failed)" : (done === 1 ? "Updated %1 package" : "Updated %1 packages");
+                const count = failed > 0 ? failed : done;
+                actionLog.record(type, Tr.t(key).arg(count), items, stash.ts || 0, {
+                    key: key,
+                    args: [count]
+                });
                 if (done > 0 && (stash.ts || 0) > (root.pluginData.lastUpdateUnix || 0))
                     PluginService.savePluginData("dankSoftwareDepot", "lastUpdateUnix", stash.ts);
                 PluginService.savePluginData("dankSoftwareDepot", "pendingShellRunLog", {});
@@ -955,15 +974,26 @@ PluginComponent {
         if (items.length === 0)
             return;
         let type = "update";
-        let title = (engine.completedCount === 1 ? Tr.t("Updated %1 package") : Tr.t("Updated %1 packages")).arg(engine.completedCount);
+        let label = {
+            key: engine.completedCount === 1 ? "Updated %1 package" : "Updated %1 packages",
+            args: [engine.completedCount]
+        };
         if (engine.phase === "cancelled") {
             type = "update-cancelled";
-            title = Tr.t("Update cancelled (%1 of %2 done)").arg(engine.completedCount).arg(engine.plannedCount);
+            label = {
+                key: "Update cancelled (%1 of %2 done)",
+                args: [engine.completedCount, engine.plannedCount]
+            };
         } else if (engine.failedCount > 0) {
             type = "update-failed";
-            title = Tr.t("Update finished with issues (%1 failed)").arg(engine.failedCount);
+            label = {
+                key: "Update finished with issues (%1 failed)",
+                args: [engine.failedCount]
+            };
         }
-        actionLog.record(type, title, items);
+        actionLog.record(type, actionLog.titleOf({
+            label: label
+        }), items, 0, label);
         // The run survived to its normal logging — the stashed entry for a
         // possible shell reload is not needed anymore
         PluginService.savePluginData("dankSoftwareDepot", "pendingShellRunLog", {});

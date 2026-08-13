@@ -11,6 +11,19 @@ Item {
     id: view
 
     property var logger: null
+
+    // An entry written by this version carries {key, args} and is put into
+    // words here, in whatever language the interface is in now. One written
+    // before that carries only the sentence it was written as, and keeps it:
+    // the words were all that was saved, so there is nothing to translate
+    // them from.
+    function entryTitle(entry) {
+        if (!entry)
+            return "";
+        if (logger && logger.titleOf)
+            return logger.titleOf(entry);
+        return entry.title || "";
+    }
     property string searchText: ""
     property var expandedKeys: ({})
 
@@ -115,7 +128,7 @@ Item {
         for (let i = all.length - 1; i >= 0; i--) {
             const entry = all[i];
             if (needle !== "") {
-                const haystack = ((entry.title || "") + " " + (entry.items || []).map(it => it.name || "").join(" ")).toLowerCase();
+                const haystack = (view.entryTitle(entry) + " " + (entry.items || []).map(it => it.name || "").join(" ")).toLowerCase();
                 if (!Ui.matchesWords(haystack, needle))
                     continue;
             }
@@ -502,7 +515,7 @@ Item {
 
                             StyledText {
                                 Layout.fillWidth: true
-                                text: entryRow.modelData.title || ""
+                                text: view.entryTitle(entryRow.modelData)
                                 font.pixelSize: Theme.fontSizeMedium
                                 font.weight: Font.Medium
                                 color: Theme.surfaceText

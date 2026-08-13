@@ -37,7 +37,6 @@
     "Updated %1": "Bijgewerkt %1",
     "Updated %1 package": "%1 pakket bijgewerkt",
     "Updated %1 packages": "%1 pakketten bijgewerkt",
-    "Update cancelled (%1 of %2 done)": "Update geannuleerd (%1 van %2 voltooid)",
     "Update finished with issues (%1 failed)": "Update afgerond met problemen (%1 mislukt)",
     "Checking for updates…": "Controleren op updates…",
     "Check for updates": "Controleer op updates",
@@ -477,5 +476,6 @@
     "installed for you": "voor jou geïnstalleerd",
     "installed for all users": "voor alle gebruikers geïnstalleerd",
     "%1 plugins": "%1 plugins",
-    "Read the changelog": "Changelog lezen"
+    "Read the changelog": "Changelog lezen",
+    "Update cancelled (%1 of %2 done)": "Update geannuleerd (%1 van %2 voltooid)"
 }

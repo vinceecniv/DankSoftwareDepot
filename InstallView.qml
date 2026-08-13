@@ -232,7 +232,10 @@ Item {
                         to: "",
                         source: "AppImage",
                         status: "done"
-                    }]);
+                    }], 0, {
+                        key: "Installed %1",
+                        args: [_label]
+                    });
                 view.softwareMutated();
             } else if (view.lastInstallResult.indexOf("✓") === -1 && view.lastInstallResult.indexOf("%") !== -1) {
                 view.lastInstallResult = Tr.t("%1 failed (exit %2)").arg(_label).arg(exitCode);
@@ -1079,7 +1082,10 @@ Item {
                         to: "",
                         source: installProcess._source,
                         status: "done"
-                    }]);
+                    }], 0, {
+                        key: "Installed %1",
+                        args: [installProcess._label]
+                    });
                 }
                 view.softwareMutated();
                 if (view._staged)

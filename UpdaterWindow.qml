@@ -318,7 +318,10 @@ FloatingWindow {
                     to: "",
                     source: "System",
                     status: exitCode === 0 ? "done" : "error"
-                }]);
+                }], 0, {
+                    key: _count === 1 ? "Updated %1 package" : "Updated %1 packages",
+                    args: [_count]
+                });
             }
             _count = 1;
             const pending = _thenFlatpakIds || [];
