@@ -485,6 +485,27 @@ the verbatim tool output behind a failure. Not every label, deliberately — the
 element that can be selected takes the mouse with it, and a card whose title
 was selectable would stop being a card you can click.
 
+## If you use it
+
+Two links, and they cost nothing:
+
+- **[Upvote it in the DMS plugin
+  directory](https://github.com/AvengeMedia/dms-plugin-registry/issues/720)** —
+  a 👍 on the registry issue. That reaction count is how the directory knows
+  which plugins people actually run, so it is worth more here than a star is.
+- **[Star the repository](https://github.com/vinceecniv/DankSoftwareDepot)** —
+  if it is doing its job on your machine.
+
+Both are in the app as well, on the Updates dashboard when there is nothing to
+update and in the About popup. They are deliberately understated there, and
+this section is meant to stay that way too: a plugin asking for votes should
+not outshout the software it reports on.
+
+Bug reports and feature requests are welcome as
+[issues](https://github.com/vinceecniv/DankSoftwareDepot/issues) — the
+templates ask for the distribution and the versions, because with four package
+managers behind this thing that is usually what decides where the fault is.
+
 ## Development
 
 This plugin is developed with [Claude Code](https://claude.com/claude-code)
