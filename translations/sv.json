@@ -477,5 +477,7 @@
     "installed for you": "installerat för dig",
     "installed for all users": "installerat för alla användare",
     "%1 plugins": "%1 tillägg",
-    "Read the changelog": "Läs ändringsloggen"
+    "Read the changelog": "Läs ändringsloggen",
+    "Held %1": "%1 hålls kvar",
+    "Released the hold on %1": "Spärren för %1 hävd"
 }

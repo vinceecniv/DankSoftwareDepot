@@ -137,7 +137,7 @@ Item {
         provenance: (entry !== null && !entryIsFlatpak && !entryIsAppimage) ? (view.provenance[entryId] || null) : null
 
         onHoldToggleRequested: {
-            view.toggleHold(entryId);
+            view.toggleHold(entryId, entry ? entry.name : "");
             app = Object.assign({}, app, {
                 held: view.isHeldName(entryId)
             });
@@ -577,12 +577,14 @@ Item {
         return (SettingsData.updaterIgnoredPackages || []).indexOf(name) !== -1;
     }
 
-    function toggleHold(name) {
-        if (isHeldName(name)) {
-            SystemUpdateService.unignorePackage(name);
-        } else {
+    function toggleHold(name, displayName) {
+        const held = !isHeldName(name);
+        if (held)
             SystemUpdateService.ignorePackage(name);
-        }
+        else
+            SystemUpdateService.unignorePackage(name);
+        if (logger)
+            logger.recordHold(name, displayName || name, held);
     }
 
     function _flatpakDisplayName(id) {

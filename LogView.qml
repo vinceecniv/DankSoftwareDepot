@@ -72,6 +72,10 @@ Item {
             return "cancel";
         case "sources":
             return "database";
+        case "hold":
+            return "lock";
+        case "unhold":
+            return "lock_open";
         default:
             return "deployed_code_update";
         }
@@ -87,6 +91,10 @@ Item {
             return Theme.warning;
         case "sources":
             return Theme.secondary;
+        // The colour the held section carries everywhere else
+        case "hold":
+        case "unhold":
+            return Theme.warning;
         default:
             return Theme.primary;
         }

@@ -477,5 +477,7 @@
     "installed for you": "đã cài cho bạn",
     "installed for all users": "đã cài cho mọi người dùng",
     "%1 plugins": "%1 tiện ích",
-    "Read the changelog": "Đọc nhật ký thay đổi"
+    "Read the changelog": "Đọc nhật ký thay đổi",
+    "Held %1": "Đã giữ %1",
+    "Released the hold on %1": "Đã bỏ giữ %1"
 }

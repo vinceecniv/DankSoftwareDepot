@@ -477,5 +477,7 @@
     "installed for you": "встановлено для вас",
     "installed for all users": "встановлено для всіх користувачів",
     "%1 plugins": "плагінів: %1",
-    "Read the changelog": "Читати список змін"
+    "Read the changelog": "Читати список змін",
+    "Held %1": "%1 утримано",
+    "Released the hold on %1": "Утримання %1 знято"
 }

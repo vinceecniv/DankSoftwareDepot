@@ -477,5 +477,7 @@
     "installed for all users": "voor alle gebruikers geïnstalleerd",
     "%1 plugins": "%1 plugins",
     "Read the changelog": "Changelog lezen",
-    "Update cancelled (%1 of %2 done)": "Update geannuleerd (%1 van %2 voltooid)"
+    "Update cancelled (%1 of %2 done)": "Update geannuleerd (%1 van %2 voltooid)",
+    "Held %1": "%1 vastgezet",
+    "Released the hold on %1": "Vastzetten van %1 opgeheven"
 }

@@ -42,6 +42,31 @@ Item {
         _run(entry);
     }
 
+    // Holding a package is a decision, and until now the only decision this
+    // app could make that left no trace: the list simply stopped counting it
+    // one day, and a month later there was nothing to say why. It records the
+    // release of a hold too — that is the half you want when an update you
+    // were waiting for turns out to have been sitting behind your own lock.
+    function recordHold(name, displayName, held) {
+        const shown = displayName || name;
+        const label = {
+            key: held ? "Held %1" : "Released the hold on %1",
+            args: [shown]
+        };
+        record(held ? "hold" : "unhold", titleOf({
+            label: label
+        }), [
+            {
+                name: shown,
+                id: name,
+                from: "",
+                to: "",
+                source: "",
+                status: "done"
+            }
+        ], 0, label);
+    }
+
     // The one place that turns an entry into a sentence, so the list, the
     // search and anything else cannot disagree about what a line says.
     function titleOf(entry) {

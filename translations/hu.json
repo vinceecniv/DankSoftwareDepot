@@ -477,5 +477,7 @@
     "installed for you": "csak Önnek telepítve",
     "installed for all users": "minden felhasználónak telepítve",
     "%1 plugins": "%1 bővítmény",
-    "Read the changelog": "Változásnapló megtekintése"
+    "Read the changelog": "Változásnapló megtekintése",
+    "Held %1": "%1 visszatartva",
+    "Released the hold on %1": "%1 visszatartása feloldva"
 }

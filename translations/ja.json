@@ -477,5 +477,7 @@
     "installed for you": "あなた用にインストール済み",
     "installed for all users": "全ユーザー用にインストール済み",
     "%1 plugins": "プラグイン %1 件",
-    "Read the changelog": "変更履歴を読む"
+    "Read the changelog": "変更履歴を読む",
+    "Held %1": "%1 を保留しました",
+    "Released the hold on %1": "%1 の保留を解除しました"
 }

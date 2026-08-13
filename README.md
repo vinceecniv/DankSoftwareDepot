@@ -231,7 +231,7 @@ chip](screenshots/firmware-devices.png)
 
 ### 5 · Log
 - Persistent history of everything the plugin did: update runs, installs,
-  uninstalls, restores/downgrades — entries expand to per-package details
+  uninstalls, restores/downgrades, holding a package and releasing it — entries expand to per-package details
   (old → new version, source, result)
 - **What this log cannot account for**: the package database knows when every
   package last arrived, this log knows what the plugin did, and the difference

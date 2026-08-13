@@ -215,11 +215,7 @@ FloatingWindow {
         }
 
         onHoldToggleRequested: {
-            if (rowData.ignored === true) {
-                SystemUpdateService.unignorePackage(rowPkg.name);
-            } else {
-                SystemUpdateService.ignorePackage(rowPkg.name);
-            }
+            win.setHold(rowPkg, rowData.ignored !== true);
             close();
         }
     }
@@ -247,6 +243,19 @@ FloatingWindow {
             includeFlatpak: false,
             ignored: ignored
         }, null);
+    }
+
+    // Hold and release in one place, so the lock button on a card and the one
+    // in the details popup cannot end up recording different things
+    function setHold(pkg, held) {
+        if (!pkg || !pkg.name)
+            return;
+        if (held)
+            SystemUpdateService.ignorePackage(pkg.name);
+        else
+            SystemUpdateService.unignorePackage(pkg.name);
+        if (win.widgetRoot && win.widgetRoot.actionLogger)
+            win.widgetRoot.actionLogger.recordHold(pkg.name, win.store.displayName(pkg), held);
     }
 
     function _isShellPkg(pkg) {
@@ -3299,13 +3308,7 @@ FloatingWindow {
                 }
                 showUpdateButton: rowData.pkg && (rowData.pkg.repo === "flatpak" || rowData.pkg.repo === "appimage") && win.singleBusyKey === ""
                 onUpdateRequested: win.runSingleUpdate(rowData)
-                onHoldToggleRequested: {
-                    if (rowData.ignored === true) {
-                        SystemUpdateService.unignorePackage(rowData.pkg.name);
-                    } else {
-                        SystemUpdateService.ignorePackage(rowData.pkg.name);
-                    }
-                }
+                onHoldToggleRequested: win.setHold(rowData.pkg, rowData.ignored !== true)
                 onDetailsRequested: win.openUpdateDetails(rowData, info)
             }
         }

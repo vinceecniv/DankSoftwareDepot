@@ -477,5 +477,7 @@
     "installed for you": "für dich installiert",
     "installed for all users": "für alle Benutzer installiert",
     "%1 plugins": "%1 Plugins",
-    "Read the changelog": "Änderungsprotokoll lesen"
+    "Read the changelog": "Änderungsprotokoll lesen",
+    "Held %1": "%1 zurückgehalten",
+    "Released the hold on %1": "Sperre für %1 aufgehoben"
 }
