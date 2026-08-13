@@ -2951,11 +2951,14 @@ FloatingWindow {
                     Item {
                         Layout.preferredWidth: viewInLogButton.width
                         Layout.preferredHeight: viewInLogButton.height
-                        visible: viewInLogButton.visible
+                        // On the wrapper, not read off the button: `visible`
+                        // reads back as false whenever a parent's is, so a
+                        // wrapper asking its child latches shut the first time
+                        // the condition is false — which here is at startup
+                        visible: !win.engine.running && win.engine.phase !== "idle" && win.engine.failedCount > 0
 
                         DankButton {
                             id: viewInLogButton
-                            visible: !win.engine.running && win.engine.phase !== "idle" && win.engine.failedCount > 0
                             buttonHeight: 26
                             horizontalPadding: Theme.spacingM
                             iconName: "history"

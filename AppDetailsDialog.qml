@@ -904,7 +904,11 @@ Item {
                             Item {
                                 Layout.preferredWidth: updateSourceSaveButton.width
                                 Layout.preferredHeight: updateSourceSaveButton.height
-                                visible: updateSourceSaveButton.visible
+                                // No `visible: updateSourceSaveButton.visible`
+                                // here: this dialog starts hidden, so a wrapper
+                                // reading its child would read false once and
+                                // stay there. The button has no condition of
+                                // its own — it is shown whenever the row is.
 
                                 DankButton {
                                     id: updateSourceSaveButton
