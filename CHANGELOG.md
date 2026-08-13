@@ -3,6 +3,39 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.1 — 2026-08-13
+
+- **DMS plugins are the fifth kind of software this window manages**, and the
+  only one that lives in the shell running it. The daemon already knew which
+  installed plugins the registry has a newer build of — the flag Settings →
+  Plugins counts its own "Available Updates" from — so they now appear in
+  their own section of the Updates tab, count towards the bar pill, and update
+  in their own phase of Update All, one at a time. There is no byte progress
+  to be had from the plugin manager, so those rows go from active to done
+  rather than filling up, which is what the firmware phase already settles
+  for. This plugin leaves itself out of that phase: it offers its own update
+  from its own release notes, and replacing the code running a transaction,
+  during the transaction, is the case the DMS packages get a final pass for.
+- **Installed has a plugins group** beside Applications and System packages,
+  read from the manifests on disk, with the plugin's own icon — a manifest
+  names a Material Symbols glyph rather than shipping an image — a filter chip
+  to see only those, and a button in the heading that opens DMS's own plugin
+  screen. The Install tab gets the matching button next to the AppImage one.
+  Installing and removing plugins stays where it already worked; this window
+  reports on them and updates them.
+- **A plugin's details show what a plugin has.** Opening one used to produce a
+  System chip, Fedora as the source, "Full system access · built by Fedora"
+  and a changelog reading "package quickCapture is not installed" — every line
+  of it from asking rpm about something rpm has never heard of. It now shows
+  the author, the category, whether it is installed for you or for everyone,
+  the directory it sits in, and the permissions it declared to the shell, as
+  the same chips a Flatpak's sandbox permissions get. The source chip says
+  DMS, and the buttons that would have handed a plugin id to the package
+  manager are gone.
+- **The hint in a text field stays while the field is empty.** Clicking into
+  one used to remove the sentence explaining what belongs in it, at the moment
+  someone was deciding what to type. All eleven fields keep it now.
+
 ## 0.9.0 — 2026-08-13
 
 - **One Install button, and a straight answer behind it.** An app carried
