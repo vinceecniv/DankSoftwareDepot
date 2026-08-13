@@ -475,5 +475,6 @@
     "Install a DMS plugin": "DMS プラグインをインストール",
     "by %1": "作者: %1",
     "installed for you": "あなた用にインストール済み",
-    "installed for all users": "全ユーザー用にインストール済み"
+    "installed for all users": "全ユーザー用にインストール済み",
+    "%1 plugins": "プラグイン %1 件"
 }

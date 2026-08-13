@@ -475,5 +475,6 @@
     "Install a DMS plugin": "DMS-bővítmény telepítése",
     "by %1": "készítette: %1",
     "installed for you": "csak Önnek telepítve",
-    "installed for all users": "minden felhasználónak telepítve"
+    "installed for all users": "minden felhasználónak telepítve",
+    "%1 plugins": "%1 bővítmény"
 }

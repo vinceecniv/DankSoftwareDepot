@@ -475,5 +475,6 @@
     "Install a DMS plugin": "Установить плагин DMS",
     "by %1": "автор: %1",
     "installed for you": "установлен для вас",
-    "installed for all users": "установлен для всех пользователей"
+    "installed for all users": "установлен для всех пользователей",
+    "%1 plugins": "плагинов: %1"
 }

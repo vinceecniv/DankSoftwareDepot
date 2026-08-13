@@ -475,5 +475,6 @@
     "Install a DMS plugin": "Installa un plugin DMS",
     "by %1": "di %1",
     "installed for you": "installato per te",
-    "installed for all users": "installato per tutti gli utenti"
+    "installed for all users": "installato per tutti gli utenti",
+    "%1 plugins": "%1 plugin"
 }

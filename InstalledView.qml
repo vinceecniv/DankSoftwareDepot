@@ -1112,7 +1112,11 @@ Item {
                 const total = view.filteredItems.length;
                 const flatpakCount = view.flatpakApps.length;
                 const rpmCount = view.rpmPackages.length;
-                return Tr.t("%1 shown · %2 Flatpak apps · %3 system packages").arg(total).arg(flatpakCount).arg(rpmCount);
+                const pluginCount = Object.keys(PluginService.availablePlugins || {}).length;
+                const line = Tr.t("%1 shown · %2 Flatpak apps · %3 system packages").arg(total).arg(flatpakCount).arg(rpmCount);
+                // The line is an inventory, not a description of the filter,
+                // so the plugins belong in it now that they are in the list
+                return pluginCount > 0 ? (line + " · " + Tr.t("%1 plugins").arg(pluginCount)) : line;
             }
             font.pixelSize: Theme.fontSizeSmall - 1
             color: Theme.surfaceVariantText
@@ -1139,7 +1143,16 @@ Item {
                 Item {
                     width: parent.width
                     visible: (rowWrap.modelData.sectionLabel || "") !== ""
-                    height: visible ? sectionHeading.implicitHeight + (rowWrap.modelData.sectionFirst ? Theme.spacingXS : Theme.spacingL) : 0
+                    // Tall enough for whichever is taller. The heading used
+                    // to be sized by its text alone, which was fine until one
+                    // of them grew a button: a 26-pixel button anchored to the
+                    // bottom of a 14-pixel box hangs out of the top of it, and
+                    // the list clips. Only visible when the group came first,
+                    // because further down the gap above it hid the overhang.
+                    readonly property int contentHeight: Math.max(sectionHeading.implicitHeight,
+                                                                  managePluginsButton.visible ? managePluginsButton.height : 0)
+
+                    height: visible ? contentHeight + (rowWrap.modelData.sectionFirst ? Theme.spacingXS : Theme.spacingL) : 0
 
                     StyledText {
                         id: sectionHeading

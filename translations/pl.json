@@ -475,5 +475,6 @@
     "Install a DMS plugin": "Zainstaluj wtyczkę DMS",
     "by %1": "autor: %1",
     "installed for you": "zainstalowana dla Ciebie",
-    "installed for all users": "zainstalowana dla wszystkich użytkowników"
+    "installed for all users": "zainstalowana dla wszystkich użytkowników",
+    "%1 plugins": "%1 wtyczek"
 }

@@ -475,5 +475,6 @@
     "Install a DMS plugin": "安装 DMS 插件",
     "by %1": "作者：%1",
     "installed for you": "已为你安装",
-    "installed for all users": "已为所有用户安装"
+    "installed for all users": "已为所有用户安装",
+    "%1 plugins": "%1 个插件"
 }
