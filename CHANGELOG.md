@@ -3,6 +3,44 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.0 — 2026-08-13
+
+- **One Install button, and a straight answer behind it.** An app carried
+  by both Fedora and Flathub used to put a button for each in the row and
+  leave you to know the difference. Now the row asks once and opens a
+  picker: the sources side by side with the version, the download size,
+  whether it is sandboxed and how many permissions it has, and who stands
+  behind it — the distribution, a verified publisher, or one person on
+  Copr. Under that, a paragraph on what each kind of packaging gives you
+  and what it costs. A single source still installs with one click.
+- **Which source you already have** is marked on the source itself. The
+  chip at the top said "Installed" without saying which of the two it
+  meant, which is the one thing worth knowing before touching anything.
+- **Honest about what it cannot compare.** VLC is 188 kB as an rpm and 53
+  MB as a Flatpak — Fedora splits the package, the Flatpak carries its
+  own libraries, and neither number counts what it drags in; the popup
+  says so rather than implying a comparison. Versions are compared on
+  their leading digits only, since `3.0.23` and `3.0.23-10.fc44` are the
+  same release, and on a tie nothing is marked newest.
+- **App icons can follow the theme.** Off by default, under Plugin
+  settings: icons are drawn in the active DMS accent instead of their own
+  colours. Tuned separately for light and dark mode, because the effect
+  maps an icon's own brightness onto the accent and that lands very
+  differently on a light card than on a dark one. Packages with no icon
+  of their own follow it too.
+- **The Install tab stops showing what you already installed.** That is
+  what the Installed tab is for. Searching still finds them, with the
+  Installed marker — being told an app does not exist because you have it
+  would be worse than showing the row.
+- **The Reclaim space card no longer vanishes mid-use.** It offers two
+  piles, and clearing the larger one used to drop the total under the
+  threshold that made the card appear, taking the second button with it.
+  Cleared rows now stay, ticked off, until you leave the window.
+- **Review stars use the theme accent**, like the buttons already did.
+- **Both settings panels offer the same settings.** The window's own
+  panel and the plugin page in DMS settings had drifted apart; automatic
+  updates and the launcher entry have joined the latter.
+
 ## 0.8.3 — 2026-08-13
 
 - **The Install tab is something you can walk through now.** Every heading
