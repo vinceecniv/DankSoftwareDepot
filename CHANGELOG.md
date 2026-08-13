@@ -3,6 +3,18 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.3 — 2026-08-13
+
+- **The About popup links to the changelog.** It named the version and offered
+  no way to read what that version means; the only link went to the front page
+  of the repository, which is not where the file is.
+- **The shell's own packages carry DMS's logo.** `dms`, `dms-cli`,
+  `dms-greeter` and `quickshell` have no AppStream entry and so no icon, and
+  fell back to the chip glyph every package without artwork gets — in a list
+  where they are the entries that reload your desktop when they install, which
+  is exactly where a recognisable mark earns its keep. It is a fallback rather
+  than an override, so anything with an icon of its own keeps it.
+
 ## 0.9.2 — 2026-08-13
 
 - **A plugin in the action log was recorded as if it were a package.** It said
