@@ -3,6 +3,23 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.2 — 2026-08-13
+
+- **A plugin in the action log was recorded as if it were a package.** It said
+  System, where it should say DMS; it could not be clicked, because the entry
+  was written without the id the log uses to lead back to what it is about,
+  and the fallback guess — a package name has no spaces in it — does not hold
+  for "Quick Capture"; and opening one would have produced the package popup
+  that 0.9.1 taught not to appear for plugins, since the log kept its own copy
+  of that distinction. Entries written from here on carry the id and the
+  source; the ones already on disk are read as the plugins they were.
+- **The dashboard counts plugins** among the installed software, in the total
+  as well as in the rows.
+- **The DMS version is on the System card**, next to the OS, the host and the
+  kernel. Everything here runs inside that shell and through its daemon, and
+  it is the version somebody needs when reporting that something misbehaved —
+  taken from the daemon's own handshake, so it is the one actually answering.
+
 ## 0.9.1 — 2026-08-13
 
 - **DMS plugins are the fifth kind of software this window manages**, and the

@@ -104,7 +104,8 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - **DMS updates run last**: updating DMS/Quickshell packages live-reloads
   the shell, so they run in a final daemon pass after everything else
   (the transaction completes even if the shell reloads mid-way)
-- Up-to-date dashboard: installed-software counts per source, system info,
+- Up-to-date dashboard: installed-software counts per source (plugins
+  included), system info down to the DMS version answering for the shell,
   recently updated packages and the current updater status at a glance
 - **The last year**, read back out of the action log: how much went through
   here, across how many runs and how often that works out at, the longest
