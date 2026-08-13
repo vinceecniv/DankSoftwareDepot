@@ -952,6 +952,9 @@ Item {
                                 id: repoField
                                 Layout.fillWidth: true
                                 placeholderText: "https://github.com/owner/project"
+                                FieldPlaceholder {
+                                    text: "https://github.com/owner/project"
+                                }
 
                                 Connections {
                                     target: dialog
@@ -1485,6 +1488,9 @@ Item {
                                 // is a thing worth knowing before you publish
                                 // rather than after
                                 placeholderText: Tr.t("Display name — empty publishes as \"%1\"").arg(Quickshell.env("USER") || "user")
+                                FieldPlaceholder {
+                                    text: Tr.t("Display name — empty publishes as \"%1\"").arg(Quickshell.env("USER") || "user")
+                                }
                             }
 
                             StyledText {
@@ -1499,6 +1505,9 @@ Item {
                                 id: reviewSummaryField
                                 Layout.fillWidth: true
                                 placeholderText: Tr.t("Summary")
+                                FieldPlaceholder {
+                                    text: Tr.t("Summary")
+                                }
                             }
 
                             Rectangle {

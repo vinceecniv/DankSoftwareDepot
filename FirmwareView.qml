@@ -236,6 +236,9 @@ Item {
                 id: searchField
                 Layout.fillWidth: true
                 placeholderText: Tr.t("Search devices…")
+                FieldPlaceholder {
+                    text: Tr.t("Search devices…")
+                }
                 leftIconName: "search"
                 showClearButton: true
                 onTextChanged: view.searchText = text

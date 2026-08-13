@@ -131,6 +131,9 @@ Item {
             y: Theme.spacingM
             width: sheet.width - Theme.spacingM * 2
             placeholderText: Tr.t("Search everything…")
+            FieldPlaceholder {
+                text: Tr.t("Search everything…")
+            }
             leftIconName: "search"
             ignoreUpDownKeys: true
             keyForwardTargets: [keyRelay]

@@ -1116,6 +1116,9 @@ Item {
                 // searches that section, and typing without being told so
                 // would look like a search that had lost most of the catalog
                 placeholderText: view.sectionMode ? Tr.t("Search in %1…").arg(Tr.t(view.activeCategory)) : Tr.t("Search new software (%1 repos + Flathub)…").arg(Backend.systemRepoLabel)
+                FieldPlaceholder {
+                    text: view.sectionMode ? Tr.t("Search in %1…").arg(Tr.t(view.activeCategory)) : Tr.t("Search new software (%1 repos + Flathub)…").arg(Backend.systemRepoLabel)
+                }
                 leftIconName: "search"
                 showClearButton: true
                 onTextChanged: view.searchText = text

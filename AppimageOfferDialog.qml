@@ -211,6 +211,9 @@ Item {
                     id: sourceField
                     Layout.fillWidth: true
                     placeholderText: Tr.t("Path or URL of an .AppImage…")
+                    FieldPlaceholder {
+                        text: Tr.t("Path or URL of an .AppImage…")
+                    }
                     showClearButton: true
                     onTextChanged: {
                         dialog.source = text;

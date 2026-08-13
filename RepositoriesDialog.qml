@@ -627,6 +627,9 @@ Item {
                                 id: remoteField
                                 Layout.fillWidth: true
                                 placeholderText: Tr.t("Address of a .flatpakrepo file")
+                                FieldPlaceholder {
+                                    text: Tr.t("Address of a .flatpakrepo file")
+                                }
                                 leftIconName: "link"
                                 onAccepted: {
                                     dialog.addRemote(text);
@@ -804,6 +807,9 @@ Item {
                                 id: coprField
                                 Layout.fillWidth: true
                                 placeholderText: Tr.t("owner/project")
+                                FieldPlaceholder {
+                                    text: Tr.t("owner/project")
+                                }
                                 leftIconName: "person_add"
                                 onAccepted: {
                                     dialog.addCopr(text);

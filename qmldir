@@ -23,6 +23,7 @@ AppDetailsDialog 1.0 AppDetailsDialog.qml
 AppimageOfferDialog 1.0 AppimageOfferDialog.qml
 NewsDialog 1.0 NewsDialog.qml
 SelectableText 1.0 SelectableText.qml
+FieldPlaceholder 1.0 FieldPlaceholder.qml
 OriginComparison 1.0 OriginComparison.qml
 TintedIconEffect 1.0 TintedIconEffect.qml
 SourcePickerDialog 1.0 SourcePickerDialog.qml

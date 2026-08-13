@@ -203,6 +203,9 @@ Item {
             id: searchField
             Layout.fillWidth: true
             placeholderText: Tr.t("Search the action log…")
+            FieldPlaceholder {
+                text: Tr.t("Search the action log…")
+            }
             leftIconName: "search"
             showClearButton: true
             onTextChanged: view.searchText = text
