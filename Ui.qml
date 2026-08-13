@@ -1,10 +1,29 @@
 pragma Singleton
 import QtQuick
 import qs.Common
+import qs.Services
 
 // Small UI helpers shared across the plugin views.
 Item {
     id: ui
+
+    // ── Themed app icons ────────────────────────────────────────────────────
+    // Off by default: an app's icon is its own identity, and a catalog where
+    // every one of them is the same colour is harder to scan, not easier.
+    // Some palettes make a wall of unrelated logos look like confetti though,
+    // and this is for those — read here rather than threaded through six
+    // views, because the leaf that draws an icon is a long way from the
+    // settings page and everything in between would only be passing it on.
+    property bool tintAppIcons: PluginService.loadPluginData("dankSoftwareDepot", "tintAppIcons", false) === true
+
+    Connections {
+        target: PluginService
+
+        function onPluginDataChanged(pluginId) {
+            if (pluginId === "dankSoftwareDepot")
+                ui.tintAppIcons = PluginService.loadPluginData("dankSoftwareDepot", "tintAppIcons", false) === true;
+        }
+    }
 
     // Failure color that stays readable everywhere: some palettes leave
     // Theme.error on the light M3 tone in light mode, which washes out to

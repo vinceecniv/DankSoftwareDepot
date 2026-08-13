@@ -915,6 +915,18 @@ FloatingWindow {
                             onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "confirmBeforeUpdate", checked)
                         }
 
+                        // Reads Ui rather than widgetRoot: this one is about
+                        // how things are drawn rather than about what the
+                        // updater does, and Ui is where the views that draw
+                        // them already look for the answer
+                        DankToggle {
+                            width: parent.width
+                            text: Tr.t("Tint app icons with the theme colour")
+                            description: Tr.t("Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.")
+                            checked: Ui.tintAppIcons
+                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "tintAppIcons", checked)
+                        }
+
                         DankToggle {
                             width: parent.width
                             text: Tr.t("Show in app launcher")
@@ -3797,11 +3809,43 @@ FloatingWindow {
                     // cache. Shown with their real sizes so the offer is a
                     // fact rather than a suggestion.
                     Rectangle {
+                        id: cleanupCard
+
                         readonly property var scan: win.widgetRoot ? win.widgetRoot.cleanup : null
                         readonly property real total: scan ? ((scan.unneeded.bytes || 0) + (scan.cache.bytes || 0)) : 0
 
+                        // Fifty megabytes is what makes the card worth
+                        // appearing. It is not what makes it worth staying:
+                        // this card offers two piles, and clearing the larger
+                        // one can drop the total under the bar while the other
+                        // is still sitting there. The card then vanished
+                        // mid-use, taking the second button with it and
+                        // leaving no way back to it. So the threshold decides
+                        // the first appearance only; after that the card is
+                        // here until there is nothing left to offer.
+                        property bool engaged: false
+                        property var cleanedKinds: []
+
+                        function noteCleanup(kind) {
+                            engaged = true;
+                            if (cleanedKinds.indexOf(kind) === -1)
+                                cleanedKinds = cleanedKinds.concat([kind]);
+                        }
+
+                        // A fresh visit starts fresh: the finished rows are
+                        // feedback on what just happened, not a record
+                        Connections {
+                            target: win
+                            function onVisibleChanged() {
+                                if (!win.visible) {
+                                    cleanupCard.engaged = false;
+                                    cleanupCard.cleanedKinds = [];
+                                }
+                            }
+                        }
+
                         Layout.fillWidth: true
-                        visible: total > 50 * 1024 * 1024
+                        visible: total > 50 * 1024 * 1024 || (engaged && (total > 0 || cleanedKinds.length > 0))
                         implicitHeight: cleanupColumn.implicitHeight + Theme.spacingM * 2
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
@@ -3864,6 +3908,22 @@ FloatingWindow {
                                             bytes: scan.cache.bytes,
                                             action: Tr.t("Empty")
                                         });
+                                    // What was cleared stays on the card as a
+                                    // finished row rather than disappearing.
+                                    // A row that vanishes on click leaves the
+                                    // reader guessing whether it worked, and
+                                    // shuffles whatever was under it upward
+                                    // just as they reach for it.
+                                    for (const kind of cleanupCard.cleanedKinds) {
+                                        if (rows.some(row => row.kind === kind))
+                                            continue;
+                                        rows.push({
+                                            kind: kind,
+                                            label: kind === "packages" ? Tr.t("Packages nothing needs any more") : Tr.t("Downloaded package files, already installed"),
+                                            bytes: 0,
+                                            done: true
+                                        });
+                                    }
                                     return rows;
                                 }
 
@@ -3875,15 +3935,30 @@ FloatingWindow {
 
                                     StyledText {
                                         Layout.fillWidth: true
-                                        text: modelData.label + " · " + win.engine.formatBytes(modelData.bytes)
+                                        text: modelData.done === true ? modelData.label : modelData.label + " · " + win.engine.formatBytes(modelData.bytes)
                                         font.pixelSize: Theme.fontSizeSmall - 1
-                                        color: Theme.surfaceVariantText
+                                        color: modelData.done === true ? Theme.withAlpha(Theme.surfaceVariantText, 0.7) : Theme.surfaceVariantText
                                         elide: Text.ElideRight
+                                    }
+
+                                    DankIcon {
+                                        visible: modelData.done === true
+                                        name: "check"
+                                        size: 14
+                                        color: Theme.success
+                                    }
+
+                                    StyledText {
+                                        visible: modelData.done === true
+                                        text: Tr.t("Cleared")
+                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                        color: Theme.success
                                     }
 
                                     Item {
                                         implicitWidth: cleanupButton.width
                                         implicitHeight: cleanupButton.height
+                                        visible: modelData.done !== true
 
                                         DankButton {
                                             id: cleanupButton
@@ -3894,6 +3969,7 @@ FloatingWindow {
                                             textColor: Theme.buttonText
                                             enabled: win.widgetRoot !== null && win.widgetRoot.cleanupBusy === ""
                                             onClicked: {
+                                                cleanupCard.noteCleanup(modelData.kind);
                                                 if (modelData.kind === "packages")
                                                     win.widgetRoot.removeUnneeded();
                                                 else

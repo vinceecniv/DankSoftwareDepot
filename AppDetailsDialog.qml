@@ -92,6 +92,14 @@ Item {
         return source.charAt(0).toUpperCase() + source.slice(1);
     }
 
+    // Which source to take — the judgement lives in OriginComparison, which
+    // the picker uses too, so the two cannot come to different conclusions
+    readonly property var origins: dialog.info.origins || []
+
+    // Which of them is already here. Decided by whoever opened this popup:
+    // only the tab knows what is on the machine, and it knows it per source
+    property var installedRefs: []
+
     readonly property string updateSourceUrl: updateSourceRepo !== "" ? "https://github.com/" + updateSourceRepo : ""
 
     property string _confirmUninstall: ""
@@ -480,11 +488,9 @@ Item {
                         id: dialogLogo
                         anchors.fill: parent
                         source: dialog.appData.iconPath ? (dialog.appData.iconPath.indexOf("http") === 0 ? dialog.appData.iconPath : "file://" + dialog.appData.iconPath) : ""
-                        sourceSize.width: 96
-                        sourceSize.height: 96
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: true
-                        visible: status === Image.Ready
+                        // Themed icons, tuned in TintedIconEffect
+                        layer.enabled: Ui.tintAppIcons
+                        layer.effect: TintedIconEffect {}
                     }
 
                     DankIcon {
@@ -492,7 +498,11 @@ Item {
                         visible: dialogLogo.status !== Image.Ready
                         name: dialog.appData.isFlatpak === false ? "memory" : "apps"
                         size: 30
-                        color: Theme.surfaceVariantText
+                        // A package with no icon of its own falls back to this glyph, and a
+                        // list of them is most of what an installed-software list is. Left
+                        // grey it made the setting look half-applied — the apps with
+                        // artwork turned, the ones without stayed as they were.
+                        color: Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText
                     }
                 }
 
@@ -683,7 +693,7 @@ Item {
                                 name: "star"
                                 filled: lit
                                 size: 13
-                                color: lit ? Theme.warning : Theme.withAlpha(Theme.surfaceVariantText, 0.5)
+                                color: lit ? Theme.primary : Theme.withAlpha(Theme.surfaceVariantText, 0.5)
                             }
                         }
 
@@ -812,47 +822,23 @@ Item {
                         wrapMode: Text.WordWrap
                     }
 
-                    // Sizes per source
-                    Column {
+                    // ── Where it comes from ─────────────────────────────────
+                    // Merging the sources into one app is what makes it
+                    // findable, and it also hides a choice. This is that
+                    // choice put back: which version, how big, out of whose
+                    // hands, and how much of the machine it gets.
+                    StyledText {
+                        visible: dialog.origins.length > 1
+                        text: Tr.t("Where it comes from")
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.weight: Font.DemiBold
+                        color: Theme.surfaceText
+                    }
+
+                    OriginComparison {
                         width: parent.width
-                        spacing: 2
-                        visible: (dialog.info.sizes || []).length > 0
-
-                        Repeater {
-                            model: dialog.info.sizes || []
-
-                            delegate: RowLayout {
-                                required property var modelData
-
-                                width: parent.width
-                                spacing: Theme.spacingS
-
-                                DankIcon {
-                                    name: "hard_drive"
-                                    size: 14
-                                    color: Theme.surfaceVariantText
-                                }
-
-                                // Without this the row has nothing that wants
-                                // the leftover width, and a layout with no
-                                // taker splits it evenly between its items —
-                                // which put half a row's worth of nothing
-                                // between the drive icon and its own sentence
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    text: {
-                                        const parts = [];
-                                        if (modelData.download)
-                                            parts.push(Tr.t("%1 download").arg(modelData.download));
-                                        if (modelData.installed)
-                                            parts.push(Tr.t("%1 installed").arg(modelData.installed));
-                                        return dialog.sourceLabel(modelData) + ": " + parts.join(" · ");
-                                    }
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.surfaceVariantText
-                                }
-                            }
-                        }
+                        origins: dialog.origins
+                        installedRefs: dialog.installedRefs
                     }
 
                     // AppImage update source (GitHub releases)
@@ -1393,7 +1379,7 @@ Item {
                                         name: "star"
                                         filled: index < shownStars
                                         size: 20
-                                        color: index < shownStars ? Theme.warning : Theme.withAlpha(Theme.surfaceVariantText, 0.5)
+                                        color: index < shownStars ? Theme.primary : Theme.withAlpha(Theme.surfaceVariantText, 0.5)
 
                                         MouseArea {
                                             anchors.fill: parent
@@ -1560,7 +1546,7 @@ Item {
                                                 name: "star"
                                                 filled: index < modelData.stars
                                                 size: 12
-                                                color: index < modelData.stars ? Theme.warning : Theme.withAlpha(Theme.surfaceVariantText, 0.4)
+                                                color: index < modelData.stars ? Theme.primary : Theme.withAlpha(Theme.surfaceVariantText, 0.4)
                                             }
                                         }
                                     }

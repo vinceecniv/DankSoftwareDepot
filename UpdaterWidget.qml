@@ -1543,11 +1543,9 @@ PluginComponent {
                                 id: rowLogo
                                 anchors.fill: parent
                                 source: (compactRow.info && compactRow.info.icon) ? "file://" + compactRow.info.icon : ""
-                                sourceSize.width: 52
-                                sourceSize.height: 52
-                                fillMode: Image.PreserveAspectFit
-                                asynchronous: true
-                                visible: status === Image.Ready
+                                // Themed icons, tuned in TintedIconEffect
+                                layer.enabled: Ui.tintAppIcons
+                                layer.effect: TintedIconEffect {}
                             }
 
                             DankIcon {
@@ -1555,7 +1553,11 @@ PluginComponent {
                                 visible: rowLogo.status !== Image.Ready
                                 name: compactRow.modelData.repo === "flatpak" ? "apps" : "memory"
                                 size: 18
-                                color: Theme.surfaceVariantText
+                                // A package with no icon of its own falls back to this glyph, and a
+                                // list of them is most of what an installed-software list is. Left
+                                // grey it made the setting look half-applied — the apps with
+                                // artwork turned, the ones without stayed as they were.
+                                color: Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText
                             }
                         }
 

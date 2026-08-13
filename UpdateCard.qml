@@ -124,11 +124,9 @@ Rectangle {
                     anchors.fill: parent
                     anchors.margins: card.iconPath.endsWith(".svg") ? 6 : 4
                     source: card.iconPath ? "file://" + card.iconPath : ""
-                    sourceSize.width: 88
-                    sourceSize.height: 88
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    visible: status === Image.Ready
+                    // Themed icons, tuned in TintedIconEffect
+                    layer.enabled: Ui.tintAppIcons
+                    layer.effect: TintedIconEffect {}
                 }
 
                 DankIcon {

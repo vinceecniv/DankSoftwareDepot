@@ -53,9 +53,73 @@ PluginSettings {
     }
 
     ToggleSetting {
+        settingKey: "tintAppIcons"
+        label: Tr.t("Tint app icons with the theme colour")
+        description: Tr.t("Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.")
+        defaultValue: false
+    }
+
+    ToggleSetting {
         settingKey: "pillOpensWindow"
         label: Tr.t("Bar click opens window")
         description: Tr.t("Open the standalone updater window instead of the compact popout when clicking the bar pill.")
         defaultValue: false
+    }
+
+    // The same choice the window's own settings panel offers. Both panels
+    // write the same keys, so whichever one someone finds first is the whole
+    // set — a setting that exists in only one of them is a setting most
+    // people do not have.
+    SelectionSetting {
+        settingKey: "autoUpdateMode"
+        label: Tr.t("Automatic updates")
+        description: Tr.t("Notify when updates are found, and optionally install Flatpak updates automatically. System packages always ask first.")
+        defaultValue: "notify"
+        options: [
+            {
+                label: Tr.t("Off"),
+                value: "off"
+            },
+            {
+                label: Tr.t("Notify only"),
+                value: "notify"
+            },
+            {
+                label: Tr.t("Auto-install Flatpaks"),
+                value: "auto"
+            }
+        ]
+    }
+
+    // Not a stored setting but a file on disk, so what it shows comes from
+    // Backend rather than from the plugin's data. ToggleSetting assigns its
+    // own `value` once the stored data loads, which would overwrite a plain
+    // binding — hence the Binding, which reasserts itself afterwards. The
+    // guard in the handler is what keeps that reassertion from being read as
+    // someone flipping the switch.
+    ToggleSetting {
+        id: launcherToggle
+
+        settingKey: "showInLauncher"
+        label: Tr.t("Show in app launcher")
+        description: Tr.t("Place a desktop entry so this window can be opened from the application launcher, like a standalone app.")
+        defaultValue: false
+
+        Binding {
+            target: launcherToggle
+            property: "value"
+            value: Backend.launcherEntryPresent
+            when: Backend.launcherEntryChecked
+            restoreMode: Binding.RestoreNone
+        }
+
+        onValueChanged: {
+            if (!Backend.launcherEntryChecked || value === Backend.launcherEntryPresent)
+                return;
+            if (value)
+                Backend.installLauncherEntry();
+            else
+                Backend.removeLauncherEntry();
+        }
     }
 }

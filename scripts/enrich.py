@@ -1406,6 +1406,34 @@ def cache_screenshots(urls):
         return list(pool.map(fetch, urls))
 
 
+def repo_origin(repo):
+    """Who stands behind the repository an rpm comes out of.
+
+    "updates" is the distribution and "rpmfusion-nonfree" is not, and a Copr
+    is one person. The package manager is the same command for all three,
+    which is exactly why the difference has to be written down somewhere.
+
+    Returns a kind and, where there is one, the name to show after it. The
+    distribution's own name is not decided here: the app already knows what
+    to call it, and it is not the same word on Debian.
+    """
+    name = (repo or "").strip()
+    if not name:
+        return {"origin": "distro"}
+    lowered = name.lower()
+    if lowered.startswith("copr:"):
+        # copr:copr.fedorainfracloud.org:owner:project
+        parts = name.split(":")
+        return {"origin": "copr", "detail": "/".join(parts[-2:]) if len(parts) >= 3 else ""}
+    if lowered in ("updates", "fedora", "updates-testing", "rawhide", "koji",
+                   "stable", "main", "core", "extra", "testing", "@system",
+                   "anaconda", "updates-archive"):
+        return {"origin": "distro"}
+    if lowered.startswith("rpmfusion"):
+        return {"origin": "third-party", "detail": "RPM Fusion " + name.split("-", 1)[-1]}
+    return {"origin": "third-party", "detail": name}
+
+
 def rpm_repoquery_info(pkg):
     """Description, license and sizes for an rpm via cache-only repoquery."""
     if BACKEND != "dnf":
@@ -1434,6 +1462,15 @@ def rpm_repoquery_info(pkg):
                 out["download"] = value
             elif field == "Installed size":
                 out["installed"] = value
+            elif field == "Version":
+                out["version"] = value
+            elif field == "Release":
+                out["release"] = value
+            elif field == "Repository":
+                # Which repository, not just which package manager: "updates"
+                # and "rpmfusion-nonfree" are the same command and a different
+                # amount of trust
+                out["repo"] = value
         elif in_desc and re.match(r"^\s*:\s?", line):
             desc_lines.append(re.sub(r"^\s*:\s?", "", line))
     if desc_lines:
@@ -1442,7 +1479,7 @@ def rpm_repoquery_info(pkg):
 
 
 def flatpak_remote_sizes(remote, ref):
-    """Download/installed size from flatpak remote metadata."""
+    """Size, version and build date from flatpak remote metadata."""
     try:
         res = subprocess.run(
             ["flatpak", "remote-info", remote, ref],
@@ -1453,6 +1490,10 @@ def flatpak_remote_sizes(remote, ref):
     out = {}
     for line in res.stdout.splitlines():
         m = re.match(r"^\s*(Download|Installed):?\s*(?:Size:?\s*)?(.+)$", line.replace("Download Size", "Download").replace("Installed Size", "Installed"))
+        if m:
+            out[m.group(1).lower()] = m.group(2).strip()
+            continue
+        m = re.match(r"^\s*(Version|Date|Branch)\s*:\s*(.+)$", line)
         if m:
             out[m.group(1).lower()] = m.group(2).strip()
     return out
@@ -1558,7 +1599,7 @@ def run_appinfo(arg):
         cache = {}
     entry = cache.get(key)
     loc = ",".join(get_locale_langs())
-    if entry and entry.get("v") == 7 and entry.get("loc") == loc and time.time() - entry.get("ts", 0) < ODRS_MAX_AGE:
+    if entry and entry.get("v") == 8 and entry.get("loc") == loc and time.time() - entry.get("ts", 0) < ODRS_MAX_AGE:
         json.dump(entry["info"], sys.stdout)
         return
 
@@ -1612,22 +1653,58 @@ def run_appinfo(arg):
 
     if shots_fut:
         info["screenshots"] = safe(shots_fut, info.get("screenshots"))
-    sizes = []
-    if rpm.get("download") or rpm.get("installed"):
-        sizes.append({"source": "Fedora", "download": rpm.get("download", ""), "installed": rpm.get("installed", "")})
-    for s, fut in flatpak_size_futs:
-        fs = safe(fut, {}) or {}
-        if fs:
-            sizes.append({"source": s.get("source", "flathub").capitalize(), "download": fs.get("download", ""), "installed": fs.get("installed", "")})
-    info["sizes"] = sizes
     if flathub_ref:
         info["installStats"] = safe(stats_fut)
         info["flathub"] = safe(summary_fut)
+
+    # ── The same app, offered several ways ───────────────────────────────────
+    # Merging the sources into one app is what makes it findable; it also
+    # hides the decision. These carry what the choice actually turns on —
+    # which version, how big, out of whose hands, and how much of the machine
+    # it gets — so the popup can put them side by side instead of leaving
+    # "Flathub or Fedora?" as something the reader is expected to already know.
+    origins = []
+    if rpm_ref:
+        version = rpm.get("version", "")
+        if version and rpm.get("release"):
+            version += "-" + rpm["release"]
+        origin = {
+            "kind": "dnf",
+            "ref": rpm_ref,
+            "version": version,
+            "download": rpm.get("download", ""),
+            "installed": rpm.get("installed", ""),
+            # An rpm runs as the machine, whoever built it. Saying so next to
+            # a sandbox listing seven permissions is the honest comparison.
+            "sandbox": "none",
+        }
+        origin.update(repo_origin(rpm.get("repo", "")))
+        origins.append(origin)
+    flathub = info.get("flathub") or {}
+    for s, fut in flatpak_size_futs:
+        fs = safe(fut, {}) or {}
+        remote = s.get("source", "flathub")
+        origin = {
+            "kind": "flatpak",
+            "origin": "remote",
+            "detail": remote.capitalize(),
+            "ref": s["ref"],
+            "version": fs.get("version", ""),
+            "download": fs.get("download", ""),
+            "installed": fs.get("installed", ""),
+            "sandbox": "flatpak",
+        }
+        if s["ref"] == flathub_ref and flathub:
+            origin["permissions"] = len(flathub.get("permissions") or [])
+            if flathub.get("verified") is not None:
+                origin["verified"] = flathub["verified"]
+        origins.append(origin)
+    info["origins"] = origins
     info["reviews"] = safe(reviews_fut, [])
     info["rating"] = rating_for(safe(ratings_fut, {}) or {}, app_id)
     pool.shutdown(wait=False)
 
-    cache[key] = {"ts": time.time(), "v": 7, "loc": loc, "info": info}
+    cache[key] = {"ts": time.time(), "v": 8, "loc": loc, "info": info}
     try:
         os.makedirs(CACHE_DIR, exist_ok=True)
         with open(APPINFO_CACHE_FILE, "w") as f:

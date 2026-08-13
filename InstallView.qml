@@ -72,8 +72,32 @@ Item {
         });
     }
 
+    // ── Which source ─────────────────────────────────────────────────────────
+    function openSourcePicker(entry) {
+        sourcePicker.pickerEntry = entry;
+        sourcePicker.open({
+            id: entry.id,
+            name: entry.name,
+            iconPath: entry.icon || "",
+            sources: entry.sources || []
+        });
+    }
+
     // Reparented into the window's overlay layer so the dim covers everything
     property var overlayParent: null
+
+    SourcePickerDialog {
+        id: sourcePicker
+
+        parent: view.overlayParent || view
+
+        property var pickerEntry: null
+
+        onInstallRequested: source => {
+            if (pickerEntry)
+                view.install(source, pickerEntry.name, pickerEntry.icon || "");
+        }
+    }
 
     AppDetailsDialog {
         id: detailsDialog
@@ -84,6 +108,7 @@ Item {
 
         showInstallButtons: true
         installedChipVisible: entry ? view.isInstalled(entry) : false
+        installedRefs: entry ? (entry.sources || []).filter(source => view.isSourceInstalled(entry, source)).map(source => source.ref) : []
         showOpenButton: entry !== null && entry.sources.some(s => s.kind === "flatpak" && view.installedFlatpaks.has(s.ref.toLowerCase()))
         busy: entry ? entry.sources.some(s => s.ref !== "" && view.sourceKey(s) === view.busyAction) : false
         busyDetail: view.installProgress
@@ -485,10 +510,14 @@ Item {
         if (!section)
             return [];
         const needle = searchText.trim().toLowerCase();
-        if (sourceFilter === 0 && needle.length < 2)
-            return section.items;
         const matches = [];
         for (const item of section.items) {
+            // Browsing is for what you could install; the Installed tab
+            // already answers the other question. Searching is not browsing
+            // though — typing a name and being told there is no such app,
+            // because you already have it, is a worse answer than the row.
+            if (needle.length < 2 && isInstalled(item))
+                continue;
             if (matchesSourceFilter(item) && matchesQuery(item, needle))
                 matches.push(item);
         }
@@ -627,9 +656,10 @@ Item {
             return rows;
         }
         for (const [index, group] of sections.entries()) {
-            // "All" is every section in full, and copying the catalog to say
-            // so is work with no answer in it
-            const items = sourceFilter === 0 ? group.items : group.items.filter(item => matchesSourceFilter(item));
+            // What is already on the machine is not on offer: that is what
+            // the Installed tab is, and a storefront listing it is a
+            // storefront of things you cannot do anything with here
+            const items = group.items.filter(item => !isInstalled(item) && matchesSourceFilter(item));
             if (items.length === 0)
                 continue;
             // A heading with a section behind it, so it can be opened. The
@@ -648,6 +678,21 @@ Item {
                 });
         }
         return rows;
+    }
+
+    // Per source rather than per app: an app carried by both Fedora and
+    // Flathub is installed from one of them, and "installed" without saying
+    // which is the answer to a question nobody asked
+    function isSourceInstalled(item, source) {
+        if (source.kind === "flatpak")
+            return installedFlatpaks.has(source.ref.toLowerCase());
+        if (source.kind === "dnf")
+            return installedRpms.has(source.ref);
+        if (source.kind === "copr")
+            return source.installed === true;
+        if (source.kind === "appimage")
+            return installedAppimages.has(item.id);
+        return false;
     }
 
     function isInstalled(item) {
@@ -1337,7 +1382,11 @@ Item {
                             visible: installProgressLogo.status !== Image.Ready
                             name: "apps"
                             size: 16
-                            color: Theme.surfaceVariantText
+                            // A package with no icon of its own falls back to this glyph, and a
+                            // list of them is most of what an installed-software list is. Left
+                            // grey it made the setting look half-applied — the apps with
+                            // artwork turned, the ones without stayed as they were.
+                            color: Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText
                         }
                     }
 
@@ -1595,11 +1644,9 @@ Item {
                             id: resultLogo
                             anchors.fill: parent
                             source: resultRow.app.icon ? (resultRow.app.icon.indexOf("http") === 0 ? resultRow.app.icon : "file://" + resultRow.app.icon) : ""
-                            sourceSize.width: 72
-                            sourceSize.height: 72
-                            fillMode: Image.PreserveAspectFit
-                            asynchronous: true
-                            visible: status === Image.Ready
+                            // Themed icons, tuned in TintedIconEffect
+                            layer.enabled: Ui.tintAppIcons
+                            layer.effect: TintedIconEffect {}
                         }
 
                         DankIcon {
@@ -1607,7 +1654,11 @@ Item {
                             visible: resultLogo.status !== Image.Ready
                             name: "apps"
                             size: 22
-                            color: Theme.surfaceVariantText
+                            // A package with no icon of its own falls back to this glyph, and a
+                            // list of them is most of what an installed-software list is. Left
+                            // grey it made the setting look half-applied — the apps with
+                            // artwork turned, the ones without stayed as they were.
+                            color: Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText
                         }
                     }
 
@@ -1649,7 +1700,7 @@ Item {
                                         }
                                         filled: resultRow.app.rating && (index + 0.25 <= resultRow.app.rating.stars)
                                         size: 13
-                                        color: resultRow.app.rating && (index + 0.25 <= resultRow.app.rating.stars) ? Theme.warning : Theme.withAlpha(Theme.surfaceVariantText, 0.5)
+                                        color: resultRow.app.rating && (index + 0.25 <= resultRow.app.rating.stars) ? Theme.primary : Theme.withAlpha(Theme.surfaceVariantText, 0.5)
                                     }
                                 }
 
@@ -1707,20 +1758,38 @@ Item {
                     // One install button per available source — the source
                     // choice when software ships from multiple sources
                     Repeater {
-                        model: resultRow.installed ? [] : (resultRow.app.sources || [])
+                        // One button when there is one thing it can mean, and
+                        // one button when there are several — in that case it
+                        // opens the picker instead of guessing. A row of two
+                        // buttons is not two actions, it is the same action
+                        // with a difference nobody wrote down; the picker is
+                        // where that difference is written down.
+                        model: {
+                            if (resultRow.installed)
+                                return [];
+                            const sources = resultRow.app.sources || [];
+                            return sources.length > 1 ? [null] : sources;
+                        }
 
                         delegate: DankButton {
                             required property var modelData
 
+                            readonly property bool picks: modelData === null
+
                             buttonHeight: 28
                             horizontalPadding: Theme.spacingM
-                            iconName: modelData.kind === "appimage" && !modelData.repo ? "open_in_new" : "download"
+                            iconName: picks ? "download" : (modelData.kind === "appimage" && !modelData.repo ? "open_in_new" : "download")
                             iconSize: 13
-                            text: modelData.kind === "flatpak" ? "Flathub" : (modelData.kind === "appimage" ? "AppImage" : (modelData.kind === "copr" ? "Copr" : Backend.systemRepoLabel))
-                            backgroundColor: modelData.kind === "flatpak" ? Theme.buttonBg : (modelData.kind === "appimage" ? Theme.withAlpha(Theme.tertiary, 0.25) : (modelData.kind === "copr" ? Theme.withAlpha(Theme.primary, 0.22) : Theme.secondaryContainer))
-                            textColor: modelData.kind === "flatpak" ? Theme.buttonText : Theme.surfaceText
+                            text: picks ? Tr.t("Install") : (modelData.kind === "flatpak" ? "Flathub" : (modelData.kind === "appimage" ? "AppImage" : (modelData.kind === "copr" ? "Copr" : Backend.systemRepoLabel)))
+                            backgroundColor: picks ? Theme.buttonBg : (modelData.kind === "flatpak" ? Theme.buttonBg : (modelData.kind === "appimage" ? Theme.withAlpha(Theme.tertiary, 0.25) : (modelData.kind === "copr" ? Theme.withAlpha(Theme.primary, 0.22) : Theme.secondaryContainer)))
+                            textColor: (picks || modelData.kind === "flatpak") ? Theme.buttonText : Theme.surfaceText
                             enabled: !resultRow.busy && view.busyAction === "" && view.appimageBusy === ""
-                            onClicked: view.install(modelData, resultRow.app.name, resultRow.app.icon || "")
+                            onClicked: {
+                                if (picks)
+                                    view.openSourcePicker(resultRow.app);
+                                else
+                                    view.install(modelData, resultRow.app.name, resultRow.app.icon || "");
+                            }
                         }
                     }
                 }

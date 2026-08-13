@@ -89,6 +89,9 @@ Item {
 
         showHoldToggle: !entryIsAppimage
         showUninstall: true
+        // Everything reached from this tab is on the machine, and the one
+        // source it was passed is the one it came from
+        installedRefs: entryId !== "" ? [entryId] : []
         showOpenButton: entryIsFlatpak || entryIsAppimage
         openCommand: entryIsAppimage && entry.file ? [entry.file] : []
         showUpdateSource: entryIsAppimage
@@ -1152,11 +1155,9 @@ Item {
                                     id: rowLogo
                                     anchors.fill: parent
                                     source: (row.modelData.info && row.modelData.info.icon) ? "file://" + row.modelData.info.icon : ""
-                                    sourceSize.width: 64
-                                    sourceSize.height: 64
-                                    fillMode: Image.PreserveAspectFit
-                                    asynchronous: true
-                                    visible: status === Image.Ready
+                                    // Themed icons, tuned in TintedIconEffect
+                                    layer.enabled: Ui.tintAppIcons
+                                    layer.effect: TintedIconEffect {}
                                 }
 
                                 DankIcon {
@@ -1164,7 +1165,11 @@ Item {
                                     visible: rowLogo.status !== Image.Ready
                                     name: row.modelData.kind === "system" ? "memory" : "apps"
                                     size: 20
-                                    color: Theme.surfaceVariantText
+                                    // A package with no icon of its own falls back to this glyph, and a
+                                    // list of them is most of what an installed-software list is. Left
+                                    // grey it made the setting look half-applied — the apps with
+                                    // artwork turned, the ones without stayed as they were.
+                                    color: Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText
                                 }
                             }
 
