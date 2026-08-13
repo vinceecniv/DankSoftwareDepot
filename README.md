@@ -116,6 +116,9 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - Details popup per app: description, screenshots, star ratings and review
   texts (ODRS), release notes / changelog, homepage, sandbox permissions —
   and you can write a review yourself
+- **Where it comes from**: the same side-by-side comparison the Install tab
+  offers, with the source you actually have marked as installed — a single
+  "Installed" chip cannot say which of two it means
 - Actions: uninstall (with confirm), hold toggle, open, restore a previous
   version (Flatpak via commit history, rpm via `dnf downgrade` where repos
   still carry an older build)
@@ -129,17 +132,44 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 | **Everything installed, in one list.** Flatpaks, system packages and AppImages together, applications first. | **The details popup**, shared with the Install tab: screenshots, permissions, install counts and ODRS reviews. |
 
 ### 3 · Install
-- **Popular-software storefront** before you search: most-reviewed apps
-  (ODRS) grouped by category, one-click install
+- **A storefront you can walk through** before you search: thirteen
+  sections from Flathub's own top-level categories, most-downloaded first.
+  Every heading opens, and behind it is the whole section rather than the
+  handful that fitted on the shelf — Games is nearly 900 apps here. Chips
+  inside a section say where else to go, rows arrive as you scroll, and
+  typing narrows that section instead of leaving it. Whatever matches no
+  category lands in *Other* rather than being dropped, so browsing reaches
+  the end of the catalog. Software already installed is left out — that is
+  what the Installed tab is for — but a search still finds it
+- Sections are cut from the same index the search uses, which is what makes
+  "all of it" and "searchable in full" one property instead of two promises
+- **Ordered by downloads**: Flathub publishes installs per app for the last
+  month, fetched once a day. Only software Flathub carries has such a
+  figure, so an rpm with no Flatpak sorts last with review volume standing
+  in; reading them never waits on the network, since the storefront takes
+  what is cached and the refresh happens out of sight
 - Live search across the system repos and Flathub (cached AppStream
   index), plus a package-name fallback so plain CLI packages
   (e.g. `playerctl`) are found too
-- **Source choice** when an app ships from multiple sources
-  (system repo / Flathub / AppImage)
+- **One Install button, and a straight answer behind it.** An app carried by
+  both the distribution and Flathub used to put a button for each in the row
+  and leave you to know the difference — which is one action with a
+  difference nobody wrote down. The row asks once now and opens a picker:
+  the sources side by side with the version, the download size, whether it
+  is sandboxed and how many permissions it has, and who stands behind it
+  (the distribution, a verified publisher, one person on Copr). Under that,
+  a paragraph on what each kind of packaging gives you and what it costs. A
+  single source still installs with one click
+- The picker is honest about what it cannot compare: sizes count the package
+  itself and not what it drags in, and versions from two packagers are
+  compared on their leading digits only — `3.0.23` and `3.0.23-10.fc44` are
+  the same release, so on a tie nothing is marked newest
 - **Search Copr** for software no configured repository has. Nothing in Copr
   can turn up in a local search — a package there is invisible to dnf until
   its project is enabled — so the Install tab offers the search as one
-  deliberate press rather than a request per keystroke. Results are listed
+  deliberate press rather than a request per keystroke, at the end of the
+  results, which is where "not here?" is a question you have arrived at
+  rather than one put to you in advance. Results are listed
   apart, under the name of the individual who builds them, and only from
   projects that build for this Fedora and architecture: a Copr that stopped at
   the previous release cannot be enabled here and is not offered. Installing
@@ -164,7 +194,7 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 
 | ![The Install tab storefront: popular apps by category with ratings and a source button per app](screenshots/install-storefront.png) | ![The Software sources dialog with Flatpak remotes, well-known sources to add, and repository switches](screenshots/software-sources.png) |
 |---|---|
-| **The storefront** before you type anything: most-reviewed apps by category, with the source to install from on the row itself. | **Software sources.** Flatpak remotes, one-click Flathub and RPM Fusion, and the configured repositories with debug and source ones folded away. |
+| **The storefront** before you type anything: sections by category, most-downloaded first, each heading opening onto the whole section. | **Software sources.** Flatpak remotes, one-click Flathub and RPM Fusion, and the configured repositories with debug and source ones folded away. |
 
 ### 4 · Firmware
 - fwupd device inventory: which hardware supports firmware updates, current
@@ -244,11 +274,21 @@ and offers to replace it](screenshots/appimage-install.png)
 
 Everything the plugin decides for itself lives in one dialog behind the gear;
 everything it can do is one **Ctrl+K** away. Check interval and ignored
-packages stay with DMS, and the dialog links straight to them.
+packages stay with DMS, and the dialog links straight to them. The same
+switches appear on the plugin's page in DMS Settings → Plugins, so whichever
+one you find first is the whole set.
+
+Optional there: **app icons in the theme colour**. Off by default, because an
+app's icon is its own identity and a catalog where every one of them is the
+same colour is harder to scan rather than easier — but some palettes make a
+wall of unrelated logos look like confetti, and this is for those. Icons are
+drawn in the active DMS accent, tuned separately for light and dark mode,
+since the effect maps an icon's own brightness onto the accent and that lands
+very differently on a light card than on a dark one.
 
 | ![The plugin settings dialog with switches for the bar pill, firmware, the launcher entry and the .appimage association](screenshots/plugin-settings.png) | ![The command palette listing tabs, check for updates, software sources and settings](screenshots/command-palette.png) |
 |---|---|
-| **Plugin settings.** What the pill shows, whether firmware joins Update All, the launcher entry, and who opens `.appimage` files. | **Ctrl+K.** Every tab, the actions around them, and the two dialogs — without going looking for a button. |
+| **Plugin settings.** What the pill shows, whether firmware joins Update All, the launcher entry, themed app icons, and who opens `.appimage` files. | **Ctrl+K.** Every tab, the actions around them, and the two dialogs — without going looking for a button. |
 
 ## Languages
 
@@ -365,6 +405,7 @@ list of things you already have. Everything it contacts, and when:
 | `raw.githubusercontent.com` | this plugin's own `plugin.json` and `CHANGELOG.md`, to offer its update | 30 seconds after the shell starts, then daily; never on a symlinked install |
 | `odrs.gnome.org` | star ratings and review texts (Open Desktop Ratings Service) | opening an app's details |
 | `flathub.org/api/v2` | install counts, download size, sandbox permissions, verified status | opening a Flatpak app's details |
+| `flathub.org/api/v2` | installs over the last month for the thousand most-installed apps, which is what orders the storefront | once a day, when the Install tab is loaded |
 | the screenshot URLs in AppStream data | the screenshots themselves, cached locally for 30 days | opening an app's details |
 | `appimage.github.io`, `api.github.com` | the AppImage catalogue and the releases of an AppImage's linked project | the Install tab and AppImage updates |
 | `api.github.com` | for a package built from git, the notes of the release being installed or the commits between two snapshots — the repository comes from the package's own URL field | opening the details of such an update; answers cached a day, and a package not built from git never asks |
@@ -398,6 +439,9 @@ anything about you leaves the machine:
 | `FirmwareView.qml` | fwupd device inventory |
 | `LogView.qml` | Action history browser |
 | `AppDetailsDialog.qml` | Shared app-details popup (info, reviews, actions) |
+| `SourcePickerDialog.qml` | Which source to install from, when an app has more than one. Opens on what the index already knows and fills in versions and sizes as they arrive |
+| `OriginComparison.qml` | The sources side by side — version, size, sandbox, who stands behind it, which one is installed. Used by both the picker and the details popup, so the two cannot disagree |
+| `TintedIconEffect.qml` | Themed app icons: colorization onto the DMS accent, lifted in light mode only. One place, because six views draw icons |
 | `AppimageOfferDialog.qml` | Installing an AppImage from a file or URL — the toolbar button and a double-clicked `.appimage` both land here |
 | `NewsDialog.qml` | Arch Linux announcements: what is unread, and the archive of everything seen |
 | `SelectableText.qml` | StyledText you can select and copy — used for the blocks worth copying out (release notes and their CVE numbers, changelogs, the verbatim output behind a failure) |
@@ -409,7 +453,7 @@ anything about you leaves the machine:
 | `FirmwareService.qml` | fwupd update detection |
 | `PhaseIndicator.qml` | Material phase stepper |
 | `Tr.qml` | Plugin-local translation singleton |
-| `scripts/enrich.py` | AppStream parsing, dnf fallbacks, holds detection, search index, featured storefront, ODRS ratings, upstream notes for git builds, caching, sanitizing |
+| `scripts/enrich.py` | AppStream parsing, dnf fallbacks, holds detection, search index (which is also the storefront: every app carries the one section it belongs to), per-source versions and repositories, ODRS ratings, Flathub download figures, upstream notes for git builds, caching, sanitizing |
 | `scripts/rpm_helper.py` | libdnf5 transactions (install/remove/upgrade/downgrade) with exact byte progress (NDJSON events, see PROTOCOL.md) |
 | `scripts/ostree_helper.py` | rpm-ostree counterpart of rpm_helper.py — experimental atomic-Fedora backend (layering, staged until reboot) |
 | `scripts/apt_helper.py` | python-apt counterpart of rpm_helper.py — experimental Debian/Ubuntu transaction backend |
