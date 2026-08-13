@@ -463,5 +463,11 @@
     "Copr: built by an individual on Fedora's build service — often newer than the distribution, and sometimes the only place something exists at all. Nobody vouches for it but its owner.": "Copr: Fedora 빌드 서비스에서 개인이 만든 것 — 배포판보다 새로운 경우가 많고, 때로는 그곳에만 존재합니다. 소유자 외에는 누구도 보증하지 않습니다.",
     "AppImage: a single file you run, installing nothing and changing nothing on the system. No sandbox, and it can only update itself if whoever publishes it keeps doing so.": "AppImage: 실행만 하는 단일 파일로, 아무것도 설치하지 않고 시스템도 바꾸지 않습니다. 샌드박스가 없으며, 배포자가 계속 올리는 동안만 업데이트됩니다.",
     "Tint app icons with the theme colour": "앱 아이콘을 테마 색으로",
-    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "앱 아이콘을 흑백으로 그린 뒤 각 앱 고유의 색 대신 현재 DMS 강조색으로 칠합니다."
+    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "앱 아이콘을 흑백으로 그린 뒤 각 앱 고유의 색 대신 현재 DMS 강조색으로 칠합니다.",
+    "DMS plugins": "DMS 플러그인",
+    "Updating DMS plugins…": "DMS 플러그인을 업데이트하는 중…",
+    "The plugin was not updated": "플러그인이 업데이트되지 않았습니다",
+    "no answer from the plugin manager": "플러그인 관리자가 응답하지 않음",
+    "Manage DMS plugins": "DMS 플러그인 관리",
+    "Open Dank Software Depot": "Dank Software Depot 열기"
 }

@@ -463,5 +463,11 @@
     "Copr: built by an individual on Fedora's build service — often newer than the distribution, and sometimes the only place something exists at all. Nobody vouches for it but its owner.": "Copr: von einer Einzelperson auf Fedoras Build-Dienst gebaut — oft neuer als die Distribution und manchmal die einzige Quelle überhaupt. Dafür bürgt niemand außer der Person selbst.",
     "AppImage: a single file you run, installing nothing and changing nothing on the system. No sandbox, and it can only update itself if whoever publishes it keeps doing so.": "AppImage: eine einzelne Datei, die Sie ausführen; nichts wird installiert und nichts am System geändert. Keine Sandbox, und Aktualisierungen gibt es nur, solange die herausgebende Person sie liefert.",
     "Tint app icons with the theme colour": "App-Symbole in der Themenfarbe einfärben",
-    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "Zeichnet App-Symbole in Graustufen und färbt sie mit der aktiven DMS-Akzentfarbe, statt die eigenen Farben jeder App zu zeigen."
+    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "Zeichnet App-Symbole in Graustufen und färbt sie mit der aktiven DMS-Akzentfarbe, statt die eigenen Farben jeder App zu zeigen.",
+    "DMS plugins": "DMS-Plugins",
+    "Updating DMS plugins…": "DMS-Plugins werden aktualisiert…",
+    "The plugin was not updated": "Das Plugin wurde nicht aktualisiert",
+    "no answer from the plugin manager": "keine Antwort von der Plugin-Verwaltung",
+    "Manage DMS plugins": "DMS-Plugins verwalten",
+    "Open Dank Software Depot": "Dank Software Depot öffnen"
 }

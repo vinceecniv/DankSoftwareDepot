@@ -463,5 +463,11 @@
     "Copr: built by an individual on Fedora's build service — often newer than the distribution, and sometimes the only place something exists at all. Nobody vouches for it but its owner.": "Copr: do một cá nhân dựng trên dịch vụ build của Fedora — thường mới hơn bản phân phối, đôi khi là nơi duy nhất có thứ đó. Không ai bảo đảm ngoài chính chủ.",
     "AppImage: a single file you run, installing nothing and changing nothing on the system. No sandbox, and it can only update itself if whoever publishes it keeps doing so.": "AppImage: một tệp duy nhất bạn chạy, không cài gì và không thay đổi gì trong hệ thống. Không có sandbox, và chỉ tự cập nhật chừng nào người phát hành còn làm.",
     "Tint app icons with the theme colour": "Tô biểu tượng theo màu chủ đề",
-    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "Vẽ biểu tượng ứng dụng ở thang xám rồi tô bằng màu nhấn DMS đang dùng, thay vì hiện màu riêng của từng ứng dụng."
+    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "Vẽ biểu tượng ứng dụng ở thang xám rồi tô bằng màu nhấn DMS đang dùng, thay vì hiện màu riêng của từng ứng dụng.",
+    "DMS plugins": "Tiện ích DMS",
+    "Updating DMS plugins…": "Đang cập nhật tiện ích DMS…",
+    "The plugin was not updated": "Tiện ích chưa được cập nhật",
+    "no answer from the plugin manager": "trình quản lý tiện ích không phản hồi",
+    "Manage DMS plugins": "Quản lý tiện ích DMS",
+    "Open Dank Software Depot": "Mở Dank Software Depot"
 }

@@ -463,5 +463,11 @@
     "Copr: built by an individual on Fedora's build service — often newer than the distribution, and sometimes the only place something exists at all. Nobody vouches for it but its owner.": "Copr: magánszemély építi a Fedora build-szolgáltatásán — gyakran frissebb a disztribúciónál, néha az egyetlen hely, ahol egyáltalán létezik. Rajta kívül senki nem áll jót érte.",
     "AppImage: a single file you run, installing nothing and changing nothing on the system. No sandbox, and it can only update itself if whoever publishes it keeps doing so.": "AppImage: egyetlen fájl, amit elindítasz; semmit nem telepít és semmit nem módosít a rendszeren. Nincs homokozó, és csak addig frissül, amíg a közzétevő ezt megteszi.",
     "Tint app icons with the theme colour": "Alkalmazásikonok a téma színével",
-    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "Az ikonokat szürkeárnyalatosan rajzolja, majd az aktív DMS kiemelőszínnel színezi, az alkalmazások saját színei helyett."
+    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "Az ikonokat szürkeárnyalatosan rajzolja, majd az aktív DMS kiemelőszínnel színezi, az alkalmazások saját színei helyett.",
+    "DMS plugins": "DMS-bővítmények",
+    "Updating DMS plugins…": "DMS-bővítmények frissítése…",
+    "The plugin was not updated": "A bővítmény nem frissült",
+    "no answer from the plugin manager": "nincs válasz a bővítménykezelőtől",
+    "Manage DMS plugins": "DMS-bővítmények kezelése",
+    "Open Dank Software Depot": "A Dank Software Depot megnyitása"
 }

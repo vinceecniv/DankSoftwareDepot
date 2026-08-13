@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import qs.Common
 import qs.Widgets
 import qs.Modules.Plugins
@@ -22,6 +23,23 @@ PluginSettings {
         font.pixelSize: Theme.fontSizeSmall
         color: Theme.surfaceVariantText
         wrapMode: Text.WordWrap
+    }
+
+    // Someone reading this panel is one click from the settings and several
+    // from the thing they configure. The window is opened over the same IPC
+    // the desktop entry uses, through the same shim — this panel is a
+    // separate component from the widget that owns the window, so there is no
+    // reference to reach for, and open.sh already knows how to find `dms` on
+    // a narrower PATH and how to say so when it cannot.
+    DankButton {
+        buttonHeight: 30
+        horizontalPadding: Theme.spacingM
+        iconName: "open_in_new"
+        iconSize: 14
+        text: Tr.t("Open Dank Software Depot")
+        backgroundColor: Theme.secondaryContainer
+        textColor: Theme.surfaceText
+        onClicked: Quickshell.execDetached(["sh", Qt.resolvedUrl("scripts/open.sh").toString().replace("file://", "")])
     }
 
     ToggleSetting {

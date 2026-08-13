@@ -18,7 +18,7 @@ Item {
 
     // ── Public state ─────────────────────────────────────────────────────────
     property bool running: false
-    // idle | starting | dnf-download | dnf-install | flatpak | verifying | done | failed | cancelled
+    // idle | starting | dnf-download | dnf-install | flatpak | plugins | verifying | done | failed | cancelled
     property string phase: "idle"
     property real overallFraction: 0
     property int etaSeconds: -1
@@ -96,6 +96,8 @@ Item {
     // Pending AppImage updates [{id, name, current, latest, url, size}],
     // bound by the widget; they run in their own phase via scripts/appimage.py.
     property var appimageUpdates: []
+    // [{name (plugin id), displayName, repo: "dmsplugin", fromVersion, toVersion}]
+    property var pluginUpdates: []
     // rpm base name -> exact download size in bytes (from dnf repoquery),
     // used for per-package byte detail during the download stage
     property var packageSizes: ({})
@@ -133,6 +135,7 @@ Item {
         case "appimage":
             return 1;
         case "firmware":
+        case "plugins":
         case "dms":
             return 2;
         case "verifying":
@@ -162,6 +165,8 @@ Item {
             return Tr.t("Updating firmware…");
         case "dms":
             return Tr.t("Updating DankMaterialShell… (shell may reload)");
+        case "plugins":
+            return Tr.t("Updating DMS plugins…");
         case "verifying":
             return Tr.t("Confirming what took effect…");
         case "done":
@@ -192,6 +197,8 @@ Item {
     // base name -> target EVR, for post-pass verification against rpm
     property var _daemonExpectedEvr: ({})
     property bool _wantAppimage: false
+    property bool _wantPlugins: false
+    property int _pluginsDone: 0
     property var _appimageItems: []
     property var _aiOps: ({})            // id -> {weight, fraction, done}
     property string _aiCurrentId: ""
@@ -200,6 +207,10 @@ Item {
     property real _firmwareFraction: 0
     property int _firmwareDone: 0
     readonly property real firmwareItemWeight: 50 * 1024 * 1024
+    // A plugin is a small git checkout; nominal, since the daemon reports no
+    // bytes and the number only has to be the right order of magnitude next
+    // to the rpms it shares a progress bar with
+    readonly property real pluginItemWeight: 2 * 1024 * 1024
     property var _flatpakIds: []
     property bool _dnfDone: false
     property int _dnfCount: 0
@@ -423,8 +434,14 @@ Item {
         const firmwareItems = (options.firmware !== false && firmwareService && firmwareService.available) ? (firmwareService.updates || []) : [];
         _wantFirmware = firmwareItems.length > 0;
         _firmwareItems = firmwareItems;
+        // Plugins join a full run, like AppImages, and stay out of a run that
+        // was asked for a specific list of Flatpaks
+        const pluginItems = (options.plugins !== false && !explicitFlatpak) ? (pluginUpdates || []).slice() : [];
+        _wantPlugins = pluginItems.length > 0;
+        _pluginItems = pluginItems;
+        _pluginsDone = 0;
 
-        if (!_wantDnf && !_wantFlatpak && !_wantFirmware && !_wantShell && !_wantAppimage)
+        if (!_wantDnf && !_wantFlatpak && !_wantFirmware && !_wantShell && !_wantAppimage && !_wantPlugins)
             return;
 
         _dnfDone = !_wantDnf;
@@ -540,6 +557,18 @@ Item {
             });
             plannedCount++;
         }
+        for (const plugin of pluginItems) {
+            states["plugin/" + plugin.name] = {
+                status: "pending",
+                fraction: 0,
+                detail: ""
+            };
+            items.push({
+                pkg: plugin,
+                key: "plugin/" + plugin.name
+            });
+            plannedCount++;
+        }
         const shellMap = {};
         for (const pkg of shellPkgs) {
             const base = _stripArch(pkg.name);
@@ -585,14 +614,88 @@ Item {
         } else if (_wantFirmware) {
             _startFirmware();
         } else {
-            _startDaemon("shell");
+            _afterFirmware();
         }
     }
 
     function _afterAppimage() {
         if (_wantFirmware) {
             _startFirmware();
+        } else {
+            _afterFirmware();
+        }
+    }
+
+    // ── DMS plugins ─────────────────────────────────────────────────────────
+    // The daemon updates one plugin per call and answers when that one is
+    // done. There is no byte progress to be had from it, so a plugin row goes
+    // from active to done rather than filling up — the same honesty the
+    // firmware phase settles for, for the same reason.
+    //
+    // One at a time: two plugin installs racing each other to rescan the
+    // plugin directory is not a thing worth finding out about during someone
+    // else's update run.
+    property var _pluginItems: []
+    property int _pluginIndex: 0
+
+    function _afterFirmware() {
+        if (_wantPlugins) {
+            _startPlugins();
         } else if (_wantShell && !_shellDone) {
+            _startDaemon("shell");
+        } else {
+            _finish(failedCount > 0 ? "failed" : "done");
+        }
+    }
+
+    function _startPlugins() {
+        phase = "plugins";
+        _pluginIndex = 0;
+        _updateNextPlugin();
+    }
+
+    function _updateNextPlugin() {
+        if (!running)
+            return;
+        if (_pluginIndex >= _pluginItems.length) {
+            _afterPlugins();
+            return;
+        }
+        const item = _pluginItems[_pluginIndex];
+        const key = "plugin/" + item.name;
+        currentItem = item.displayName || item.name;
+        currentDetail = "";
+        _setItem(key, {
+            status: "active",
+            fraction: 0,
+            detail: ""
+        });
+        DMSService.update(item.name, response => {
+            if (!engine.running)
+                return;
+            if (!response || response.error) {
+                const detail = (response && response.error)
+                    ? (response.error.message || JSON.stringify(response.error))
+                    : Tr.t("no answer from the plugin manager");
+                engine._setError(key, Tr.t("The plugin was not updated"), detail);
+                engine.failedCount++;
+            } else {
+                engine._setItem(key, {
+                    status: "done",
+                    fraction: 1,
+                    detail: ""
+                });
+                engine.completedCount++;
+                engine._pluginsDone++;
+            }
+            engine._pluginIndex++;
+            engine._updateNextPlugin();
+        });
+    }
+
+    function _afterPlugins() {
+        currentItem = "";
+        if (_wantShell && !_shellDone) {
             _startDaemon("shell");
         } else {
             _finish(failedCount > 0 ? "failed" : "done");
@@ -936,6 +1039,8 @@ Item {
                     engine._startAppimage();
                 else if (engine._wantFirmware)
                     engine._startFirmware();
+                else if (engine._wantPlugins)
+                    engine._startPlugins();
                 else
                     engine._finish("failed");
             }
@@ -947,10 +1052,8 @@ Item {
             _startAppimage();
         } else if (_wantFirmware) {
             _startFirmware();
-        } else if (_wantShell && !_shellDone) {
-            _startDaemon("shell");
         } else {
-            _finish(failedCount > 0 ? "failed" : "done");
+            _afterFirmware();
         }
     }
 
@@ -1132,6 +1235,7 @@ Item {
 
     // ── Weighted progress model ──────────────────────────────────────────────
     readonly property real _firmwareWeightTotal: _wantFirmware ? _firmwareItems.length * firmwareItemWeight : 0
+    readonly property real _pluginWeightTotal: _wantPlugins ? _pluginItems.length * pluginItemWeight : 0
     readonly property real _dnfWeightTotal: _wantDnf ? _dnfCount * dnfPkgWeight : 0
     readonly property real _shellWeightTotal: _wantShell ? _shellCount * dnfPkgWeight : 0
     readonly property real _appimageWeightTotal: {
@@ -1195,7 +1299,7 @@ Item {
     }
 
     function _updateOverall() {
-        const total = _dnfWeightTotal + _flatpakWeightTotal + _firmwareWeightTotal + _shellWeightTotal + _appimageWeightTotal;
+        const total = _dnfWeightTotal + _flatpakWeightTotal + _firmwareWeightTotal + _shellWeightTotal + _appimageWeightTotal + _pluginWeightTotal;
         if (total <= 0)
             return;
         const fbDone = _flatpakWeightDone();
@@ -1208,7 +1312,7 @@ Item {
         }
         opsDone = doneOps;
         opsTotal = totalOps;
-        const done = _dnfFractionNow() * _dnfWeightTotal + fbDone + _firmwareFraction * _firmwareWeightTotal + _shellFractionNow() * _shellWeightTotal + _appimageWeightDone();
+        const done = _dnfFractionNow() * _dnfWeightTotal + fbDone + _firmwareFraction * _firmwareWeightTotal + _shellFractionNow() * _shellWeightTotal + _appimageWeightDone() + _pluginsDone * pluginItemWeight;
         overallFraction = Math.min(running ? 0.995 : 1, done / total);
     }
 
@@ -1349,10 +1453,8 @@ Item {
             _startAppimage();
         } else if (_wantFirmware) {
             _startFirmware();
-        } else if (_wantShell && !_shellDone) {
-            _startDaemon("shell");
         } else {
-            _finish(failedCount > 0 ? "failed" : "done");
+            _afterFirmware();
         }
     }
 
@@ -1684,11 +1786,7 @@ Item {
             } else {
                 engine.failedCount += engine._firmwareItems.length;
             }
-            if (engine._wantShell && !engine._shellDone) {
-                engine._startDaemon("shell");
-            } else {
-                engine._finish(engine.failedCount > 0 ? "failed" : "done");
-            }
+            engine._afterFirmware();
         }
     }
 

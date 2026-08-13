@@ -1022,6 +1022,29 @@ FloatingWindow {
                             }
                         }
                     }
+
+                    // Plugin updates are shown and run from the Updates tab,
+                    // but installing, removing and browsing them lives in DMS
+                    // itself. Rather than reimplement that, point at it.
+                    Item {
+                        Layout.preferredWidth: dmsPluginsLinkButton.width
+                        Layout.preferredHeight: dmsPluginsLinkButton.height
+
+                        DankButton {
+                            id: dmsPluginsLinkButton
+                            buttonHeight: 30
+                            horizontalPadding: Theme.spacingM
+                            iconName: "open_in_new"
+                            iconSize: 14
+                            text: Tr.t("Manage DMS plugins")
+                            backgroundColor: Theme.secondaryContainer
+                            textColor: Theme.surfaceText
+                            onClicked: {
+                                win.settingsOpen = false;
+                                PopoutService.openSettingsWithTab("plugins");
+                            }
+                        }
+                    }
                     }
                 }
             }
@@ -1076,7 +1099,7 @@ FloatingWindow {
     // more packages than it is working on; leaving that pile open would push
     // the active rows off screen, which is the opposite of the point.
     property var collapsedCats: ({
-            "5 · Held packages": true,
+            "6 · Held packages": true,
             "4 · Completed": true
         })
 
@@ -1313,7 +1336,7 @@ FloatingWindow {
         if (pkg.repo === "firmware")
             return "4 · Firmware";
         if (pkg.repo !== "flatpak")
-            return store.isHeld(pkg) ? "5 · Held packages" : "2 · System packages";
+            return store.isHeld(pkg) ? "6 · Held packages" : "2 · System packages";
         const name = pkg.name || "";
         const runtime = /\.(Locale|Debug|Sources)$/.test(name)
             || /\.(Platform|Sdk)($|\.)/.test(name)
@@ -1398,6 +1421,19 @@ FloatingWindow {
                 aiInfo: ai
             });
         }
+
+        // DMS plugins: the fifth kind of software this window manages, and
+        // the only one that lives in the shell running it. The daemon says
+        // which have a newer build in the registry; what it does not say is
+        // how big that is, so these rows carry versions and nothing else.
+        for (const plugin of (widgetRoot ? widgetRoot.pluginUpdates : []) || []) {
+            rows.push({
+                pkg: plugin,
+                key: "plugin/" + plugin.name,
+                category: "5 · DMS plugins",
+                ignored: false
+            });
+        }
         for (const name of SettingsData.updaterIgnoredPackages || []) {
             const repo = _guessRepo(name);
             const pkg = {
@@ -1409,7 +1445,7 @@ FloatingWindow {
             rows.push({
                 pkg: pkg,
                 key: store.keyFor(pkg),
-                category: "5 · Held packages",
+                category: "6 · Held packages",
                 ignored: true
             });
         }
@@ -1454,7 +1490,7 @@ FloatingWindow {
         // out this run shouldn't vanish from the overview — keep their
         // section below the queue.
         const runKeys = new Set(runRows.map(row => row.key));
-        return runRows.concat(updateRows.filter(row => row.category === "5 · Held packages" && !runKeys.has(row.key)));
+        return runRows.concat(updateRows.filter(row => row.category === "6 · Held packages" && !runKeys.has(row.key)));
     }
 
     // Flat list model with explicit header rows. This sidesteps ListView's
@@ -1464,7 +1500,7 @@ FloatingWindow {
         const counts = {};
         for (const row of visibleRows)
             counts[row.category] = (counts[row.category] || 0) + 1;
-        const collapsible = ["5 · Held packages", "4 · Completed"];
+        const collapsible = ["6 · Held packages", "4 · Completed"];
         const out = [];
         let current = "";
         for (const row of visibleRows) {
@@ -1725,7 +1761,9 @@ FloatingWindow {
             return "extension";
         case "4 · Firmware":
             return "developer_board";
-        case "5 · Held packages":
+        case "5 · DMS plugins":
+            return "extension";
+        case "6 · Held packages":
             return "lock";
         default:
             return "apps";
@@ -1738,7 +1776,7 @@ FloatingWindow {
             return Theme.surfaceVariantText;
         case "4 · Completed":
             return Theme.success;
-        case "5 · Held packages":
+        case "6 · Held packages":
             return Theme.warning;
         default:
             return Theme.primary;

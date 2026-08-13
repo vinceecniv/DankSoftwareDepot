@@ -80,6 +80,7 @@ PluginComponent {
         if (includeFirmware)
             count += (firmware.updates || []).length;
         count += (appimageUpdates || []).length;
+        count += (pluginUpdates || []).length;
         return count;
     }
 
@@ -170,6 +171,49 @@ PluginComponent {
                 }
             }
         }
+    }
+
+    // ── DMS plugin updates ──────────────────────────────────────────────────
+    // The daemon already works out which installed plugins the registry has a
+    // newer build of — the same `hasUpdate` flag Settings → Plugins counts its
+    // "Available Updates" from. A software centre that reports on four kinds
+    // of software and stays quiet about the fifth, which is sitting in the
+    // same shell it is running in, is being arbitrary about it.
+    //
+    // Answering it needs daemon API 8; older ones do not carry the flag, and a
+    // missing flag would read as "nothing to update" rather than as "cannot
+    // say", so the whole section stays away instead.
+    readonly property bool pluginUpdatesSupported: DMSService.dmsAvailable && DMSService.apiVersion >= 8
+
+    readonly property var pluginUpdates: {
+        if (!pluginUpdatesSupported)
+            return [];
+        const out = [];
+        for (const plugin of (DMSService.installedPlugins || [])) {
+            if (plugin.hasUpdate !== true)
+                continue;
+            const id = plugin.id || plugin.name || "";
+            // Ourselves, deliberately: this plugin already offers its own
+            // update from its own release notes, and replacing the code that
+            // is running the transaction, during the transaction, is the one
+            // case the DMS packages get a separate final pass for.
+            if (id === "" || id === "dankSoftwareDepot")
+                continue;
+            const manifest = (PluginService.availablePlugins || {})[id] || {};
+            out.push({
+                name: id,
+                displayName: plugin.name || manifest.name || id,
+                repo: "dmsplugin",
+                fromVersion: manifest.version || plugin.version || "",
+                toVersion: plugin.latestVersion || plugin.newVersion || ""
+            });
+        }
+        return out;
+    }
+
+    function refreshPluginUpdates() {
+        if (pluginUpdatesSupported)
+            DMSService.listInstalled();
     }
 
     // ── AppStream search index, warmed out of sight ─────────────────────────
@@ -310,6 +354,9 @@ PluginComponent {
                 firmware.check();
             if (!SystemUpdateService.isChecking) {
                 appimageCheckProcess.running = true;
+                // And the plugins, for the same reason: one check answers for
+                // every kind of software this window reports on
+                root.refreshPluginUpdates();
                 Qt.callLater(() => root._afterCheck());
             }
         }
@@ -918,6 +965,7 @@ PluginComponent {
         packageSizes: (root.updateSizes && root.updateSizes.rpmSizes) || ({})
         firmwareService: root.includeFirmware ? firmware : null
         appimageUpdates: root.appimageUpdates
+        pluginUpdates: root.pluginUpdates
 
         // The dms pass is about to reload the shell — stash the log entry
         // and the failure reasons it would otherwise swallow

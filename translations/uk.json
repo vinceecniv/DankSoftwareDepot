@@ -463,5 +463,11 @@
     "Copr: built by an individual on Fedora's build service — often newer than the distribution, and sometimes the only place something exists at all. Nobody vouches for it but its owner.": "Copr: зібрано приватною особою у службі збирання Fedora — часто новіше за дистрибутив, а іноді це єдине місце, де щось узагалі є. За це не ручається ніхто, крім власника.",
     "AppImage: a single file you run, installing nothing and changing nothing on the system. No sandbox, and it can only update itself if whoever publishes it keeps doing so.": "AppImage: один файл, який ви запускаєте; нічого не встановлюється і нічого в системі не змінюється. Пісочниці немає, і оновлюється він лише доки видавець це робить.",
     "Tint app icons with the theme colour": "Фарбувати піктограми в колір теми",
-    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "Малює піктограми застосунків у відтінках сірого та фарбує їх активним акцентом DMS замість власних кольорів кожного застосунку."
+    "Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.": "Малює піктограми застосунків у відтінках сірого та фарбує їх активним акцентом DMS замість власних кольорів кожного застосунку.",
+    "DMS plugins": "Плагіни DMS",
+    "Updating DMS plugins…": "Оновлення плагінів DMS…",
+    "The plugin was not updated": "Плагін не оновлено",
+    "no answer from the plugin manager": "немає відповіді від менеджера плагінів",
+    "Manage DMS plugins": "Керування плагінами DMS",
+    "Open Dank Software Depot": "Відкрити Dank Software Depot"
 }

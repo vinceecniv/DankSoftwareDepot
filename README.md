@@ -55,7 +55,7 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   release for the distro to describe, so their notes come from the upstream
   forge instead: the published notes of the release being installed, or the
   commits between the two snapshots when both sides are builds of a branch
-- Sections (Applications / System / Runtimes / Firmware / Held)
+- Sections (Applications / System / Runtimes / Firmware / DMS plugins / Held)
   with a hover **Update these** button per section
 - **Held packages**: dnf versionlock/excludepkgs detected automatically,
   plus user-holds via the lock button — never counted or updated,
@@ -86,6 +86,18 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   missed. Items are kept rather than mirrored, so the archive (Ctrl+K → Arch
   Linux news) still has the announcement that explains the state this machine
   is in, long after it scrolled off the feed
+- **DMS plugins are the fifth kind of software**, and the only one living in
+  the shell that runs this window. The daemon already works out which
+  installed plugins the registry has a newer build of — the flag Settings →
+  Plugins counts its own "Available Updates" from — so they are listed in
+  their own section, counted in the bar pill, and updated in their own phase
+  of Update All, one at a time. No byte progress: the daemon reports a plugin
+  as done or not, so the rows say that and no more. This plugin excludes
+  itself, because replacing the code running the transaction, during the
+  transaction, is what the DMS packages get a separate final pass for — it
+  offers its own update from its own release notes instead. Installing,
+  removing and browsing plugins stays in DMS, one button away in the
+  settings panel
 - Reboot recommendation banner (kernel/systemd/glibc/firmware) with
   confirm-restart button, persisted per boot
 - End-of-life Flatpak detection and distro-upgrade notice
