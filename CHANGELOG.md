@@ -3,6 +3,46 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.8.3 — 2026-08-13
+
+- **The Install tab is something you can walk through now.** Every heading
+  opens, and behind it is the whole section rather than the six apps that
+  fitted on the storefront: Games is 892 apps here, Utilities 750. Chips
+  at the top of a section say where else to go, rows arrive as you scroll,
+  and typing inside a section searches all of it — not the part you have
+  scrolled past. Sections are cut from the search index instead of being
+  a second, shorter list sent alongside it, which is what makes "all of
+  it" and "searchable in full" the same thing rather than two promises.
+- **Thirteen sections instead of eight**, from Flathub's own top-level
+  categories: Education, Science, Health & Fitness and Internet are new,
+  and whatever fits nowhere lands in Other rather than being dropped. On
+  this machine that last one holds 46 apps, 39 of which carry no category
+  at all — until now they could be found by name and by nothing else.
+- **Sorted by downloads.** That number did not exist in the app before;
+  "popularity" meant review volume, which is a much smaller and different
+  thing. Flathub's install figures for the last month now decide the
+  order, refreshed daily. Two honest limits: only software Flathub
+  carries has such a figure, so an rpm with no Flatpak sorts last with
+  review count standing in; and the figures cover the top thousand, which
+  makes absence "fewer than the smallest number here" rather than
+  unknown. Reading them never waits on the network — the storefront takes
+  what is cached and a refresh happens out of sight.
+- **"Search Copr" exists again**, and sits under the results instead of
+  above them, which is where "not here?" is a question you have just
+  arrived at. It had been invisible since 0.8.0 — a wrapper added around
+  the button to fix its width asked the button whether to be shown, and a
+  parent asking that of its child has already decided the answer.
+- **Two more buttons that had gone the same way**: "View in log" after a
+  failed update, and "Save" on an AppImage's update source. Both were
+  noted a fortnight ago as things that *could* latch and left alone;
+  both had already latched, because both live somewhere that starts
+  hidden.
+- **Typing stays quick on a four-thousand-app catalog.** A query that
+  grows is matched against what survived the previous letter rather than
+  against everything, and the tab warms up shortly after the window opens
+  instead of on the click that asks for it — that click is usually
+  someone about to type.
+
 ## 0.8.2 — 2026-08-13
 
 - **Release notes you can read, and now actually select.** This plugin's
