@@ -3511,6 +3511,11 @@ FloatingWindow {
                                             { label: "OS", value: dash.osPretty || SystemUpdateService.distroPretty || "" },
                                             { label: "Host", value: dash.hostname || "" },
                                             { label: "Kernel", value: dash.kernel || "" },
+                                            // The shell this window is a part of, as the daemon
+                                            // reports itself. A release build says 1.5.2; a git
+                                            // build says what it is, at length, and that is the
+                                            // honest answer rather than something tidied up
+                                            { label: "DMS", value: DMSService.cliVersion || "" },
                                             { label: Tr.t("Uptime"), value: win.formatUptime(dash.uptimeSecs || 0) }
                                         ].filter(row => row.value !== "");
                                     }
