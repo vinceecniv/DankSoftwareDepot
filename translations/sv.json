@@ -476,5 +476,6 @@
     "by %1": "av %1",
     "installed for you": "installerat för dig",
     "installed for all users": "installerat för alla användare",
-    "%1 plugins": "%1 tillägg"
+    "%1 plugins": "%1 tillägg",
+    "Read the changelog": "Läs ändringsloggen"
 }

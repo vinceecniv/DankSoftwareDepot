@@ -476,5 +476,6 @@
     "by %1": "제작: %1",
     "installed for you": "내 계정에 설치됨",
     "installed for all users": "모든 사용자에게 설치됨",
-    "%1 plugins": "플러그인 %1개"
+    "%1 plugins": "플러그인 %1개",
+    "Read the changelog": "변경 내역 보기"
 }

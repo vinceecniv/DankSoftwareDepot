@@ -476,5 +476,6 @@
     "by %1": "автор: %1",
     "installed for you": "встановлено для вас",
     "installed for all users": "встановлено для всіх користувачів",
-    "%1 plugins": "плагінів: %1"
+    "%1 plugins": "плагінів: %1",
+    "Read the changelog": "Читати список змін"
 }

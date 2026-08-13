@@ -476,5 +476,6 @@
     "by %1": "von %1",
     "installed for you": "für dich installiert",
     "installed for all users": "für alle Benutzer installiert",
-    "%1 plugins": "%1 Plugins"
+    "%1 plugins": "%1 Plugins",
+    "Read the changelog": "Änderungsprotokoll lesen"
 }

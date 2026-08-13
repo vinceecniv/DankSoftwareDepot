@@ -476,5 +476,6 @@
     "by %1": "作者：%1",
     "installed for you": "已为你安装",
     "installed for all users": "已为所有用户安装",
-    "%1 plugins": "%1 个插件"
+    "%1 plugins": "%1 个插件",
+    "Read the changelog": "查看更新日志"
 }

@@ -476,5 +476,6 @@
     "by %1": "par %1",
     "installed for you": "installée pour vous",
     "installed for all users": "installée pour tous les utilisateurs",
-    "%1 plugins": "%1 extensions"
+    "%1 plugins": "%1 extensions",
+    "Read the changelog": "Lire le journal des modifications"
 }

@@ -88,7 +88,7 @@ FloatingWindow {
             id: isFlatpak ? pkg.name : base,
             name: win.store.displayName(pkg),
             summary: isPlugin ? (manifest.description || "") : ((info && info.summary) || ""),
-            iconPath: (info && info.icon) || "",
+            iconPath: (info && info.icon) || (win._isShellPkg(pkg) && win.widgetRoot ? win.widgetRoot.dankLogoPath : ""),
             homepage: (info && info.homepage) || "",
             held: rowData.ignored === true || win.store.isHeld(pkg),
             holdReason: rowData.ignored === true ? Tr.t("held by you") : win.store.holdReason(pkg),
@@ -788,6 +788,29 @@ FloatingWindow {
                         backgroundColor: Theme.buttonBg
                         textColor: Theme.buttonText
                         onClicked: Qt.openUrlExternally(win.githubUrl)
+                    }
+                }
+
+                // A row of its own rather than beside the button above: the
+                // card is 420 wide, and two labels side by side fit in English
+                // and stop fitting in German.
+                Item {
+                    Layout.fillWidth: true
+                    implicitHeight: 32
+
+                    DankButton {
+                        anchors.left: parent.left
+                        buttonHeight: 32
+                        iconName: "description"
+                        iconSize: 15
+                        horizontalPadding: Theme.spacingM
+                        text: Tr.t("Read the changelog")
+                        backgroundColor: Theme.buttonBg
+                        textColor: Theme.buttonText
+                        // The whole history, not the section for the version
+                        // being offered — that one is already on this card
+                        // when there is an update to describe
+                        onClicked: Qt.openUrlExternally(win.githubUrl + "/blob/main/CHANGELOG.md")
                     }
                 }
 
@@ -3225,6 +3248,7 @@ FloatingWindow {
                 property var rowData: ({})
 
                 width: cardsList.width
+                shellIconPath: (rowData.pkg && win._isShellPkg(rowData.pkg) && win.widgetRoot) ? win.widgetRoot.dankLogoPath : ""
                 pkg: rowData.pkg || ({
                         name: "",
                         repo: "system"

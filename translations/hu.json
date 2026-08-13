@@ -476,5 +476,6 @@
     "by %1": "készítette: %1",
     "installed for you": "csak Önnek telepítve",
     "installed for all users": "minden felhasználónak telepítve",
-    "%1 plugins": "%1 bővítmény"
+    "%1 plugins": "%1 bővítmény",
+    "Read the changelog": "Változásnapló megtekintése"
 }

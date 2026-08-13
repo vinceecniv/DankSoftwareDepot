@@ -476,5 +476,6 @@
     "by %1": "autor: %1",
     "installed for you": "zainstalowana dla Ciebie",
     "installed for all users": "zainstalowana dla wszystkich użytkowników",
-    "%1 plugins": "%1 wtyczek"
+    "%1 plugins": "%1 wtyczek",
+    "Read the changelog": "Przeczytaj listę zmian"
 }
