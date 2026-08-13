@@ -700,6 +700,10 @@ FloatingWindow {
                             visible: win.selfUpdateNotes !== ""
                             clip: true
                             contentHeight: aboutNotesText.implicitHeight
+                            // Same as the banner: drag-to-scroll and
+                            // drag-to-select are the same gesture, and the
+                            // wheel and the scrollbar do not need it
+                            interactive: false
 
                             SelectableText {
                                 id: aboutNotesText
@@ -707,7 +711,9 @@ FloatingWindow {
                                 width: aboutNotesView.width
                                 textFormat: Text.RichText
                                 text: win.selfUpdateNotes
-                                font.pixelSize: Theme.fontSizeSmall - 1
+                                // The same notes as the banner, so the same
+                                // size — this is where people come to read them
+                                font.pixelSize: Theme.fontSizeMedium
                                 color: Theme.surfaceVariantText
                                 wrapMode: Text.WordWrap
                             }
@@ -2334,6 +2340,14 @@ FloatingWindow {
                     visible: win.selfUpdateNotes !== ""
                     clip: true
                     contentHeight: selfUpdateNotesText.implicitHeight
+                    // A drag inside a Flickable is a scroll, and it is decided
+                    // by the same few pixels of movement that start a text
+                    // selection — so the notes could be selected only by
+                    // winning a race against their own viewport. Nothing here
+                    // needs drag-to-scroll: this one is driven by the wheel
+                    // handler and the scrollbar, both of which set contentY
+                    // themselves and go on working with the drag switched off.
+                    interactive: false
 
                     SelectableText {
                         id: selfUpdateNotesText
@@ -2341,7 +2355,9 @@ FloatingWindow {
                         width: selfUpdateNotesView.width
                         textFormat: Text.RichText
                         text: win.selfUpdateNotes
-                        font.pixelSize: Theme.fontSizeSmall
+                        // Release notes are read, not glanced at, and this is
+                        // the one banner people are asked to act on
+                        font.pixelSize: Theme.fontSizeMedium
                         color: Theme.surfaceVariantText
                         wrapMode: Text.WordWrap
                     }
