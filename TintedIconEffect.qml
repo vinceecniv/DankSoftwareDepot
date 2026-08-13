@@ -23,9 +23,26 @@ import qs.Common
 // The order matters and is not the one you would write down: MultiEffect
 // desaturates *after* it colorizes, which is why there is no greyscale pass
 // here — asking for one washes the tint straight back out.
+// One more asymmetry, found later and by eye: in light mode the colour
+// shouted. Not because it is a different accent — it is the same one — but
+// because of where the mapping puts it. In dark mode most of an icon lands
+// near black and only the highlights come out accented, so the colour arrives
+// in small amounts. In light mode the lift above is applied so shapes stay
+// readable, and the effect of that is to move most of the icon *up* into the
+// accent, so a card ends up carrying a large block of a fully saturated
+// colour. The fix is not less lift — the shapes need it — but a quieter
+// colour to lift into: the same hue, with the saturation taken down, so the
+// amount of colour on screen matches what dark mode arrives at by accident.
 MultiEffect {
+    readonly property color _softTint: Qt.hsla(Theme.primary.hslHue,
+                                               Theme.primary.hslSaturation * 0.55,
+                                               Theme.primary.hslLightness,
+                                               1.0)
+
     brightness: Theme.isLightMode ? 0.32 : 0
-    contrast: Theme.isLightMode ? 0.22 : 0
+    // Contrast reads as vividness as much as separation, so it comes down a
+    // little with the saturation rather than staying where it was
+    contrast: Theme.isLightMode ? 0.16 : 0
     colorization: 1.0
-    colorizationColor: Theme.primary
+    colorizationColor: Theme.isLightMode ? _softTint : Theme.primary
 }
