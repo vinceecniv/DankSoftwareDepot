@@ -609,11 +609,10 @@ Item {
                             color: Theme.surfaceVariantText
                         }
 
-                        // The leftover width goes to the last item, not this
-                        // one: whoever takes it pushes everything after it
-                        // along, and the licence was ending up adrift in the
-                        // middle of the row. It can still shrink and wrap when
-                        // the row is genuinely too narrow.
+                        // Not this one: whoever takes the leftover width pushes
+                        // everything after it along, and the licence was ending
+                        // up adrift in the middle of the row. It can still
+                        // shrink and wrap when the row is genuinely too narrow.
                         SelectableText {
                             id: identityText
 
@@ -634,24 +633,38 @@ Item {
                             color: Theme.surfaceVariantText
                         }
 
+                        // The licence is the one item here with no upper bound
+                        // on its length — Fedora hands out whole sentences as
+                        // LicenseRef ids, and one of those is a single
+                        // unbreakable word. So it takes the leftover width
+                        // rather than asking for its own: a word that cannot
+                        // fit breaks mid-word instead of being painted past
+                        // the edge of the card, and the row stops claiming a
+                        // width the header cannot give it. That last part is
+                        // what was pushing the dialog's close button off the
+                        // right-hand side — it sits after this column in the
+                        // header row, and a column asking for 900px leaves
+                        // nothing behind it.
                         SelectableText {
                             id: licenseText
 
                             Layout.minimumWidth: 0
+                            Layout.fillWidth: true
                             visible: identityRow.licenseLine !== ""
                             text: identityRow.licenseLine
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.surfaceVariantText
-                            wrapMode: Text.WordWrap
+                            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         }
 
                         // Somebody has to want the leftover width, or the
-                        // layout hands each item an equal share of it. A
-                        // package with no licence to show would otherwise put
-                        // the gap back, in a row that no longer has anything
-                        // on its right to blame.
+                        // layout hands each item an equal share of it. With a
+                        // licence on show that somebody is the licence itself;
+                        // a package with no licence would otherwise put the gap
+                        // back, in a row that no longer has anything on its
+                        // right to blame.
                         Item {
-                            Layout.fillWidth: true
+                            Layout.fillWidth: identityRow.licenseLine === ""
                         }
                     }
 
