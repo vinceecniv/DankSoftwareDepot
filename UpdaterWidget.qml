@@ -558,7 +558,7 @@ PluginComponent {
                 repo: ri.pkg.repo || "",
                 from: ri.pkg.fromVersion || "",
                 to: ri.pkg.toVersion || "",
-                source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : "System")),
+                source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : (ri.pkg.repo === "dmsplugin" ? "DMS" : "System"))),
                 status: st.status || "",
                 reason: st.status === "error" ? (st.detail || "") : "",
                 error: engine.runErrorDetails[ri.key] || ""
@@ -933,9 +933,16 @@ PluginComponent {
             const st = engine.itemStates[ri.key] || {};
             return {
                 name: store.displayName(ri.pkg),
+                // The id and the repo travel with the entry so the log can
+                // lead back to what it is about. Without them a line is a
+                // string: "Quick Capture" has a space in it, which is what
+                // the fallback heuristic uses to tell a display name from a
+                // package name, so the entry stopped being clickable.
+                id: ri.pkg.name || "",
+                repo: ri.pkg.repo || "",
                 from: ri.pkg.fromVersion || "",
                 to: ri.pkg.toVersion || "",
-                source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : "System")),
+                source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : (ri.pkg.repo === "dmsplugin" ? "DMS" : "System"))),
                 status: st.status || "",
                 // Short reason for reading, tool output for reporting
                 reason: st.status === "error" ? (st.detail || "") : "",

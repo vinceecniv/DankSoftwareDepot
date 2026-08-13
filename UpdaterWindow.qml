@@ -128,10 +128,22 @@ FloatingWindow {
         if (id === "")
             return;
         const isFlatpak = (item.repo || "") === "flatpak" || (item.source || "") === "Flatpak";
-        const isRpm = !isFlatpak && (item.repo || "") !== "appimage" && (item.repo || "") !== "firmware";
+        // A plugin recorded before this knew about plugins carries no repo, so
+        // the source it was logged under stands in for one
+        const isPlugin = (item.repo || "") === "dmsplugin" || (item.source || "") === "DMS";
+        const isRpm = !isFlatpak && !isPlugin && (item.repo || "") !== "appimage" && (item.repo || "") !== "firmware";
         const base = win.store.stripArch(id);
         logDialog.base = base;
         logDialog.isRpm = isRpm;
+        const manifest = isPlugin ? ((PluginService.availablePlugins || {})[id] || {}) : {};
+        logDialog.pluginFacts = isPlugin ? {
+            author: manifest.author || "",
+            category: manifest.category || "",
+            source: manifest.source || "",
+            directory: manifest.pluginDirectory || "",
+            permissions: manifest.permissions || [],
+            icon: manifest.icon || ""
+        } : null;
         if (isRpm)
             win.store.fetchChangelog(base);
         const info = win.store.infoFor({
@@ -3678,7 +3690,11 @@ FloatingWindow {
                                             { label: Backend.systemRepoLabel, icon: "memory", count: Math.max(0, (dash.rpmTotal || 0) - copr) },
                                             { label: Backend.backendId === "pacman" ? "AUR" : "COPR", icon: "science", count: copr },
                                             { label: "Flatpak", icon: "apps", count: dash.flatpakCount || 0 },
-                                            { label: "AppImage", icon: "deployed_code", count: dash.appimageCount || 0 }
+                                            { label: "AppImage", icon: "deployed_code", count: dash.appimageCount || 0 },
+                                            // The plugins in the shell this window runs in. Counted
+                                            // from the manifests PluginService has already read, so
+                                            // this is what is installed rather than what is enabled.
+                                            { label: Tr.t("DMS plugins"), icon: "extension", count: Object.keys(PluginService.availablePlugins || {}).length }
                                         ].filter(row => row.label !== "COPR" && row.label !== "AUR" || row.count > 0 || Backend.backendId === "dnf");
                                     }
 
@@ -3718,7 +3734,7 @@ FloatingWindow {
 
                                 StyledText {
                                     Layout.fillWidth: true
-                                    text: Tr.t("Total: %1").arg((win.dashboard ? (win.dashboard.rpmTotal || 0) + (win.dashboard.flatpakCount || 0) + (win.dashboard.appimageCount || 0) : 0))
+                                    text: Tr.t("Total: %1").arg((win.dashboard ? (win.dashboard.rpmTotal || 0) + (win.dashboard.flatpakCount || 0) + (win.dashboard.appimageCount || 0) : 0) + Object.keys(PluginService.availablePlugins || {}).length)
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.surfaceVariantText
                                     horizontalAlignment: Text.AlignRight
