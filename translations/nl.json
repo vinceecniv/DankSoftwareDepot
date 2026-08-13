@@ -433,5 +433,13 @@
     "Mark all as read": "Alles als gelezen markeren",
     "Nothing new.": "Niets nieuws.",
     "Nothing here yet.": "Hier staat nog niets.",
-    "Could not reach the news feed — showing what was already here.": "Nieuwsfeed niet bereikbaar — wat er al was, wordt getoond."
+    "Could not reach the news feed — showing what was already here.": "Nieuwsfeed niet bereikbaar — wat er al was, wordt getoond.",
+    "All sections": "Alle secties",
+    "Most downloaded first": "Meest gedownload eerst",
+    "Search in %1…": "Zoeken in %1…",
+    "Education": "Onderwijs",
+    "Science": "Wetenschap",
+    "Health & Fitness": "Gezondheid & fitness",
+    "Internet": "Internet",
+    "Other": "Overig"
 }

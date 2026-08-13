@@ -2836,7 +2836,19 @@ FloatingWindow {
             }
         }
 
-        // ── Install tab (lazy) ──────────────────────────────────────────────
+        // Loaded shortly after the window opens rather than on the click that
+        // asks for it. Behind that tab sit five processes, a 2 MB index and
+        // the parse of it, and doing all of that on the click puts it in front
+        // of the first keystroke — the tab is opened to type in it. Two
+        // seconds is long enough for the window itself to have drawn, so the
+        // warm-up competes with nothing the user is looking at.
+        Timer {
+            interval: 2000
+            running: win.visible && !installLoader.active
+            onTriggered: installLoader.active = true
+        }
+
+        // ── Install tab (lazy, warmed above) ────────────────────────────────
         Loader {
             id: installLoader
             Layout.fillWidth: true

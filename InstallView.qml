@@ -12,7 +12,8 @@ import qs.Widgets
 Item {
     id: view
 
-    property var featured: []        // enrich.py --featured output: [{category, items}]
+    property var sectionOrder: []    // section labels, in the order enrich.py assigns them
+    property var installsById: ({})  // Flathub app id -> installs last month
     property string searchText: ""
     property int sourceFilter: 0     // 0 all, 1 flathub, 2 fedora
     property string busyAction: ""   // "<ref>" while an install runs
@@ -95,7 +96,7 @@ Item {
 
     Component.onCompleted: {
         installedProcess.running = true;
-        featuredProcess.running = true;
+        installsProcess.running = true;
         indexProcess.running = true;
         appimageIndexProcess.running = true;
         appimageListProcess.running = true;
@@ -301,11 +302,34 @@ Item {
         dnfProcess.running = true;
     }
 
+    // One array instead of a fresh concat per keystroke. The two indexes are
+    // replaced twice in a session — when each finishes loading — and copying
+    // four thousand entries on every letter to express that is a waste.
+    readonly property var searchPool: searchIndex.concat(appimageIndex)
+
+    // Typing only ever narrows. Every test below is containment or a stronger
+    // form of it, so an entry that cannot match "fire" cannot match "firef"
+    // either, and the second letter can be scanned against the few hundred
+    // that survived the first rather than against the whole catalog.
+    //
+    // Kept in a plain object rather than in properties on purpose: this is
+    // written from inside a binding, and a property write would notify the
+    // binding that reads it. Assigning to the fields of a var never does.
+    // `source` is the pool identity, so an index arriving mid-word throws the
+    // cache away rather than filtering a stale subset.
+    readonly property var _searchCache: ({
+            source: null,
+            needle: "",
+            pool: []
+        })
+
     function localResults(query) {
         const needle = query.toLowerCase();
         const words = needle.split(/\s+/).filter(w => w !== "");
         const scored = [];
-        const pool = searchIndex.concat(appimageIndex);
+        const cache = _searchCache;
+        const narrowed = cache.source === searchPool && cache.needle.length >= 2 && needle.startsWith(cache.needle);
+        const pool = narrowed ? cache.pool : searchPool;
         for (const item of pool) {
             let score = -1;
             if (words.length <= 1) {
@@ -341,6 +365,11 @@ Item {
                     score: score
                 });
         }
+        // The whole match set, not the sixty that get shown: the next letter
+        // has to be scanned against everything that could still match it
+        cache.source = searchPool;
+        cache.needle = needle;
+        cache.pool = scored.map(entry => entry.item);
         scored.sort((a, b) => {
             if (a.score !== b.score)
                 return a.score - b.score;
@@ -371,6 +400,118 @@ Item {
     }
 
     readonly property bool searchMode: searchText.trim().length >= 2
+
+    // ── Sections ─────────────────────────────────────────────────────────────
+    // The storefront is a row of teasers per category; naming one here opens it
+    // and the tab shows that category alone. Searching outranks it rather than
+    // clearing it: a search is a detour, and the section is still where the
+    // reader was when they left.
+    // A section outranks a search rather than the other way round: typing
+    // while inside one narrows that section instead of abandoning it, which is
+    // what "search further" means once you have chosen where to look. Leaving
+    // is a chip away, and leaving is what widens the search back to everything.
+    property string activeCategory: ""
+    readonly property bool sectionMode: activeCategory !== ""
+
+    function installsFor(item) {
+        let best = 0;
+        for (const source of item.sources) {
+            if (source.kind === "flatpak") {
+                const count = installsById[source.ref] || 0;
+                if (count > best)
+                    best = count;
+            }
+        }
+        return best;
+    }
+
+    // Every app in the catalog, in exactly one section, most-downloaded first.
+    // Whole sections rather than a sample of each: a section holds what a
+    // section holds, the list shows as much of it as has been scrolled to, and
+    // searching one searches all of it. Computed when an index or the download
+    // figures arrive — twice in a session, not once per keystroke.
+    readonly property var sections: {
+        if (searchIndex.length === 0 || sectionOrder.length === 0)
+            return [];
+        for (const item of searchIndex)
+            item._inst = installsFor(item);
+        const byDownloads = (a, b) => {
+            if (a._inst !== b._inst)
+                return b._inst - a._inst;
+            const countA = a.rating ? a.rating.count : 0;
+            const countB = b.rating ? b.rating.count : 0;
+            if (countA !== countB)
+                return countB - countA;
+            return a.name.localeCompare(b.name);
+        };
+        const buckets = {};
+        for (const label of sectionOrder)
+            buckets[label] = [];
+        for (const item of searchIndex) {
+            const bucket = buckets[item.section];
+            if (bucket !== undefined)
+                bucket.push(item);
+        }
+        // The chart is every app there is rather than a category, which also
+        // makes it the section to open when what you want is to browse the lot
+        const groups = [{
+                category: "Most popular",
+                items: searchIndex.slice().sort(byDownloads)
+            }];
+        for (const label of sectionOrder) {
+            if (buckets[label].length === 0)
+                continue;
+            groups.push({
+                category: label,
+                items: buckets[label].sort(byDownloads)
+            });
+        }
+        return groups;
+    }
+    readonly property var sectionNames: sections.map(group => group.category)
+
+    function matchesQuery(item, query) {
+        if (query.length < 2)
+            return true;
+        return item.nl.indexOf(query) !== -1 || item.ne.indexOf(query) !== -1 || item.il.indexOf(query) !== -1 || item.pl.indexOf(query) !== -1 || item.sl.indexOf(query) !== -1;
+    }
+
+    // Everything in the open section that matches, before anything is cut off
+    // for the sake of the list. The heading counts this, and the search runs
+    // over it — a section you have only scrolled a third of the way through is
+    // still a section you searched in full.
+    readonly property var sectionMatches: {
+        const section = activeCategory !== "" ? sections.find(group => group.category === activeCategory) : null;
+        if (!section)
+            return [];
+        const needle = searchText.trim().toLowerCase();
+        if (sourceFilter === 0 && needle.length < 2)
+            return section.items;
+        const matches = [];
+        for (const item of section.items) {
+            if (matchesSourceFilter(item) && matchesQuery(item, needle))
+                matches.push(item);
+        }
+        return matches;
+    }
+
+    // How much of it has been asked for. Rows are cheap but not free, and a
+    // section can be nine hundred apps long; the rest arrives on the way down.
+    property int sectionRevealed: sectionPage
+    readonly property int sectionPage: 60
+
+    onSectionMatchesChanged: sectionRevealed = sectionPage
+
+    function revealMoreOfSection() {
+        if (sectionRevealed < sectionMatches.length)
+            sectionRevealed += sectionPage;
+    }
+
+    function openSection(category) {
+        activeCategory = category || "";
+        sectionRevealed = sectionPage;
+        resultsList.positionViewAtBeginning();
+    }
     readonly property int resultCount: {
         let count = 0;
         for (const row of listModel) {
@@ -412,9 +553,22 @@ Item {
     }
 
     // Flat model shared by search results and the featured storefront:
-    // {type: "header", label} | {type: "app", data}
+    // {type: "header", label} | {type: "app", data} | {type: "coprPrompt"}
     readonly property var listModel: {
         const rows = [];
+        // A section named but no longer delivered falls through to the
+        // storefront rather than to an empty list — the sections are cut from
+        // the catalogs, and those change under an update
+        if (activeCategory !== "" && sections.some(group => group.category === activeCategory)) {
+            // Already in download order, and filtering keeps an order rather
+            // than making one, so there is nothing left to sort here
+            for (const item of sectionMatches.slice(0, sectionRevealed))
+                rows.push({
+                    type: "app",
+                    data: item
+                });
+            return rows;
+        }
         if (searchMode) {
             const query = searchText.trim();
             let items = localResults(query);
@@ -443,6 +597,16 @@ Item {
                         data: item
                     });
             }
+            // Copr, offered where the results run out rather than above them.
+            // It is the one search that leaves the machine, so it stays a
+            // thing to ask for — and the place to ask is after everything the
+            // machine could answer by itself, which is also where "not here?"
+            // is a question the reader has just arrived at. Anything Copr
+            // returns is listed under this row, so the row can say so.
+            if (Backend.hasCopr)
+                rows.push({
+                    type: "coprPrompt"
+                });
             // Copr answers are kept apart rather than mixed in: they come from
             // a person rather than from the distribution, and that is the
             // first thing worth knowing about them
@@ -462,15 +626,22 @@ Item {
             }
             return rows;
         }
-        for (const group of featured) {
-            const items = group.items.filter(item => matchesSourceFilter(item));
+        for (const [index, group] of sections.entries()) {
+            // "All" is every section in full, and copying the catalog to say
+            // so is work with no answer in it
+            const items = sourceFilter === 0 ? group.items : group.items.filter(item => matchesSourceFilter(item));
             if (items.length === 0)
                 continue;
+            // A heading with a section behind it, so it can be opened. The
+            // storefront shows the head of each; the rest is what opening one
+            // is for. The chart keeps the eight it always had.
             rows.push({
                 type: "header",
-                label: group.category
+                label: group.category,
+                category: group.category,
+                total: items.length
             });
-            for (const item of items)
+            for (const item of items.slice(0, index === 0 ? 8 : 6))
                 rows.push({
                     type: "app",
                     data: item
@@ -561,16 +732,21 @@ Item {
         }
     }
 
+    // Download figures, refreshed here and nowhere else. The index reads them
+    // from cache and never waits for a server on another continent; this asks
+    // that server, once a day, alongside the index rather than in front of it.
+    // What comes back is used directly, so the first run on a machine is
+    // ordered correctly a second later instead of at the next start.
     Process {
-        id: featuredProcess
-        command: [Backend.python, view.scriptPath, "--featured"]
+        id: installsProcess
+        command: [Backend.python, view.scriptPath, "--flathub-installs"]
 
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    view.featured = JSON.parse(text);
+                    view.installsById = JSON.parse(text) || ({});
                 } catch (e) {
-                    view.featured = [];
+                    view.installsById = ({});
                 }
             }
         }
@@ -582,8 +758,11 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    view.searchIndex = JSON.parse(text);
+                    const payload = JSON.parse(text);
+                    view.sectionOrder = payload.sections || [];
+                    view.searchIndex = payload.items || [];
                 } catch (e) {
+                    view.sectionOrder = [];
                     view.searchIndex = [];
                 }
                 view.indexLoading = false;
@@ -888,7 +1067,10 @@ Item {
             DankTextField {
                 id: searchField
                 Layout.fillWidth: true
-                placeholderText: Tr.t("Search new software (%1 repos + Flathub)…").arg(Backend.systemRepoLabel)
+                // The field says where it is pointing: inside a section it
+                // searches that section, and typing without being told so
+                // would look like a search that had lost most of the catalog
+                placeholderText: view.sectionMode ? Tr.t("Search in %1…").arg(Tr.t(view.activeCategory)) : Tr.t("Search new software (%1 repos + Flathub)…").arg(Backend.systemRepoLabel)
                 leftIconName: "search"
                 showClearButton: true
                 onTextChanged: view.searchText = text
@@ -949,7 +1131,8 @@ Item {
             }
 
             DankDropdown {
-                visible: view.searchMode
+                // A section has one order and it is not up for discussion
+                visible: view.searchMode && !view.sectionMode
                 dropdownWidth: 170
                 alignPopupRight: true
                 options: view.sortOptions.map(o => Tr.t(o))
@@ -965,71 +1148,109 @@ Item {
             }
         }
 
-        // ── Copr, on request ─────────────────────────────────────────────────
-        // The one search that leaves the machine, so it is the one search that
-        // has to be asked for. What it finds is built by individuals, which is
-        // said here rather than after the fact.
-        Rectangle {
+        // Which section this is. The heading that was clicked scrolled away
+        // with the storefront, and the chips below say where else to go
+        // rather than where you are.
+        RowLayout {
             Layout.fillWidth: true
-            visible: view.searchMode && Backend.hasCopr
-            implicitHeight: coprRow.implicitHeight + Theme.spacingS * 2
-            radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+            visible: view.sectionMode
+            spacing: Theme.spacingXS
 
-            RowLayout {
-                id: coprRow
+            StyledText {
+                text: Tr.t(view.activeCategory)
+                font.pixelSize: Theme.fontSizeMedium
+                font.weight: Font.DemiBold
+                color: Theme.surfaceText
+            }
 
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.leftMargin: Theme.spacingM
-                anchors.rightMargin: Theme.spacingS
-                spacing: Theme.spacingS
+            // The whole section, not the part of it that has been scrolled to
+            StyledText {
+                text: (view.sectionMatches.length === 1 ? Tr.t("%1 result") : Tr.t("%1 results")).arg(view.sectionMatches.length)
+                font.pixelSize: Theme.fontSizeSmall - 1
+                color: Theme.surfaceVariantText
+            }
 
-                DankIcon {
-                    name: "person"
-                    size: 16
-                    color: Theme.surfaceVariantText
-                }
+            StyledText {
+                Layout.fillWidth: true
+                text: Tr.t("Most downloaded first")
+                font.pixelSize: Theme.fontSizeSmall - 1
+                color: Theme.withAlpha(Theme.surfaceVariantText, 0.8)
+                horizontalAlignment: Text.AlignRight
+                elide: Text.ElideRight
+            }
+        }
 
-                StyledText {
-                    Layout.fillWidth: true
-                    text: {
-                        if (view.coprSearching)
-                            return Tr.t("Searching Copr…");
-                        if (view.coprError !== "")
-                            return Tr.t("Copr could not be reached.");
-                        if (view.coprQuery === view.searchText.trim())
-                            return view.coprResults.length > 0 ? Tr.t("%1 found in Copr, listed below").arg(view.coprResults.length) : Tr.t("Nothing in Copr for \"%1\"").arg(view.coprQuery);
-                        return Tr.t("Not here? Copr has builds by individuals, for software Fedora does not ship.");
+        // ── Where else to go from here ───────────────────────────────────────
+        // Only inside a section: on the storefront every section is already on
+        // screen with its own heading, and a row of chips saying the same
+        // things again would be furniture. A Flow rather than a Row because
+        // nine translated category names do not fit a narrow window on one
+        // line, and a chip pushed off the edge is a section you cannot reach.
+        Flow {
+            Layout.fillWidth: true
+            visible: view.sectionMode
+            spacing: Theme.spacingXS
+
+            Rectangle {
+                height: 28
+                width: backChipRow.implicitWidth + Theme.spacingM * 2
+                radius: 14
+                color: backChipArea.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.surfaceContainerHigh, 0.6)
+
+                Row {
+                    id: backChipRow
+                    anchors.centerIn: parent
+                    spacing: Theme.spacingXS
+
+                    DankIcon {
+                        name: "arrow_back"
+                        size: 14
+                        color: Theme.surfaceText
+                        anchors.verticalCenter: parent.verticalCenter
                     }
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: view.coprError !== "" ? Theme.error : Theme.surfaceVariantText
-                    elide: Text.ElideRight
+
+                    StyledText {
+                        text: Tr.t("All sections")
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceText
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                 }
 
-                DankSpinner {
-                    visible: view.coprSearching
-                    size: 16
+                MouseArea {
+                    id: backChipArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: view.openSection("")
                 }
+            }
 
-                // Wrapper Item: DankButton sizes itself through `width`, which a layout does not read
-                Item {
-                    Layout.preferredWidth: coprSearchButton.width
-                    Layout.preferredHeight: coprSearchButton.height
-                    visible: coprSearchButton.visible
+            Repeater {
+                model: view.sectionNames.filter(name => name !== view.activeCategory)
 
-                    DankButton {
-                        id: coprSearchButton
-                        visible: !view.coprSearching && view.coprQuery !== view.searchText.trim()
-                        buttonHeight: 26
-                        horizontalPadding: Theme.spacingM
-                        iconName: "search"
-                        iconSize: 13
-                        text: Tr.t("Search Copr")
-                        backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
-                        textColor: Theme.surfaceText
-                        onClicked: view.searchCopr()
+                delegate: Rectangle {
+                    required property string modelData
+
+                    height: 28
+                    width: sectionChipLabel.implicitWidth + Theme.spacingM * 2
+                    radius: 14
+                    color: sectionChipArea.containsMouse ? Theme.withAlpha(Theme.primary, 0.18) : Theme.withAlpha(Theme.surfaceVariant, 0.5)
+
+                    StyledText {
+                        id: sectionChipLabel
+                        anchors.centerIn: parent
+                        text: Tr.t(modelData)
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceVariantText
+                    }
+
+                    MouseArea {
+                        id: sectionChipArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: view.openSection(modelData)
                     }
                 }
             }
@@ -1037,7 +1258,8 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            visible: view.searchMode && !view.indexLoading
+            // In a section the heading above already carries the count
+            visible: view.searchMode && !view.sectionMode && !view.indexLoading
             spacing: Theme.spacingS
 
             StyledText {
@@ -1153,15 +1375,111 @@ Item {
             clip: true
             spacing: Theme.spacingXS
             model: view.listModel
-            visible: view.listModel.length > 0 && !view.searching
+            // Counted in results, not in rows: the Copr prompt is a row too,
+            // and a list holding nothing but the offer to search elsewhere is
+            // still a search that found nothing
+            visible: view.resultCount > 0 && !view.searching
+
+            // The rest of a section, handed over on the way down rather than
+            // all at once. Far enough from the bottom that the next batch is
+            // built before it is reached, so scrolling never stops at a seam.
+            onContentYChanged: {
+                if (view.sectionMode && contentHeight - (contentY + height) < 600)
+                    view.revealMoreOfSection();
+            }
 
             delegate: Loader {
                 required property var modelData
 
                 width: resultsList.width
-                sourceComponent: modelData.type === "header" ? categoryHeaderComponent : appRowComponent
+                sourceComponent: {
+                    if (modelData.type === "header")
+                        return categoryHeaderComponent;
+                    if (modelData.type === "coprPrompt")
+                        return coprPromptComponent;
+                    return appRowComponent;
+                }
 
                 onLoaded: item.rowData = modelData
+            }
+        }
+
+        // ── Copr, on request ─────────────────────────────────────────────────
+        // Used twice: as the last row of a result list, and in the empty state
+        // where there is no list to be the last row of. Nothing about it reads
+        // its own position, so both are the same component.
+        Component {
+            id: coprPromptComponent
+
+            Rectangle {
+                property var rowData: ({})
+
+                implicitHeight: coprRow.implicitHeight + Theme.spacingS * 2
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+
+                RowLayout {
+                    id: coprRow
+
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.leftMargin: Theme.spacingM
+                    anchors.rightMargin: Theme.spacingS
+                    spacing: Theme.spacingS
+
+                    DankIcon {
+                        name: "person"
+                        size: 16
+                        color: Theme.surfaceVariantText
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: {
+                            if (view.coprSearching)
+                                return Tr.t("Searching Copr…");
+                            if (view.coprError !== "")
+                                return Tr.t("Copr could not be reached.");
+                            if (view.coprQuery === view.searchText.trim())
+                                return view.coprResults.length > 0 ? Tr.t("%1 found in Copr, listed below").arg(view.coprResults.length) : Tr.t("Nothing in Copr for \"%1\"").arg(view.coprQuery);
+                            return Tr.t("Not here? Copr has builds by individuals, for software Fedora does not ship.");
+                        }
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: view.coprError !== "" ? Theme.error : Theme.surfaceVariantText
+                        wrapMode: Text.WordWrap
+                    }
+
+                    DankSpinner {
+                        visible: view.coprSearching
+                        size: 16
+                    }
+
+                    // Wrapper Item: DankButton sizes itself through `width`, which a layout does not read
+                    //
+                    // The condition lives here rather than on the button: a
+                    // wrapper that reads its child's `visible` is asking a
+                    // question it has already answered, since `visible` reads
+                    // back as false whenever a parent's is. That is what kept
+                    // this button off the screen from 0.8.0 on.
+                    Item {
+                        Layout.preferredWidth: coprSearchButton.width
+                        Layout.preferredHeight: coprSearchButton.height
+                        visible: !view.coprSearching && view.coprQuery !== view.searchText.trim()
+
+                        DankButton {
+                            id: coprSearchButton
+                            buttonHeight: 26
+                            horizontalPadding: Theme.spacingM
+                            iconName: "search"
+                            iconSize: 13
+                            text: Tr.t("Search Copr")
+                            backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
+                            textColor: Theme.surfaceText
+                            onClicked: view.searchCopr()
+                        }
+                    }
+                }
             }
         }
 
@@ -1169,19 +1487,66 @@ Item {
             id: categoryHeaderComponent
 
             Item {
+                id: headerRoot
+
                 property var rowData: ({})
+                // Only a storefront category opens: the Copr heading in a
+                // search result labels where rows came from, and there is no
+                // section behind it to go to
+                readonly property bool opens: (rowData.category || "") !== ""
 
                 implicitHeight: headerLabel.implicitHeight + Theme.spacingM
 
-                StyledText {
-                    id: headerLabel
+                Row {
+                    id: headerContent
+
                     anchors.left: parent.left
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 2
-                    text: Tr.t(rowData.label || "")
-                    font.pixelSize: Theme.fontSizeSmall
-                    font.weight: Font.DemiBold
-                    color: Theme.primary
+                    spacing: Theme.spacingXS
+
+                    StyledText {
+                        id: headerLabel
+                        text: Tr.t(headerRoot.rowData.label || "")
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.DemiBold
+                        font.underline: headerRoot.opens && headerArea.containsMouse
+                        color: Theme.primary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    // The count is the invitation: a heading that says 60 is a
+                    // heading worth clicking, where one that says 6 is the
+                    // whole story already
+                    StyledText {
+                        visible: headerRoot.opens && (headerRoot.rowData.total || 0) > 0
+                        text: headerRoot.rowData.total || ""
+                        font.pixelSize: Theme.fontSizeSmall - 1
+                        color: Theme.withAlpha(Theme.primary, 0.7)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    DankIcon {
+                        visible: headerRoot.opens
+                        name: "chevron_right"
+                        size: 14
+                        color: Theme.primary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                MouseArea {
+                    id: headerArea
+
+                    anchors.left: headerContent.left
+                    anchors.right: headerContent.right
+                    anchors.top: headerContent.top
+                    anchors.bottom: headerContent.bottom
+                    anchors.margins: -Theme.spacingXS
+                    enabled: headerRoot.opens
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: view.openSection(headerRoot.rowData.category)
                 }
             }
         }
@@ -1366,7 +1731,7 @@ Item {
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: view.listModel.length === 0 || view.searching
+            visible: view.resultCount === 0 || view.searching
 
             Column {
                 anchors.centerIn: parent
@@ -1405,6 +1770,16 @@ Item {
                     text: Tr.t("Ratings by the Open Desktop Ratings Service")
                     font.pixelSize: Theme.fontSizeSmall - 1
                     color: Theme.withAlpha(Theme.surfaceVariantText, 0.7)
+                }
+
+                // Nothing found is the case the offer was written for, and
+                // it is the one case with no result list to sit at the end of
+                Loader {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: Math.min(520, view.width - Theme.spacingXL * 2)
+                    active: view.searchMode && !view.searching && Backend.hasCopr
+                    visible: active
+                    sourceComponent: coprPromptComponent
                 }
             }
         }

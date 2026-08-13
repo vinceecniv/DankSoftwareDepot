@@ -433,5 +433,13 @@
     "Mark all as read": "すべて既読にする",
     "Nothing new.": "新しいお知らせはありません。",
     "Nothing here yet.": "まだ何もありません。",
-    "Could not reach the news feed — showing what was already here.": "ニュースフィードに接続できませんでした — 既に取得済みの内容を表示しています。"
+    "Could not reach the news feed — showing what was already here.": "ニュースフィードに接続できませんでした — 既に取得済みの内容を表示しています。",
+    "All sections": "すべてのセクション",
+    "Most downloaded first": "ダウンロード数が多い順",
+    "Search in %1…": "%1 内を検索…",
+    "Education": "教育",
+    "Science": "科学",
+    "Health & Fitness": "健康・フィットネス",
+    "Internet": "インターネット",
+    "Other": "その他"
 }

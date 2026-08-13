@@ -965,6 +965,10 @@ ODRS_CACHE_FILE = os.path.join(CACHE_DIR, "odrs-ratings.json")
 ODRS_URL = "https://odrs.gnome.org/1.0/reviews/api/ratings"
 ODRS_MAX_AGE = 24 * 3600
 
+FLATHUB_INSTALLS_CACHE = os.path.join(CACHE_DIR, "flathub-installs.json")
+FLATHUB_INSTALLS_URL = "https://flathub.org/api/v2/collection/popular?page=1&per_page=1000"
+FLATHUB_INSTALLS_MAX_AGE = 24 * 3600
+
 
 def catalog_source(path):
     """Human source label for a catalog path."""
@@ -1070,6 +1074,83 @@ def load_odrs_ratings():
                 return json.load(f)
         except (OSError, ValueError):
             return {}
+
+
+def load_flathub_installs(refresh=False):
+    """Installs over the last month per Flathub app id (cached daily).
+
+    Without `refresh` this never touches the network and never fails: it
+    returns whatever is cached, at whatever age, or nothing. The storefront
+    reads it that way because it is drawn on the way to a search box, and a
+    slow host on the other side of the world is not a reason for a search
+    index to be late. Refreshing is somebody else's job, done out of sight.
+
+    One request for the whole storefront rather than one per app: the
+    per-app endpoint is a round trip each and a section holds dozens.
+
+    The list is ordered by installs and cut at the top thousand, so an app
+    missing from it has fewer installs than every app in it — which is
+    exactly what sorting it last says. Absence therefore means "fewer than
+    the smallest number here", not "unknown", and it is only a real unknown
+    for software Flathub does not carry at all: an rpm with no Flatpak of
+    the same name has no download figure anywhere, and sorts last.
+    """
+    import time
+    try:
+        st = os.stat(FLATHUB_INSTALLS_CACHE)
+        if refresh is False or time.time() - st.st_mtime < FLATHUB_INSTALLS_MAX_AGE:
+            with open(FLATHUB_INSTALLS_CACHE) as f:
+                return json.load(f)
+    except (OSError, ValueError):
+        pass
+    if not refresh:
+        return {}
+    try:
+        import urllib.request
+        req = urllib.request.Request(FLATHUB_INSTALLS_URL,
+                                     headers={"User-Agent": "dankSoftwareDepot/0.1"})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.load(resp)
+        installs = {}
+        for hit in data.get("hits") or []:
+            app_id = hit.get("app_id")
+            count = hit.get("installs_last_month")
+            if app_id and isinstance(count, int):
+                installs[app_id] = count
+        # A response that parsed but carried nothing is a shape change, not an
+        # empty storefront: keep whatever is on disk rather than caching it away
+        if not installs:
+            raise ValueError("no installs in response")
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(FLATHUB_INSTALLS_CACHE, "w") as f:
+            json.dump(installs, f)
+        return installs
+    except Exception:
+        try:
+            with open(FLATHUB_INSTALLS_CACHE) as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return {}
+
+
+def run_flathub_installs():
+    """Refresh the download figures and hand them straight to the caller.
+
+    Printing what it fetched rather than only writing the cache is what makes
+    the first run right: the index is already built and on screen by the time
+    this returns, and a storefront that had to be rebuilt to learn its own
+    order would reshuffle itself under the reader.
+    """
+    json.dump(load_flathub_installs(refresh=True), sys.stdout)
+
+
+def installs_for(installs, sources):
+    """Downloads last month for whichever of an app's sources Flathub knows."""
+    best = 0
+    for source in sources:
+        if source.get("kind") == "flatpak":
+            best = max(best, installs.get(source.get("ref"), 0))
+    return best
 
 
 def rating_for(ratings, cid):
@@ -1560,9 +1641,15 @@ def run_appinfo(arg):
 def run_qml_index():
     """Full merged search index for in-QML type-to-filter searching.
 
-    Emits every installable app once (sources merged, ODRS rating attached)
-    with precomputed lowercase fields so QML can filter instantly per
-    keystroke without spawning a process."""
+    Emits every installable app once (sources merged, ODRS rating and section
+    attached) with precomputed lowercase fields so QML can filter instantly
+    per keystroke without spawning a process.
+
+    This is also the storefront. Sections used to be a second, shorter payload
+    built by a second process, which meant a section could only hold what that
+    payload had room for — and searching one could only search what had been
+    sent. Cut from the same index, a section is a filter over everything.
+    """
     paths = catalog_paths()
     fp = fingerprint(paths)
     entries = build_search_index(paths, fp)
@@ -1581,11 +1668,13 @@ def run_qml_index():
                 "icon": entry.get("icon", ""),
                 "updated": entry.get("updated", 0),
                 "sources": [],
+                "_cats": set(),
             }
         item = merged[cid]
         item["updated"] = max(item.get("updated", 0), entry.get("updated", 0))
         if not item["icon"] and entry.get("icon"):
             item["icon"] = entry["icon"]
+        item["_cats"].update(entry.get("categories", []))
         source = entry["source"]
         kind = "dnf" if source == "fedora" else "flatpak"
         ref = entry.get("pkgname") if kind == "dnf" else entry["id"]
@@ -1593,10 +1682,13 @@ def run_qml_index():
             item["sources"].append({"source": source, "kind": kind, "ref": ref})
 
     out = []
+    used_sections = set()
     for item in merged.values():
         if not item["sources"]:
             continue
         item["rating"] = rating_for(ratings, item["id"])
+        item["section"] = section_for(item.pop("_cats"))
+        used_sections.add(item["section"])
         item["nl"] = item["name"].lower()
         item["ne"] = (item.get("name_en") or "").lower()
         item["il"] = item["id"].lower()
@@ -1606,7 +1698,13 @@ def run_qml_index():
         item.pop("name_en", None)
         item.pop("summary_en", None)
         out.append(item)
-    json.dump(out, sys.stdout)
+
+    # The order the sections are offered in, decided here because the rule
+    # that assigns them lives here. A section nothing landed in is not shown.
+    order = [label for label, _ in CATEGORY_GROUPS if label in used_sections]
+    if OTHER_SECTION in used_sections:
+        order.append(OTHER_SECTION)
+    json.dump({"sections": order, "items": out}, sys.stdout)
 
 
 def run_search_dnf(query):
@@ -1978,6 +2076,15 @@ def run_dashboard():
 
 
 # Freedesktop menu categories → storefront groups, in display order
+# Every app lands in exactly one of these, and the order is what decides
+# which: the first group whose categories it carries takes it. Browsers and
+# Communication therefore come before Internet, or Firefox and Discord would
+# be filed under Network with the torrent clients; Utilities is last because
+# almost everything is also a Utility to someone.
+#
+# The set is Flathub's eleven top-level categories, with Network split into
+# the two parts big enough to browse on their own and the rest kept together.
+# Whatever matches nothing is still shown — see OTHER_SECTION.
 CATEGORY_GROUPS = [
     ("Browsers", {"WebBrowser"}),
     ("Office", {"Office", "WordProcessor", "Spreadsheet", "Presentation", "Finance"}),
@@ -1986,8 +2093,31 @@ CATEGORY_GROUPS = [
     ("Graphics & Photo", {"Graphics", "Photography", "RasterGraphics", "VectorGraphics"}),
     ("Games", {"Game"}),
     ("Development", {"Development", "IDE", "TextEditor"}),
-    ("Utilities", {"Utility", "System", "FileTools", "Archiving"}),
+    ("Education", {"Education", "Languages", "Dictionary", "Literature", "Teaching"}),
+    ("Science", {"Science", "Astronomy", "Chemistry", "Physics", "Biology", "Math",
+                 "NumericalAnalysis", "Geography", "Geoscience", "Electronics",
+                 "Engineering", "DataVisualization", "ComputerScience"}),
+    ("Health & Fitness", {"Sports", "MedicalSoftware", "Amusement"}),
+    ("Internet", {"Network", "FileTransfer", "P2P", "RemoteAccess", "Feed", "News",
+                  "WebDevelopment", "Monitor", "HamRadio", "Dialup"}),
+    ("Utilities", {"Utility", "System", "FileTools", "Archiving", "Settings",
+                   "HardwareSettings", "Security", "Accessibility", "PackageManager",
+                   "TerminalEmulator", "Filesystem", "Printing", "DesktopSettings",
+                   "Viewer"}),
 ]
+
+# The catch-all. Around one per cent of a catalog carries no category at all,
+# and a browsable storefront that quietly drops them is one that cannot be
+# browsed to the end.
+OTHER_SECTION = "Other"
+
+
+def section_for(categories):
+    """Which single section an app belongs to."""
+    for label, cats in CATEGORY_GROUPS:
+        if categories & cats:
+            return label
+    return OTHER_SECTION
 
 
 def run_warm_index():
@@ -2015,71 +2145,6 @@ def run_warm_index():
         print(json.dumps({"ok": False, "error": str(exc)}))
 
 
-def run_featured():
-    """Most-popular software (by ODRS review volume) grouped by category —
-    shown in the Install tab before the user types a search."""
-    paths = catalog_paths()
-    fp = fingerprint(paths)
-    entries = build_search_index(paths, fp)
-    ratings = load_odrs_ratings()
-
-    merged = {}
-    for entry in entries:
-        cid = entry["id"].lower()
-        if cid not in merged:
-            merged[cid] = {
-                "id": entry["id"],
-                "name": entry["name"],
-                "summary": entry.get("summary", ""),
-                "homepage": entry.get("homepage", ""),
-                "icon": entry.get("icon", ""),
-                "sources": [],
-                "_cats": set(),
-            }
-        item = merged[cid]
-        if not item["icon"] and entry.get("icon"):
-            item["icon"] = entry["icon"]
-        item["_cats"].update(entry.get("categories", []))
-        source = entry["source"]
-        kind = "dnf" if source == "fedora" else "flatpak"
-        ref = entry.get("pkgname") if kind == "dnf" else entry["id"]
-        if ref and not any(s_["source"] == source for s_ in item["sources"]):
-            item["sources"].append({"source": source, "kind": kind, "ref": ref})
-
-    for item in merged.values():
-        item["rating"] = rating_for(ratings, item["id"])
-
-    groups = []
-    used = set()
-
-    # Overall chart first: the most-reviewed apps regardless of category
-    # (they may also appear in their own category below)
-    chart = [item for item in merged.values() if item["sources"] and item["rating"]]
-    chart.sort(key=lambda it: -it["rating"]["count"])
-    top_chart = chart[:8]
-    if top_chart:
-        groups.append({
-            "category": "Most popular",
-            "items": [{k: v for k, v in item.items() if k != "_cats"} for item in top_chart],
-        })
-
-    for label, cats in CATEGORY_GROUPS:
-        candidates = [item for key, item in merged.items()
-                      if key not in used and item["sources"] and item["rating"]
-                      and item["rating"]["count"] >= 50 and item["_cats"] & cats]
-        candidates.sort(key=lambda it: -it["rating"]["count"])
-        top = candidates[:6]
-        if not top:
-            continue
-        for item in top:
-            used.add(item["id"].lower())
-        groups.append({
-            "category": label,
-            "items": [{k: v for k, v in item.items() if k != "_cats"} for item in top],
-        })
-    json.dump(groups, sys.stdout)
-
-
 def main():
     if len(sys.argv) >= 2 and sys.argv[1] == "--catalog-status":
         # Whether the distro's AppStream catalog is installed at all, asked
@@ -2096,8 +2161,8 @@ def main():
     if len(sys.argv) >= 3 and sys.argv[1] == "--search":
         run_search(sys.argv[2])
         return
-    if len(sys.argv) >= 2 and sys.argv[1] == "--featured":
-        run_featured()
+    if len(sys.argv) >= 2 and sys.argv[1] == "--flathub-installs":
+        run_flathub_installs()
         return
     if len(sys.argv) >= 2 and sys.argv[1] == "--qml-index":
         run_qml_index()

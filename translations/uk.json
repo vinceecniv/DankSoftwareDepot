@@ -433,5 +433,13 @@
     "Mark all as read": "Позначити все як прочитане",
     "Nothing new.": "Нічого нового.",
     "Nothing here yet.": "Тут поки що порожньо.",
-    "Could not reach the news feed — showing what was already here.": "Не вдалося отримати стрічку новин — показано те, що вже було завантажено."
+    "Could not reach the news feed — showing what was already here.": "Не вдалося отримати стрічку новин — показано те, що вже було завантажено.",
+    "All sections": "Усі розділи",
+    "Most downloaded first": "Спочатку найпопулярніші",
+    "Search in %1…": "Пошук у %1…",
+    "Education": "Освіта",
+    "Science": "Наука",
+    "Health & Fitness": "Здоров’я і фітнес",
+    "Internet": "Інтернет",
+    "Other": "Інше"
 }

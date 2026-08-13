@@ -433,5 +433,13 @@
     "Mark all as read": "Đánh dấu tất cả đã đọc",
     "Nothing new.": "Không có gì mới.",
     "Nothing here yet.": "Chưa có gì ở đây.",
-    "Could not reach the news feed — showing what was already here.": "Không truy cập được nguồn tin — hiển thị những gì đã có sẵn."
+    "Could not reach the news feed — showing what was already here.": "Không truy cập được nguồn tin — hiển thị những gì đã có sẵn.",
+    "All sections": "Tất cả mục",
+    "Most downloaded first": "Tải nhiều nhất trước",
+    "Search in %1…": "Tìm trong %1…",
+    "Education": "Giáo dục",
+    "Science": "Khoa học",
+    "Health & Fitness": "Sức khỏe & thể chất",
+    "Internet": "Internet",
+    "Other": "Khác"
 }

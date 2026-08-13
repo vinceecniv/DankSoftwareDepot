@@ -433,5 +433,13 @@
     "Mark all as read": "Marcar tudo como lido",
     "Nothing new.": "Nada de novo.",
     "Nothing here yet.": "Ainda não há nada aqui.",
-    "Could not reach the news feed — showing what was already here.": "Não foi possível aceder ao feed de notícias — a mostrar o que já existia."
+    "Could not reach the news feed — showing what was already here.": "Não foi possível aceder ao feed de notícias — a mostrar o que já existia.",
+    "All sections": "Todas as secções",
+    "Most downloaded first": "Mais transferidas primeiro",
+    "Search in %1…": "Pesquisar em %1…",
+    "Education": "Educação",
+    "Science": "Ciência",
+    "Health & Fitness": "Saúde e fitness",
+    "Internet": "Internet",
+    "Other": "Outros"
 }

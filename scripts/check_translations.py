@@ -30,7 +30,8 @@ DYNAMIC_LITERALS = {"Off", "Notify only", "Auto-install Flatpaks",
 # Storefront categories come from AppStream data, not from the source
 CATEGORY_KEYS = {
     "Most popular", "Browsers", "Communication", "Development", "Games",
-    "Graphics & Photo", "Media", "Office", "Utilities",
+    "Graphics & Photo", "Media", "Office", "Utilities", "Education",
+    "Science", "Health & Fitness", "Internet", "Other",
 }
 
 

@@ -433,5 +433,13 @@
     "Mark all as read": "Markera alla som lästa",
     "Nothing new.": "Inget nytt.",
     "Nothing here yet.": "Inget här ännu.",
-    "Could not reach the news feed — showing what was already here.": "Kunde inte nå nyhetsflödet — visar det som redan fanns."
+    "Could not reach the news feed — showing what was already here.": "Kunde inte nå nyhetsflödet — visar det som redan fanns.",
+    "All sections": "Alla sektioner",
+    "Most downloaded first": "Mest nedladdade först",
+    "Search in %1…": "Sök i %1…",
+    "Education": "Utbildning",
+    "Science": "Vetenskap",
+    "Health & Fitness": "Hälsa och träning",
+    "Internet": "Internet",
+    "Other": "Övrigt"
 }

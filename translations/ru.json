@@ -433,5 +433,13 @@
     "Mark all as read": "Отметить всё как прочитанное",
     "Nothing new.": "Ничего нового.",
     "Nothing here yet.": "Здесь пока пусто.",
-    "Could not reach the news feed — showing what was already here.": "Не удалось получить ленту новостей — показано то, что уже было загружено."
+    "Could not reach the news feed — showing what was already here.": "Не удалось получить ленту новостей — показано то, что уже было загружено.",
+    "All sections": "Все разделы",
+    "Most downloaded first": "Сначала самые скачиваемые",
+    "Search in %1…": "Поиск в %1…",
+    "Education": "Образование",
+    "Science": "Наука",
+    "Health & Fitness": "Здоровье и фитнес",
+    "Internet": "Интернет",
+    "Other": "Прочее"
 }

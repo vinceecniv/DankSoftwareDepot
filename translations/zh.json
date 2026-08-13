@@ -433,5 +433,13 @@
     "Mark all as read": "全部标记为已读",
     "Nothing new.": "没有新内容。",
     "Nothing here yet.": "这里还没有内容。",
-    "Could not reach the news feed — showing what was already here.": "无法访问新闻源 — 显示已获取的内容。"
+    "Could not reach the news feed — showing what was already here.": "无法访问新闻源 — 显示已获取的内容。",
+    "All sections": "所有分区",
+    "Most downloaded first": "下载最多优先",
+    "Search in %1…": "在 %1 中搜索…",
+    "Education": "教育",
+    "Science": "科学",
+    "Health & Fitness": "健康与健身",
+    "Internet": "互联网",
+    "Other": "其他"
 }

@@ -433,5 +433,13 @@
     "Mark all as read": "모두 읽음으로 표시",
     "Nothing new.": "새 소식이 없습니다.",
     "Nothing here yet.": "아직 아무것도 없습니다.",
-    "Could not reach the news feed — showing what was already here.": "뉴스 피드에 연결할 수 없어 이미 받아 둔 내용을 표시합니다."
+    "Could not reach the news feed — showing what was already here.": "뉴스 피드에 연결할 수 없어 이미 받아 둔 내용을 표시합니다.",
+    "All sections": "모든 섹션",
+    "Most downloaded first": "다운로드 많은 순",
+    "Search in %1…": "%1에서 검색…",
+    "Education": "교육",
+    "Science": "과학",
+    "Health & Fitness": "건강 및 운동",
+    "Internet": "인터넷",
+    "Other": "기타"
 }

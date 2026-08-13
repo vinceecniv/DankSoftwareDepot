@@ -433,5 +433,13 @@
     "Mark all as read": "Összes megjelölése olvasottként",
     "Nothing new.": "Nincs újdonság.",
     "Nothing here yet.": "Még nincs itt semmi.",
-    "Could not reach the news feed — showing what was already here.": "A hírcsatorna nem érhető el — a már meglévő tartalom látható."
+    "Could not reach the news feed — showing what was already here.": "A hírcsatorna nem érhető el — a már meglévő tartalom látható.",
+    "All sections": "Összes szakasz",
+    "Most downloaded first": "Legtöbbet letöltött elöl",
+    "Search in %1…": "Keresés itt: %1…",
+    "Education": "Oktatás",
+    "Science": "Tudomány",
+    "Health & Fitness": "Egészség és fitnesz",
+    "Internet": "Internet",
+    "Other": "Egyéb"
 }

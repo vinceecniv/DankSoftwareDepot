@@ -433,5 +433,13 @@
     "Mark all as read": "Tout marquer comme lu",
     "Nothing new.": "Rien de neuf.",
     "Nothing here yet.": "Rien pour l'instant.",
-    "Could not reach the news feed — showing what was already here.": "Flux d'actualités inaccessible — affichage de ce qui était déjà là."
+    "Could not reach the news feed — showing what was already here.": "Flux d'actualités inaccessible — affichage de ce qui était déjà là.",
+    "All sections": "Toutes les sections",
+    "Most downloaded first": "Les plus téléchargées d'abord",
+    "Search in %1…": "Rechercher dans %1…",
+    "Education": "Éducation",
+    "Science": "Science",
+    "Health & Fitness": "Santé et forme",
+    "Internet": "Internet",
+    "Other": "Autres"
 }
