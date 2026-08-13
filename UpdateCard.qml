@@ -60,7 +60,11 @@ Rectangle {
     readonly property string prettyName: (info && info.name) ? info.name : baseName
     readonly property string summary: (info && info.summary) ? info.summary : ""
     readonly property string homepage: (info && info.homepage) ? info.homepage : ""
-    readonly property string iconPath: (info && info.icon) ? info.icon : ""
+    // The packages the shell is made of have no AppStream entry and so no
+    // icon of their own, and the generic chip glyph told you nothing about
+    // what they are. The host hands over DMS's own logo for those.
+    property string shellIconPath: ""
+    readonly property string iconPath: (info && info.icon) ? info.icon : shellIconPath
     readonly property var newReleases: {
         if (!info || !info.releases)
             return [];
