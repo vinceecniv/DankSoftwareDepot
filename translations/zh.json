@@ -469,5 +469,11 @@
     "The plugin was not updated": "插件未更新",
     "no answer from the plugin manager": "插件管理器没有响应",
     "Manage DMS plugins": "管理 DMS 插件",
-    "Open Dank Software Depot": "打开 Dank Software Depot"
+    "Open Dank Software Depot": "打开 Dank Software Depot",
+    "Plugins": "插件",
+    "Manage plugins": "管理插件",
+    "Install a DMS plugin": "安装 DMS 插件",
+    "by %1": "作者：%1",
+    "installed for you": "已为你安装",
+    "installed for all users": "已为所有用户安装"
 }

@@ -205,7 +205,11 @@ PluginComponent {
                 displayName: plugin.name || manifest.name || id,
                 repo: "dmsplugin",
                 fromVersion: manifest.version || plugin.version || "",
-                toVersion: plugin.latestVersion || plugin.newVersion || ""
+                toVersion: plugin.latestVersion || plugin.newVersion || "",
+                // A plugin's manifest names a Material Symbols glyph rather
+                // than shipping an image, so its "icon" is a word. Ours says
+                // deployed_code_update; Quick Capture's says screenshot_region
+                icon: manifest.icon || plugin.icon || ""
             });
         }
         return out;

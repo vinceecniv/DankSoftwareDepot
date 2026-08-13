@@ -121,6 +121,13 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 ### 2 · Installed
 - All Flatpak apps, rpm packages and AppImages in one list: live search,
   source filter, sorting (name / largest / recently updated) with sizes
+- **DMS plugins have their own group** in the list, read from the manifests on
+  disk rather than from a registry, with the plugin's own icon (a manifest
+  names a Material Symbols glyph rather than shipping an image) and a button
+  in the heading that opens DMS's own plugin screen, where they are installed
+  and removed. Their details popup shows what a plugin has instead of what a
+  package has: author, category, whether it is installed for you or for
+  everyone, where it sits on disk, and the permissions it declares
 - **Applications first, supporting packages after**: anything that owns a
   desktop entry your launcher would show counts as an application, in its
   own group with a count — which is also where packages outside AppStream
@@ -201,6 +208,10 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   changed from here: apt and pacman sources are shown read-only, because an
   apt source is a file plus a signing key and a pacman repo lives in a single
   hand-edited `pacman.conf`.
+- **Installing a DMS plugin** is a button in the toolbar next to the AppImage
+  one. It opens DMS's own plugin screen rather than reimplementing a second
+  registry client — this window reports on plugins and updates them, it does
+  not sell them
 - **AppImages** are searched, installed and offered from here alongside
   everything else — see [AppImages, end to end](#appimages-end-to-end)
 

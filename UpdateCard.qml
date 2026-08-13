@@ -132,7 +132,10 @@ Rectangle {
                 DankIcon {
                     anchors.centerIn: parent
                     visible: logoImage.status !== Image.Ready
-                    name: card.isFlatpak ? "apps" : "memory"
+                    // A plugin has no icon file to fail to load — it names a
+                    // glyph in its manifest, and the generic one stands in
+                    // when it names nothing
+                    name: card.pkg.repo === "dmsplugin" ? (card.pkg.icon || "extension") : (card.isFlatpak ? "apps" : "memory")
                     size: 24
                     color: Theme.primary
                 }
@@ -298,7 +301,10 @@ Rectangle {
                     StyledText {
                         id: repoChipText
                         anchors.centerIn: parent
-                        text: card.isFlatpak ? "Flatpak" : Tr.t("System")
+                        // "System" is what a package is; a plugin is not one,
+                        // and calling it that was the chip claiming the wrong
+                        // thing about where it came from
+                        text: card.pkg.repo === "dmsplugin" ? "DMS" : (card.isFlatpak ? "Flatpak" : Tr.t("System"))
                         font.pixelSize: Theme.fontSizeSmall - 2
                         font.weight: Font.Medium
                         color: card.isFlatpak ? Theme.tertiary : Theme.secondary

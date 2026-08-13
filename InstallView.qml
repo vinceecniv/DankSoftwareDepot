@@ -1154,6 +1154,19 @@ Item {
                 tooltipText: Tr.t("Install AppImage from file or URL")
                 onClicked: offerDialog.open()
             }
+
+            // The fifth source of software, and the one this window does not
+            // serve itself: browsing and installing plugins is DMS's own
+            // screen, so the button opens that rather than pretending to be
+            // a second registry client.
+            DankActionButton {
+                buttonSize: 34
+                iconName: "extension"
+                iconSize: 18
+                iconColor: Theme.surfaceText
+                tooltipText: Tr.t("Install a DMS plugin")
+                onClicked: PopoutService.openSettingsWithTab("plugins")
+            }
         }
 
         // Second toolbar row: source filter + sorting (wraps cleanly at

@@ -57,9 +57,15 @@ FloatingWindow {
         const pkg = rowData.pkg || {};
         const isFirmware = pkg.repo === "firmware";
         const isFlatpak = pkg.repo === "flatpak";
+        // A DMS plugin is none of the things this dialog usually shows: no
+        // repository to name, no rpm changelog to read (asking for one told
+        // the user "package quickCapture is not installed", which is true and
+        // useless), and nobody has reviewed it. Its manifest is the source.
+        const isPlugin = pkg.repo === "dmsplugin";
+        const manifest = isPlugin ? ((PluginService.availablePlugins || {})[pkg.name] || {}) : {};
         const base = win.store.stripArch(pkg.name || "");
         const newer = (info && info.releases) ? info.releases.filter(r => r.newer && (r.notesHtml || r.version)).slice(0, 5) : [];
-        if (!isFlatpak && !isFirmware && newer.length === 0) {
+        if (!isFlatpak && !isFirmware && !isPlugin && newer.length === 0) {
             win.store.fetchChangelog(base);
             // Nothing in AppStream and, for a git build, nothing in the
             // changelog either — the notes exist, just not in the distro
@@ -67,21 +73,29 @@ FloatingWindow {
         }
         updatesDialog.rowData = rowData;
         updatesDialog.releases = newer;
+        updatesDialog.pluginFacts = isPlugin ? {
+            author: manifest.author || "",
+            category: manifest.category || "",
+            source: manifest.source || "",
+            directory: manifest.pluginDirectory || "",
+            permissions: manifest.permissions || [],
+            icon: manifest.icon || pkg.icon || ""
+        } : null;
         let versionLabel = pkg.toVersion || "";
         if (pkg.fromVersion && pkg.toVersion)
             versionLabel = pkg.fromVersion + " → " + pkg.toVersion;
         updatesDialog.open({
             id: isFlatpak ? pkg.name : base,
             name: win.store.displayName(pkg),
-            summary: (info && info.summary) || "",
+            summary: isPlugin ? (manifest.description || "") : ((info && info.summary) || ""),
             iconPath: (info && info.icon) || "",
             homepage: (info && info.homepage) || "",
             held: rowData.ignored === true || win.store.isHeld(pkg),
             holdReason: rowData.ignored === true ? Tr.t("held by you") : win.store.holdReason(pkg),
             versionLabel: versionLabel,
-            origin: isFirmware ? "Firmware" : (isFlatpak ? "Flatpak" : "System"),
+            origin: isFirmware ? "Firmware" : (isPlugin ? "DMS" : (isFlatpak ? "Flatpak" : "System")),
             isFlatpak: isFlatpak,
-            sources: isFirmware ? [] : (isFlatpak ? [{
+            sources: (isFirmware || isPlugin) ? [] : (isFlatpak ? [{
                 source: "flathub",
                 kind: "flatpak",
                 ref: pkg.name

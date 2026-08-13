@@ -469,5 +469,11 @@
     "The plugin was not updated": "Плагин не обновлён",
     "no answer from the plugin manager": "нет ответа от менеджера плагинов",
     "Manage DMS plugins": "Управление плагинами DMS",
-    "Open Dank Software Depot": "Открыть Dank Software Depot"
+    "Open Dank Software Depot": "Открыть Dank Software Depot",
+    "Plugins": "Плагины",
+    "Manage plugins": "Управление плагинами",
+    "Install a DMS plugin": "Установить плагин DMS",
+    "by %1": "автор: %1",
+    "installed for you": "установлен для вас",
+    "installed for all users": "установлен для всех пользователей"
 }

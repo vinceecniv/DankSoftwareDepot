@@ -469,5 +469,11 @@
     "The plugin was not updated": "플러그인이 업데이트되지 않았습니다",
     "no answer from the plugin manager": "플러그인 관리자가 응답하지 않음",
     "Manage DMS plugins": "DMS 플러그인 관리",
-    "Open Dank Software Depot": "Dank Software Depot 열기"
+    "Open Dank Software Depot": "Dank Software Depot 열기",
+    "Plugins": "플러그인",
+    "Manage plugins": "플러그인 관리",
+    "Install a DMS plugin": "DMS 플러그인 설치",
+    "by %1": "제작: %1",
+    "installed for you": "내 계정에 설치됨",
+    "installed for all users": "모든 사용자에게 설치됨"
 }

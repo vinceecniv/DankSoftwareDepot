@@ -43,9 +43,12 @@ Item {
     // ── App details popup ────────────────────────────────────────────────────
     function openDetails(rowData) {
         detailsDialog.entry = rowData;
+        detailsDialog.pluginFacts = rowData.kind === "plugin" ? (rowData.pluginFacts || {}) : null;
         if (rowData.kind === "flatpak") {
             loadDowngradeLog(rowData.id, rowData.origin);
-        } else if (rowData.kind === "appimage") {
+        } else if (rowData.kind === "appimage" || rowData.kind === "plugin") {
+            // Neither is a package: no changelog to read, no older builds in a
+            // repository to offer, nothing that would be removed along with it
         } else {
             store.fetchChangelog(rowData.id);
             loadRpmVersions(rowData.id, rowData.version);
@@ -60,13 +63,13 @@ Item {
             homepage: (rowData.info && rowData.info.homepage) || "",
             held: isHeldName(rowData.id),
             versionLabel: rowData.version || "",
-            origin: rowData.origin || "",
+            origin: rowData.kind === "plugin" ? "DMS" : (rowData.origin || ""),
             isFlatpak: rowData.kind === "flatpak",
             sources: rowData.kind === "flatpak" ? [{
                 source: rowData.origin || "flathub",
                 kind: "flatpak",
                 ref: rowData.id
-            }] : (rowData.kind === "appimage" ? [] : [{
+            }] : ((rowData.kind === "appimage" || rowData.kind === "plugin") ? [] : [{
                 source: "fedora",
                 kind: "dnf",
                 ref: rowData.id
@@ -166,7 +169,7 @@ Item {
     property var meta: ({})          // "flatpak/<id>" -> enrichment info
     property bool loading: true
     property string searchText: ""
-    property int sourceFilter: 0     // 0 all, 1 flatpak, 2 system
+    property int sourceFilter: 0     // 0 all, 1 flatpak, 2 system, 3 appimage, 4 plugins
     property string busyAction: ""   // "<action>:<id>" while a mutation runs
     property string mutationProgress: ""  // live phase/percent line while mutationProcess runs
     property real mutationFraction: 0     // 0..1 overall progress estimate
@@ -429,6 +432,43 @@ Item {
                 });
             }
         }
+        if (sourceFilter === 0 || sourceFilter === 4) {
+            // The plugins running inside the shell this window is part of.
+            // PluginService has already read every manifest on disk, so this
+            // is what is installed rather than what a registry offers.
+            const plugins = PluginService.availablePlugins || {};
+            for (const id in plugins) {
+                const plugin = plugins[id] || {};
+                const name = plugin.name || id;
+                if (needle && !Ui.matchesWords((name + " " + id + " " + (plugin.description || "")).toLowerCase(), needle))
+                    continue;
+                rows.push({
+                    kind: "plugin",
+                    id: id,
+                    name: name,
+                    summary: plugin.description || "",
+                    version: plugin.version || "",
+                    origin: "plugin",
+                    pluginIcon: plugin.icon || "",
+                    pluginFacts: {
+                        author: plugin.author || "",
+                        category: plugin.category || "",
+                        source: plugin.source || "",
+                        directory: plugin.pluginDirectory || "",
+                        permissions: plugin.permissions || []
+                    },
+                    sizeBytes: 0,
+                    updatedTs: 0,
+                    info: {
+                        name: name,
+                        summary: plugin.description || "",
+                        homepage: plugin.homepage || plugin.repository || "",
+                        icon: "",
+                        releases: []
+                    }
+                });
+            }
+        }
         if (sourceFilter === 0 || sourceFilter === 2) {
             for (const pkg of rpmPackages) {
                 let info = meta["system/" + pkg.name] || null;
@@ -469,7 +509,9 @@ Item {
         // Applications come first in every sort order: the programs someone
         // installed to use are what this list is for, and the supporting
         // packages they dragged in are context underneath them.
-        const appRank = row => view._isApplication(row) ? 0 : 1;
+        // Three groups now, not two: applications, the plugins running inside
+        // the shell, and the packages underneath them both.
+        const appRank = row => row.kind === "plugin" ? 1 : (view._isApplication(row) ? 0 : 2);
         switch (sortMode) {
         case "Largest":
             rows.sort((a, b) => (appRank(a) - appRank(b)) || (b.sizeBytes - a.sizeBytes) || a.name.localeCompare(b.name));
@@ -490,18 +532,20 @@ Item {
         }
         // Mark where each group starts; the delegate draws a heading there.
         // Counting first means the heading can say how big its group is.
-        let appCount = 0;
-        for (const row of rows) {
-            if (appRank(row) === 0)
-                appCount++;
-        }
+        const counts = [0, 0, 0];
+        for (const row of rows)
+            counts[appRank(row)]++;
+        const labels = [Tr.t("Applications"), Tr.t("DMS plugins"), Tr.t("System packages")];
         for (let i = 0; i < rows.length; i++) {
-            const isApp = appRank(rows[i]) === 0;
-            if (i > 0 && isApp === (appRank(rows[i - 1]) === 0))
+            const rank = appRank(rows[i]);
+            if (i > 0 && rank === appRank(rows[i - 1]))
                 continue;
-            rows[i].sectionLabel = isApp ? Tr.t("Applications") : Tr.t("System packages");
-            rows[i].sectionCount = isApp ? appCount : rows.length - appCount;
+            rows[i].sectionLabel = labels[rank];
+            rows[i].sectionCount = counts[rank];
             rows[i].sectionFirst = i === 0;
+            // The heading of the plugins group carries the way out to where
+            // plugins are installed and removed, which is DMS's own screen
+            rows[i].sectionAction = rank === 1 ? "plugins" : "";
         }
         return rows;
     }
@@ -1033,7 +1077,7 @@ Item {
 
             DankButtonGroup {
                 id: filterGroup
-                model: [Tr.t("All"), "Flatpak", Tr.t("System"), "AppImage"]
+                model: [Tr.t("All"), "Flatpak", Tr.t("System"), "AppImage", Tr.t("Plugins")]
                 currentIndex: view.sourceFilter
                 onSelectionChanged: (index, selected) => {
                     if (selected)
@@ -1100,13 +1144,34 @@ Item {
                     StyledText {
                         id: sectionHeading
                         anchors.left: parent.left
-                        anchors.right: parent.right
+                        anchors.right: managePluginsButton.visible ? managePluginsButton.left : parent.right
                         anchors.bottom: parent.bottom
                         anchors.leftMargin: Theme.spacingS
+                        anchors.rightMargin: Theme.spacingS
                         text: (rowWrap.modelData.sectionLabel || "") + " · " + (rowWrap.modelData.sectionCount || 0)
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.Medium
                         color: Theme.surfaceVariantText
+                    }
+
+                    // Installing and removing plugins is DMS's own screen, and
+                    // reimplementing it here would be a second front door to
+                    // the same room. This is the door.
+                    DankButton {
+                        id: managePluginsButton
+
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.rightMargin: Theme.spacingS
+                        visible: (rowWrap.modelData.sectionAction || "") === "plugins"
+                        buttonHeight: 26
+                        horizontalPadding: Theme.spacingM
+                        iconName: "open_in_new"
+                        iconSize: 13
+                        text: Tr.t("Manage plugins")
+                        backgroundColor: Theme.buttonBg
+                        textColor: Theme.buttonText
+                        onClicked: PopoutService.openSettingsWithTab("plugins")
                     }
                 }
 
@@ -1163,7 +1228,9 @@ Item {
                                 DankIcon {
                                     anchors.centerIn: parent
                                     visible: rowLogo.status !== Image.Ready
-                                    name: row.modelData.kind === "system" ? "memory" : "apps"
+                                    name: row.modelData.kind === "plugin"
+                                        ? (row.modelData.pluginIcon || "extension")
+                                        : (row.modelData.kind === "system" ? "memory" : "apps")
                                     size: 20
                                     // A package with no icon of its own falls back to this glyph, and a
                                     // list of them is most of what an installed-software list is. Left

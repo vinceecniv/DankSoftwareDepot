@@ -469,5 +469,11 @@
     "The plugin was not updated": "プラグインは更新されませんでした",
     "no answer from the plugin manager": "プラグインマネージャーから応答がありません",
     "Manage DMS plugins": "DMS プラグインを管理",
-    "Open Dank Software Depot": "Dank Software Depot を開く"
+    "Open Dank Software Depot": "Dank Software Depot を開く",
+    "Plugins": "プラグイン",
+    "Manage plugins": "プラグインを管理",
+    "Install a DMS plugin": "DMS プラグインをインストール",
+    "by %1": "作者: %1",
+    "installed for you": "あなた用にインストール済み",
+    "installed for all users": "全ユーザー用にインストール済み"
 }

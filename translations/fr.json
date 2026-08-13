@@ -469,5 +469,11 @@
     "The plugin was not updated": "L'extension n'a pas été mise à jour",
     "no answer from the plugin manager": "aucune réponse du gestionnaire d'extensions",
     "Manage DMS plugins": "Gérer les extensions DMS",
-    "Open Dank Software Depot": "Ouvrir Dank Software Depot"
+    "Open Dank Software Depot": "Ouvrir Dank Software Depot",
+    "Plugins": "Extensions",
+    "Manage plugins": "Gérer les extensions",
+    "Install a DMS plugin": "Installer une extension DMS",
+    "by %1": "par %1",
+    "installed for you": "installée pour vous",
+    "installed for all users": "installée pour tous les utilisateurs"
 }

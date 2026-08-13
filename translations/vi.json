@@ -469,5 +469,11 @@
     "The plugin was not updated": "Tiện ích chưa được cập nhật",
     "no answer from the plugin manager": "trình quản lý tiện ích không phản hồi",
     "Manage DMS plugins": "Quản lý tiện ích DMS",
-    "Open Dank Software Depot": "Mở Dank Software Depot"
+    "Open Dank Software Depot": "Mở Dank Software Depot",
+    "Plugins": "Tiện ích",
+    "Manage plugins": "Quản lý tiện ích",
+    "Install a DMS plugin": "Cài đặt tiện ích DMS",
+    "by %1": "bởi %1",
+    "installed for you": "đã cài cho bạn",
+    "installed for all users": "đã cài cho mọi người dùng"
 }

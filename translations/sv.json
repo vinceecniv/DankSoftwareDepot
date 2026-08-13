@@ -469,5 +469,11 @@
     "The plugin was not updated": "Tillägget uppdaterades inte",
     "no answer from the plugin manager": "inget svar från tilläggshanteraren",
     "Manage DMS plugins": "Hantera DMS-tillägg",
-    "Open Dank Software Depot": "Öppna Dank Software Depot"
+    "Open Dank Software Depot": "Öppna Dank Software Depot",
+    "Plugins": "Tillägg",
+    "Manage plugins": "Hantera tillägg",
+    "Install a DMS plugin": "Installera ett DMS-tillägg",
+    "by %1": "av %1",
+    "installed for you": "installerat för dig",
+    "installed for all users": "installerat för alla användare"
 }

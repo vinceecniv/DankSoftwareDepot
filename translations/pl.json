@@ -469,5 +469,11 @@
     "The plugin was not updated": "Wtyczka nie została zaktualizowana",
     "no answer from the plugin manager": "brak odpowiedzi od menedżera wtyczek",
     "Manage DMS plugins": "Zarządzaj wtyczkami DMS",
-    "Open Dank Software Depot": "Otwórz Dank Software Depot"
+    "Open Dank Software Depot": "Otwórz Dank Software Depot",
+    "Plugins": "Wtyczki",
+    "Manage plugins": "Zarządzaj wtyczkami",
+    "Install a DMS plugin": "Zainstaluj wtyczkę DMS",
+    "by %1": "autor: %1",
+    "installed for you": "zainstalowana dla Ciebie",
+    "installed for all users": "zainstalowana dla wszystkich użytkowników"
 }

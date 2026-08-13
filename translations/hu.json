@@ -469,5 +469,11 @@
     "The plugin was not updated": "A bővítmény nem frissült",
     "no answer from the plugin manager": "nincs válasz a bővítménykezelőtől",
     "Manage DMS plugins": "DMS-bővítmények kezelése",
-    "Open Dank Software Depot": "A Dank Software Depot megnyitása"
+    "Open Dank Software Depot": "A Dank Software Depot megnyitása",
+    "Plugins": "Bővítmények",
+    "Manage plugins": "Bővítmények kezelése",
+    "Install a DMS plugin": "DMS-bővítmény telepítése",
+    "by %1": "készítette: %1",
+    "installed for you": "csak Önnek telepítve",
+    "installed for all users": "minden felhasználónak telepítve"
 }

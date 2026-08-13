@@ -43,6 +43,14 @@ Item {
     // {type, severity, ids} from updateinfo. The CVE numbers were being
     // fetched with the rest and thrown away; this is the one place with room
     // to print them, and the one place someone would look them up from.
+    // A DMS plugin is not a package: it has no repository, no download size,
+    // nobody has reviewed it on ODRS and `dnf` has never heard of it. What it
+    // does have is a manifest, which is what this shows instead — author,
+    // category, where it came from, and the permissions it declares.
+    // {author, category, source, directory, permissions: [...]}
+    property var pluginFacts: null
+    readonly property bool isPlugin: pluginFacts !== null
+
     property var advisory: null
     property var previousVersions: []    // [{label, payload}]
     property bool versionsLoading: false
@@ -252,6 +260,8 @@ Item {
     // Risky permissions first, filesystem paths last; the list is collapsed
     // to one row's worth of chips until expanded
     readonly property var permissionTokens: {
+        if (dialog.isPlugin)
+            return (pluginFacts.permissions || []).slice();
         const tokens = ((info.flathub && info.flathub.permissions) ? info.flathub.permissions : []).filter(tok => tok !== "ipc");
         const rank = tok => {
             if (tok === "devices:all" || tok === "fs:host" || tok === "fs:host:ro")
@@ -820,6 +830,77 @@ Item {
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.warning
                         wrapMode: Text.WordWrap
+                    }
+
+                    // ── What a plugin is, in the terms a plugin has ─────────
+                    // No repository, no download size, no ODRS reviews and
+                    // nothing dnf has ever heard of. A manifest, though: who
+                    // wrote it, what it calls itself, where it sits on disk,
+                    // and what it asked the shell for.
+                    Column {
+                        width: parent.width
+                        spacing: 4
+                        visible: dialog.isPlugin
+
+                        RowLayout {
+                            width: parent.width
+                            spacing: Theme.spacingS
+
+                            DankIcon {
+                                name: "extension"
+                                size: 14
+                                color: Theme.surfaceVariantText
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: {
+                                    const facts = dialog.pluginFacts || {};
+                                    const parts = [];
+                                    if (facts.author)
+                                        parts.push(Tr.t("by %1").arg(facts.author));
+                                    if (facts.category)
+                                        parts.push(facts.category);
+                                    parts.push(facts.source === "system" ? Tr.t("installed for all users") : Tr.t("installed for you"));
+                                    return parts.join(" · ");
+                                }
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.surfaceVariantText
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        SelectableText {
+                            width: parent.width
+                            visible: text !== ""
+                            text: (dialog.pluginFacts && dialog.pluginFacts.directory) ? dialog.pluginFacts.directory : ""
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            font.family: Theme.monoFontFamily
+                            color: Theme.surfaceVariantText
+                            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                        }
+
+                        Item {
+                            width: parent.width
+                            height: managePluginButton.height + Theme.spacingXS
+
+                            DankButton {
+                                id: managePluginButton
+                                anchors.left: parent.left
+                                anchors.bottom: parent.bottom
+                                buttonHeight: 26
+                                horizontalPadding: Theme.spacingM
+                                iconName: "open_in_new"
+                                iconSize: 13
+                                text: Tr.t("Manage plugins")
+                                backgroundColor: Theme.buttonBg
+                                textColor: Theme.buttonText
+                                onClicked: {
+                                    dialog.close();
+                                    PopoutService.openSettingsWithTab("plugins");
+                                }
+                            }
+                        }
                     }
 
                     // ── Where it comes from ─────────────────────────────────

@@ -469,5 +469,11 @@
     "The plugin was not updated": "Il plugin non è stato aggiornato",
     "no answer from the plugin manager": "nessuna risposta dal gestore dei plugin",
     "Manage DMS plugins": "Gestisci i plugin DMS",
-    "Open Dank Software Depot": "Apri Dank Software Depot"
+    "Open Dank Software Depot": "Apri Dank Software Depot",
+    "Plugins": "Plugin",
+    "Manage plugins": "Gestisci i plugin",
+    "Install a DMS plugin": "Installa un plugin DMS",
+    "by %1": "di %1",
+    "installed for you": "installato per te",
+    "installed for all users": "installato per tutti gli utenti"
 }
