@@ -3,6 +3,23 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.5 — 2026-08-13
+
+- **Holding a package, and releasing it, are recorded in the log.** Everything
+  else this app does ends up there; locking a package did not, so the list
+  quietly stopped counting something one day and a month later there was
+  nothing to say why, or that it had been a decision at all. The release is
+  the half that earns its keep: an update you have been waiting for, which
+  turns out to have been sitting behind your own lock, is now a question the
+  log can answer.
+- **Tinted icons are calmer in light mode.** The same accent arrived in very
+  different amounts in the two palettes: in dark mode only an icon's
+  highlights come out accented, while in light mode the lift that keeps shapes
+  from collapsing moves most of the icon into the accent, so a card carried a
+  large block of fully saturated colour. Not less lift — the shapes need it —
+  but a quieter colour to lift into, at 55% saturation. Dark mode is
+  unchanged; it was already the picture the other one is tuned towards.
+
 ## 0.9.4 — 2026-08-13
 
 - **The action log follows the interface language.** Every line was written as
