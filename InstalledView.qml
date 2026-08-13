@@ -89,9 +89,13 @@ Item {
         readonly property string entryId: entry ? entry.id : ""
         readonly property bool entryIsFlatpak: entry ? entry.kind === "flatpak" : false
         readonly property bool entryIsAppimage: entry ? entry.kind === "appimage" : false
+        readonly property bool entryIsPlugin: entry ? entry.kind === "plugin" : false
 
-        showHoldToggle: !entryIsAppimage
-        showUninstall: true
+        // Holding and uninstalling are package verbs. A plugin is removed from
+        // DMS's own screen — the button in the popup goes there — and there is
+        // no version of "hold this plugin" that means anything.
+        showHoldToggle: !entryIsAppimage && !entryIsPlugin
+        showUninstall: !entryIsPlugin
         // Everything reached from this tab is on the machine, and the one
         // source it was passed is the one it came from
         installedRefs: entryId !== "" ? [entryId] : []
@@ -103,15 +107,17 @@ Item {
         busyDetail: view.mutationProgress
         busyFraction: view.mutationFraction
         releases: (entryIsFlatpak && entry.info && entry.info.releases) ? entry.info.releases.slice(0, 3) : []
-        changelogLoading: entry !== null && !entryIsFlatpak && !entryIsAppimage && view.store.changelogs[entryId] === undefined
-        changelog: (entry !== null && !entryIsFlatpak && !entryIsAppimage) ? (view.store.changelogs[entryId] || "") : ""
+        // A changelog is never fetched for these, so "loading" would be
+        // forever: nothing is on its way
+        changelogLoading: entry !== null && !entryIsFlatpak && !entryIsAppimage && !entryIsPlugin && view.store.changelogs[entryId] === undefined
+        changelog: (entry !== null && !entryIsFlatpak && !entryIsAppimage && !entryIsPlugin) ? (view.store.changelogs[entryId] || "") : ""
         versionsLoading: {
-            if (!entry || entryIsAppimage)
+            if (!entry || entryIsAppimage || entryIsPlugin)
                 return false;
             return entryIsFlatpak ? view.downgradeLogs[entryId] === "loading" : view.rpmVersions[entryId] === "loading";
         }
         previousVersions: {
-            if (!entry || entryIsAppimage)
+            if (!entry || entryIsAppimage || entryIsPlugin)
                 return [];
             if (entryIsFlatpak) {
                 const log = view.downgradeLogs[entryId];

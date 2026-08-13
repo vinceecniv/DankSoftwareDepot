@@ -156,7 +156,11 @@ FloatingWindow {
 
         property var rowData: null
         readonly property var rowPkg: rowData ? rowData.pkg : null
-        readonly property bool rowIsRpm: rowPkg !== null && rowPkg.repo !== "flatpak" && rowPkg.repo !== "firmware"
+        // Everything the rpm machinery hangs off — the changelog, the older
+        // builds, the git-notes lookup. A plugin is not one of these, and
+        // asking anyway left "Loading changelog…" on screen for good, because
+        // nothing was ever going to arrive and clear it.
+        readonly property bool rowIsRpm: rowPkg !== null && rowPkg.repo !== "flatpak" && rowPkg.repo !== "firmware" && rowPkg.repo !== "dmsplugin"
         readonly property string rowBase: rowPkg ? win.store.stripArch(rowPkg.name || "") : ""
 
         // "" for anything not built from git, which is what keeps the
