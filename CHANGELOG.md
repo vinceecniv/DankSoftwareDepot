@@ -3,6 +3,27 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.8.2 — 2026-08-13
+
+- **Release notes you can read, and now actually select.** This plugin's
+  own notes were the smallest text in the app — 12px in the banner that
+  offers the update, 11px in the About window — on the one banner that
+  asks to be acted on. Both are 14px now. They were also made
+  selectable last week and still could not be selected: they sit in a
+  bounded scroll area, a drag inside one is a scroll, and a scroll and a
+  selection are the same gesture until one of them claims the mouse. The
+  viewport won every time. It no longer takes the drag, and the wheel
+  and the scrollbar carry on as before.
+- **A licence long enough to push the close button off the card.**
+  Fedora hands out whole sentences as licence ids, and
+  `LicenseRef-Callaway-Redistributable-no-modification-permitted` is a
+  single unbreakable word: nothing to wrap on, so it ran past the edge
+  of the details popup. Worse than the untidiness, the width it claimed
+  was claimed by the column it sits in, which is followed in the header
+  by the × — so the button left the card. The licence now takes the
+  width that is left over instead of asking for its own, and breaks
+  mid-word when a word does not fit.
+
 ## 0.8.1 — 2026-08-12
 
 - **A run is over when the check says so.** Every run ends by asking the
