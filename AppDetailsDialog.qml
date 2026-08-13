@@ -506,7 +506,12 @@ Item {
                     DankIcon {
                         anchors.centerIn: parent
                         visible: dialogLogo.status !== Image.Ready
-                        name: dialog.appData.isFlatpak === false ? "memory" : "apps"
+                        // A plugin names its glyph in its manifest rather than
+                        // shipping an image, so it never has an icon file to
+                        // fall back from — this is its icon, not a stand-in
+                        name: dialog.isPlugin
+                            ? ((dialog.pluginFacts.icon || "") !== "" ? dialog.pluginFacts.icon : "extension")
+                            : (dialog.appData.isFlatpak === false ? "memory" : "apps")
                         size: 30
                         // A package with no icon of its own falls back to this glyph, and a
                         // list of them is most of what an installed-software list is. Left

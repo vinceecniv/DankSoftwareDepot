@@ -461,7 +461,8 @@ Item {
                         category: plugin.category || "",
                         source: plugin.source || "",
                         directory: plugin.pluginDirectory || "",
-                        permissions: plugin.permissions || []
+                        permissions: plugin.permissions || [],
+                        icon: plugin.icon || ""
                     },
                     sizeBytes: 0,
                     updatedTs: 0,

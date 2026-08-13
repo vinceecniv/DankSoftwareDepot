@@ -468,6 +468,7 @@ anything about you leaves the machine:
 | `AppimageOfferDialog.qml` | Installing an AppImage from a file or URL — the toolbar button and a double-clicked `.appimage` both land here |
 | `NewsDialog.qml` | Arch Linux announcements: what is unread, and the archive of everything seen |
 | `SelectableText.qml` | StyledText you can select and copy — used for the blocks worth copying out (release notes and their CVE numbers, changelogs, the verbatim output behind a failure) |
+| `FieldPlaceholder.qml` | The hint that stays while a field is empty — DankTextField hides its own the moment the field takes focus, which is when it is being read |
 | `RetrospectCard.qml` | The year the action log remembers, as figures and a few sentences, on the Updates dashboard |
 | `PulseRings.qml` | The shell's System Check pulse, borrowed so a check can happen around the logo instead of over it |
 | `UpdateEngine.qml` | Run orchestration (daemon dnf → libflatpak → fwupd → DMS packages), per-package progress from log lines and dnf-cache bytes |
@@ -502,7 +503,7 @@ All release-note/HTML content from external sources is reduced to an escaped
 minimal markup subset before rendering.
 
 **Text you would want to copy can be selected**: in an app's details popup its
-name, the `old → new` version step and the licence; and everywhere, release
+name, the `old → new` version step, the licence and a plugin's directory; and everywhere, release
 notes and the CVE numbers in them, changelogs, descriptions, announcements and
 the verbatim tool output behind a failure. Not every label, deliberately — the
 element that can be selected takes the mouse with it, and a card whose title
