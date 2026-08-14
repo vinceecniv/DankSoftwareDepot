@@ -981,6 +981,18 @@ PluginComponent {
             return;
         const items = engine.runItems.map(ri => {
             const st = engine.itemStates[ri.key] || {};
+            // The plugin manager says which plugins have a newer build but
+            // never which version that is, so a plugin row was recorded with
+            // where it came from and a blank where it arrived. By the time a
+            // run is written down the manifest on disk has been re-read, and
+            // it knows: ask it, and take the answer only when it really is a
+            // different version from the one this started at.
+            let landedAt = ri.pkg.toVersion || "";
+            if (landedAt === "" && ri.pkg.repo === "dmsplugin" && st.status === "done") {
+                const manifest = (PluginService.availablePlugins || {})[ri.pkg.name] || {};
+                if ((manifest.version || "") !== "" && manifest.version !== ri.pkg.fromVersion)
+                    landedAt = manifest.version;
+            }
             return {
                 name: store.displayName(ri.pkg),
                 // The id and the repo travel with the entry so the log can
@@ -991,7 +1003,7 @@ PluginComponent {
                 id: ri.pkg.name || "",
                 repo: ri.pkg.repo || "",
                 from: ri.pkg.fromVersion || "",
-                to: ri.pkg.toVersion || "",
+                to: landedAt,
                 source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : (ri.pkg.repo === "dmsplugin" ? "DMS" : "System"))),
                 status: st.status || "",
                 // Short reason for reading, tool output for reporting

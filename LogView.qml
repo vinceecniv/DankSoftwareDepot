@@ -625,6 +625,8 @@ Item {
                                     }
 
                                     StyledText {
+                                        id: versionText
+
                                         visible: (itemRow.modelData.from || "") !== "" || (itemRow.modelData.to || "") !== ""
                                         text: {
                                             if ((itemRow.modelData.from || "") !== "" && (itemRow.modelData.to || "") !== "")
@@ -640,10 +642,24 @@ Item {
                                         // means: take what you need and no
                                         // more, and shorten only when the row
                                         // really is too narrow.
+                                        //
+                                        // The cap comes from TextMetrics rather
+                                        // than from implicitWidth, which for a
+                                        // text that elides is measured on the
+                                        // width it was given — so capping the
+                                        // width with it is a loop that can
+                                        // settle anywhere, and settled on "4…1"
+                                        // for a version of five characters.
                                         wrapMode: Text.NoWrap
                                         elide: Text.ElideMiddle
                                         Layout.fillWidth: true
-                                        Layout.maximumWidth: implicitWidth
+                                        Layout.maximumWidth: versionMetrics.width
+
+                                        TextMetrics {
+                                            id: versionMetrics
+                                            font: versionText.font
+                                            text: versionText.text
+                                        }
                                     }
 
                                     StyledText {
