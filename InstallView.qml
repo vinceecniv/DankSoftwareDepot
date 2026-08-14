@@ -287,9 +287,21 @@ Item {
     property var installedAppimages: new Set()
     property bool indexLoading: true
     readonly property bool searching: searchMode && indexLoading
+    // Whether "nothing found" is a finding or just the current state of a
+    // sentence still being written. The name search for CLI packages — the
+    // one that finds libheif, which no AppStream entry describes — answers a
+    // moment after the local index, and for a query only it can answer, that
+    // moment was being filled with "No results for heif". An answer that
+    // changes its mind is worse than one that takes a beat. It deliberately
+    // does not gate the result list: hits the local index already has go up
+    // immediately, and the rest join them.
+    readonly property bool awaitingResults: searchMode && (indexLoading || moreResultsPending)
     property var dnfExtras: []
     property string dnfExtrasQuery: ""
-    // True while the async dnf name search hasn't answered for the current query
+    // True while the async dnf name search hasn't answered for the current
+    // query. It gates both the "more on the way" hint under a result list and
+    // the empty state above, which must not conclude anything until it is
+    // false.
     readonly property bool moreResultsPending: searchMode && dnfExtrasQuery !== searchText.trim()
 
     // ── Copr ─────────────────────────────────────────────────────────────────
@@ -848,9 +860,14 @@ Item {
             onStreamFinished: {
                 try {
                     view.dnfExtras = JSON.parse(text);
-                    view.dnfExtrasQuery = dnfProcess._query;
                 } catch (e) {
+                    // Nothing usable came back. Recording the query anyway is
+                    // the point: "this query has been answered, with nothing"
+                    // is an answer, and without it the empty state below waits
+                    // for a reply that is never coming.
+                    view.dnfExtras = [];
                 }
+                view.dnfExtrasQuery = dnfProcess._query;
             }
         }
     }
@@ -1866,13 +1883,13 @@ Item {
 
                 DankSpinner {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    visible: view.searching
+                    visible: view.awaitingResults
                     size: 36
                 }
 
                 DankIcon {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    visible: !view.searching
+                    visible: !view.awaitingResults
                     name: view.searchText.trim().length >= 2 ? "search_off" : "storefront"
                     size: 48
                     color: Theme.surfaceVariantText
@@ -1881,7 +1898,7 @@ Item {
                 StyledText {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: {
-                        if (view.searching)
+                        if (view.awaitingResults)
                             return Tr.t("Searching…");
                         if (view.searchMode)
                             return Tr.t("No results for \"%1\"").arg(view.searchText.trim());
@@ -1893,7 +1910,7 @@ Item {
 
                 StyledText {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    visible: !view.searching && view.searchText.trim().length < 2
+                    visible: !view.awaitingResults && view.searchText.trim().length < 2
                     text: Tr.t("Ratings by the Open Desktop Ratings Service")
                     font.pixelSize: Theme.fontSizeSmall - 1
                     color: Theme.withAlpha(Theme.surfaceVariantText, 0.7)
@@ -1904,7 +1921,9 @@ Item {
                 Loader {
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: Math.min(520, view.width - Theme.spacingXL * 2)
-                    active: view.searchMode && !view.searching && Backend.hasCopr
+                    // Offering to look elsewhere before this machine has
+                    // finished answering is advice given too early
+                    active: view.searchMode && !view.awaitingResults && Backend.hasCopr
                     visible: active
                     sourceComponent: coprPromptComponent
                 }
