@@ -479,5 +479,7 @@
     "Read the changelog": "Changelog lezen",
     "Update cancelled (%1 of %2 done)": "Update geannuleerd (%1 van %2 voltooid)",
     "Held %1": "%1 vastgezet",
-    "Released the hold on %1": "Vastzetten van %1 opgeheven"
+    "Released the hold on %1": "Vastzetten van %1 opgeheven",
+    "Could not install %1": "%1 kon niet worden geïnstalleerd",
+    "exit %1": "afsluitcode %1"
 }

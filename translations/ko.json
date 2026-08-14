@@ -479,5 +479,7 @@
     "%1 plugins": "플러그인 %1개",
     "Read the changelog": "변경 내역 보기",
     "Held %1": "%1 보류함",
-    "Released the hold on %1": "%1 보류를 해제함"
+    "Released the hold on %1": "%1 보류를 해제함",
+    "Could not install %1": "%1을(를) 설치하지 못했습니다",
+    "exit %1": "종료 코드 %1"
 }

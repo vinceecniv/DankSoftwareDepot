@@ -479,5 +479,7 @@
     "%1 plugins": "%1 个插件",
     "Read the changelog": "查看更新日志",
     "Held %1": "已锁定 %1",
-    "Released the hold on %1": "已解除 %1 的锁定"
+    "Released the hold on %1": "已解除 %1 的锁定",
+    "Could not install %1": "无法安装 %1",
+    "exit %1": "退出码 %1"
 }

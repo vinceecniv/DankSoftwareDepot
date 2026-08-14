@@ -67,6 +67,7 @@ Item {
         case "downgrade":
             return "history";
         case "update-failed":
+        case "install-failed":
             return "error";
         case "update-cancelled":
             return "cancel";
@@ -84,6 +85,7 @@ Item {
     function colorFor(type) {
         switch (type) {
         case "update-failed":
+        case "install-failed":
             return Theme.error;
         case "update-cancelled":
             return Theme.surfaceVariantText;

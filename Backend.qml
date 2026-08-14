@@ -275,11 +275,24 @@ Item {
     // Why the last install failed, "" when there was none
     property string requirementInstallError: ""
 
+    // Somebody has to write this one down. These installs deliberately skip
+    // the transaction helper — it may be the very thing that is missing — and
+    // in skipping it they skipped the log, which cost more than a missing
+    // line: the reconciler works out what changed *outside* this app by
+    // comparing install times against the log, so a package this app
+    // installed without recording it came back later as a stranger, in the
+    // one card whose whole worth is being trusted when it does speak up.
+    //
+    // A singleton cannot reach the log, so it says what it did and the widget
+    // writes it down.
+    signal requirementInstalled(string pkg, bool ok, string detail)
+
     function installRequirement(id, pkg) {
         if (installingRequirement !== "")
             return;
         requirementInstallError = "";
         installingRequirement = id;
+        installProcess._pkg = pkg;
         installProcess._output = "";
         installProcess.command = ["pkexec"].concat(_installWords(pkg));
         installProcess.running = true;
@@ -289,6 +302,7 @@ Item {
         id: installProcess
 
         property string _output: ""
+        property string _pkg: ""
 
         stdout: SplitParser {
             onRead: line => {
@@ -311,6 +325,7 @@ Item {
             backend.installingRequirement = "";
             if (exitCode !== 0)
                 backend.requirementInstallError = exitCode === 126 || exitCode === 127 ? Tr.t("the authorisation was refused") : (_output || Tr.t("the installation failed"));
+            backend.requirementInstalled(installProcess._pkg, exitCode === 0, exitCode === 0 ? "" : backend.requirementInstallError);
             // Either way the check, not the exit code, decides
             if (which === "appstream")
                 backend.checkAppstream();

@@ -479,5 +479,7 @@
     "%1 plugins": "%1 bővítmény",
     "Read the changelog": "Változásnapló megtekintése",
     "Held %1": "%1 visszatartva",
-    "Released the hold on %1": "%1 visszatartása feloldva"
+    "Released the hold on %1": "%1 visszatartása feloldva",
+    "Could not install %1": "A(z) %1 telepítése nem sikerült",
+    "exit %1": "kilépési kód: %1"
 }

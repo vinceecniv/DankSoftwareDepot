@@ -479,5 +479,7 @@
     "%1 plugins": "%1 plugin",
     "Read the changelog": "Leggi il registro delle modifiche",
     "Held %1": "%1 bloccato",
-    "Released the hold on %1": "Blocco di %1 rimosso"
+    "Released the hold on %1": "Blocco di %1 rimosso",
+    "Could not install %1": "Impossibile installare %1",
+    "exit %1": "codice di uscita %1"
 }

@@ -479,5 +479,7 @@
     "%1 plugins": "плагинов: %1",
     "Read the changelog": "Читать список изменений",
     "Held %1": "%1 удержан",
-    "Released the hold on %1": "Удержание %1 снято"
+    "Released the hold on %1": "Удержание %1 снято",
+    "Could not install %1": "Не удалось установить %1",
+    "exit %1": "код выхода %1"
 }

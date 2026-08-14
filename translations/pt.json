@@ -479,5 +479,7 @@
     "%1 plugins": "%1 extensões",
     "Read the changelog": "Ler o registo de alterações",
     "Held %1": "%1 retido",
-    "Released the hold on %1": "Retenção de %1 removida"
+    "Released the hold on %1": "Retenção de %1 removida",
+    "Could not install %1": "Não foi possível instalar %1",
+    "exit %1": "código de saída %1"
 }

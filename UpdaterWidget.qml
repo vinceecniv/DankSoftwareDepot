@@ -349,6 +349,37 @@ PluginComponent {
         }
     }
 
+    // The bootstrap installs — the package-manager bindings, the AppStream
+    // catalog — go around the transaction helper by design, and so around
+    // everything that would have logged them. This is where they land instead.
+    Connections {
+        target: Backend
+
+        function onRequirementInstalled(pkg, ok, detail) {
+            if (!actionLog)
+                return;
+            const label = {
+                key: ok ? "Installed %1" : "Could not install %1",
+                args: [pkg]
+            };
+            actionLog.record(ok ? "install" : "install-failed", actionLog.titleOf({
+                label: label
+            }), [
+                {
+                    name: pkg,
+                    id: pkg,
+                    repo: "system",
+                    from: "",
+                    to: "",
+                    source: "System",
+                    status: ok ? "done" : "error",
+                    reason: ok ? "" : detail,
+                    error: ok ? "" : detail
+                }
+            ], 0, label);
+        }
+    }
+
     Connections {
         target: SystemUpdateService
 

@@ -479,5 +479,7 @@
     "%1 plugins": "%1 Plugins",
     "Read the changelog": "Änderungsprotokoll lesen",
     "Held %1": "%1 zurückgehalten",
-    "Released the hold on %1": "Sperre für %1 aufgehoben"
+    "Released the hold on %1": "Sperre für %1 aufgehoben",
+    "Could not install %1": "%1 konnte nicht installiert werden",
+    "exit %1": "Exit-Code %1"
 }

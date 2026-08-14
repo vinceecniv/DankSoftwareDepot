@@ -239,6 +239,21 @@ Item {
                 view.softwareMutated();
             } else if (view.lastInstallResult.indexOf("✓") === -1 && view.lastInstallResult.indexOf("%") !== -1) {
                 view.lastInstallResult = Tr.t("%1 failed (exit %2)").arg(_label).arg(exitCode);
+                if (view.logger)
+                    view.logger.record("install-failed", Tr.t("Could not install %1").arg(_label), [{
+                        name: _label,
+                        id: _label,
+                        repo: "appimage",
+                        from: "",
+                        to: "",
+                        source: "AppImage",
+                        status: "error",
+                        reason: Tr.t("exit %1").arg(exitCode),
+                        error: ""
+                    }], 0, {
+                        key: "Could not install %1",
+                        args: [_label]
+                    });
             }
             appimageListProcess.running = true;
             resultClearTimer.restart();
@@ -1072,6 +1087,27 @@ Item {
             view.installFraction = 0;
             view.installIcon = "";
             view.lastInstallResult = exitCode === 0 ? (Tr.t("%1 installed ✓").arg(installProcess._label) + (view._staged ? " · " + Tr.t("takes effect after reboot") : "")) : (Tr.t("%1 failed (exit %2)").arg(installProcess._label).arg(exitCode) + (view._helperError !== "" ? " · " + view._helperError : ""));
+            if (exitCode !== 0 && view.logger) {
+                // A failed run says so on its card; a failed install said so
+                // in a line that is gone the moment the view moves on. The
+                // update side has kept its failures with their reasons since
+                // the beginning — this is the same bargain for installs.
+                const reason = view._helperError !== "" ? view._helperError : Tr.t("exit %1").arg(exitCode);
+                view.logger.record("install-failed", Tr.t("Could not install %1").arg(installProcess._label), [{
+                    name: installProcess._label,
+                    id: installProcess._id || installProcess._label,
+                    repo: installProcess._source === "Flatpak" ? "flatpak" : "system",
+                    from: "",
+                    to: "",
+                    source: installProcess._source,
+                    status: "error",
+                    reason: reason,
+                    error: view._helperError
+                }], 0, {
+                    key: "Could not install %1",
+                    args: [installProcess._label]
+                });
+            }
             if (exitCode === 0) {
                 if (view.logger) {
                     view.logger.record("install", Tr.t("Installed %1").arg(installProcess._label), [{
