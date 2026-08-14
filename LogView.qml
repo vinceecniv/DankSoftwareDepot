@@ -625,8 +625,6 @@ Item {
                                     }
 
                                     StyledText {
-                                        id: versionText
-
                                         visible: (itemRow.modelData.from || "") !== "" || (itemRow.modelData.to || "") !== ""
                                         text: {
                                             if ((itemRow.modelData.from || "") !== "" && (itemRow.modelData.to || "") !== "")
@@ -636,30 +634,25 @@ Item {
                                         font.pixelSize: Theme.fontSizeSmall
                                         color: Theme.surfaceVariantText
                                         // StyledText wraps by default, so a
-                                        // long version broke at the arrow while
-                                        // the row still had room to its right.
-                                        // fillWidth capped at the natural width
-                                        // means: take what you need and no
-                                        // more, and shorten only when the row
-                                        // really is too narrow.
+                                        // long version used to break at the
+                                        // arrow while the row still had room to
+                                        // its right. The fix for that was to
+                                        // fill the width and cap the fill at
+                                        // the text's natural size — but a cap
+                                        // has to be measured, and every way of
+                                        // measuring it came out a little short:
+                                        // "8.1.4087.64-1 → 8.1.4087.66-1" lost
+                                        // its arrow, "4.2.1" came out as "4…1".
                                         //
-                                        // The cap comes from TextMetrics rather
-                                        // than from implicitWidth, which for a
-                                        // text that elides is measured on the
-                                        // width it was given — so capping the
-                                        // width with it is a loop that can
-                                        // settle anywhere, and settled on "4…1"
-                                        // for a version of five characters.
+                                        // There is nothing to cap. A spacer
+                                        // further along this row already takes
+                                        // the slack, so this can simply be its
+                                        // own width and shrink — that is what
+                                        // minimumWidth 0 is for — on the day the
+                                        // row genuinely cannot fit it.
                                         wrapMode: Text.NoWrap
                                         elide: Text.ElideMiddle
-                                        Layout.fillWidth: true
-                                        Layout.maximumWidth: versionMetrics.width
-
-                                        TextMetrics {
-                                            id: versionMetrics
-                                            font: versionText.font
-                                            text: versionText.text
-                                        }
+                                        Layout.minimumWidth: 0
                                     }
 
                                     StyledText {
