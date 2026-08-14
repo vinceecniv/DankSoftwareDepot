@@ -3,6 +3,33 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.6 — 2026-08-14
+
+- **Installs that failed, and installs that happened quietly, are in the log
+  now.** Only successful installs were recorded, and only the ones made from
+  the Install tab. A failed one said so in a line at the bottom of the view
+  that is gone the moment you navigate away; it is kept now, with its reason
+  and the tool's own words, the way a failed update run always has been. The
+  bootstrap installs — the package-manager bindings, the AppStream catalog —
+  never appeared at all, because they skip the transaction helper by design
+  and skipped everything that would have recorded them with it. That also
+  means they will stop turning up later as packages that "changed outside
+  this app": that card compares install times against this log, so anything
+  this app did without writing it down came back as a stranger.
+- **"No results" no longer flashes before the results arrive.** Searching for
+  something only the package-name fallback can find — libheif, which no app
+  catalog describes — put "No results" on screen for the second that fallback
+  takes to answer. The empty state now asks whether anything is still coming
+  rather than whether the list is empty, and the offer to search Copr waits
+  with it. Results the local index already has still appear immediately.
+- **A version is shown in full again in the log.** The field holding
+  `old → new` capped its own width with a measurement of itself, which came
+  out short: an update from 8.1.4087.64-1 to 8.1.4087.66-1 lost its arrow, and
+  a plugin at 4.2.1 was rendered as "4…1". A plugin's line also had nothing to
+  the right of the arrow, since the plugin manager reports that a newer build
+  exists but never which version it is; the entry now reads that off the
+  manifest once it is on disk.
+
 ## 0.9.5 — 2026-08-13
 
 - **Holding a package, and releasing it, are recorded in the log.** Everything
