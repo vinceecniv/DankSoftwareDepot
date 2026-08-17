@@ -3,6 +3,19 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.7 — 2026-08-17
+
+Thanks to @gitblit for the report and the screenshot behind this one.
+
+- **The window uses the theme's own background, like the rest of DMS.** It
+  reacted to theme changes and stayed within the spirit of the palette, but it
+  painted a surface of its own choosing, which read as slightly out of place
+  next to DMS Settings. It is now built on the same floating window the shell
+  uses for its own: the same background tone, the same rounded corners, the
+  blur behind it, and the border the shell gives every floating window. It
+  also follows the floating-window transparency setting, which it used to be
+  deaf to.
+
 ## 0.9.6 — 2026-08-14
 
 - **Installs that failed, and installs that happened quietly, are in the log
