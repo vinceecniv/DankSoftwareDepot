@@ -10,7 +10,14 @@ import qs.Widgets
 // Standalone updater window: the full visual experience with logos, release
 // notes, per-item progress and the phase stepper. Opens as a regular
 // toplevel window, independent of the bar popout.
-FloatingWindow {
+//
+// DankFloatingWindow rather than a plain FloatingWindow, which is what DMS's
+// own windows are: it paints Theme.floatingWindowSurface behind the content,
+// rounds the corners, blurs what is behind it and draws the border the shell
+// gives every floating window. Painting Theme.surface ourselves looked close
+// enough in isolation and wrong beside DMS Settings — a different tone, no
+// blur, and deaf to the floating-window transparency setting.
+DankFloatingWindow {
     id: win
 
     // Whether the window has keyboard focus. FloatingWindow has no `active`
@@ -1144,7 +1151,6 @@ FloatingWindow {
     minimumSize: Qt.size(560, 420)
     implicitWidth: 760
     implicitHeight: 640
-    color: Theme.surface
     visible: false
 
     // A compositor-side close (Super+Q) kills the toplevel without updating
