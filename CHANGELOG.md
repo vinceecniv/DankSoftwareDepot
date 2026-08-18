@@ -3,6 +3,34 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.9 — 2026-08-18
+
+- **Three numbers for one thing, and two of them wrong.** The header counted a
+  package the daemon names twice — it does that when two enabled repositories
+  carry the same one — while the list below it had always collapsed those. And
+  the transaction line counted both halves of every upgrade, since libdnf5
+  resolves one into the new package arriving and the old one being replaced:
+  three updates were summarised as six packages. All three places agree now.
+- **The up-to-date mark, the DMS penguin and the pulse follow the theme.** The
+  mark was the only green thing on a dashboard that is otherwise the accent,
+  the penguin the only untinted one, and the pulse was drawn in two colours,
+  which made one wave read as two marks chasing each other. A failed check
+  keeps its red, where the colour is the message. Light mode is unchanged
+  there: the disc behind the mark is already the accent, with the mark white
+  on top of it.
+- **Buttons that are the only thing to do no longer look like the second
+  choice.** Open, Write a review, the two at the foot of the settings dialog
+  and the one that opens this window from DMS Settings all wore the muted tone
+  this app uses for the alternative in a pair. They take the accent, which
+  also means they follow the button-colour setting. What keeps the muted tone
+  is the alternative install source, where it means what it says.
+- **App icons are tinted with the theme colour by default.** The switch stays
+  for anyone who prefers each app's own artwork; turning it off keeps it off.
+- **Smaller things.** The Recently updated card no longer labels every row
+  with where it came from — the log answers that per entry, in a view built
+  for it. A plugin's "Manage plugins" button moved out of the middle of the
+  facts it was interrupting, to the row of actions at the bottom.
+
 ## 0.9.8 — 2026-08-18
 
 Thanks to @BadLemon5267 for catching the first one within a day of it going
