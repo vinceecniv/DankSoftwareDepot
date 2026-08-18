@@ -885,27 +885,6 @@ Item {
                             wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         }
 
-                        Item {
-                            width: parent.width
-                            height: managePluginButton.height + Theme.spacingXS
-
-                            DankButton {
-                                id: managePluginButton
-                                anchors.left: parent.left
-                                anchors.bottom: parent.bottom
-                                buttonHeight: 26
-                                horizontalPadding: Theme.spacingM
-                                iconName: "open_in_new"
-                                iconSize: 13
-                                text: Tr.t("Manage plugins")
-                                backgroundColor: Theme.buttonBg
-                                textColor: Theme.buttonText
-                                onClicked: {
-                                    dialog.close();
-                                    PopoutService.openSettingsWithTab("plugins");
-                                }
-                            }
-                        }
                     }
 
                     // ── Where it comes from ─────────────────────────────────
@@ -1726,6 +1705,26 @@ Item {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: Theme.spacingS
+
+                    // The way out to where plugins are installed and removed.
+                    // It sat in the middle of the facts, which put a button
+                    // between two things being read; it belongs with the other
+                    // things this popup can do.
+                    DankButton {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: dialog.isPlugin
+                        buttonHeight: 30
+                        horizontalPadding: Theme.spacingM
+                        iconName: "open_in_new"
+                        iconSize: 14
+                        text: Tr.t("Manage plugins")
+                        backgroundColor: Theme.buttonBg
+                        textColor: Theme.buttonText
+                        onClicked: {
+                            dialog.close();
+                            PopoutService.openSettingsWithTab("plugins");
+                        }
+                    }
 
                     DankButton {
                         anchors.verticalCenter: parent.verticalCenter
