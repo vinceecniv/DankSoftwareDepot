@@ -59,7 +59,24 @@ PluginComponent {
     // repopulates at its next check — until the service has real state the
     // snapshot is shown, so previously found updates reappear immediately.
     readonly property bool _serviceHasState: SystemUpdateService.lastCheckUnix > 0 || (SystemUpdateService.availableUpdates || []).length > 0
-    readonly property var pendingUpdates: _serviceHasState ? (SystemUpdateService.availableUpdates || []) : ((pluginData.updatesSnapshot || {}).packages || [])
+    readonly property var pendingUpdates: {
+        const raw = _serviceHasState ? (SystemUpdateService.availableUpdates || []) : ((pluginData.updatesSnapshot || {}).packages || []);
+        // The daemon can name the same package twice — one entry per
+        // repository carrying it, which for a package in two enabled Coprs is
+        // two. The list has always collapsed those, because it keys its rows
+        // by package; the count above it did not, and the two disagreed on
+        // screen: "4 updates" over a list of three.
+        const seen = new Set();
+        const out = [];
+        for (const pkg of raw) {
+            const key = store.keyFor(pkg);
+            if (seen.has(key))
+                continue;
+            seen.add(key);
+            out.push(pkg);
+        }
+        return out;
+    }
 
     // Held packages (dnf versionlock/excludes) never count as real updates
     readonly property var heldSystemKeys: {

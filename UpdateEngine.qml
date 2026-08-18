@@ -323,16 +323,26 @@ Item {
                 if (event.event !== "plan")
                     return;
                 let extra = 0;
+                let counted = 0;
                 const removed = [];
                 for (const op of event.ops || []) {
-                    const outbound = /remove|obsolet/i.test(op.action || "");
-                    if (outbound)
+                    const action = op.action || "";
+                    // An upgrade resolves to two operations: the new package
+                    // arriving and the old one being replaced. The second is
+                    // the same package leaving as part of the first — not
+                    // something to count, and not something to warn about
+                    // either. Counting it turned three updates into "6
+                    // packages" underneath a list of three.
+                    if (/replac/i.test(action))
+                        continue;
+                    counted++;
+                    if (/remove|obsolet/i.test(action))
                         removed.push(op.name);
                     else if (!previewProcess._selected.has(op.name))
                         extra++;
                 }
                 engine.previewPlan = {
-                    total: (event.ops || []).length,
+                    total: counted,
                     extra: extra,
                     removals: removed.length,
                     removedNames: removed,
