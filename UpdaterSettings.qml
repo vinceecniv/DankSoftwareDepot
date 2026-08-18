@@ -37,8 +37,8 @@ PluginSettings {
         iconName: "open_in_new"
         iconSize: 14
         text: Tr.t("Open Dank Software Depot")
-        backgroundColor: Theme.secondaryContainer
-        textColor: Theme.surfaceText
+        backgroundColor: Theme.buttonBg
+        textColor: Theme.buttonText
         onClicked: Quickshell.execDetached(["sh", Qt.resolvedUrl("scripts/open.sh").toString().replace("file://", "")])
     }
 

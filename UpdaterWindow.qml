@@ -1080,8 +1080,8 @@ FloatingWindow {
                             iconName: "open_in_new"
                             iconSize: 14
                             text: Tr.t("Open DMS System Updater settings")
-                            backgroundColor: Theme.secondaryContainer
-                            textColor: Theme.surfaceText
+                            backgroundColor: Theme.buttonBg
+                            textColor: Theme.buttonText
                             onClicked: {
                                 win.settingsOpen = false;
                                 PopoutService.openSettingsWithTab("updater");
@@ -1103,8 +1103,8 @@ FloatingWindow {
                             iconName: "open_in_new"
                             iconSize: 14
                             text: Tr.t("Manage DMS plugins")
-                            backgroundColor: Theme.secondaryContainer
-                            textColor: Theme.surfaceText
+                            backgroundColor: Theme.buttonBg
+                            textColor: Theme.buttonText
                             onClicked: {
                                 win.settingsOpen = false;
                                 PopoutService.openSettingsWithTab("plugins");
