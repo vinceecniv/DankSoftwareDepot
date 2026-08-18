@@ -3,6 +3,31 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 0.9.8 — 2026-08-18
+
+Thanks to @BadLemon5267 for catching the first one within a day of it going
+out.
+
+- **Fixes 0.9.7, which could not be enabled at all on DMS 1.5.x.** The window
+  was rebuilt on DankFloatingWindow, which is what DMS uses for its own
+  windows — and which arrived upstream after 1.5.3. A QML file naming a type
+  that does not exist does not fall back to something simpler; it fails to
+  load, and takes the widget and the whole plugin with it. The window asks for
+  the colour by name again instead of inheriting the component that has it,
+  and falls back to the tone that colour is derived from where it is missing.
+  The background still matches DMS on a shell that is new enough to have one
+  to match.
+- **One password per update run.** A run carrying DMS's own packages asked
+  twice, which is why it seemed to come and go: the ordinary packages go
+  through a helper under pkexec and the DMS ones through the daemon, because
+  that transaction has to outlive the shell reload it causes, and those are
+  two different polkit actions. When the shell's packages are in a run, all
+  system packages now travel with them in that single daemon transaction.
+  Runs without them are unchanged and were never the ones asking twice.
+- **The up-to-date mark and the DMS penguin follow the theme** instead of
+  being the only green and the only untinted thing on the dashboard. A failed
+  check keeps its red, where the colour is the message.
+
 ## 0.9.7 — 2026-08-17
 
 Thanks to @gitblit for the report and the screenshot behind this one.
