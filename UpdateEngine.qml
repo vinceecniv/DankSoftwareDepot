@@ -164,7 +164,8 @@ Item {
         case "firmware":
             return Tr.t("Updating firmware…");
         case "dms":
-            return Tr.t("Updating DankMaterialShell… (shell may reload)");
+            return _shellPassIsEverything ? Tr.t("Updating system packages… (shell may reload)")
+                                          : Tr.t("Updating DankMaterialShell… (shell may reload)");
         case "plugins":
             return Tr.t("Updating DMS plugins…");
         case "verifying":
@@ -203,6 +204,10 @@ Item {
     property var _aiOps: ({})            // id -> {weight, fraction, done}
     property string _aiCurrentId: ""
     property string _daemonKind: "dnf"    // which daemon pass is active: dnf | shell
+    // Whether the shell pass is carrying the whole rpm set rather than only
+    // the packages that reload the shell — it says so, rather than announcing
+    // DankMaterialShell while installing somebody else's library
+    property bool _shellPassIsEverything: false
     property var _firmwareItems: []
     property real _firmwareFraction: 0
     property int _firmwareDone: 0
@@ -412,8 +417,23 @@ Item {
         const updates = pendingUpdates || [];
         const explicitFlatpak = (options.flatpakIds || []).length > 0;
         const dnfAll = updates.filter(p => p.repo !== "flatpak" && !held.has("system/" + _stripArch(p.name)));
-        const shellPkgs = (options.dnf !== false) ? dnfAll.filter(p => shellPackagePattern.test(_stripArch(p.name))) : [];
-        const dnfPkgs = dnfAll.filter(p => !shellPackagePattern.test(_stripArch(p.name)));
+        // Two privileged passes meant two authorisations: the rpm helper runs
+        // under pkexec, the DMS packages go through the daemon, and those are
+        // different polkit actions, so a run carrying both asked twice. They
+        // are one transaction now whenever the shell's own packages are in it
+        // — everything goes through the daemon, which is the only one of the
+        // two that can outlive the shell reload it is about to cause anyway.
+        //
+        // The cost is that such a run gets the daemon's progress (package n of
+        // m, plus bytes read from the dnf cache) instead of the helper's
+        // per-package byte events. Runs without DMS packages in them — nearly
+        // all of them — keep the helper and asked only once to begin with.
+        const shellOnly = (options.dnf !== false) ? dnfAll.filter(p => shellPackagePattern.test(_stripArch(p.name))) : [];
+        const otherRpms = dnfAll.filter(p => !shellPackagePattern.test(_stripArch(p.name)));
+        const oneRpmPass = shellOnly.length > 0 && options.dnf !== false;
+        const shellPkgs = oneRpmPass ? shellOnly.concat(otherRpms) : shellOnly;
+        const dnfPkgs = oneRpmPass ? [] : otherRpms;
+        _shellPassIsEverything = oneRpmPass && otherRpms.length > 0;
         const flatpakPkgs = updates.filter(p => p.repo === "flatpak");
 
         _wantDnf = (options.dnf !== false) && dnfPkgs.length > 0;
@@ -577,7 +597,9 @@ Item {
             states["system/" + base] = {
                 status: "pending",
                 fraction: 0,
-                detail: Tr.t("runs last · reloads the shell")
+                // Only the shell's own packages reload it; the rest are only
+                // travelling with them to save an authorisation
+                detail: shellPackagePattern.test(base) ? Tr.t("runs last · reloads the shell") : ""
             };
             shellMap[base] = "system/" + base;
             expectedEvr[base] = pkg.toVersion || "";

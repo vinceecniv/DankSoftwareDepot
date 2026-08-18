@@ -481,5 +481,6 @@
     "Held %1": "%1 bloccato",
     "Released the hold on %1": "Blocco di %1 rimosso",
     "Could not install %1": "Impossibile installare %1",
-    "exit %1": "codice di uscita %1"
+    "exit %1": "codice di uscita %1",
+    "Updating system packages… (shell may reload)": "Aggiornamento dei pacchetti di sistema… (la shell potrebbe ricaricarsi)"
 }

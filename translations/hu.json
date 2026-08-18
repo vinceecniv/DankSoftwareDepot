@@ -481,5 +481,6 @@
     "Held %1": "%1 visszatartva",
     "Released the hold on %1": "%1 visszatartása feloldva",
     "Could not install %1": "A(z) %1 telepítése nem sikerült",
-    "exit %1": "kilépési kód: %1"
+    "exit %1": "kilépési kód: %1",
+    "Updating system packages… (shell may reload)": "Rendszercsomagok frissítése… (a héj újratöltődhet)"
 }

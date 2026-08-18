@@ -481,5 +481,6 @@
     "Held %1": "%1 を保留しました",
     "Released the hold on %1": "%1 の保留を解除しました",
     "Could not install %1": "%1 をインストールできませんでした",
-    "exit %1": "終了コード %1"
+    "exit %1": "終了コード %1",
+    "Updating system packages… (shell may reload)": "システムパッケージを更新しています…（シェルが再読み込みされる場合があります）"
 }

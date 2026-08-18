@@ -481,5 +481,6 @@
     "Held %1": "%1 vastgezet",
     "Released the hold on %1": "Vastzetten van %1 opgeheven",
     "Could not install %1": "%1 kon niet worden geïnstalleerd",
-    "exit %1": "afsluitcode %1"
+    "exit %1": "afsluitcode %1",
+    "Updating system packages… (shell may reload)": "Systeempakketten bijwerken… (shell kan herladen)"
 }
