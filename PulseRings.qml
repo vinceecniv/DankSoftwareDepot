@@ -59,7 +59,11 @@ Item {
     }
 
     // The inner ring runs the same clock at a smaller radius, which is what
-    // makes one pulse look like a wave rather than a circle changing size
+    // makes one pulse look like a wave rather than a circle changing size.
+    // It used to be drawn in the secondary colour, which made the wave read as
+    // two things chasing each other rather than one moving outwards. Same
+    // colour as the outer ring now; the depth comes from it being fainter,
+    // which is the difference that says "further back" rather than "other".
     Rectangle {
         anchors.centerIn: parent
         width: pulse.ringSize
@@ -67,14 +71,14 @@ Item {
         radius: width / 2
         color: "transparent"
         border.width: Math.round(Theme.spacingXS * 0.75)
-        border.color: Theme.secondary
+        border.color: Theme.primary
         opacity: 0
         visible: pulse.running
 
         OpacityAnimator on opacity {
             running: pulse.running
             loops: Animation.Infinite
-            from: 0.8
+            from: 0.5
             to: 0
             duration: 1500
             easing.type: Easing.OutQuad
