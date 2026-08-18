@@ -3905,14 +3905,22 @@ FloatingWindow {
                                                 Layout.preferredWidth: recentChip.implicitWidth + 10
                                                 Layout.preferredHeight: 16
                                                 radius: 8
-                                                color: Theme.withAlpha(Theme.tertiary, 0.12)
+                                                // The rest of the app reads a
+                                                // source chip by colour:
+                                                // tertiary is Flatpak,
+                                                // secondary is everything that
+                                                // came from the system. This
+                                                // card painted all of them
+                                                // tertiary, so a system package
+                                                // wore the Flatpak colour.
+                                                color: Theme.withAlpha(modelData.source === "Flatpak" ? Theme.tertiary : Theme.secondary, 0.12)
 
                                                 StyledText {
                                                     id: recentChip
                                                     anchors.centerIn: parent
                                                     text: Tr.t(modelData.source)
                                                     font.pixelSize: Theme.fontSizeSmall - 3
-                                                    color: Theme.tertiary
+                                                    color: modelData.source === "Flatpak" ? Theme.tertiary : Theme.secondary
                                                 }
                                             }
 
