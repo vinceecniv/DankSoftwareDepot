@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Layouts
 import QtQuick.Window
 import Quickshell
@@ -3423,6 +3424,17 @@ FloatingWindow {
                                     // click does something — but not mid-check,
                                     // when it does not
                                     visible: status === Image.Ready && (SystemUpdateService.isChecking || !windowEmptyArea.containsMouse)
+
+                                    // The shell's mark in the shell's colour.
+                                    // Light mode is left alone on purpose: there
+                                    // the disc behind it is solid primary and the
+                                    // penguin is white on top of it, so tinting it
+                                    // primary would paint it out of sight.
+                                    layer.enabled: !Theme.isLightMode
+                                    layer.effect: MultiEffect {
+                                        colorization: 1.0
+                                        colorizationColor: Theme.primary
+                                    }
                                 }
 
                                 DankIcon {
@@ -3446,7 +3458,12 @@ FloatingWindow {
                                             return "white";
                                         if (SystemUpdateService.isChecking || windowEmptyArea.containsMouse)
                                             return Theme.primary;
-                                        return SystemUpdateService.hasError ? Theme.error : Theme.success;
+                                        // Up to date is the app's own state, not a
+                                        // traffic light: it wears the accent like
+                                        // everything else here. A failed check keeps
+                                        // its red, which is the one case where the
+                                        // colour is carrying the meaning.
+                                        return SystemUpdateService.hasError ? Theme.error : Theme.primary;
                                     }
                                 }
                             }
