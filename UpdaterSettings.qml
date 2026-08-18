@@ -74,7 +74,7 @@ PluginSettings {
         settingKey: "tintAppIcons"
         label: Tr.t("Tint app icons with the theme colour")
         description: Tr.t("Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.")
-        defaultValue: false
+        defaultValue: true
     }
 
     ToggleSetting {

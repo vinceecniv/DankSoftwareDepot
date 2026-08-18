@@ -8,20 +8,30 @@ Item {
     id: ui
 
     // ── Themed app icons ────────────────────────────────────────────────────
-    // Off by default: an app's icon is its own identity, and a catalog where
-    // every one of them is the same colour is harder to scan, not easier.
-    // Some palettes make a wall of unrelated logos look like confetti though,
-    // and this is for those — read here rather than threaded through six
-    // views, because the leaf that draws an icon is a long way from the
-    // settings page and everything in between would only be passing it on.
-    property bool tintAppIcons: PluginService.loadPluginData("dankSoftwareDepot", "tintAppIcons", false) === true
+    // On by default. The argument against it is that an app's icon is its own
+    // identity and a catalog where every one is the same colour is harder to
+    // scan; the argument for it is that this window belongs to a shell whose
+    // whole point is that everything follows one accent, and a wall of
+    // unrelated logos is the one place that stops being true. The second
+    // argument won, and the switch is still there for anyone the first one
+    // convinced.
+    //
+    // `!== false` rather than `=== true`: it is the difference between a
+    // default and an override. Somebody who turned this off has a `false` on
+    // disk and keeps it; somebody who never touched it has nothing on disk
+    // and gets what the plugin thinks is best today.
+    //
+    // Read here rather than threaded through six views, because the leaf that
+    // draws an icon is a long way from the settings page and everything in
+    // between would only be passing it on.
+    property bool tintAppIcons: PluginService.loadPluginData("dankSoftwareDepot", "tintAppIcons", true) !== false
 
     Connections {
         target: PluginService
 
         function onPluginDataChanged(pluginId) {
             if (pluginId === "dankSoftwareDepot")
-                ui.tintAppIcons = PluginService.loadPluginData("dankSoftwareDepot", "tintAppIcons", false) === true;
+                ui.tintAppIcons = PluginService.loadPluginData("dankSoftwareDepot", "tintAppIcons", true) !== false;
         }
     }
 
