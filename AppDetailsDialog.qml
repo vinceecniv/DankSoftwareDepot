@@ -1425,8 +1425,8 @@ Item {
                                 iconName: "rate_review"
                                 iconSize: 13
                                 text: Tr.t("Write a review")
-                                backgroundColor: Theme.secondaryContainer
-                                textColor: Theme.surfaceText
+                                backgroundColor: Theme.buttonBg
+                                textColor: Theme.buttonText
                                 onClicked: dialog.reviewFormOpen = true
                             }
                         }
@@ -1735,8 +1735,8 @@ Item {
                         iconName: "launch"
                         iconSize: 14
                         text: Tr.t("Open")
-                        backgroundColor: Theme.secondaryContainer
-                        textColor: Theme.surfaceText
+                        backgroundColor: Theme.buttonBg
+                        textColor: Theme.buttonText
                         onClicked: {
                             Quickshell.execDetached(dialog.openCommand.length > 0 ? dialog.openCommand : ["flatpak", "run", dialog.appData.id]);
                             dialog.close();
