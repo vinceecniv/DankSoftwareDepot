@@ -492,5 +492,6 @@
     "Homebrew has command-line software the distribution does not carry.": "Homebrew 提供发行版未收录的命令行软件。",
     "%1 found in Homebrew, listed below": "在 Homebrew 中找到 %1 个，列于下方",
     "Nothing in Homebrew for \"%1\"": "Homebrew 中没有“%1”的结果",
-    "macOS only — this formula cannot run on Linux": "仅限 macOS — 该 formula 无法在 Linux 上运行"
+    "Homebrew has no build of this for Linux": "Homebrew 没有该软件的 Linux 版本",
+    "Depends on: %1": "依赖：%1"
 }

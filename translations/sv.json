@@ -492,5 +492,6 @@
     "Homebrew has command-line software the distribution does not carry.": "Homebrew har kommandoradsprogram som distributionen inte levererar.",
     "%1 found in Homebrew, listed below": "%1 hittades i Homebrew, listas nedan",
     "Nothing in Homebrew for \"%1\"": "Inget i Homebrew för ”%1”",
-    "macOS only — this formula cannot run on Linux": "Endast macOS — den här formeln fungerar inte på Linux"
+    "Homebrew has no build of this for Linux": "Homebrew har inget Linux-bygge av detta",
+    "Depends on: %1": "Beror på: %1"
 }

@@ -492,5 +492,6 @@
     "Homebrew has command-line software the distribution does not carry.": "Homebrew có phần mềm dòng lệnh mà bản phân phối không kèm theo.",
     "%1 found in Homebrew, listed below": "Tìm thấy %1 trong Homebrew, liệt kê bên dưới",
     "Nothing in Homebrew for \"%1\"": "Không có gì trong Homebrew cho “%1”",
-    "macOS only — this formula cannot run on Linux": "Chỉ dành cho macOS — công thức này không chạy trên Linux"
+    "Homebrew has no build of this for Linux": "Homebrew không có bản dựng Linux cho mục này",
+    "Depends on: %1": "Phụ thuộc vào: %1"
 }

@@ -51,6 +51,13 @@ Item {
     property var pluginFacts: null
     readonly property bool isPlugin: pluginFacts !== null
 
+    // A Homebrew formula is not a package either: no repository to name, no
+    // AppStream entry, no reviews. What it has is what brew knows —
+    // {name, desc, homepage, license, version, installs30d, linux,
+    //  dependencies, deprecated}
+    property var brewFacts: null
+    readonly property bool isBrew: brewFacts !== null
+
     property var advisory: null
     property var previousVersions: []    // [{label, payload}]
     property bool versionsLoading: false
@@ -835,6 +842,90 @@ Item {
                         font.pixelSize: Theme.fontSizeSmall
                         color: Theme.warning
                         wrapMode: Text.WordWrap
+                    }
+
+                    // ── What brew knows about a formula ─────────────────────
+                    Column {
+                        width: parent.width
+                        spacing: 4
+                        visible: dialog.isBrew
+
+                        RowLayout {
+                            width: parent.width
+                            spacing: Theme.spacingS
+
+                            DankIcon {
+                                name: "local_drink"
+                                size: 14
+                                color: Theme.surfaceVariantText
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: {
+                                    const facts = dialog.brewFacts || {};
+                                    const parts = ["Homebrew"];
+                                    if (facts.version)
+                                        parts.push(facts.version);
+                                    if (facts.license)
+                                        parts.push(facts.license);
+                                    return parts.join(" · ");
+                                }
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.surfaceVariantText
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        RowLayout {
+                            width: parent.width
+                            spacing: Theme.spacingS
+                            visible: (dialog.brewFacts && dialog.brewFacts.installs30d > 0) || false
+
+                            DankIcon {
+                                name: "trending_up"
+                                size: 14
+                                color: Theme.surfaceVariantText
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                // Homebrew's own analytics, the same kind of
+                                // number the Flathub rows carry
+                                text: Tr.t("%1 installs last month").arg(dialog.brewFacts ? dialog.formatCount(dialog.brewFacts.installs30d) : "")
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.surfaceVariantText
+                            }
+                        }
+
+                        RowLayout {
+                            width: parent.width
+                            spacing: Theme.spacingS
+                            visible: dialog.isBrew && dialog.brewFacts.linux === false
+
+                            DankIcon {
+                                name: "warning"
+                                size: 14
+                                color: Theme.warning
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: Tr.t("Homebrew has no build of this for Linux")
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.warning
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        StyledText {
+                            width: parent.width
+                            visible: dialog.isBrew && (dialog.brewFacts.dependencies || []).length > 0
+                            text: Tr.t("Depends on: %1").arg((dialog.brewFacts ? (dialog.brewFacts.dependencies || []) : []).join(", "))
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            color: Theme.surfaceVariantText
+                            wrapMode: Text.WordWrap
+                        }
                     }
 
                     // ── What a plugin is, in the terms a plugin has ─────────

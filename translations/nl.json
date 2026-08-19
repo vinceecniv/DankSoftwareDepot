@@ -492,5 +492,6 @@
     "Homebrew has command-line software the distribution does not carry.": "Homebrew heeft opdrachtregelsoftware die de distributie niet meelevert.",
     "%1 found in Homebrew, listed below": "%1 gevonden in Homebrew, hieronder",
     "Nothing in Homebrew for \"%1\"": "Niets in Homebrew voor „%1”",
-    "macOS only — this formula cannot run on Linux": "Alleen macOS — deze formule draait niet op Linux"
+    "Homebrew has no build of this for Linux": "Homebrew heeft hier geen Linux-build van",
+    "Depends on: %1": "Afhankelijk van: %1"
 }

@@ -190,15 +190,78 @@ def run_state(refresh):
 # ── Searching and describing ─────────────────────────────────────────────────
 
 def _usable_on_linux(info):
-    """Whether this formula can run here at all.
+    """Whether Homebrew has a build of this for the platform we are on.
 
-    A Linux bottle is the plain yes. Without one it can still be built from
-    source — unless it says it needs macOS, which is the plain no.
+    Checked against a real brew, which changed the answer. `brew info` on
+    Linux reports only what is relevant here: a macOS-only formula comes back
+    with no bottles *and no requirements*, because the requirement that makes
+    it macOS-only was stripped along with everything else about macOS. So the
+    absence of a macOS requirement means nothing locally, and the rule that
+    relied on it called the Mac App Store command line usable on Linux.
+
+    What survives the stripping is the bottle list. A Linux bottle is the
+    plain yes; the API document, which is not stripped, still lets a macOS
+    requirement be the plain no; and `versions.bottle` answers for the rest.
+
+    A formula that has no bottle and would have built from source is called
+    unavailable here, which is why the label says Homebrew has no build for
+    this platform rather than claiming the formula is macOS-only.
     """
     files = (((info.get("bottle") or {}).get("stable") or {}).get("files") or {})
     if any("linux" in key for key in files):
         return True
-    return not any((req.get("name") or "") == "macos" for req in (info.get("requirements") or []))
+    if any((req.get("name") or "") == "macos" for req in (info.get("requirements") or [])):
+        return False
+    return bool((info.get("versions") or {}).get("bottle"))
+
+
+ANALYTICS_URL = "https://formulae.brew.sh/api/analytics/install/30d.json"
+ANALYTICS_CACHE = os.path.join(CACHE_DIR, "brew-analytics-30d.json")
+ANALYTICS_MAX_AGE = 24 * 3600
+ANALYTICS_TIMEOUT = 20
+
+
+def analytics_table():
+    """How often each formula was installed in the last thirty days.
+
+    `brew info --json=v2` does not carry this — checked against a real brew,
+    where the key is simply absent — so it comes from the same place the
+    website reads it: one document for every formula at once, about 1.7 MB,
+    kept for a day. One fetch rather than one per search result, and a search
+    still answers from brew alone when the fetch fails.
+    """
+    try:
+        if time.time() - os.stat(ANALYTICS_CACHE).st_mtime < ANALYTICS_MAX_AGE:
+            with open(ANALYTICS_CACHE) as f:
+                return json.load(f)
+    except (OSError, ValueError):
+        pass
+    try:
+        import urllib.error
+        import urllib.request
+        req = urllib.request.Request(ANALYTICS_URL, headers={"User-Agent": "dankSoftwareDepot/0.1"})
+        with urllib.request.urlopen(req, timeout=ANALYTICS_TIMEOUT) as response:
+            doc = json.loads(response.read())
+    # Named rather than bare. A catch-all here swallowed a NameError in this
+    # very function and reported it as "the network is down": a lie that looks
+    # like a fact, since the counts simply came out zero.
+    except (OSError, ValueError, urllib.error.URLError):
+        return {}
+    # The document lists {"formula": "jq", "count": "79,407"} per item; the
+    # counts are strings with thousands separators in them
+    table = {}
+    for item in doc.get("items") or []:
+        name = (item.get("formula") or "").split()[0]
+        count = str(item.get("count") or "0").replace(",", "")
+        if name and count.isdigit():
+            table[name] = max(table.get(name, 0), int(count))
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(ANALYTICS_CACHE, "w") as f:
+            json.dump(table, f)
+    except OSError:
+        pass
+    return table
 
 
 def _installs_30d(info):
@@ -214,14 +277,15 @@ def _installs_30d(info):
     return max(plain) if plain else 0
 
 
-def _describe(info, installed_names):
+def _describe(info, installed_names, analytics=None):
+    counts = analytics or {}
     return {
         "name": info.get("name") or "",
         "desc": info.get("desc") or "",
         "homepage": info.get("homepage") or "",
         "license": info.get("license") or "",
         "version": ((info.get("versions") or {}).get("stable") or ""),
-        "installs30d": _installs_30d(info),
+        "installs30d": _installs_30d(info) or counts.get(info.get("name") or "", 0),
         "linux": _usable_on_linux(info),
         "deprecated": bool(info.get("deprecated")) or bool(info.get("disabled")),
         "installed": (info.get("name") or "") in installed_names,
@@ -248,7 +312,8 @@ def run_search(term, limit=40):
     names = [line.strip() for line in raw.splitlines()
              if line.strip() and not line.startswith("==>") and "/" not in line]
     installed = {row["name"] for row in parse_installed(run([brew, "list", "--versions"], STATE_TIMEOUT))}
-    results = [_describe(doc, installed) for doc in _info_documents(brew, names[:limit])]
+    counts = analytics_table()
+    results = [_describe(doc, installed, counts) for doc in _info_documents(brew, names[:limit])]
     # Unusable here is worth showing rather than hiding — "this exists but not
     # for Linux" is an answer — but not worth showing first
     results.sort(key=lambda r: (not r["linux"], r["deprecated"], -r["installs30d"], r["name"]))
@@ -270,7 +335,7 @@ def run_info(name):
     if not docs:
         print(json.dumps({"supported": True, "found": False, "name": name}))
         return
-    out = _describe(docs[0], installed)
+    out = _describe(docs[0], installed, analytics_table())
     out.update({"supported": True, "found": True,
                 "dependencies": (docs[0].get("dependencies") or [])[:12]})
     print(json.dumps(out))

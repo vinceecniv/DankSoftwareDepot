@@ -253,7 +253,8 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   from brew's own analytics. **Homebrew grew up on macOS**, and its core still
   carries formulae that cannot run on Linux; those are listed greyed with the
   reason rather than dropped, because "this exists, but not for you" is an
-  answer
+  answer. Opening one shows what brew knows: version, licence, homepage,
+  dependencies and how often it was installed last month
 - **AppImages** are searched, installed and offered from here alongside
   everything else — see [AppImages, end to end](#appimages-end-to-end)
 

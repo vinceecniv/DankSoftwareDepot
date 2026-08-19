@@ -57,7 +57,44 @@ Item {
     }
 
     // ── App details popup ────────────────────────────────────────────────────
+    // A formula opens the same popup as everything else, filled from brew
+    // rather than from AppStream — there is no catalogue entry for it, and
+    // brew knows what there is to know.
+    function openBrewDetails(formula) {
+        detailsDialog.entry = null;
+        detailsDialog.brewFacts = formula;
+        detailsDialog.open({
+            id: formula.name,
+            name: formula.name,
+            summary: formula.desc || "",
+            iconPath: "",
+            homepage: formula.homepage || "",
+            versionLabel: formula.version || "",
+            origin: "Homebrew",
+            isFlatpak: false,
+            sources: []
+        });
+        brewInfoProcess.command = [Backend.python, scriptPath.replace("enrich.py", "brew_helper.py"), "--info", formula.name];
+        brewInfoProcess.running = true;
+    }
+
+    Process {
+        id: brewInfoProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const info = JSON.parse(text);
+                    if (info.found === true && detailsDialog.brewFacts && info.name === detailsDialog.brewFacts.name)
+                        detailsDialog.brewFacts = info;
+                } catch (e) {
+                }
+            }
+        }
+    }
+
     function openDetails(entry) {
+        detailsDialog.brewFacts = null;
         detailsDialog.entry = entry;
         detailsDialog.open({
             id: entry.id,
@@ -1829,11 +1866,19 @@ Item {
                             Layout.fillWidth: true
                             visible: text !== ""
                             text: brewRowRoot.usable ? (brewRowRoot.formula.desc || "")
-                                                     : Tr.t("macOS only — this formula cannot run on Linux")
+                                                     : Tr.t("Homebrew has no build of this for Linux")
                             font.pixelSize: Theme.fontSizeSmall - 1
                             color: Theme.surfaceVariantText
                             elide: Text.ElideRight
                         }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton
+                        cursorShape: Qt.PointingHandCursor
+                        z: -1
+                        onClicked: view.openBrewDetails(brewRowRoot.formula)
                     }
 
                     Item {

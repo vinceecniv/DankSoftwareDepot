@@ -492,5 +492,6 @@
     "Homebrew has command-line software the distribution does not carry.": "Homebrew에는 배포판이 제공하지 않는 명령줄 소프트웨어가 있습니다.",
     "%1 found in Homebrew, listed below": "Homebrew에서 %1개 발견, 아래 표시",
     "Nothing in Homebrew for \"%1\"": "“%1”에 대한 결과가 Homebrew에 없습니다",
-    "macOS only — this formula cannot run on Linux": "macOS 전용 — 이 포뮬러는 Linux에서 실행할 수 없습니다"
+    "Homebrew has no build of this for Linux": "Homebrew에 이 항목의 Linux 빌드가 없습니다",
+    "Depends on: %1": "의존성: %1"
 }

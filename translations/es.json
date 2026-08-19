@@ -492,5 +492,6 @@
     "Homebrew has command-line software the distribution does not carry.": "Homebrew tiene software de línea de comandos que la distribución no incluye.",
     "%1 found in Homebrew, listed below": "%1 encontrados en Homebrew, listados abajo",
     "Nothing in Homebrew for \"%1\"": "Nada en Homebrew para «%1»",
-    "macOS only — this formula cannot run on Linux": "Solo macOS: esta fórmula no funciona en Linux"
+    "Homebrew has no build of this for Linux": "Homebrew no tiene una versión de esto para Linux",
+    "Depends on: %1": "Depende de: %1"
 }

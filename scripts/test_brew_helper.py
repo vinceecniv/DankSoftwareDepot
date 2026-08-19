@@ -232,6 +232,16 @@ def main():
               brew._usable_on_linux(FORMULA_DOCS["jq"]) is True)
         check("one that requires macOS is not",
               brew._usable_on_linux(FORMULA_DOCS["mas"]) is False)
+        # What `brew info` returns on Linux, recorded from a real one: the
+        # platform-specific parts are stripped, so the macOS requirement that
+        # makes this formula macOS-only is not in the document at all.
+        check("and neither is one brew reports without any build here",
+              brew._usable_on_linux({"name": "mas", "versions": {"stable": "7.0.0", "bottle": False},
+                                     "bottle": {"stable": {"files": {}}}, "requirements": []}) is False)
+        check("while a formula with a Linux bottle still is",
+              brew._usable_on_linux({"name": "jq", "versions": {"stable": "1.8.2", "bottle": True},
+                                     "bottle": {"stable": {"files": {"x86_64_linux": {}}}},
+                                     "requirements": []}) is True)
         check("installs over thirty days come from brew's own analytics",
               brew._installs_30d(FORMULA_DOCS["jq"]) == 79407,
               str(brew._installs_30d(FORMULA_DOCS["jq"])))

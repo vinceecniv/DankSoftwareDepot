@@ -492,5 +492,6 @@
     "Homebrew has command-line software the distribution does not carry.": "В Homebrew есть консольные программы, которых нет в дистрибутиве.",
     "%1 found in Homebrew, listed below": "Найдено в Homebrew: %1 — см. ниже",
     "Nothing in Homebrew for \"%1\"": "В Homebrew ничего нет по запросу «%1»",
-    "macOS only — this formula cannot run on Linux": "Только macOS — эта формула не работает в Linux"
+    "Homebrew has no build of this for Linux": "У Homebrew нет сборки для Linux",
+    "Depends on: %1": "Зависит от: %1"
 }

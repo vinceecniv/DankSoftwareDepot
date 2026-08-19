@@ -492,5 +492,6 @@
     "Homebrew has command-line software the distribution does not carry.": "Homebrew にはディストリビューションが提供しないコマンドラインソフトウェアがあります。",
     "%1 found in Homebrew, listed below": "Homebrew で %1 件見つかりました（下に表示）",
     "Nothing in Homebrew for \"%1\"": "「%1」は Homebrew にありません",
-    "macOS only — this formula cannot run on Linux": "macOS 専用 — この formula は Linux では動きません"
+    "Homebrew has no build of this for Linux": "Homebrew にはこの Linux 向けビルドがありません",
+    "Depends on: %1": "依存: %1"
 }
