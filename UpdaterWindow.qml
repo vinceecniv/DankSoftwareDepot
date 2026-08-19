@@ -2560,6 +2560,131 @@ FloatingWindow {
             }
         }
 
+        // ── Tabs ────────────────────────────────────────────────────────────
+        DankTabBar {
+            id: tabs
+            Layout.fillWidth: true
+            // The active-tab indicator draws ~10px below the bar's bounds, so
+            // reserve extra space between the bar and the tab content.
+            Layout.bottomMargin: Theme.spacingL
+            // Taller than the content so the hover highlight gets internal padding
+            tabHeight: 52
+            // Built from the same list of ids the rest of the window uses, so
+            // a hidden tab cannot make the two disagree
+            model: win.tabIds.map(id => {
+                switch (id) {
+                case 1:
+                    return {
+                        text: Tr.t("Installed"),
+                        icon: "apps"
+                    };
+                case 2:
+                    return {
+                        text: Tr.t("Install"),
+                        icon: "storefront"
+                    };
+                case 3:
+                    return {
+                        text: Tr.t("Firmware"),
+                        icon: "memory"
+                    };
+                case 4:
+                    return {
+                        text: Tr.t("Log"),
+                        icon: "history"
+                    };
+                default:
+                    return {
+                        text: Tr.t("Updates"),
+                        icon: "deployed_code_update"
+                    };
+                }
+            })
+
+            // The shared tab bar does carry a state layer, but at surfaceTint
+            // 0.08 it is invisible against this window. Draw a clearer one on
+            // top. One bar-wide HoverHandler drives a single sliding
+            // highlight: per-tab handlers latched their hovered state when
+            // the pointer left along certain paths, leaving every visited
+            // tab lit. A HoverHandler never swallows clicks, so the bar
+            // keeps handling those itself.
+            HoverHandler {
+                id: tabsHoverHandler
+            }
+
+            Rectangle {
+                id: tabHoverOverlay
+
+                readonly property int tabCount: Math.max(1, tabs.model.length)
+                readonly property real tabWidth: (tabs.width - tabs.spacing * Math.max(0, tabCount - 1)) / tabCount
+                // Follow the pointer only while hovered, so the highlight
+                // fades out in place instead of jumping to the first tab
+                property int hoverIndex: 0
+                readonly property real pointerX: tabsHoverHandler.point.position.x
+
+                onPointerXChanged: {
+                    if (tabsHoverHandler.hovered)
+                        hoverIndex = Math.max(0, Math.min(tabCount - 1, Math.floor(pointerX / (tabWidth + tabs.spacing))));
+                }
+
+                x: hoverIndex * (tabWidth + tabs.spacing)
+                y: 0
+                width: tabWidth
+                height: tabs.tabHeight
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.primary, 0.14)
+                opacity: tabsHoverHandler.hovered ? 1 : 0
+
+                Behavior on x {
+                    NumberAnimation {
+                        duration: Theme.shortDuration
+                        easing.type: Theme.standardEasing
+                    }
+                }
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Theme.shortDuration
+                        easing.type: Theme.standardEasing
+                    }
+                }
+            }
+
+            onTabClicked: index => {
+                currentIndex = index;
+            }
+
+            onCurrentIndexChanged: {
+                // Derived from currentIndex right here, not read off
+                // win.currentTab: that is a binding on this very property and
+                // is not guaranteed to have caught up while this handler runs.
+                // Reading it stale activated the previous tab's loader and
+                // left the new tab blank until it was clicked twice.
+                const id = win.tabIds[Math.min(currentIndex, win.tabIds.length - 1)];
+                if (id === 1)
+                    installedLoader.active = true;
+                if (id === 2)
+                    installLoader.active = true;
+                if (id === 3) {
+                    // Re-scan hardware on every visit; first activation scans
+                    // via Component.onCompleted
+                    const rescan = firmwareLoader.active;
+                    firmwareLoader.active = true;
+                    if (rescan && firmwareLoader.item)
+                        firmwareLoader.item.reload();
+                }
+                if (id === 4)
+                    logLoader.active = true;
+                win.focusCurrentTab();
+            }
+        }
+
+        // ── What is going on, said under the tabs rather than over them ─────
+        // Every strip below belongs to the Updates tab and appears and vanishes
+        // with it. Above the tab bar, each appearance pushed the tabs down and
+        // each switch to another tab let them spring back — the row you were
+        // aiming at moved while you were aiming at it. Underneath, the tabs
+        // hold still and the strips take their space from the list instead.
         // ── Compact status strip while updates are pending ──────────────────
         Rectangle {
             Layout.fillWidth: true
@@ -2831,124 +2956,6 @@ FloatingWindow {
             }
         }
 
-        // ── Tabs ────────────────────────────────────────────────────────────
-        DankTabBar {
-            id: tabs
-            Layout.fillWidth: true
-            // The active-tab indicator draws ~10px below the bar's bounds, so
-            // reserve extra space between the bar and the tab content.
-            Layout.bottomMargin: Theme.spacingL
-            // Taller than the content so the hover highlight gets internal padding
-            tabHeight: 52
-            // Built from the same list of ids the rest of the window uses, so
-            // a hidden tab cannot make the two disagree
-            model: win.tabIds.map(id => {
-                switch (id) {
-                case 1:
-                    return {
-                        text: Tr.t("Installed"),
-                        icon: "apps"
-                    };
-                case 2:
-                    return {
-                        text: Tr.t("Install"),
-                        icon: "storefront"
-                    };
-                case 3:
-                    return {
-                        text: Tr.t("Firmware"),
-                        icon: "memory"
-                    };
-                case 4:
-                    return {
-                        text: Tr.t("Log"),
-                        icon: "history"
-                    };
-                default:
-                    return {
-                        text: Tr.t("Updates"),
-                        icon: "deployed_code_update"
-                    };
-                }
-            })
-
-            // The shared tab bar does carry a state layer, but at surfaceTint
-            // 0.08 it is invisible against this window. Draw a clearer one on
-            // top. One bar-wide HoverHandler drives a single sliding
-            // highlight: per-tab handlers latched their hovered state when
-            // the pointer left along certain paths, leaving every visited
-            // tab lit. A HoverHandler never swallows clicks, so the bar
-            // keeps handling those itself.
-            HoverHandler {
-                id: tabsHoverHandler
-            }
-
-            Rectangle {
-                id: tabHoverOverlay
-
-                readonly property int tabCount: Math.max(1, tabs.model.length)
-                readonly property real tabWidth: (tabs.width - tabs.spacing * Math.max(0, tabCount - 1)) / tabCount
-                // Follow the pointer only while hovered, so the highlight
-                // fades out in place instead of jumping to the first tab
-                property int hoverIndex: 0
-                readonly property real pointerX: tabsHoverHandler.point.position.x
-
-                onPointerXChanged: {
-                    if (tabsHoverHandler.hovered)
-                        hoverIndex = Math.max(0, Math.min(tabCount - 1, Math.floor(pointerX / (tabWidth + tabs.spacing))));
-                }
-
-                x: hoverIndex * (tabWidth + tabs.spacing)
-                y: 0
-                width: tabWidth
-                height: tabs.tabHeight
-                radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.primary, 0.14)
-                opacity: tabsHoverHandler.hovered ? 1 : 0
-
-                Behavior on x {
-                    NumberAnimation {
-                        duration: Theme.shortDuration
-                        easing.type: Theme.standardEasing
-                    }
-                }
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: Theme.shortDuration
-                        easing.type: Theme.standardEasing
-                    }
-                }
-            }
-
-            onTabClicked: index => {
-                currentIndex = index;
-            }
-
-            onCurrentIndexChanged: {
-                // Derived from currentIndex right here, not read off
-                // win.currentTab: that is a binding on this very property and
-                // is not guaranteed to have caught up while this handler runs.
-                // Reading it stale activated the previous tab's loader and
-                // left the new tab blank until it was clicked twice.
-                const id = win.tabIds[Math.min(currentIndex, win.tabIds.length - 1)];
-                if (id === 1)
-                    installedLoader.active = true;
-                if (id === 2)
-                    installLoader.active = true;
-                if (id === 3) {
-                    // Re-scan hardware on every visit; first activation scans
-                    // via Component.onCompleted
-                    const rescan = firmwareLoader.active;
-                    firmwareLoader.active = true;
-                    if (rescan && firmwareLoader.item)
-                        firmwareLoader.item.reload();
-                }
-                if (id === 4)
-                    logLoader.active = true;
-                win.focusCurrentTab();
-            }
-        }
 
         // ── Installed tab (lazy) ────────────────────────────────────────────
         Loader {
