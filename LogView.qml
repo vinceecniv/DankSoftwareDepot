@@ -590,9 +590,18 @@ Item {
                                     spacing: Theme.spacingS
 
                                     DankIcon {
-                                        name: itemRow.modelData.status === "error" ? "error" : "check_circle"
+                                        // Three outcomes, not two. A row that
+                                        // is neither done nor failed — a run
+                                        // torn down by the shell reloading
+                                        // leaves those — used to be drawn with
+                                        // the same green tick as a success,
+                                        // which is how an entry could show
+                                        // three ticks over a title saying two.
+                                        name: itemRow.modelData.status === "error" ? "error"
+                                            : (itemRow.modelData.status === "done" ? "check_circle" : "schedule")
                                         size: 13
-                                        color: itemRow.modelData.status === "error" ? Theme.error : Theme.success
+                                        color: itemRow.modelData.status === "error" ? Theme.error
+                                            : (itemRow.modelData.status === "done" ? Theme.success : Theme.surfaceVariantText)
                                     }
 
                                     StyledText {

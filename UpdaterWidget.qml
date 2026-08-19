@@ -1006,7 +1006,12 @@ PluginComponent {
                 // target version now did arrive — the log records what the
                 // system says, not what the run last believed.
                 const items = (stash.items || []).map(it => {
-                    if (it.status !== "error" || !it.base || !arrived(it.base, it.to))
+                    // Any row the run did not see finish, not only the ones it
+                    // saw fail. The stash is taken when the shell pass begins,
+                    // so packages still in flight are recorded as pending —
+                    // and they are exactly the ones the reload stops us from
+                    // hearing about. The package database knows.
+                    if (it.status === "done" || !it.base || !arrived(it.base, it.to))
                         return it;
                     const fixed = Object.assign({}, it, {
                         status: "done"
@@ -1033,6 +1038,13 @@ PluginComponent {
                         done++;
                     else if (it.status === "error")
                         failed++;
+                }
+                // The tail of a torn-down run can carry nothing at all. The
+                // normal writer already refuses that case; this one wrote it,
+                // which is where the stray "0 packages updated" came from.
+                if (items.length === 0) {
+                    PluginService.savePluginData("dankSoftwareDepot", "pendingShellRunLog", {});
+                    return;
                 }
                 const type = failed > 0 ? "update-failed" : "update";
                 const key = failed > 0 ? "Update finished with issues (%1 failed)" : (done === 1 ? "Updated %1 package" : "Updated %1 packages");
