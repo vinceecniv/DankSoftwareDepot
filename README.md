@@ -1,6 +1,23 @@
 # <picture><source media="(prefers-color-scheme: dark)" srcset="assets/icons/dank-software-depot-dark.svg"><img src="assets/icons/dank-software-depot-light.svg" alt="" width="42"></picture> Dank Software Depot
 
-**Beta** · **Fedora-based distros (atomic Fedora, Debian/Ubuntu & Arch experimental)** · English / Nederlands / Deutsch / Français / Español / Português / Italiano / Polski / Svenska / Українська / Русский / Magyar / 日本語 / 한국어 / Tiếng Việt / 中文
+[![Release](https://img.shields.io/github/v/release/vinceecniv/DankSoftwareDepot?label=release&color=6750A4)](https://github.com/vinceecniv/DankSoftwareDepot/releases)
+[![Checks](https://github.com/vinceecniv/DankSoftwareDepot/actions/workflows/checks.yml/badge.svg)](https://github.com/vinceecniv/DankSoftwareDepot/actions/workflows/checks.yml)
+[![License](https://img.shields.io/badge/license-MIT-informational)](LICENSE)
+![Status](https://img.shields.io/badge/status-beta-orange)
+![DMS](https://img.shields.io/badge/DMS-%E2%89%A5%201.5-6750A4)
+![Languages](https://img.shields.io/badge/languages-16-6750A4)
+
+**Manages** ![System packages](https://img.shields.io/badge/system%20packages-dnf%20%C2%B7%20apt%20%C2%B7%20pacman%20%C2%B7%20rpm--ostree-4A4458)
+![Flatpak](https://img.shields.io/badge/Flatpak-4A4458)
+![AppImage](https://img.shields.io/badge/AppImage-4A4458)
+![Firmware](https://img.shields.io/badge/firmware-fwupd%20%C2%B7%20LVFS-4A4458)
+![DMS plugins](https://img.shields.io/badge/DMS%20plugins-4A4458)
+![Homebrew](https://img.shields.io/badge/Homebrew-4A4458)
+
+**Fedora-based distros** — atomic Fedora, Debian/Ubuntu and Arch experimental ·
+English / Nederlands / Deutsch / Français / Español / Português / Italiano /
+Polski / Svenska / Українська / Русский / Magyar / 日本語 / 한국어 /
+Tiếng Việt / 中文
 
 A full software & updates center plugin for
 [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell):
