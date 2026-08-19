@@ -9,7 +9,8 @@ in-app when the plugin offers its own update.
 It is the same software as 0.9.9 with Homebrew added; it is still in beta, it
 still changes quickly, and the status section of the README still says so. If
 you were waiting for a version number to mean "safe now", keep waiting — what
-it means is that there were nine of them before this one.
+it means is that thirty-five releases came before this one, the first of them
+on 5 August, a fortnight ago.
 
 Thanks to @kmf for asking for Homebrew.
 
