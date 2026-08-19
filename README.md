@@ -91,6 +91,12 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   **Waiting**, **Completed** (collapsed) — so the packages actually being
   worked on are the first thing on screen. Each row has its own progress
   bar built from real bytes (flatpak transaction events, libdnf5 callbacks)
+- **The stepper follows the work, not the running order.** Every kind of
+  software reports its own two stages, so a run that has finished installing
+  system packages and started fetching Flatpaks steps *back* to Downloading
+  instead of standing on Installing while bytes are still arriving. A stepper
+  that only ever moves forwards is tidier and wrong — the run is not a line,
+  it is six of them
 - A package that fails keeps its reason on its card, including after the
   shell reload a DMS update causes, with the tool's verbatim output one
   click away under **Show details** — the same detail the action log keeps
@@ -203,6 +209,11 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 - Live search across the system repos and Flathub (cached AppStream
   index), plus a package-name fallback so plain CLI packages
   (e.g. `playerctl`) are found too
+- **Chips above the results** narrow them to one kind, with Copr and Homebrew
+  joining only on a machine where they mean anything. Picking one narrows the
+  offer to search elsewhere along with it: filtering on Homebrew stops
+  offering a Copr search, because its answer could not appear under the filter
+  you just set
 - **One Install button, and a straight answer behind it.** An app carried by
   both the distribution and Flathub used to put a button for each in the row
   and leave you to know the difference — which is one action with a
@@ -275,6 +286,12 @@ chip](screenshots/firmware-devices.png)
 - Persistent history of everything the plugin did: update runs, installs,
   uninstalls, restores/downgrades, holding a package and releasing it — entries expand to per-package details
   (old → new version, source, result)
+- **A row that never finished says so** — a clock, not a tick. An entry titled
+  *2 packages updated* could show three ticks under it: the count was right
+  and the icons were wrong, because a row nobody ever wrote an ending for was
+  being drawn as a success. A DMS update reloads the shell mid-run, which is
+  exactly how a run ends without writing its last lines; when a later check
+  finds the package did land after all, the entry heals itself
 - **What this log cannot account for**: the package database knows when every
   package last arrived, this log knows what the plugin did, and the difference
   is somebody else — a terminal, an automatic-update timer, another software

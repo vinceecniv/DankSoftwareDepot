@@ -3,6 +3,59 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.1.0 — 2026-08-19
+
+Homebrew becomes somewhere you install *from*, not only a section that gets
+updated — and with it the round of corrections that a day of actually using
+1.0.0 turned up.
+
+- **Install from Homebrew.** Brew joins the Install tab the way Copr did,
+  because it poses the same question: a catalogue this machine keeps and this
+  storefront does not index. So it is one deliberate press at the end of the
+  results rather than a search per keystroke, and only where brew exists. The
+  search goes through brew's own copy of the index rather than fetching the
+  30 MB document again; opening a result shows what brew knows — version,
+  licence, homepage, dependencies, and how often it was installed in the last
+  thirty days, from Homebrew's own analytics. **Homebrew grew up on macOS**,
+  and its core still carries formulae that cannot run here: those are listed
+  greyed with the reason rather than dropped, because "this exists, but not
+  for you" is an answer and silently returning nothing is not
+- **A Homebrew chip** in the Install tab's filter, next to the Copr one, each
+  appearing only on a machine where it means anything. Picking one narrows the
+  offer to search elsewhere along with it — an offer whose results the current
+  filter would throw away is worse than no offer
+- **The stepper stops running ahead of the work.** During the Flatpak phase it
+  would move to Install while rows underneath were still counting up download
+  percentages: several refs install at once, and the first to get there moved
+  the whole stepper. It is a statement about all of them now. The DMS package
+  pass no longer reads as Install through the minutes it spends downloading,
+  and the AppImage phase no longer reads as Download while it writes the
+  desktop entry. Firmware, Homebrew and the plugin pass are deliberately left
+  as they were: a step that is wrong in a new way is not an improvement on one
+  that is wrong in a known way
+- **The strips on the Updates tab moved below the tab bar.** Pending updates,
+  a manual pass, end-of-life components, a newer Fedora, unread Arch news —
+  all five used to push the tabs down as they appeared and let them spring
+  back when you switched tab, which is precisely when you are aiming at one.
+  The header and the reboot banner stay above, because the reboot notice is
+  true wherever you are
+- **Update All lands at the top of the list**, instead of somewhere in the
+  middle of it: the jump ran in the same instant the dashboard header left and
+  the run's own rows arrived, so the content moved out from under it
+- **Progress bars stop replaying finished downloads.** A card scrolled back
+  into view animated its bar from zero again, which is what made scrolling
+  during a run feel busy
+- **The log tells three outcomes apart.** A row that never finished is drawn
+  as unfinished rather than as a success — an entry could say "2 packages
+  updated" over three green ticks. Behind that: the replay that runs after a
+  DMS update reloads the shell now re-checks every row it did not see finish,
+  not only the ones it saw fail, so a package that went in during the reload
+  stops being pending forever; and it can no longer write an entry with
+  nothing in it
+- **The item-count chip is gone** from the right of every log entry. It
+  repeated the number already in the title, and on the entries where it did
+  not, what it had to say was one click away in the entry itself
+
 ## 1.0.0 — 2026-08-19
 
 **1.0.0 is where the numbering arrived, not a claim that this is finished.**
