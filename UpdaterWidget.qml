@@ -1601,7 +1601,8 @@ PluginComponent {
 
                     PhaseIndicator {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        visible: engine.running || engine.phase === "verifying"
+                        // The popout's panel already stays until the run is
+                        // dismissed; the stepper left before it did
                         step: engine.phaseStep
                         running: engine.running || engine.phase === "verifying"
                         failed: engine.failedCount > 0

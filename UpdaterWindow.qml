@@ -3026,7 +3026,11 @@ FloatingWindow {
         // ── Progress panel (only while a run adds information) ──────────────
         Rectangle {
             Layout.fillWidth: true
-            visible: win.currentTab === 0 && (win.engine.running || (win.engine.phase !== "idle" && win.engine.failedCount > 0) || win.engine.phase === "done")
+            // Verifying is part of the run, so the panel stays for it — it used
+            // to fall through every clause here and take the stepper with it,
+            // which is how a step became invisible at the moment it was the
+            // one being worked on.
+            visible: win.currentTab === 0 && (win.engine.running || win.engine.phase === "verifying" || (win.engine.phase !== "idle" && win.engine.failedCount > 0) || win.engine.phase === "done")
             implicitHeight: progressColumn.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
             color: Theme.surfaceContainer
@@ -3043,10 +3047,12 @@ FloatingWindow {
 
                 PhaseIndicator {
                     Layout.alignment: Qt.AlignHCenter
-                    // Verification is work with nobody at the controls: the
-                    // engine is no longer running, but the stepper has a step
-                    // left and it should be pulsing on it
-                    visible: win.engine.running || win.engine.phase === "verifying"
+                    // Shown for as long as the panel is. The last two steps
+                    // are steps like the others: verification is work with
+                    // nobody at the controls — the engine is no longer running
+                    // but there is a step left to pulse on — and Done is the
+                    // stepper's own conclusion, which it used to leave before
+                    // reaching.
                     step: win.engine.phaseStep
                     running: win.engine.running || win.engine.phase === "verifying"
                     failed: win.engine.failedCount > 0
