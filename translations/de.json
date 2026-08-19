@@ -482,5 +482,8 @@
     "Released the hold on %1": "Sperre für %1 aufgehoben",
     "Could not install %1": "%1 konnte nicht installiert werden",
     "exit %1": "Exit-Code %1",
-    "Updating system packages… (shell may reload)": "Systempakete werden aktualisiert… (Shell wird evtl. neu geladen)"
+    "Updating system packages… (shell may reload)": "Systempakete werden aktualisiert… (Shell wird evtl. neu geladen)",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "Homebrew-Formeln werden aktualisiert… (Kompilieren kann dauern)",
+    "Homebrew could not upgrade this": "Homebrew konnte dies nicht aktualisieren"
 }

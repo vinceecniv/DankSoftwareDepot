@@ -45,6 +45,9 @@ jobs:
       - name: The Arch news feed
         run: python3 scripts/test_arch_news.py
 
+      - name: The Homebrew path
+        run: python3 scripts/test_brew_helper.py
+
       - name: Everything else at least parses
         run: python3 -m compileall -q scripts
 

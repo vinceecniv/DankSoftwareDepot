@@ -18,7 +18,7 @@ Item {
 
     // ── Public state ─────────────────────────────────────────────────────────
     property bool running: false
-    // idle | starting | dnf-download | dnf-install | flatpak | plugins | verifying | done | failed | cancelled
+    // idle | starting | dnf-download | dnf-install | flatpak | brew | plugins | verifying | done | failed | cancelled
     property string phase: "idle"
     property real overallFraction: 0
     property int etaSeconds: -1
@@ -98,6 +98,8 @@ Item {
     property var appimageUpdates: []
     // [{name (plugin id), displayName, repo: "dmsplugin", fromVersion, toVersion}]
     property var pluginUpdates: []
+    // [{name (formula), displayName, repo: "brew", fromVersion, toVersion}]
+    property var brewUpdates: []
     // rpm base name -> exact download size in bytes (from dnf repoquery),
     // used for per-package byte detail during the download stage
     property var packageSizes: ({})
@@ -135,6 +137,7 @@ Item {
         case "appimage":
             return 1;
         case "firmware":
+        case "brew":
         case "plugins":
         case "dms":
             return 2;
@@ -166,6 +169,8 @@ Item {
         case "dms":
             return _shellPassIsEverything ? Tr.t("Updating system packages… (shell may reload)")
                                           : Tr.t("Updating DankMaterialShell… (shell may reload)");
+        case "brew":
+            return Tr.t("Upgrading Homebrew formulae… (building from source can take a while)");
         case "plugins":
             return Tr.t("Updating DMS plugins…");
         case "verifying":
@@ -200,6 +205,9 @@ Item {
     property bool _wantAppimage: false
     property bool _wantPlugins: false
     property int _pluginsDone: 0
+    property bool _wantBrew: false
+    property var _brewItems: []
+    property int _brewDone: 0
     property var _appimageItems: []
     property var _aiOps: ({})            // id -> {weight, fraction, done}
     property string _aiCurrentId: ""
@@ -216,6 +224,7 @@ Item {
     // bytes and the number only has to be the right order of magnitude next
     // to the rpms it shares a progress bar with
     readonly property real pluginItemWeight: 2 * 1024 * 1024
+    readonly property real brewItemWeight: 8 * 1024 * 1024
     property var _flatpakIds: []
     property bool _dnfDone: false
     property int _dnfCount: 0
@@ -370,6 +379,8 @@ Item {
             key = "firmware/" + pkg.name;
         else if (pkg.repo === "appimage")
             key = "appimage/" + pkg.name;
+        else if (pkg.repo === "brew")
+            key = "brew/" + pkg.name;
         else
             key = "system/" + _stripArch(pkg.name);
         return key;
@@ -470,8 +481,12 @@ Item {
         _wantPlugins = pluginItems.length > 0;
         _pluginItems = pluginItems;
         _pluginsDone = 0;
+        const brewItems = (options.brew !== false && !explicitFlatpak) ? (brewUpdates || []).slice() : [];
+        _wantBrew = brewItems.length > 0;
+        _brewItems = brewItems;
+        _brewDone = 0;
 
-        if (!_wantDnf && !_wantFlatpak && !_wantFirmware && !_wantShell && !_wantAppimage && !_wantPlugins)
+        if (!_wantDnf && !_wantFlatpak && !_wantFirmware && !_wantShell && !_wantAppimage && !_wantPlugins && !_wantBrew)
             return;
 
         _dnfDone = !_wantDnf;
@@ -587,6 +602,18 @@ Item {
             });
             plannedCount++;
         }
+        for (const formula of brewItems) {
+            states["brew/" + formula.name] = {
+                status: "pending",
+                fraction: 0,
+                detail: ""
+            };
+            items.push({
+                pkg: formula,
+                key: "brew/" + formula.name
+            });
+            plannedCount++;
+        }
         for (const plugin of pluginItems) {
             states["plugin/" + plugin.name] = {
                 status: "pending",
@@ -671,12 +698,96 @@ Item {
     property int _pluginIndex: 0
 
     function _afterFirmware() {
+        if (_wantBrew) {
+            _startBrew();
+        } else if (_wantPlugins) {
+            _startPlugins();
+        } else if (_wantShell && !_shellDone) {
+            _startDaemon("shell");
+        } else {
+            _finish(failedCount > 0 ? "failed" : "done");
+        }
+    }
+
+    // ── Homebrew ────────────────────────────────────────────────────────────
+    // No privileges, no shell reload, no daemon: one process, one formula at a
+    // time, and the events come from reading what brew says it is doing. There
+    // are no bytes in that, so a row goes from active to done — and a formula
+    // with no bottle is compiled from source, which can take very long and
+    // says nothing while it does. The phase label admits that rather than
+    // implying a stall.
+    function _startBrew() {
+        phase = "brew";
+        _brewDone = 0;
+        const cmd = [Backend.python, Qt.resolvedUrl("scripts/brew_helper.py").toString().replace("file://", ""), "--upgrade"];
+        for (const formula of _brewItems)
+            cmd.push(formula.name);
+        brewProcess.command = cmd;
+        brewProcess.running = true;
+    }
+
+    function _afterBrew() {
+        currentItem = "";
         if (_wantPlugins) {
             _startPlugins();
         } else if (_wantShell && !_shellDone) {
             _startDaemon("shell");
         } else {
             _finish(failedCount > 0 ? "failed" : "done");
+        }
+    }
+
+    Process {
+        id: brewProcess
+
+        stdout: SplitParser {
+            onRead: line => {
+                let event;
+                try {
+                    event = JSON.parse(line);
+                } catch (e) {
+                    return;
+                }
+                const key = event.name ? "brew/" + event.name : "";
+                switch (event.event) {
+                case "op-start":
+                    engine.currentItem = event.name;
+                    engine._setItem(key, {
+                        status: "active",
+                        fraction: 0,
+                        detail: ""
+                    });
+                    break;
+                case "op-done":
+                    engine._setItem(key, {
+                        status: "done",
+                        fraction: 1,
+                        detail: ""
+                    });
+                    engine.completedCount++;
+                    engine._brewDone++;
+                    break;
+                case "op-error":
+                    engine._setError(key, Tr.t("Homebrew could not upgrade this"), event.message || "");
+                    engine.failedCount++;
+                    break;
+                }
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            if (!engine.running)
+                return;
+            // Anything still pending never got its own event — brew died
+            // before reaching it, or before saying so
+            for (const item of engine._brewItems) {
+                const state = engine.itemStates["brew/" + item.name] || {};
+                if (state.status === "done" || state.status === "error")
+                    continue;
+                engine._setError("brew/" + item.name, Tr.t("Homebrew could not upgrade this"), "");
+                engine.failedCount++;
+            }
+            engine._afterBrew();
         }
     }
 
@@ -1268,6 +1379,10 @@ Item {
     // ── Weighted progress model ──────────────────────────────────────────────
     readonly property real _firmwareWeightTotal: _wantFirmware ? _firmwareItems.length * firmwareItemWeight : 0
     readonly property real _pluginWeightTotal: _wantPlugins ? _pluginItems.length * pluginItemWeight : 0
+    // A formula is a bottle of a few megabytes, or a compile of unknown
+    // length. The nominal weight is the first of those, because guessing the
+    // second would make the bar wrong in both directions.
+    readonly property real _brewWeightTotal: _wantBrew ? _brewItems.length * brewItemWeight : 0
     readonly property real _dnfWeightTotal: _wantDnf ? _dnfCount * dnfPkgWeight : 0
     readonly property real _shellWeightTotal: _wantShell ? _shellCount * dnfPkgWeight : 0
     readonly property real _appimageWeightTotal: {
@@ -1331,7 +1446,7 @@ Item {
     }
 
     function _updateOverall() {
-        const total = _dnfWeightTotal + _flatpakWeightTotal + _firmwareWeightTotal + _shellWeightTotal + _appimageWeightTotal + _pluginWeightTotal;
+        const total = _dnfWeightTotal + _flatpakWeightTotal + _firmwareWeightTotal + _shellWeightTotal + _appimageWeightTotal + _pluginWeightTotal + _brewWeightTotal;
         if (total <= 0)
             return;
         const fbDone = _flatpakWeightDone();
@@ -1344,7 +1459,7 @@ Item {
         }
         opsDone = doneOps;
         opsTotal = totalOps;
-        const done = _dnfFractionNow() * _dnfWeightTotal + fbDone + _firmwareFraction * _firmwareWeightTotal + _shellFractionNow() * _shellWeightTotal + _appimageWeightDone() + _pluginsDone * pluginItemWeight;
+        const done = _dnfFractionNow() * _dnfWeightTotal + fbDone + _firmwareFraction * _firmwareWeightTotal + _shellFractionNow() * _shellWeightTotal + _appimageWeightDone() + _pluginsDone * pluginItemWeight + _brewDone * brewItemWeight;
         overallFraction = Math.min(running ? 0.995 : 1, done / total);
     }
 

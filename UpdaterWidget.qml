@@ -98,6 +98,7 @@ PluginComponent {
             count += (firmware.updates || []).length;
         count += (appimageUpdates || []).length;
         count += (pluginUpdates || []).length;
+        count += (brewUpdates || []).length;
         return count;
     }
 
@@ -185,6 +186,56 @@ PluginComponent {
                     root.appimageUpdates = JSON.parse(text);
                 } catch (e) {
                     root.appimageUpdates = [];
+                }
+            }
+        }
+    }
+
+    // ── Homebrew ────────────────────────────────────────────────────────────
+    // Brew sits beside the distribution's own package manager rather than
+    // instead of it, so it is a kind of software here, like Flatpak and
+    // AppImages — not a fourth entry in the dnf/apt/pacman list, which are
+    // mutually exclusive and chosen by the machine.
+    //
+    // Absent on nearly every machine, and asking a program that is not there
+    // costs a process start per check, so the answer to "is there a brew" is
+    // remembered and the rest only runs when it is yes.
+    property bool brewSupported: false
+    property var brewUpdates: []
+    property var brewInstalled: []
+
+    readonly property string brewScript: Qt.resolvedUrl("scripts/brew_helper.py").toString().replace("file://", "")
+
+    function refreshBrew(refresh) {
+        if (brewProcess.running)
+            return;
+        brewProcess.command = refresh ? [Backend.python, brewScript, "--state", "--refresh"]
+                                      : [Backend.python, brewScript, "--state"];
+        brewProcess.running = true;
+    }
+
+    Process {
+        id: brewProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(text);
+                    root.brewSupported = data.supported === true;
+                    root.brewInstalled = data.installed || [];
+                    // A pinned formula is brew's own word for held, and it
+                    // means what held means here: leave this one alone
+                    root.brewUpdates = (data.outdated || []).filter(row => row.pinned !== true).map(row => ({
+                        name: row.name,
+                        displayName: row.name,
+                        repo: "brew",
+                        fromVersion: row.fromVersion || "",
+                        toVersion: row.toVersion || ""
+                    }));
+                } catch (e) {
+                    root.brewSupported = false;
+                    root.brewUpdates = [];
+                    root.brewInstalled = [];
                 }
             }
         }
@@ -409,6 +460,10 @@ PluginComponent {
                 // And the plugins, for the same reason: one check answers for
                 // every kind of software this window reports on
                 root.refreshPluginUpdates();
+                // Brew's own index is refreshed at most every six hours; the
+                // helper decides, because `brew update` is a git fetch and a
+                // check is not the place to spend one
+                root.refreshBrew(true);
                 Qt.callLater(() => root._afterCheck());
             }
         }
@@ -1067,6 +1122,7 @@ PluginComponent {
         firmwareService: root.includeFirmware ? firmware : null
         appimageUpdates: root.appimageUpdates
         pluginUpdates: root.pluginUpdates
+        brewUpdates: root.brewUpdates
 
         // The dms pass is about to reload the shell — stash the log entry
         // and the failure reasons it would otherwise swallow
@@ -1274,7 +1330,14 @@ PluginComponent {
         interval: 2000
         running: true
         repeat: false
-        onTriggered: SystemUpdateService.requestState()
+        onTriggered: {
+            SystemUpdateService.requestState();
+            // Without a refresh: this is only asking what brew already knows,
+            // so the section is there from the start rather than after the
+            // first check. On a machine without brew it is one process that
+            // says no and never runs again until the next check.
+            root.refreshBrew(false);
+        }
     }
 
     Connections {

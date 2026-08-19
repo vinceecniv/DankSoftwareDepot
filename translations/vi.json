@@ -482,5 +482,8 @@
     "Released the hold on %1": "Đã bỏ giữ %1",
     "Could not install %1": "Không thể cài đặt %1",
     "exit %1": "mã thoát %1",
-    "Updating system packages… (shell may reload)": "Đang cập nhật gói hệ thống… (shell có thể tải lại)"
+    "Updating system packages… (shell may reload)": "Đang cập nhật gói hệ thống… (shell có thể tải lại)",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "Đang nâng cấp công thức Homebrew… (biên dịch từ mã nguồn có thể lâu)",
+    "Homebrew could not upgrade this": "Homebrew không thể nâng cấp mục này"
 }

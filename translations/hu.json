@@ -482,5 +482,8 @@
     "Released the hold on %1": "%1 visszatartása feloldva",
     "Could not install %1": "A(z) %1 telepítése nem sikerült",
     "exit %1": "kilépési kód: %1",
-    "Updating system packages… (shell may reload)": "Rendszercsomagok frissítése… (a héj újratöltődhet)"
+    "Updating system packages… (shell may reload)": "Rendszercsomagok frissítése… (a héj újratöltődhet)",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "Homebrew-formulák frissítése… (a fordítás sokáig tarthat)",
+    "Homebrew could not upgrade this": "A Homebrew nem tudta frissíteni"
 }

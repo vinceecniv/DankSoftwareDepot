@@ -482,5 +482,8 @@
     "Released the hold on %1": "Spärren för %1 hävd",
     "Could not install %1": "Kunde inte installera %1",
     "exit %1": "avslutskod %1",
-    "Updating system packages… (shell may reload)": "Uppdaterar systempaket… (skalet kan laddas om)"
+    "Updating system packages… (shell may reload)": "Uppdaterar systempaket… (skalet kan laddas om)",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "Uppdaterar Homebrew-formler… (att bygga från källkod kan ta tid)",
+    "Homebrew could not upgrade this": "Homebrew kunde inte uppdatera den"
 }

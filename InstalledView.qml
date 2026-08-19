@@ -14,6 +14,10 @@ Item {
     required property var store
     required property var engine
     property var logger: null
+    // Homebrew's installed formulae, read by the widget. Brew is a kind of
+    // software beside the distribution's own rather than another flavour of
+    // it, so it is a group of its own here.
+    property var brewFormulae: []
 
     // Bumped by the window when software was installed/updated elsewhere
     // (Install tab, update run) so this list stays current.
@@ -46,7 +50,7 @@ Item {
         detailsDialog.pluginFacts = rowData.kind === "plugin" ? (rowData.pluginFacts || {}) : null;
         if (rowData.kind === "flatpak") {
             loadDowngradeLog(rowData.id, rowData.origin);
-        } else if (rowData.kind === "appimage" || rowData.kind === "plugin") {
+        } else if (rowData.kind === "appimage" || rowData.kind === "plugin" || rowData.kind === "brew") {
             // Neither is a package: no changelog to read, no older builds in a
             // repository to offer, nothing that would be removed along with it
         } else {
@@ -69,7 +73,7 @@ Item {
                 source: rowData.origin || "flathub",
                 kind: "flatpak",
                 ref: rowData.id
-            }] : ((rowData.kind === "appimage" || rowData.kind === "plugin") ? [] : [{
+            }] : ((rowData.kind === "appimage" || rowData.kind === "plugin" || rowData.kind === "brew") ? [] : [{
                 source: "fedora",
                 kind: "dnf",
                 ref: rowData.id
@@ -90,12 +94,13 @@ Item {
         readonly property bool entryIsFlatpak: entry ? entry.kind === "flatpak" : false
         readonly property bool entryIsAppimage: entry ? entry.kind === "appimage" : false
         readonly property bool entryIsPlugin: entry ? entry.kind === "plugin" : false
+        readonly property bool entryIsBrew: entry ? entry.kind === "brew" : false
 
         // Holding and uninstalling are package verbs. A plugin is removed from
         // DMS's own screen — the button in the popup goes there — and there is
         // no version of "hold this plugin" that means anything.
-        showHoldToggle: !entryIsAppimage && !entryIsPlugin
-        showUninstall: !entryIsPlugin
+        showHoldToggle: !entryIsAppimage && !entryIsPlugin && !entryIsBrew
+        showUninstall: !entryIsPlugin && !entryIsBrew
         // Everything reached from this tab is on the machine, and the one
         // source it was passed is the one it came from
         installedRefs: entryId !== "" ? [entryId] : []
@@ -109,15 +114,15 @@ Item {
         releases: (entryIsFlatpak && entry.info && entry.info.releases) ? entry.info.releases.slice(0, 3) : []
         // A changelog is never fetched for these, so "loading" would be
         // forever: nothing is on its way
-        changelogLoading: entry !== null && !entryIsFlatpak && !entryIsAppimage && !entryIsPlugin && view.store.changelogs[entryId] === undefined
-        changelog: (entry !== null && !entryIsFlatpak && !entryIsAppimage && !entryIsPlugin) ? (view.store.changelogs[entryId] || "") : ""
+        changelogLoading: entry !== null && !entryIsFlatpak && !entryIsAppimage && !entryIsPlugin && !entryIsBrew && view.store.changelogs[entryId] === undefined
+        changelog: (entry !== null && !entryIsFlatpak && !entryIsAppimage && !entryIsPlugin && !entryIsBrew) ? (view.store.changelogs[entryId] || "") : ""
         versionsLoading: {
-            if (!entry || entryIsAppimage || entryIsPlugin)
+            if (!entry || entryIsAppimage || entryIsPlugin || entryIsBrew)
                 return false;
             return entryIsFlatpak ? view.downgradeLogs[entryId] === "loading" : view.rpmVersions[entryId] === "loading";
         }
         previousVersions: {
-            if (!entry || entryIsAppimage || entryIsPlugin)
+            if (!entry || entryIsAppimage || entryIsPlugin || entryIsBrew)
                 return [];
             if (entryIsFlatpak) {
                 const log = view.downgradeLogs[entryId];
@@ -175,7 +180,7 @@ Item {
     property var meta: ({})          // "flatpak/<id>" -> enrichment info
     property bool loading: true
     property string searchText: ""
-    property int sourceFilter: 0     // 0 all, 1 flatpak, 2 system, 3 appimage, 4 plugins
+    property int sourceFilter: 0     // 0 all, 1 flatpak, 2 system, 3 appimage, 4 plugins, 5 brew
     property string busyAction: ""   // "<action>:<id>" while a mutation runs
     property string mutationProgress: ""  // live phase/percent line while mutationProcess runs
     property real mutationFraction: 0     // 0..1 overall progress estimate
@@ -478,6 +483,30 @@ Item {
                 });
             }
         }
+        if (sourceFilter === 0 || sourceFilter === 5) {
+            for (const formula of view.brewFormulae || []) {
+                const name = formula.name || "";
+                if (needle && !Ui.matchesWords(name.toLowerCase(), needle))
+                    continue;
+                rows.push({
+                    kind: "brew",
+                    id: name,
+                    name: name,
+                    summary: "Homebrew",
+                    version: formula.version || "",
+                    origin: "Homebrew",
+                    sizeBytes: 0,
+                    updatedTs: 0,
+                    info: {
+                        name: name,
+                        summary: "",
+                        homepage: "https://formulae.brew.sh/formula/" + name,
+                        icon: "",
+                        releases: []
+                    }
+                });
+            }
+        }
         if (sourceFilter === 0 || sourceFilter === 2) {
             for (const pkg of rpmPackages) {
                 let info = meta["system/" + pkg.name] || null;
@@ -520,7 +549,7 @@ Item {
         // packages they dragged in are context underneath them.
         // Three groups now, not two: applications, the plugins running inside
         // the shell, and the packages underneath them both.
-        const appRank = row => row.kind === "plugin" ? 1 : (view._isApplication(row) ? 0 : 2);
+        const appRank = row => row.kind === "plugin" ? 1 : (row.kind === "brew" ? 2 : (view._isApplication(row) ? 0 : 3));
         switch (sortMode) {
         case "Largest":
             rows.sort((a, b) => (appRank(a) - appRank(b)) || (b.sizeBytes - a.sizeBytes) || a.name.localeCompare(b.name));
@@ -541,10 +570,10 @@ Item {
         }
         // Mark where each group starts; the delegate draws a heading there.
         // Counting first means the heading can say how big its group is.
-        const counts = [0, 0, 0];
+        const counts = [0, 0, 0, 0];
         for (const row of rows)
             counts[appRank(row)]++;
-        const labels = [Tr.t("Applications"), Tr.t("DMS plugins"), Tr.t("System packages")];
+        const labels = [Tr.t("Applications"), Tr.t("DMS plugins"), "Homebrew", Tr.t("System packages")];
         for (let i = 0; i < rows.length; i++) {
             const rank = appRank(rows[i]);
             if (i > 0 && rank === appRank(rows[i - 1]))
@@ -1096,7 +1125,7 @@ Item {
 
             DankButtonGroup {
                 id: filterGroup
-                model: [Tr.t("All"), "Flatpak", Tr.t("System"), "AppImage", Tr.t("Plugins")]
+                model: [Tr.t("All"), "Flatpak", Tr.t("System"), "AppImage", Tr.t("Plugins"), "Homebrew"]
                 currentIndex: view.sourceFilter
                 onSelectionChanged: (index, selected) => {
                     if (selected)

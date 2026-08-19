@@ -482,5 +482,8 @@
     "Released the hold on %1": "%1 の保留を解除しました",
     "Could not install %1": "%1 をインストールできませんでした",
     "exit %1": "終了コード %1",
-    "Updating system packages… (shell may reload)": "システムパッケージを更新しています…（シェルが再読み込みされる場合があります）"
+    "Updating system packages… (shell may reload)": "システムパッケージを更新しています…（シェルが再読み込みされる場合があります）",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "Homebrew の formula を更新しています…（ソースからのビルドは時間がかかることがあります）",
+    "Homebrew could not upgrade this": "Homebrew はこれを更新できませんでした"
 }

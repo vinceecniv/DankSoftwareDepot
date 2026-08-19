@@ -482,5 +482,8 @@
     "Released the hold on %1": "Retenção de %1 removida",
     "Could not install %1": "Não foi possível instalar %1",
     "exit %1": "código de saída %1",
-    "Updating system packages… (shell may reload)": "A atualizar pacotes do sistema… (a shell pode recarregar)"
+    "Updating system packages… (shell may reload)": "A atualizar pacotes do sistema… (a shell pode recarregar)",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "A atualizar fórmulas do Homebrew… (compilar pode demorar)",
+    "Homebrew could not upgrade this": "O Homebrew não conseguiu atualizar isto"
 }

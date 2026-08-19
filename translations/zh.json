@@ -482,5 +482,8 @@
     "Released the hold on %1": "已解除 %1 的锁定",
     "Could not install %1": "无法安装 %1",
     "exit %1": "退出码 %1",
-    "Updating system packages… (shell may reload)": "正在更新系统软件包…（Shell 可能会重新加载）"
+    "Updating system packages… (shell may reload)": "正在更新系统软件包…（Shell 可能会重新加载）",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "正在升级 Homebrew formula…（从源码构建可能较慢）",
+    "Homebrew could not upgrade this": "Homebrew 无法升级此项"
 }

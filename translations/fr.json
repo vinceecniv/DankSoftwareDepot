@@ -482,5 +482,8 @@
     "Released the hold on %1": "Blocage de %1 levé",
     "Could not install %1": "Impossible d'installer %1",
     "exit %1": "code de sortie %1",
-    "Updating system packages… (shell may reload)": "Mise à jour des paquets système… (le shell peut se recharger)"
+    "Updating system packages… (shell may reload)": "Mise à jour des paquets système… (le shell peut se recharger)",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "Mise à jour des formules Homebrew… (la compilation peut être longue)",
+    "Homebrew could not upgrade this": "Homebrew n'a pas pu le mettre à jour"
 }

@@ -482,5 +482,8 @@
     "Released the hold on %1": "%1 보류를 해제함",
     "Could not install %1": "%1을(를) 설치하지 못했습니다",
     "exit %1": "종료 코드 %1",
-    "Updating system packages… (shell may reload)": "시스템 패키지를 업데이트하는 중… (셸이 다시 로드될 수 있음)"
+    "Updating system packages… (shell may reload)": "시스템 패키지를 업데이트하는 중… (셸이 다시 로드될 수 있음)",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "Homebrew 포뮬러를 업그레이드하는 중… (소스 빌드는 오래 걸릴 수 있음)",
+    "Homebrew could not upgrade this": "Homebrew가 업그레이드하지 못했습니다"
 }

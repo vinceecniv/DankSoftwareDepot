@@ -482,5 +482,8 @@
     "Released the hold on %1": "Vastzetten van %1 opgeheven",
     "Could not install %1": "%1 kon niet worden geïnstalleerd",
     "exit %1": "afsluitcode %1",
-    "Updating system packages… (shell may reload)": "Systeempakketten bijwerken… (shell kan herladen)"
+    "Updating system packages… (shell may reload)": "Systeempakketten bijwerken… (shell kan herladen)",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "Homebrew-formules bijwerken… (vanaf broncode bouwen kan lang duren)",
+    "Homebrew could not upgrade this": "Homebrew kon dit niet bijwerken"
 }

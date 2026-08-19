@@ -1502,6 +1502,14 @@ FloatingWindow {
         // the only one that lives in the shell running it. The daemon says
         // which have a newer build in the registry; what it does not say is
         // how big that is, so these rows carry versions and nothing else.
+        for (const formula of (widgetRoot ? widgetRoot.brewUpdates : []) || []) {
+            rows.push({
+                pkg: formula,
+                key: "brew/" + formula.name,
+                category: "5 · Homebrew",
+                ignored: false
+            });
+        }
         for (const plugin of (widgetRoot ? widgetRoot.pluginUpdates : []) || []) {
             rows.push({
                 pkg: plugin,
@@ -1839,6 +1847,8 @@ FloatingWindow {
             return "developer_board";
         case "5 · DMS plugins":
             return "extension";
+        case "5 · Homebrew":
+            return "local_drink";
         case "6 · Held packages":
             return "lock";
         default:
@@ -2952,6 +2962,7 @@ FloatingWindow {
                 store: win.store
                 engine: win.engine
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
+                brewFormulae: win.widgetRoot ? win.widgetRoot.brewInstalled : []
                 refreshSerial: win.softwareSerial
                 overlayParent: windowOverlayLayer
                 onSoftwareMutated: win.softwareSerial++

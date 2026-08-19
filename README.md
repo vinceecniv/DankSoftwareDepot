@@ -55,7 +55,8 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   release for the distro to describe, so their notes come from the upstream
   forge instead: the published notes of the release being installed, or the
   commits between the two snapshots when both sides are builds of a branch
-- Sections (Applications / System / Runtimes / Firmware / DMS plugins / Held)
+- Sections (Applications / System / Runtimes / Firmware / Homebrew / DMS
+  plugins / Held)
   with a hover **Update these** button per section
 - **Held packages**: dnf versionlock/excludepkgs detected automatically,
   plus user-holds via the lock button — never counted or updated,
@@ -86,6 +87,16 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   missed. Items are kept rather than mirrored, so the archive (Ctrl+K → Arch
   Linux news) still has the announcement that explains the state this machine
   is in, long after it scrolled off the feed
+- **Homebrew formulae**, on a machine that has brew. It sits beside the
+  distribution's package manager rather than instead of it, so it is a kind of
+  software here — its own section, counted in the bar pill, upgraded in its own
+  phase of Update All. It needs no privileges at all: no pkexec, no polkit, no
+  daemon. It also reports no machine-readable progress, so a formula goes from
+  active to done rather than filling up, and the phase says out loud that a
+  formula without a bottle is compiled from source and can take a while. A
+  pinned formula is brew's own word for held, and is left alone. `brew update`
+  is a git fetch, so the formula index is refreshed at most every six hours
+  rather than on every check
 - **DMS plugins are the fifth kind of software**, and the only one living in
   the shell that runs this window. The daemon already works out which
   installed plugins the registry has a newer build of — the flag Settings →
@@ -497,6 +508,8 @@ anything about you leaves the machine:
 | `scripts/repo_backend.py` | Software sources: reads the configured repositories and Flatpak remotes; enable/disable, Copr add/remove/search, RPM Fusion and Flathub (dnf family only; apt and pacman are listed read-only) |
 | `scripts/action_log.py` | Action-log append/prune helper |
 | `scripts/reconcile.py` | Compares package install times against the action log to find what changed outside this app |
+| `scripts/brew_helper.py` | Homebrew: what is installed and outdated, and upgrading it — per-formula events read out of brew's own prose, since it emits nothing machine-readable |
+| `scripts/test_brew_helper.py` | Checks that path against recorded `brew outdated` output and a recorded upgrade log, with brew stubbed, so it runs on a machine that has none |
 | `scripts/arch_news.py` | The Arch news feed: fetch, reduce each announcement to the safe markup subset, keep what scrolls off the feed, track what has been read |
 | `scripts/test_arch_news.py` | Checks that path against a fixture feed with the network stubbed — parsing, the markup reduction, the archive, and that a first run announces nothing |
 | `scripts/test_reconcile.py` | Checks that comparison against synthetic bursts — dependencies count as ours, an unexplained burst does not |

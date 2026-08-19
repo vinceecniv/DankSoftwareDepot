@@ -482,5 +482,8 @@
     "Released the hold on %1": "Утримання %1 знято",
     "Could not install %1": "Не вдалося встановити %1",
     "exit %1": "код виходу %1",
-    "Updating system packages… (shell may reload)": "Оновлення системних пакунків… (оболонка може перезавантажитися)"
+    "Updating system packages… (shell may reload)": "Оновлення системних пакунків… (оболонка може перезавантажитися)",
+    "Homebrew": "Homebrew",
+    "Upgrading Homebrew formulae… (building from source can take a while)": "Оновлення формул Homebrew… (збирання з початкового коду може тривати довго)",
+    "Homebrew could not upgrade this": "Homebrew не зміг це оновити"
 }
