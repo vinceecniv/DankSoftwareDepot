@@ -3188,13 +3188,22 @@ FloatingWindow {
 
             // A starting run regroups the list with the in-progress work on
             // top — jump there, or a user who had scrolled down watches
-            // nothing happen
+            // nothing happen.
+            //
+            // Twice, and the second one matters. At the moment `running` turns
+            // over, two other things are also changing: the dashboard header
+            // is going away and the rows are being replaced by the run's own.
+            // Both move the content under the viewport after the jump, which
+            // is why a single synchronous call landed somewhere in the middle
+            // of the new list. The deferred one runs once that has settled.
             Connections {
                 target: win.engine
 
                 function onRunningChanged() {
-                    if (win.engine.running)
-                        cardsList.positionViewAtBeginning();
+                    if (!win.engine.running)
+                        return;
+                    cardsList.positionViewAtBeginning();
+                    Qt.callLater(() => cardsList.positionViewAtBeginning());
                 }
             }
 

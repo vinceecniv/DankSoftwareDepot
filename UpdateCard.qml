@@ -379,6 +379,8 @@ Rectangle {
                 color: Theme.withAlpha(Theme.surfaceVariant, 0.4)
 
                 Rectangle {
+                    id: progressFill
+
                     anchors.left: parent.left
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
@@ -386,7 +388,21 @@ Rectangle {
                     color: Theme.primary
                     width: parent.width * (card.itemState ? Math.max(0.02, card.itemState.fraction) : 0)
 
+                    // The animation is for a bar that grows while you watch
+                    // it. A delegate scrolled back into view is not that: it
+                    // is created at the width it already had, and animating
+                    // to it replays a download that finished minutes ago —
+                    // every card, every time the list moves.
+                    //
+                    // So it is off until the row has drawn once. Qt.callLater
+                    // rather than Component.onCompleted, which still runs
+                    // inside the frame that sets the initial width.
+                    property bool _grown: false
+                    Component.onCompleted: Qt.callLater(() => _grown = true)
+
                     Behavior on width {
+                        enabled: progressFill._grown
+
                         NumberAnimation {
                             duration: 300
                             easing.type: Easing.OutCubic
