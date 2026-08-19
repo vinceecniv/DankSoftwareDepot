@@ -621,6 +621,9 @@ Item {
     }
     readonly property var filterKinds: filterChips.kinds
     readonly property bool brewFilterWanted: sourceFilter === 0 || filterKinds[sourceFilter] === "brew"
+    // Offering to search Copr while the Homebrew chip is selected is offering
+    // an answer the filter would then hide
+    readonly property bool coprFilterWanted: sourceFilter === 0 || filterKinds[sourceFilter] === "copr"
 
     function matchesSourceFilter(item) {
         if (sourceFilter === 0)
@@ -843,7 +846,7 @@ Item {
             // machine could answer by itself, which is also where "not here?"
             // is a question the reader has just arrived at. Anything Copr
             // returns is listed under this row, so the row can say so.
-            if (Backend.hasCopr)
+            if (Backend.hasCopr && view.coprFilterWanted)
                 rows.push({
                     type: "coprPrompt"
                 });
@@ -2318,9 +2321,21 @@ Item {
                     width: Math.min(520, view.width - Theme.spacingXL * 2)
                     // Offering to look elsewhere before this machine has
                     // finished answering is advice given too early
-                    active: view.searchMode && !view.awaitingResults && Backend.hasCopr
+                    active: view.searchMode && !view.awaitingResults && Backend.hasCopr && view.coprFilterWanted
                     visible: active
                     sourceComponent: coprPromptComponent
+                }
+
+                // The same offer for brew, in the same place and for the same
+                // reason. Nothing found is exactly when a second catalogue is
+                // worth mentioning — and with the Homebrew chip selected it is
+                // the only thing that could still answer.
+                Loader {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: Math.min(520, view.width - Theme.spacingXL * 2)
+                    active: view.searchMode && !view.awaitingResults && view.hasBrew && view.brewFilterWanted
+                    visible: active
+                    sourceComponent: brewPromptComponent
                 }
             }
         }
