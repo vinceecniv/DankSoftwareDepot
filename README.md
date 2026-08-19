@@ -9,10 +9,11 @@ honest per-package progress, an app store, [full AppImage
 management](#appimages-end-to-end), firmware support and an action log — and no
 terminal output anywhere.
 
-Four kinds of software, managed the same way: system packages, Flatpaks,
-AppImages and firmware. Beyond what the system already knows about, it can
-[search Copr](#3--install) for packages no configured repository carries, and
-it can be [the app that opens a downloaded
+Six kinds of software, managed the same way: system packages, Flatpaks,
+AppImages, firmware, the DMS plugins running in the shell around it, and
+Homebrew formulae where brew is installed. Beyond what the system already
+knows about, it can [search Copr](#3--install) for packages no configured
+repository carries, and it can be [the app that opens a downloaded
 `.appimage`](#appimages-end-to-end).
 
 ![The Updates tab: pending updates as cards, graded by severity, with a size
@@ -133,6 +134,9 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 ### 2 · Installed
 - All Flatpak apps, rpm packages and AppImages in one list: live search,
   source filter, sorting (name / largest / recently updated) with sizes
+- **Homebrew formulae have their own group** and filter where brew is
+  installed, listed by the short name brew shows even when the formula comes
+  from a tap and is named in full underneath
 - **DMS plugins have their own group** in the list, read from the manifests on
   disk rather than from a registry, with the plugin's own icon (a manifest
   names a Material Symbols glyph rather than shipping an image) and a button
@@ -345,7 +349,8 @@ language by dropping a new `translations/<lang>.json` next to the others.
 - A Fedora-based distribution — or an atomic Fedora, Debian/Ubuntu or Arch
   (all three experimental)
 - DMS ≥ 1.5 with the `sysupdate` daemon capability
-- `python3` and `flatpak`, optionally `fwupd`
+- `python3` and `flatpak`, optionally `fwupd`, and optionally Homebrew — the
+  brew section appears only on a machine that has it
 - Package-manager bindings for your distro:
   - Fedora: `python3-libdnf5` (**not** part of a default install)
   - Atomic Fedora: nothing extra — `rpm-ostree` is the image's own tool
@@ -450,6 +455,7 @@ list of things you already have. Everything it contacts, and when:
 | `appimage.github.io`, `api.github.com` | the AppImage catalogue and the releases of an AppImage's linked project | the Install tab and AppImage updates |
 | `api.github.com` | for a package built from git, the notes of the release being installed or the commits between two snapshots — the repository comes from the package's own URL field | opening the details of such an update; answers cached a day, and a package not built from git never asks |
 | `bodhi.fedoraproject.org` | which Fedora releases are current, for the release-upgrade notice | the upgrade check |
+| `formulae.brew.sh`, `github.com`, `ghcr.io` | Homebrew's own traffic, run by brew rather than by this plugin: refreshing the formula index (`brew update`, a git fetch) and downloading bottles (`brew upgrade`) | only where brew is installed — the index at most once every six hours, bottles only during an update you started |
 | `archlinux.org` | the Arch news feed, for the announcements that ask something of you before an update | on Arch only, at most once every six hours while the window is open |
 | `copr.fedorainfracloud.org` | which Coprs build a package matching your search, and for which Fedora | only when you press Search Copr; answers cached six hours |
 | `mirrors.rpmfusion.org`, `dl.flathub.org`, `nightly.gnome.org`, `cdn.kde.org`, `registry.fedoraproject.org` | fetching a source you asked to add | only when you press Add in Software sources |

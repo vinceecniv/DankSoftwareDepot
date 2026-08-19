@@ -3,6 +3,45 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.0.0 — 2026-08-19
+
+**1.0.0 is where the numbering arrived, not a claim that this is finished.**
+It is the same software as 0.9.9 with Homebrew added; it is still in beta, it
+still changes quickly, and the status section of the README still says so. If
+you were waiting for a version number to mean "safe now", keep waiting — what
+it means is that there were nine of them before this one.
+
+Thanks to @kmf for asking for Homebrew.
+
+- **Homebrew support.** On a machine that has brew, its formulae are a kind of
+  software this window manages: their own section in Updates, their own group
+  and filter in Installed, a line on the dashboard's installed-software card,
+  a place in the bar pill's count, and their own phase in Update All. Brew
+  needs no privileges, so this asks for nothing — no password, no polkit, no
+  daemon. It reports no machine-readable progress either, so a formula goes
+  from active to done rather than filling up, and the phase says out loud that
+  a formula without a bottle is compiled from source and can take a while. A
+  pinned formula is brew's word for held and is left alone. `brew update` is a
+  git fetch, so the formula index is refreshed at most every six hours rather
+  than on every check.
+
+  **Tested against a real Homebrew, in a basic setup**: installed, a formula
+  taken from one version to the next, upgraded through this window, confirmed
+  by brew as no longer outdated. That is the extent of it — the author does
+  not run Homebrew day to day, so nothing here has met a large installation,
+  a machine that leans on taps, or a formula that takes twenty minutes to
+  compile. If you do run brew and something reads wrong, the issue tracker is
+  the fastest way to have it fixed.
+- **The phase stepper stays for its own last two steps.** Verify and Done were
+  both on the stepper and neither was ever on screen: the panel around it hid
+  itself during verification, and the stepper hid itself once the run was
+  done.
+- **A result card that clears itself says so first.** A finished run with
+  nothing to report clears its panel after a few seconds; a line now runs out
+  along the bottom edge for exactly that long, so the card leaving is
+  something you watched approach. It does not count down when the panel is
+  staying — during a run, or after one with a failure to report.
+
 ## 0.9.9 — 2026-08-18
 
 - **Three numbers for one thing, and two of them wrong.** The header counted a
