@@ -152,7 +152,7 @@ Item {
         case "dnf-install":
             return 2;
         case "flatpak":
-            return _flatpakMostlyDownloading ? 1 : 2;
+            return _flatpakStillDownloading ? 1 : 2;
         case "appimage":
             return 1;
         case "firmware":
@@ -180,7 +180,7 @@ Item {
         case "dnf-install":
             return Tr.t("Installing system packages…");
         case "flatpak":
-            return _flatpakMostlyDownloading ? Tr.t("Downloading Flatpak updates…") : Tr.t("Installing Flatpak updates…");
+            return _flatpakStillDownloading ? Tr.t("Downloading Flatpak updates…") : Tr.t("Installing Flatpak updates…");
         case "appimage":
             return Tr.t("Updating AppImages…");
         case "firmware":
@@ -257,7 +257,26 @@ Item {
     property real _flatpakPlannedBytes: 0
     property bool _flatpakPlanKnown: false
     property int _flatpakOpCount: 0
-    property bool _flatpakMostlyDownloading: true
+    // Whether anything in the Flatpak phase is still being fetched. It used to
+    // be set from whichever operation spoke last, which is not the same
+    // question: libflatpak runs several refs at once, so one reaching
+    // "Installing" flipped the stepper to Install while other rows were still
+    // counting up their download percentages — visible, and reported.
+    //
+    // Anything not finished and not yet installing is still coming down, and
+    // while that is true of any of them the phase is a download.
+    property bool _flatpakStillDownloading: true
+
+    function _recomputeFlatpakStage() {
+        for (const ref in _flatpakOps) {
+            const op = _flatpakOps[ref];
+            if (!op.done && !op.installing) {
+                _flatpakStillDownloading = true;
+                return;
+            }
+        }
+        _flatpakStillDownloading = false;
+    }
     property real _rate: 0               // weight units per second (EWMA)
     property real _lastWeightDone: 0
     property int _elapsedSeconds: 0
@@ -523,7 +542,7 @@ Item {
         _flatpakPlannedBytes = 0;
         _flatpakPlanKnown = false;
         _flatpakOpCount = 0;
-        _flatpakMostlyDownloading = true;
+        _flatpakStillDownloading = true;
         _rate = 0;
         _lastWeightDone = 0;
         _elapsedSeconds = 0;
@@ -2059,7 +2078,8 @@ Item {
                     appid: op.appid,
                     weight: Math.max(op.downloadBytes || 0, 1024 * 1024),
                     fraction: 0,
-                    done: false
+                    done: false,
+                    installing: false
                 };
             }
             _flatpakOps = ops;
@@ -2087,7 +2107,9 @@ Item {
                 ops[event.ref].fraction = Math.min(1, (event.percent || 0) / 100);
             }
             const isInstallPhase = (event.status || "").toLowerCase().indexOf("install") !== -1 || (event.status || "").toLowerCase().indexOf("deploy") !== -1;
-            _flatpakMostlyDownloading = !isInstallPhase;
+            if (ops[event.ref])
+                ops[event.ref].installing = isInstallPhase;
+            _recomputeFlatpakStage();
             currentItem = event.appid;
             currentDetail = (event.percent || 0) + "%";
             const key = _flatpakKeyFor(event.appid);
@@ -2107,6 +2129,9 @@ Item {
                 ops[event.ref].done = true;
                 ops[event.ref].fraction = 1;
             }
+            // One finishing can be the moment the last download ends, and the
+            // stage is a statement about all of them
+            _recomputeFlatpakStage();
             const key = _flatpakKeyFor(event.appid);
             if (key) {
                 // Only mark the row done when all ops mapping to it are done
@@ -2135,6 +2160,10 @@ Item {
             failedCount++;
             const key = _flatpakKeyFor(event.appid) || _flatpakAdopt(event.appid);
             _setError(key, event.message || Tr.t("failed"), event.message || "");
+            // It is not coming down any more either way
+            if (_flatpakOps[event.ref])
+                _flatpakOps[event.ref].done = true;
+            _recomputeFlatpakStage();
             break;
         }
         case "done": {
