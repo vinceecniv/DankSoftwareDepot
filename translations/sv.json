@@ -485,5 +485,12 @@
     "Updating system packages… (shell may reload)": "Uppdaterar systempaket… (skalet kan laddas om)",
     "Homebrew": "Homebrew",
     "Upgrading Homebrew formulae… (building from source can take a while)": "Uppdaterar Homebrew-formler… (att bygga från källkod kan ta tid)",
-    "Homebrew could not upgrade this": "Homebrew kunde inte uppdatera den"
+    "Homebrew could not upgrade this": "Homebrew kunde inte uppdatera den",
+    "Search Homebrew": "Sök i Homebrew",
+    "Searching Homebrew…": "Söker i Homebrew…",
+    "Homebrew could not be asked.": "Homebrew kunde inte tillfrågas.",
+    "Homebrew has command-line software the distribution does not carry.": "Homebrew har kommandoradsprogram som distributionen inte levererar.",
+    "%1 found in Homebrew, listed below": "%1 hittades i Homebrew, listas nedan",
+    "Nothing in Homebrew for \"%1\"": "Inget i Homebrew för ”%1”",
+    "macOS only — this formula cannot run on Linux": "Endast macOS — den här formeln fungerar inte på Linux"
 }

@@ -485,5 +485,12 @@
     "Updating system packages… (shell may reload)": "Rendszercsomagok frissítése… (a héj újratöltődhet)",
     "Homebrew": "Homebrew",
     "Upgrading Homebrew formulae… (building from source can take a while)": "Homebrew-formulák frissítése… (a fordítás sokáig tarthat)",
-    "Homebrew could not upgrade this": "A Homebrew nem tudta frissíteni"
+    "Homebrew could not upgrade this": "A Homebrew nem tudta frissíteni",
+    "Search Homebrew": "Keresés a Homebrew-ban",
+    "Searching Homebrew…": "Keresés a Homebrew-ban…",
+    "Homebrew could not be asked.": "A Homebrew nem kérdezhető le.",
+    "Homebrew has command-line software the distribution does not carry.": "A Homebrew olyan parancssori szoftvereket kínál, amelyeket a disztribúció nem.",
+    "%1 found in Homebrew, listed below": "%1 találat a Homebrew-ban, lentebb",
+    "Nothing in Homebrew for \"%1\"": "Nincs találat a Homebrew-ban erre: „%1”",
+    "macOS only — this formula cannot run on Linux": "Csak macOS — ez a formula Linuxon nem fut"
 }

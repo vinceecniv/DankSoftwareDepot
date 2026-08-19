@@ -21,7 +21,21 @@ Modes:
 
     brew_helper.py --state                 what is installed and what is outdated
     brew_helper.py --state --refresh       ...after `brew update`, throttled
+    brew_helper.py --search <term>         formulae matching a word
+    brew_helper.py --info <name>           one formula, in detail
     brew_helper.py --upgrade [name ...]    upgrade those, or everything outdated
+    brew_helper.py --install <name>        install one formula
+
+Searching goes through brew itself rather than through the API. The index at
+formulae.brew.sh is a 30 MB document, and brew already has it: it downloaded
+it to answer its own questions. Asking `brew search` costs nothing and stays
+correct as brew's copy is refreshed.
+
+Linux is the reason a search needs filtering at all. Homebrew grew up on macOS
+and its core still carries formulae that cannot run here — a formula is taken
+as usable when it has a Linux bottle, or when it at least does not declare a
+macOS requirement, which is the difference between "builds here" and "will
+refuse".
 
 `--state` prints one JSON document. `--upgrade` prints newline-delimited
 events, in the shape the other helpers use:
@@ -173,6 +187,95 @@ def run_state(refresh):
     }))
 
 
+# ── Searching and describing ─────────────────────────────────────────────────
+
+def _usable_on_linux(info):
+    """Whether this formula can run here at all.
+
+    A Linux bottle is the plain yes. Without one it can still be built from
+    source — unless it says it needs macOS, which is the plain no.
+    """
+    files = (((info.get("bottle") or {}).get("stable") or {}).get("files") or {})
+    if any("linux" in key for key in files):
+        return True
+    return not any((req.get("name") or "") == "macos" for req in (info.get("requirements") or []))
+
+
+def _installs_30d(info):
+    """How many installs the last thirty days saw, as brew's own analytics
+    report it — the same kind of number the Flathub rows carry."""
+    counts = (((info.get("analytics") or {}).get("install") or {}).get("30d") or {})
+    name = info.get("name") or ""
+    if name in counts:
+        return counts[name]
+    # The key carries the invocation, so a formula usually installed with a
+    # flag appears as "name --HEAD"; take the plain one, else the largest
+    plain = [v for k, v in counts.items() if k.split()[0] == name]
+    return max(plain) if plain else 0
+
+
+def _describe(info, installed_names):
+    return {
+        "name": info.get("name") or "",
+        "desc": info.get("desc") or "",
+        "homepage": info.get("homepage") or "",
+        "license": info.get("license") or "",
+        "version": ((info.get("versions") or {}).get("stable") or ""),
+        "installs30d": _installs_30d(info),
+        "linux": _usable_on_linux(info),
+        "deprecated": bool(info.get("deprecated")) or bool(info.get("disabled")),
+        "installed": (info.get("name") or "") in installed_names,
+    }
+
+
+def _info_documents(brew, names):
+    """`brew info --json=v2` for a list of names, as formula documents."""
+    if not names:
+        return []
+    raw = run([brew, "info", "--json=v2", "--formula"] + names, STATE_TIMEOUT)
+    try:
+        return (json.loads(raw or "{}").get("formulae") or [])
+    except ValueError:
+        return []
+
+
+def run_search(term, limit=40):
+    brew = brew_path()
+    if not brew or not (term or "").strip():
+        print(json.dumps({"supported": bool(brew), "results": []}))
+        return
+    raw = run([brew, "search", "--formula", term], STATE_TIMEOUT) or ""
+    names = [line.strip() for line in raw.splitlines()
+             if line.strip() and not line.startswith("==>") and "/" not in line]
+    installed = {row["name"] for row in parse_installed(run([brew, "list", "--versions"], STATE_TIMEOUT))}
+    results = [_describe(doc, installed) for doc in _info_documents(brew, names[:limit])]
+    # Unusable here is worth showing rather than hiding — "this exists but not
+    # for Linux" is an answer — but not worth showing first
+    results.sort(key=lambda r: (not r["linux"], r["deprecated"], -r["installs30d"], r["name"]))
+    print(json.dumps({
+        "supported": True,
+        "term": term,
+        "truncated": len(names) > limit,
+        "results": results,
+    }))
+
+
+def run_info(name):
+    brew = brew_path()
+    if not brew:
+        print(json.dumps({"supported": False}))
+        return
+    installed = {row["name"] for row in parse_installed(run([brew, "list", "--versions"], STATE_TIMEOUT))}
+    docs = _info_documents(brew, [name])
+    if not docs:
+        print(json.dumps({"supported": True, "found": False, "name": name}))
+        return
+    out = _describe(docs[0], installed)
+    out.update({"supported": True, "found": True,
+                "dependencies": (docs[0].get("dependencies") or [])[:12]})
+    print(json.dumps(out))
+
+
 # ── Upgrading ────────────────────────────────────────────────────────────────
 # brew announces what it is about to do in prose, and these are the two lines
 # that name a formula. Anything else it prints is ignored rather than guessed
@@ -263,15 +366,57 @@ def run_upgrade(names):
     emit({"event": "done", "ok": False, "failed": failed})
 
 
+def run_install(name):
+    """One formula, through the same event stream an upgrade uses.
+
+    Installing and upgrading are the same shape of work to brew and to the
+    window watching it, so they are the same shape of report — a plan, a start,
+    an end, and brew's own words when it goes wrong.
+    """
+    brew = brew_path()
+    if not brew:
+        emit({"event": "error", "message": "Homebrew is not installed"})
+        emit({"event": "done", "ok": False, "failed": [name]})
+        return
+
+    emit({"event": "plan", "ops": [{"name": name}]})
+    emit({"event": "op-start", "name": name})
+    tail = []
+    process = subprocess.Popen(
+        [brew, "install", "--formula", name],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
+        env={**os.environ, "HOMEBREW_NO_AUTO_UPDATE": "1", "HOMEBREW_NO_ENV_HINTS": "1",
+             "HOMEBREW_NO_COLOR": "1"})
+    for line in process.stdout:
+        tail.append(line.rstrip("\n"))
+        del tail[:-40]
+    if process.wait() == 0:
+        emit({"event": "op-done", "name": name})
+        emit({"event": "done", "ok": True, "failed": []})
+        return
+    emit({"event": "op-error", "name": name,
+          "message": "\n".join(t for t in tail[-8:] if t.strip())})
+    emit({"event": "done", "ok": False, "failed": [name]})
+
+
 def main():
     args = sys.argv[1:]
     if args and args[0] == "--state":
         run_state("--refresh" in args)
         return
+    if args and args[0] == "--search":
+        run_search(" ".join(args[1:]).strip())
+        return
+    if args and args[0] == "--info" and len(args) >= 2:
+        run_info(args[1])
+        return
     if args and args[0] == "--upgrade":
         run_upgrade([a for a in args[1:] if not a.startswith("--")])
         return
-    print(json.dumps({"error": "usage: brew_helper.py --state [--refresh] | --upgrade [name ...]"}))
+    if args and args[0] == "--install" and len(args) >= 2:
+        run_install(args[1])
+        return
+    print(json.dumps({"error": "usage: brew_helper.py --state [--refresh] | --search <term> | --info <name> | --upgrade [name ...] | --install <name>"}))
 
 
 if __name__ == "__main__":

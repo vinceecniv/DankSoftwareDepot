@@ -485,5 +485,12 @@
     "Updating system packages… (shell may reload)": "A atualizar pacotes do sistema… (a shell pode recarregar)",
     "Homebrew": "Homebrew",
     "Upgrading Homebrew formulae… (building from source can take a while)": "A atualizar fórmulas do Homebrew… (compilar pode demorar)",
-    "Homebrew could not upgrade this": "O Homebrew não conseguiu atualizar isto"
+    "Homebrew could not upgrade this": "O Homebrew não conseguiu atualizar isto",
+    "Search Homebrew": "Pesquisar no Homebrew",
+    "Searching Homebrew…": "A pesquisar no Homebrew…",
+    "Homebrew could not be asked.": "Não foi possível consultar o Homebrew.",
+    "Homebrew has command-line software the distribution does not carry.": "O Homebrew tem software de linha de comandos que a distribuição não inclui.",
+    "%1 found in Homebrew, listed below": "%1 encontrados no Homebrew, listados abaixo",
+    "Nothing in Homebrew for \"%1\"": "Nada no Homebrew para «%1»",
+    "macOS only — this formula cannot run on Linux": "Apenas macOS — esta fórmula não funciona no Linux"
 }

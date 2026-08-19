@@ -485,5 +485,12 @@
     "Updating system packages… (shell may reload)": "Đang cập nhật gói hệ thống… (shell có thể tải lại)",
     "Homebrew": "Homebrew",
     "Upgrading Homebrew formulae… (building from source can take a while)": "Đang nâng cấp công thức Homebrew… (biên dịch từ mã nguồn có thể lâu)",
-    "Homebrew could not upgrade this": "Homebrew không thể nâng cấp mục này"
+    "Homebrew could not upgrade this": "Homebrew không thể nâng cấp mục này",
+    "Search Homebrew": "Tìm trong Homebrew",
+    "Searching Homebrew…": "Đang tìm trong Homebrew…",
+    "Homebrew could not be asked.": "Không thể truy vấn Homebrew.",
+    "Homebrew has command-line software the distribution does not carry.": "Homebrew có phần mềm dòng lệnh mà bản phân phối không kèm theo.",
+    "%1 found in Homebrew, listed below": "Tìm thấy %1 trong Homebrew, liệt kê bên dưới",
+    "Nothing in Homebrew for \"%1\"": "Không có gì trong Homebrew cho “%1”",
+    "macOS only — this formula cannot run on Linux": "Chỉ dành cho macOS — công thức này không chạy trên Linux"
 }

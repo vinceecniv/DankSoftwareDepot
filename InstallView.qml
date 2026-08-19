@@ -315,6 +315,125 @@ Item {
     property string coprError: ""
     property bool coprSearching: false
 
+    // ── Homebrew ────────────────────────────────────────────────────────────
+    // Asked for the same way Copr is, and for a related reason: it is a
+    // catalogue this machine keeps but the storefront does not index, so
+    // searching it is a deliberate press rather than something that happens
+    // per keystroke. Only offered where brew exists.
+    property var brewResults: []
+    property string brewQuery: ""
+    property string brewError: ""
+    property bool brewSearching: false
+    // Bound by the window from the widget, which is the one that asks brew
+    property bool hasBrew: false
+
+    // Brew's analytics run to six figures; the row has room for two.
+    function formatCount(n) {
+        if (n >= 1000000)
+            return (n / 1000000).toFixed(1) + "M";
+        if (n >= 1000)
+            return Math.round(n / 1000) + "k";
+        return String(n);
+    }
+
+    function installBrew(name) {
+        if (busyAction !== "" || brewInstallProcess.running)
+            return;
+        busyAction = name;
+        installProgress = Tr.t("Installing %1…").arg(name);
+        installIcon = "";
+        installFraction = 0;
+        brewInstallProcess._label = name;
+        brewInstallProcess._failed = "";
+        brewInstallProcess.command = [Backend.python, scriptPath.replace("enrich.py", "brew_helper.py"), "--install", name];
+        brewInstallProcess.running = true;
+    }
+
+    Process {
+        id: brewInstallProcess
+
+        property string _label: ""
+        property string _failed: ""
+
+        stdout: SplitParser {
+            onRead: line => {
+                let event;
+                try {
+                    event = JSON.parse(line);
+                } catch (e) {
+                    return;
+                }
+                if (event.event === "op-error")
+                    brewInstallProcess._failed = event.message || "";
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            view.busyAction = "";
+            view.installProgress = "";
+            const label = brewInstallProcess._label;
+            const ok = exitCode === 0 && brewInstallProcess._failed === "";
+            view.lastInstallResult = ok ? Tr.t("%1 installed ✓").arg(label)
+                                        : Tr.t("%1 failed (exit %2)").arg(label).arg(exitCode);
+            if (view.logger) {
+                const label2 = {
+                    key: ok ? "Installed %1" : "Could not install %1",
+                    args: [label]
+                };
+                view.logger.record(ok ? "install" : "install-failed", Tr.t(label2.key).arg(label), [
+                    {
+                        name: label,
+                        id: label,
+                        repo: "brew",
+                        from: "",
+                        to: "",
+                        source: "Homebrew",
+                        status: ok ? "done" : "error",
+                        reason: ok ? "" : brewInstallProcess._failed,
+                        error: ok ? "" : brewInstallProcess._failed
+                    }
+                ], 0, label2);
+            }
+            // The row said "Install" a moment ago; ask brew what is true now
+            view.searchBrew();
+            view.softwareMutated();
+            resultClearTimer.restart();
+        }
+    }
+
+    function searchBrew() {
+        const query = searchText.trim();
+        if (query.length < 2 || brewProcess.running)
+            return;
+        brewError = "";
+        brewSearching = true;
+        brewProcess._query = query;
+        brewProcess.command = [Backend.python, scriptPath.replace("enrich.py", "brew_helper.py"), "--search", query];
+        brewProcess.running = true;
+    }
+
+    Process {
+        id: brewProcess
+
+        property string _query: ""
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                view.brewSearching = false;
+                try {
+                    const answer = JSON.parse(text);
+                    view.brewResults = answer.results || [];
+                    view.brewQuery = brewProcess._query;
+                    view.brewError = "";
+                } catch (e) {
+                    view.brewResults = [];
+                    view.brewQuery = brewProcess._query;
+                    view.brewError = Tr.t("Homebrew could not be asked.");
+                }
+            }
+        }
+    }
+
     function searchCopr() {
         const query = searchText.trim();
         if (query.length < 2 || coprProcess.running)
@@ -332,6 +451,10 @@ Item {
         if (searchText.trim() !== coprQuery) {
             coprResults = [];
             coprError = "";
+        }
+        if (searchText.trim() !== brewQuery) {
+            brewResults = [];
+            brewError = "";
         }
     }
 
@@ -666,9 +789,28 @@ Item {
                 rows.push({
                     type: "coprPrompt"
                 });
+            // The same offer for Homebrew, on a machine that has it. Brew keeps
+            // a catalogue of its own that this storefront does not index, and
+            // asking it is local and quick — but it is still a second place to
+            // look, and worth being asked for rather than assumed.
+            if (view.hasBrew)
+                rows.push({
+                    type: "brewPrompt"
+                });
             // Copr answers are kept apart rather than mixed in: they come from
             // a person rather than from the distribution, and that is the
             // first thing worth knowing about them
+            if (brewQuery === query && brewResults.length > 0) {
+                rows.push({
+                    type: "header",
+                    label: "Homebrew"
+                });
+                for (const item of brewResults)
+                    rows.push({
+                        type: "brew",
+                        data: item
+                    });
+            }
             if (coprQuery === query && coprResults.length > 0) {
                 const coprRows = coprResults.filter(item => matchesSourceFilter(item));
                 if (coprRows.length > 0) {
@@ -1521,6 +1663,10 @@ Item {
                         return categoryHeaderComponent;
                     if (modelData.type === "coprPrompt")
                         return coprPromptComponent;
+                    if (modelData.type === "brewPrompt")
+                        return brewPromptComponent;
+                    if (modelData.type === "brew")
+                        return brewRowComponent;
                     return appRowComponent;
                 }
 
@@ -1601,6 +1747,189 @@ Item {
                             backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
                             textColor: Theme.surfaceText
                             onClicked: view.searchCopr()
+                        }
+                    }
+                }
+            }
+        }
+
+        // A formula in a result list: what it is, what it costs you to know
+        // (nothing — the numbers come from brew's own analytics), and whether
+        // it can run here at all. Homebrew grew up on macOS and its core still
+        // carries formulae that cannot: those are shown greyed with the reason
+        // rather than hidden, because "this exists, but not for you" is an
+        // answer and silently dropping it is not.
+        Component {
+            id: brewRowComponent
+
+            Rectangle {
+                id: brewRowRoot
+
+                property var rowData: ({})
+
+                readonly property var formula: rowData.data || ({})
+                readonly property bool usable: formula.linux !== false
+
+                implicitHeight: brewInfoColumn.implicitHeight + Theme.spacingS * 2
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.35)
+                opacity: usable ? 1 : 0.55
+
+                RowLayout {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.leftMargin: Theme.spacingM
+                    anchors.rightMargin: Theme.spacingS
+                    spacing: Theme.spacingS
+
+                    DankIcon {
+                        name: "local_drink"
+                        size: 18
+                        color: Theme.surfaceVariantText
+                    }
+
+                    ColumnLayout {
+                        id: brewInfoColumn
+
+                        Layout.fillWidth: true
+                        spacing: 1
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingS
+
+                            StyledText {
+                                text: brewRowRoot.formula.name || ""
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.weight: Font.Medium
+                                color: Theme.surfaceText
+                            }
+
+                            StyledText {
+                                visible: (brewRowRoot.formula.version || "") !== ""
+                                text: brewRowRoot.formula.version || ""
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                color: Theme.surfaceVariantText
+                            }
+
+                            StyledText {
+                                visible: (brewRowRoot.formula.installs30d || 0) > 0
+                                text: "· " + Tr.t("%1 installs last month").arg(view.formatCount(brewRowRoot.formula.installs30d))
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                color: Theme.surfaceVariantText
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            visible: text !== ""
+                            text: brewRowRoot.usable ? (brewRowRoot.formula.desc || "")
+                                                     : Tr.t("macOS only — this formula cannot run on Linux")
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            color: Theme.surfaceVariantText
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Item {
+                        Layout.preferredWidth: brewInstallButton.width
+                        Layout.preferredHeight: brewInstallButton.height
+                        visible: brewRowRoot.usable && brewRowRoot.formula.installed !== true
+
+                        DankButton {
+                            id: brewInstallButton
+                            buttonHeight: 26
+                            horizontalPadding: Theme.spacingM
+                            iconName: "download"
+                            iconSize: 13
+                            text: Tr.t("Install")
+                            backgroundColor: Theme.buttonBg
+                            textColor: Theme.buttonText
+                            enabled: view.busyAction === ""
+                            onClicked: view.installBrew(brewRowRoot.formula.name)
+                        }
+                    }
+
+                    StyledText {
+                        visible: brewRowRoot.formula.installed === true
+                        text: Tr.t("Installed")
+                        font.pixelSize: Theme.fontSizeSmall - 1
+                        color: Theme.success
+                    }
+                }
+            }
+        }
+
+        // ── Homebrew, on request ─────────────────────────────────────────────
+        // The same shape as the Copr row above it, because it is the same
+        // offer: a catalogue this window does not index, searched when asked.
+        Component {
+            id: brewPromptComponent
+
+            Rectangle {
+                property var rowData: ({})
+
+                implicitHeight: brewRow.implicitHeight + Theme.spacingS * 2
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+
+                RowLayout {
+                    id: brewRow
+
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.leftMargin: Theme.spacingM
+                    anchors.rightMargin: Theme.spacingS
+                    spacing: Theme.spacingS
+
+                    DankIcon {
+                        name: "local_drink"
+                        size: 16
+                        color: Theme.surfaceVariantText
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: {
+                            if (view.brewSearching)
+                                return Tr.t("Searching Homebrew…");
+                            if (view.brewError !== "")
+                                return Tr.t("Homebrew could not be asked.");
+                            if (view.brewQuery === view.searchText.trim())
+                                return view.brewResults.length > 0 ? Tr.t("%1 found in Homebrew, listed below").arg(view.brewResults.length) : Tr.t("Nothing in Homebrew for \"%1\"").arg(view.brewQuery);
+                            return Tr.t("Homebrew has command-line software the distribution does not carry.");
+                        }
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: view.brewError !== "" ? Theme.error : Theme.surfaceVariantText
+                        wrapMode: Text.WordWrap
+                    }
+
+                    DankSpinner {
+                        visible: view.brewSearching
+                        size: 16
+                    }
+
+                    Item {
+                        Layout.preferredWidth: brewSearchButton.width
+                        Layout.preferredHeight: brewSearchButton.height
+                        visible: !view.brewSearching && view.brewQuery !== view.searchText.trim()
+
+                        DankButton {
+                            id: brewSearchButton
+                            buttonHeight: 26
+                            horizontalPadding: Theme.spacingM
+                            iconName: "search"
+                            iconSize: 13
+                            text: Tr.t("Search Homebrew")
+                            backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
+                            textColor: Theme.surfaceText
+                            onClicked: view.searchBrew()
                         }
                     }
                 }

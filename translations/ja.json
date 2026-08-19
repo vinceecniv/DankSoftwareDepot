@@ -485,5 +485,12 @@
     "Updating system packages… (shell may reload)": "システムパッケージを更新しています…（シェルが再読み込みされる場合があります）",
     "Homebrew": "Homebrew",
     "Upgrading Homebrew formulae… (building from source can take a while)": "Homebrew の formula を更新しています…（ソースからのビルドは時間がかかることがあります）",
-    "Homebrew could not upgrade this": "Homebrew はこれを更新できませんでした"
+    "Homebrew could not upgrade this": "Homebrew はこれを更新できませんでした",
+    "Search Homebrew": "Homebrew を検索",
+    "Searching Homebrew…": "Homebrew を検索しています…",
+    "Homebrew could not be asked.": "Homebrew に問い合わせできませんでした。",
+    "Homebrew has command-line software the distribution does not carry.": "Homebrew にはディストリビューションが提供しないコマンドラインソフトウェアがあります。",
+    "%1 found in Homebrew, listed below": "Homebrew で %1 件見つかりました（下に表示）",
+    "Nothing in Homebrew for \"%1\"": "「%1」は Homebrew にありません",
+    "macOS only — this formula cannot run on Linux": "macOS 専用 — この formula は Linux では動きません"
 }

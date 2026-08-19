@@ -3005,6 +3005,7 @@ FloatingWindow {
                 refreshSerial: win.softwareSerial
                 overlayParent: windowOverlayLayer
                 onSoftwareMutated: win.softwareSerial++
+                hasBrew: win.widgetRoot ? win.widgetRoot.brewSupported === true : false
                 onSourcesRequested: sourcesDialog.open()
                 onStagedChange: {
                     if (win.widgetRoot)

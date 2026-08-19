@@ -485,5 +485,12 @@
     "Updating system packages… (shell may reload)": "시스템 패키지를 업데이트하는 중… (셸이 다시 로드될 수 있음)",
     "Homebrew": "Homebrew",
     "Upgrading Homebrew formulae… (building from source can take a while)": "Homebrew 포뮬러를 업그레이드하는 중… (소스 빌드는 오래 걸릴 수 있음)",
-    "Homebrew could not upgrade this": "Homebrew가 업그레이드하지 못했습니다"
+    "Homebrew could not upgrade this": "Homebrew가 업그레이드하지 못했습니다",
+    "Search Homebrew": "Homebrew 검색",
+    "Searching Homebrew…": "Homebrew를 검색하는 중…",
+    "Homebrew could not be asked.": "Homebrew에 질의할 수 없습니다.",
+    "Homebrew has command-line software the distribution does not carry.": "Homebrew에는 배포판이 제공하지 않는 명령줄 소프트웨어가 있습니다.",
+    "%1 found in Homebrew, listed below": "Homebrew에서 %1개 발견, 아래 표시",
+    "Nothing in Homebrew for \"%1\"": "“%1”에 대한 결과가 Homebrew에 없습니다",
+    "macOS only — this formula cannot run on Linux": "macOS 전용 — 이 포뮬러는 Linux에서 실행할 수 없습니다"
 }

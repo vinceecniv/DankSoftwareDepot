@@ -245,6 +245,15 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
   one. It opens DMS's own plugin screen rather than reimplementing a second
   registry client — this window reports on plugins and updates them, it does
   not sell them
+- **Search Homebrew** where brew is installed, asked for rather than assumed —
+  the same deliberate press Copr gets, and for the same reason: it is a
+  catalogue this window does not index. The search goes through brew's own
+  copy of it rather than fetching the 30 MB index again. Results carry the
+  version, the description and how many installs the last thirty days saw,
+  from brew's own analytics. **Homebrew grew up on macOS**, and its core still
+  carries formulae that cannot run on Linux; those are listed greyed with the
+  reason rather than dropped, because "this exists, but not for you" is an
+  answer
 - **AppImages** are searched, installed and offered from here alongside
   everything else — see [AppImages, end to end](#appimages-end-to-end)
 

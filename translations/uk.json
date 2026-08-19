@@ -485,5 +485,12 @@
     "Updating system packages… (shell may reload)": "Оновлення системних пакунків… (оболонка може перезавантажитися)",
     "Homebrew": "Homebrew",
     "Upgrading Homebrew formulae… (building from source can take a while)": "Оновлення формул Homebrew… (збирання з початкового коду може тривати довго)",
-    "Homebrew could not upgrade this": "Homebrew не зміг це оновити"
+    "Homebrew could not upgrade this": "Homebrew не зміг це оновити",
+    "Search Homebrew": "Шукати в Homebrew",
+    "Searching Homebrew…": "Пошук у Homebrew…",
+    "Homebrew could not be asked.": "Не вдалося звернутися до Homebrew.",
+    "Homebrew has command-line software the distribution does not carry.": "У Homebrew є консольні програми, яких немає в дистрибутиві.",
+    "%1 found in Homebrew, listed below": "Знайдено в Homebrew: %1 — нижче",
+    "Nothing in Homebrew for \"%1\"": "У Homebrew нічого не знайдено за «%1»",
+    "macOS only — this formula cannot run on Linux": "Лише macOS — ця формула не працює в Linux"
 }

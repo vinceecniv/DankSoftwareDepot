@@ -485,5 +485,12 @@
     "Updating system packages… (shell may reload)": "正在更新系统软件包…（Shell 可能会重新加载）",
     "Homebrew": "Homebrew",
     "Upgrading Homebrew formulae… (building from source can take a while)": "正在升级 Homebrew formula…（从源码构建可能较慢）",
-    "Homebrew could not upgrade this": "Homebrew 无法升级此项"
+    "Homebrew could not upgrade this": "Homebrew 无法升级此项",
+    "Search Homebrew": "搜索 Homebrew",
+    "Searching Homebrew…": "正在搜索 Homebrew…",
+    "Homebrew could not be asked.": "无法查询 Homebrew。",
+    "Homebrew has command-line software the distribution does not carry.": "Homebrew 提供发行版未收录的命令行软件。",
+    "%1 found in Homebrew, listed below": "在 Homebrew 中找到 %1 个，列于下方",
+    "Nothing in Homebrew for \"%1\"": "Homebrew 中没有“%1”的结果",
+    "macOS only — this formula cannot run on Linux": "仅限 macOS — 该 formula 无法在 Linux 上运行"
 }
