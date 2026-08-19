@@ -175,8 +175,6 @@
     "No log entries match \"%1\"": "‘%1’과(와) 일치하는 기록이 없습니다",
     "No actions logged yet": "아직 기록된 작업이 없습니다",
     "Updates, installs and removals will appear here (kept for two years)": "업데이트, 설치, 제거가 여기에 표시됩니다 (2년간 보관)",
-    "%1 item": "항목 %1개",
-    "%1 items": "항목 %1개",
     "Today %1": "오늘 %1",
     "Yesterday %1": "어제 %1",
     "Close": "닫기",

@@ -175,8 +175,6 @@
     "No log entries match \"%1\"": "Inga loggposter matchar \"%1\"",
     "No actions logged yet": "Inga åtgärder loggade ännu",
     "Updates, installs and removals will appear here (kept for two years)": "Uppdateringar, installationer och borttagningar visas här (sparas i två år)",
-    "%1 item": "%1 objekt",
-    "%1 items": "%1 objekt",
     "Today %1": "Idag %1",
     "Yesterday %1": "Igår %1",
     "Close": "Stäng",

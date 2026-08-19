@@ -539,36 +539,6 @@ Item {
                             }
                         }
 
-                        // The count of rows, shown only when it is not the
-                        // number already in the title. For most entries those
-                        // agree — "3 packages updated" over three rows — and a
-                        // chip repeating it is furniture. They come apart in
-                        // the cases worth noticing: a run that failed counts
-                        // its failures in the title and holds more rows than
-                        // that, and one interrupted by the shell reloading can
-                        // hold a row it never saw finish.
-                        Rectangle {
-                            readonly property int headlined: {
-                                const label = entryRow.modelData.label;
-                                const args = label ? (label.args || []) : [];
-                                return args.length > 0 && typeof args[0] === "number" ? args[0] : -1;
-                            }
-
-                            visible: entryRow.entryItems.length > 0 && headlined !== entryRow.entryItems.length
-                            Layout.preferredWidth: countChip.implicitWidth + 14
-                            Layout.preferredHeight: 20
-                            radius: 10
-                            color: Theme.withAlpha(Theme.primary, 0.12)
-
-                            StyledText {
-                                id: countChip
-                                anchors.centerIn: parent
-                                text: (entryRow.entryItems.length === 1 ? Tr.t("%1 item") : Tr.t("%1 items")).arg(entryRow.entryItems.length)
-                                font.pixelSize: Theme.fontSizeSmall - 2
-                                color: Theme.primary
-                            }
-                        }
-
                         DankIcon {
                             visible: entryRow.entryItems.length > 0
                             name: entryRow.expanded ? "expand_less" : "expand_more"

@@ -175,8 +175,6 @@
     "No log entries match \"%1\"": "Không có mục nhật ký nào khớp “%1”",
     "No actions logged yet": "Chưa có thao tác nào được ghi",
     "Updates, installs and removals will appear here (kept for two years)": "Các bản cập nhật, cài đặt và gỡ bỏ sẽ xuất hiện ở đây (giữ trong hai năm)",
-    "%1 item": "%1 mục",
-    "%1 items": "%1 mục",
     "Today %1": "Hôm nay %1",
     "Yesterday %1": "Hôm qua %1",
     "Close": "Đóng",

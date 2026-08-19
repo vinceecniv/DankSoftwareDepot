@@ -175,8 +175,6 @@
     "No log entries match \"%1\"": "Nincs naplóbejegyzés erre: „%1”",
     "No actions logged yet": "Még nincs naplózott művelet",
     "Updates, installs and removals will appear here (kept for two years)": "A frissítések, telepítések és eltávolítások itt jelennek meg (két évig megőrizve)",
-    "%1 item": "%1 elem",
-    "%1 items": "%1 elem",
     "Today %1": "Ma %1",
     "Yesterday %1": "Tegnap %1",
     "Close": "Bezárás",

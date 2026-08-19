@@ -175,8 +175,6 @@
     "No log entries match \"%1\"": "Немає записів журналу за запитом «%1»",
     "No actions logged yet": "Дій ще не записано",
     "Updates, installs and removals will appear here (kept for two years)": "Оновлення, встановлення та вилучення з'являтимуться тут (зберігаються два роки)",
-    "%1 item": "%1 запис",
-    "%1 items": "записів: %1",
     "Today %1": "Сьогодні %1",
     "Yesterday %1": "Учора %1",
     "Close": "Закрити",

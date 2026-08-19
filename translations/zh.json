@@ -175,8 +175,6 @@
     "No log entries match \"%1\"": "没有与“%1”匹配的日志条目",
     "No actions logged yet": "尚无操作记录",
     "Updates, installs and removals will appear here (kept for two years)": "更新、安装和卸载会显示在这里（保留两年）",
-    "%1 item": "%1 项",
-    "%1 items": "%1 项",
     "Today %1": "今天 %1",
     "Yesterday %1": "昨天 %1",
     "Close": "关闭",

@@ -175,8 +175,6 @@
     "No log entries match \"%1\"": "「%1」に一致するログはありません",
     "No actions logged yet": "まだ記録された操作はありません",
     "Updates, installs and removals will appear here (kept for two years)": "更新・インストール・削除がここに表示されます（2 年間保持）",
-    "%1 item": "%1 件",
-    "%1 items": "%1 件",
     "Today %1": "今日 %1",
     "Yesterday %1": "昨日 %1",
     "Close": "閉じる",

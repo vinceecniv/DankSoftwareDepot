@@ -175,8 +175,6 @@
     "No log entries match \"%1\"": "Nenhuma entrada do registro corresponde a \"%1\"",
     "No actions logged yet": "Nenhuma ação registrada ainda",
     "Updates, installs and removals will appear here (kept for two years)": "Atualizações, instalações e remoções aparecerão aqui (guardadas dois anos)",
-    "%1 item": "%1 item",
-    "%1 items": "%1 itens",
     "Today %1": "Hoje %1",
     "Yesterday %1": "Ontem %1",
     "Close": "Fechar",
