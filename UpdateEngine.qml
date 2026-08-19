@@ -153,12 +153,21 @@ Item {
             return 2;
         case "flatpak":
             return _flatpakStillDownloading ? 1 : 2;
+        // The daemon pass computes its own stage — a download series, then the
+        // transaction — for both kinds of pass; it simply does not set the
+        // phase for the shell one, because that phase carries the warning
+        // about the reload and should keep saying it. The step is free to be
+        // accurate even when the label stays put.
+        case "dms":
+            return _dnfStage >= 2 ? 2 : 1;
+        // Downloading is what the AppImage phase spends its time on, and the
+        // helper reports every byte of it; what follows — the icon, the
+        // desktop entry, moving the file into place — is the install.
         case "appimage":
-            return 1;
+            return _appimageDownloading ? 1 : 2;
         case "firmware":
         case "brew":
         case "plugins":
-        case "dms":
             return 2;
         case "verifying":
             return 3;
@@ -266,6 +275,11 @@ Item {
     // Anything not finished and not yet installing is still coming down, and
     // while that is true of any of them the phase is a download.
     property bool _flatpakStillDownloading: true
+
+    // The AppImage being fetched right now, as opposed to being unpacked into
+    // place. A run only ever downloads — an update comes from a release — so
+    // this starts true for each item and turns over when the bytes are in.
+    property bool _appimageDownloading: true
 
     function _recomputeFlatpakStage() {
         for (const ref in _flatpakOps) {
@@ -1892,6 +1906,7 @@ Item {
         switch (event.event) {
         case "ai-start": {
             _aiCurrentId = event.id;
+            _appimageDownloading = true;
             currentItem = event.name || event.id;
             _setItem("appimage/" + event.id, {
                 status: "active",
@@ -1905,6 +1920,7 @@ Item {
             const ops = _aiOps;
             if (ops[_aiCurrentId])
                 ops[_aiCurrentId].fraction = Math.min(1, (event.percent || 0) / 100);
+            _appimageDownloading = (event.percent || 0) < 100;
             currentDetail = (event.percent || 0) + "%";
             _setItem("appimage/" + _aiCurrentId, {
                 status: "active",
