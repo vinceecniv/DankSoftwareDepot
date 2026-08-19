@@ -599,7 +599,28 @@ Item {
             }, s.item));
     }
 
-    readonly property var filterKinds: ["", "flatpak", "dnf", "appimage", "copr"]
+    // Labels and kinds built together, because both are conditional — Copr
+    // only where dnf is, Homebrew only where brew is — and two lists that
+    // shift independently are two lists that will disagree about which chip
+    // means what.
+    readonly property var filterChips: {
+        const labels = [Tr.t("All"), "Flathub", Backend.systemRepoLabel, "AppImage"];
+        const kinds = ["", "flatpak", "dnf", "appimage"];
+        if (Backend.hasCopr) {
+            labels.push("Copr");
+            kinds.push("copr");
+        }
+        if (view.hasBrew) {
+            labels.push("Homebrew");
+            kinds.push("brew");
+        }
+        return {
+            labels: labels,
+            kinds: kinds
+        };
+    }
+    readonly property var filterKinds: filterChips.kinds
+    readonly property bool brewFilterWanted: sourceFilter === 0 || filterKinds[sourceFilter] === "brew"
 
     function matchesSourceFilter(item) {
         if (sourceFilter === 0)
@@ -830,14 +851,14 @@ Item {
             // a catalogue of its own that this storefront does not index, and
             // asking it is local and quick — but it is still a second place to
             // look, and worth being asked for rather than assumed.
-            if (view.hasBrew)
+            if (view.hasBrew && view.brewFilterWanted)
                 rows.push({
                     type: "brewPrompt"
                 });
             // Copr answers are kept apart rather than mixed in: they come from
             // a person rather than from the distribution, and that is the
             // first thing worth knowing about them
-            if (brewQuery === query && brewResults.length > 0) {
+            if (brewQuery === query && brewResults.length > 0 && view.brewFilterWanted) {
                 rows.push({
                     type: "header",
                     label: "Homebrew"
@@ -1417,7 +1438,7 @@ Item {
             spacing: Theme.spacingM
 
             DankButtonGroup {
-                model: Backend.hasCopr ? [Tr.t("All"), "Flathub", Backend.systemRepoLabel, "AppImage", "Copr"] : [Tr.t("All"), "Flathub", Backend.systemRepoLabel, "AppImage"]
+                model: view.filterChips.labels
                 currentIndex: view.sourceFilter
                 onSelectionChanged: (index, selected) => {
                     if (selected)

@@ -1125,7 +1125,15 @@ Item {
 
             DankButtonGroup {
                 id: filterGroup
-                model: [Tr.t("All"), "Flatpak", Tr.t("System"), "AppImage", Tr.t("Plugins"), "Homebrew"]
+                // Homebrew only where there is a Homebrew: a filter for a kind
+                // of software this machine cannot have is a chip that always
+                // answers nothing
+                model: {
+                    const labels = [Tr.t("All"), "Flatpak", Tr.t("System"), "AppImage", Tr.t("Plugins")];
+                    if ((view.brewFormulae || []).length > 0)
+                        labels.push("Homebrew");
+                    return labels;
+                }
                 currentIndex: view.sourceFilter
                 onSelectionChanged: (index, selected) => {
                     if (selected)
