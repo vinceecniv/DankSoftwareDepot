@@ -755,10 +755,16 @@ Item {
         sectionRevealed = sectionPage;
         resultsList.positionViewAtBeginning();
     }
+    // What the list has to show, which decides whether the list is shown at
+    // all. Copr answers arrive as ordinary rows and were counted from the
+    // start; Homebrew's are their own kind of row and were not, so a search
+    // that only brew could answer said "14 found in Homebrew, listed below"
+    // over an empty screen — the list holding them was hidden for being
+    // empty.
     readonly property int resultCount: {
         let count = 0;
         for (const row of listModel) {
-            if (row.type === "app")
+            if (row.type === "app" || row.type === "brew")
                 count++;
         }
         return count;
