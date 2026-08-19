@@ -3036,6 +3036,8 @@ FloatingWindow {
 
         // ── Progress panel (only while a run adds information) ──────────────
         Rectangle {
+            id: resultPanel
+
             Layout.fillWidth: true
             // Verifying is part of the run, so the panel stays for it — it used
             // to fall through every clause here and take the stepper with it,
@@ -3047,6 +3049,30 @@ FloatingWindow {
             color: Theme.surfaceContainer
             border.width: 1
             border.color: Theme.withAlpha(Theme.outline, 0.1)
+            clip: true
+
+            // A clean result clears itself after a few seconds, which without
+            // this reads as the card having been taken away mid-sentence. The
+            // line runs out along the bottom edge instead, so the disappearance
+            // is something you watched approach rather than something that
+            // happened to you. It is absent when the panel is staying —
+            // during the run, and after one with something to report.
+            Rectangle {
+                anchors.left: parent.left
+                anchors.bottom: parent.bottom
+                height: 2
+                visible: win.engine.autoDismissing
+                color: Theme.withAlpha(Theme.primary, 0.45)
+                width: resultPanel.width
+
+                NumberAnimation on width {
+                    running: win.engine.autoDismissing
+                    from: resultPanel.width
+                    to: 0
+                    duration: win.engine.autoDismissMs
+                    easing.type: Easing.Linear
+                }
+            }
 
             ColumnLayout {
                 id: progressColumn

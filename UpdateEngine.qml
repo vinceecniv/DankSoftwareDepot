@@ -106,23 +106,42 @@ Item {
 
     // Clear the finished/failed result panel
     function dismiss() {
+        autoDismissTimer.stop();
+        autoDismissing = false;
         if (!running)
             phase = "idle";
     }
 
-    // Auto-dismiss a fully successful result; failures stay until dismissed
+    // Auto-dismiss a fully successful result; failures stay until dismissed.
+    // Both published, because a panel that clears itself without warning reads
+    // as a panel that was taken away: the card shows the time running out.
+    readonly property int autoDismissMs: 8000
+    property bool autoDismissing: false
+
     Timer {
         id: autoDismissTimer
-        interval: 8000
+        interval: engine.autoDismissMs
         onTriggered: {
+            engine.autoDismissing = false;
             if (!engine.running && engine.phase === "done" && engine.failedCount === 0)
                 engine.phase = "idle";
         }
     }
 
     onPhaseChanged: {
-        if (phase === "done" && failedCount === 0)
+        autoDismissing = phase === "done" && failedCount === 0;
+        if (autoDismissing)
             autoDismissTimer.restart();
+    }
+
+    // Verification can turn a clean run into one with a failure in it, minutes
+    // after the phase said done. The panel stops counting down when that
+    // happens — it has something to say now.
+    onFailedCountChanged: {
+        if (failedCount > 0 && autoDismissing) {
+            autoDismissTimer.stop();
+            autoDismissing = false;
+        }
     }
 
     // Stepper position: 0 check, 1 download, 2 install, 3 verify, 4 done
