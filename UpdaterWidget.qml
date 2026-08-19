@@ -227,7 +227,7 @@ PluginComponent {
                     // means what held means here: leave this one alone
                     root.brewUpdates = (data.outdated || []).filter(row => row.pinned !== true).map(row => ({
                         name: row.name,
-                        displayName: row.name,
+                        displayName: row.displayName || row.name,
                         repo: "brew",
                         fromVersion: row.fromVersion || "",
                         toVersion: row.toVersion || ""

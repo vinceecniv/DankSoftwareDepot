@@ -26,18 +26,35 @@ OUTDATED = json.dumps({
 
 LIST_VERSIONS = "jq 1.7.1\nripgrep 14.1.0\nnode 22.1.0 22.4.0\nzlib 1.3.1\n"
 
-# What `brew upgrade jq ripgrep` prints, trimmed to the lines that carry names
+# Recorded from a real `brew upgrade` (Homebrew 6.0.18) against a local tap,
+# with the summary line brew 4 opened with kept in front of it: the two
+# generations word it differently and both are the same shape as a formula
+# line, which is why nothing is trusted here unless the run planned it.
 UPGRADE_LOG = """==> Upgrading 2 outdated packages:
 jq 1.7.1 -> 1.8.0
 ripgrep 14.1.0 -> 14.2.0
+==> Fetching downloads for: jq
 ==> Upgrading jq
-==> Downloading https://ghcr.io/v2/homebrew/core/jq/manifests/1.8.0
+  1.7.1 -> 1.8.0
 ==> Pouring jq-1.8.0.x86_64_linux.bottle.tar.gz
-🍺  /home/linuxbrew/.linuxbrew/Cellar/jq/1.8.0: 20 files, 1.2MB
+\U0001F37A  /home/linuxbrew/.linuxbrew/Cellar/jq/1.8.0: 20 files, 1.2MB
 ==> Upgrading ripgrep
+  14.1.0 -> 14.2.0
 ==> Pouring ripgrep-14.2.0.x86_64_linux.bottle.tar.gz
-🍺  /home/linuxbrew/.linuxbrew/Cellar/ripgrep/14.2.0: 15 files, 5.5MB
+\U0001F37A  /home/linuxbrew/.linuxbrew/Cellar/ripgrep/14.2.0: 15 files, 5.5MB
+==> Cleanup
+==> Upgraded 2 outdated packages
+jq 1.7.1 -> 1.8.0
+ripgrep 14.1.0 -> 14.2.0
 """
+
+# A formula from a third-party tap is named in full by `brew outdated` and
+# short by `brew list` — recorded from the tap this was tested against.
+TAP_OUTDATED = json.dumps({
+    "formulae": [{"name": "dsd/test/dsdtest", "installed_versions": ["1.0.0"],
+                  "current_version": "1.0.1", "pinned": False, "pinned_version": None}],
+    "casks": [],
+})
 
 failures = []
 
@@ -86,6 +103,12 @@ def main():
         check("an unpinned one is not", by_name["jq"]["pinned"] is False)
         check("sorted by name", [r["name"] for r in rows] == ["jq", "node", "ripgrep"])
         check("nothing usable in, nothing out", brew.parse_outdated("not json") == [])
+
+        tap = brew.parse_outdated(TAP_OUTDATED)[0]
+        check("a tap formula keeps the name brew upgrade needs",
+              tap["name"] == "dsd/test/dsdtest", tap["name"])
+        check("and gains the one a person should read",
+              tap["displayName"] == "dsdtest", tap["displayName"])
 
         installed = brew.parse_installed(LIST_VERSIONS)
         check("four installed formulae", len(installed) == 4, str(len(installed)))

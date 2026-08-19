@@ -119,7 +119,13 @@ def parse_outdated(raw):
                 continue
             installed = entry.get("installed_versions") or []
             rows.append({
+                # brew names a formula from a third-party tap in full —
+                # "dsd/test/dsdtest" — and that is what `brew upgrade` has to
+                # be given. It is not what anyone wants to read in a list, and
+                # `brew list` reports the short name for the same formula, so
+                # both travel: one to act on, one to show.
                 "name": name,
+                "displayName": name.rsplit("/", 1)[-1],
                 "kind": "cask" if kind == "casks" else "formula",
                 "fromVersion": installed[-1] if installed else "",
                 "toVersion": entry.get("current_version") or "",
@@ -172,6 +178,11 @@ def run_state(refresh):
 # that name a formula. Anything else it prints is ignored rather than guessed
 # at: a wrong "now installing X" is worse than no line at all.
 UPGRADING = re.compile(r"^==> Upgrading (\S+)")
+# brew 6 opens with "==> Would upgrade 1 outdated package" and closes with
+# "==> Upgraded ..."; brew 4 opened with "==> Upgrading 2 outdated packages:",
+# which is the same shape as a formula line. Neither is a formula, and the
+# guard below — a name must be one this run planned — is what tells them apart
+# without having to know which brew is installed.
 POURING = re.compile(r"^==> Pouring (\S+?)-")
 
 

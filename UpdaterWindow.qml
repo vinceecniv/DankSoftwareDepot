@@ -3773,8 +3773,13 @@ FloatingWindow {
                                             // The plugins in the shell this window runs in. Counted
                                             // from the manifests PluginService has already read, so
                                             // this is what is installed rather than what is enabled.
-                                            { label: Tr.t("DMS plugins"), icon: "extension", count: Object.keys(PluginService.availablePlugins || {}).length }
-                                        ].filter(row => row.label !== "COPR" && row.label !== "AUR" || row.count > 0 || Backend.backendId === "dnf");
+                                            { label: Tr.t("DMS plugins"), icon: "extension", count: Object.keys(PluginService.availablePlugins || {}).length },
+                                            // Only on a machine that has brew: a row
+                                            // reading "Homebrew 0" on the other ones is
+                                            // an answer to a question nobody asked
+                                            { label: "Homebrew", icon: "local_drink", count: (win.widgetRoot ? (win.widgetRoot.brewInstalled || []).length : 0) }
+                                        ].filter(row => row.label !== "COPR" && row.label !== "AUR" || row.count > 0 || Backend.backendId === "dnf")
+                                         .filter(row => row.label !== "Homebrew" || row.count > 0);
                                     }
 
                                     delegate: RowLayout {
@@ -3813,7 +3818,7 @@ FloatingWindow {
 
                                 StyledText {
                                     Layout.fillWidth: true
-                                    text: Tr.t("Total: %1").arg((win.dashboard ? (win.dashboard.rpmTotal || 0) + (win.dashboard.flatpakCount || 0) + (win.dashboard.appimageCount || 0) : 0) + Object.keys(PluginService.availablePlugins || {}).length)
+                                    text: Tr.t("Total: %1").arg((win.dashboard ? (win.dashboard.rpmTotal || 0) + (win.dashboard.flatpakCount || 0) + (win.dashboard.appimageCount || 0) : 0) + Object.keys(PluginService.availablePlugins || {}).length + (win.widgetRoot ? (win.widgetRoot.brewInstalled || []).length : 0))
                                     font.pixelSize: Theme.fontSizeSmall
                                     color: Theme.surfaceVariantText
                                     horizontalAlignment: Text.AlignRight
