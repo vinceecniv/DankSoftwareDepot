@@ -66,9 +66,19 @@ detection and dnf transactions; polkit prompts appear through the DMS agent).
 ## The five tabs
 
 ### 1 · Updates
-- Rich update cards: logo, name, summary, `old → new` versions, repo chip,
-  homepage link, expandable sanitized release notes (AppStream releases for
-  apps, rpm changelog fallback), per-app update button
+- Rich update cards: logo, name, summary, `old → new` versions, homepage
+  link, expandable sanitized release notes (AppStream releases for apps, rpm
+  changelog fallback), per-app update button
+- **A chip saying where the row came from**, on the rows where that is not
+  already written directly above them: under Applications, which holds
+  Flatpaks and AppImages together, under Held, which holds anything at all,
+  and during a run, where the groups are In progress and Waiting and the chip
+  is the only thing left saying what a row is. Under a heading that names a
+  source — System packages, Firmware, Homebrew, DMS plugins — it is the
+  heading again in smaller type, so it stays off
+- **Section headings stay put while you scroll**, in all four lists: which
+  group you are inside, which day of the log you have reached, which
+  storefront category you are 400 rows into
 - **Packages built from git** (a `*-git` Copr, an AUR `-git` build) have no
   release for the distro to describe, so their notes come from the upstream
   forge instead: the published notes of the release being installed, or the

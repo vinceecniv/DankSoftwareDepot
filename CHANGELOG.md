@@ -3,6 +3,38 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.1.1 — 2026-08-21
+
+Thanks to @kmf for reporting #10.
+
+- **Homebrew formulae no longer call themselves system packages.** One mapping
+  from a row to the name of its source had been written out in four places,
+  each copy with a different hole in it: the update card knew Flatpak and DMS
+  plugins, the action log knew four kinds, the details popup knew three, and
+  none of them knew Homebrew. Everything that fell through said System — so
+  AppImage and firmware rows were quietly saying it too. There is one now,
+  used by all four
+- **The details popup for a formula stops asking the system about it.** It was
+  offering a dnf source for something that lives in brew's own prefix, and
+  asking the package manager for the changelog of a package it never installed
+  — which is what left *Loading changelog…* on screen for good. It is filled
+  from brew instead: version, licence, homepage, dependencies and installs
+  last month, the same panel the Install tab shows
+- **Rows are named by the name meant to be read**, so the list no longer says
+  `charmbracelet/tap/crush` where the popup one click away says `crush`
+- **The source chip is gone where the heading above already says it** — under
+  System packages, Firmware, Homebrew and DMS plugins it was the heading again
+  in smaller type. It stays under Applications, which holds Flatpaks and
+  AppImages together, under Held, which holds anything, and during a run,
+  where the groups are In progress and Waiting and the chip is the only thing
+  saying what a row is
+- **Section headings stay put while you scroll**, in all four lists: which
+  group you are in, which day of the log you have reached, which storefront
+  category you are hundreds of rows into. Worth more now that the rows beneath
+  a heading no longer each repeat it
+- The bug report form has boxes for Homebrew and DMS plugins, which is why
+  #10 arrived with none of them ticked
+
 ## 1.1.0 — 2026-08-19
 
 Homebrew becomes somewhere you install *from*, not only a section that gets
