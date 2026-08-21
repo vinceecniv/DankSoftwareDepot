@@ -1187,6 +1187,38 @@ Item {
             model: view.filteredItems
             visible: !view.loading
 
+            // The group heading, held at the top while its rows go past.
+            // Here a heading is carried by the row that starts the group
+            // rather than being a row of its own, so the count comes along
+            // with it — the pinned copy says "Homebrew · 5" exactly like the
+            // one it stands in for.
+            StickyHeader {
+                id: installedSticky
+
+                view: installedList
+                rows: view.filteredItems
+                headingOf: row => (row && row.sectionLabel) ? row : ""
+                barHeight: 26
+
+                content: Component {
+                    StyledText {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 2
+                        anchors.leftMargin: Theme.spacingS
+                        anchors.rightMargin: Theme.spacingS
+                        text: {
+                            const row = installedSticky.heading;
+                            return row ? ((row.sectionLabel || "") + " · " + (row.sectionCount || 0)) : "";
+                        }
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.Medium
+                        color: Theme.surfaceVariantText
+                    }
+                }
+            }
+
             // A row, optionally under the heading that opens its group
             delegate: Column {
                 id: rowWrap

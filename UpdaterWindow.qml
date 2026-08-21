@@ -63,10 +63,16 @@ FloatingWindow {
         // the user "package quickCapture is not installed", which is true and
         // useless), and nobody has reviewed it. Its manifest is the source.
         const isPlugin = pkg.repo === "dmsplugin";
+        // Neither of these is a package the system knows about either: a
+        // formula lives in brew's own prefix, an AppImage is a file. Asking
+        // rpm or dpkg what changed in one gets "not installed", which is true
+        // and useless — the same answer plugins used to get.
+        const isBrew = pkg.repo === "brew";
+        const isAppImage = pkg.repo === "appimage";
         const manifest = isPlugin ? ((PluginService.availablePlugins || {})[pkg.name] || {}) : {};
         const base = win.store.stripArch(pkg.name || "");
         const newer = (info && info.releases) ? info.releases.filter(r => r.newer && (r.notesHtml || r.version)).slice(0, 5) : [];
-        if (!isFlatpak && !isFirmware && !isPlugin && newer.length === 0) {
+        if (!isFlatpak && !isFirmware && !isPlugin && !isBrew && !isAppImage && newer.length === 0) {
             win.store.fetchChangelog(base);
             // Nothing in AppStream and, for a git build, nothing in the
             // changelog either — the notes exist, just not in the distro
@@ -74,6 +80,20 @@ FloatingWindow {
         }
         updatesDialog.rowData = rowData;
         updatesDialog.releases = newer;
+        // What brew knows about it — licence, homepage, dependencies, how
+        // often it was installed last month — which is the same panel the
+        // Install tab fills from the same helper. The version is on the card
+        // already, so the popup has something to show while the answer
+        // arrives rather than opening empty.
+        updatesDialog.brewFacts = isBrew ? {
+            name: pkg.name,
+            version: pkg.toVersion || ""
+        } : null;
+        if (isBrew) {
+            brewFactsProcess.running = false;
+            brewFactsProcess.command = [Backend.python, Qt.resolvedUrl("scripts/brew_helper.py").toString().replace("file://", ""), "--info", pkg.name];
+            brewFactsProcess.running = true;
+        }
         updatesDialog.pluginFacts = isPlugin ? {
             author: manifest.author || "",
             category: manifest.category || "",
@@ -94,9 +114,9 @@ FloatingWindow {
             held: rowData.ignored === true || win.store.isHeld(pkg),
             holdReason: rowData.ignored === true ? Tr.t("held by you") : win.store.holdReason(pkg),
             versionLabel: versionLabel,
-            origin: isFirmware ? "Firmware" : (isPlugin ? "DMS" : (isFlatpak ? "Flatpak" : "System")),
+            origin: Ui.sourceLabel(pkg.repo),
             isFlatpak: isFlatpak,
-            sources: (isFirmware || isPlugin) ? [] : (isFlatpak ? [{
+            sources: (isFirmware || isPlugin || isBrew || isAppImage) ? [] : (isFlatpak ? [{
                 source: "flathub",
                 kind: "flatpak",
                 ref: pkg.name
@@ -106,6 +126,24 @@ FloatingWindow {
                 ref: base
             }])
         });
+    }
+
+    // The answer is only accepted if it is still about the formula on screen:
+    // opening a second popup before the first has answered would otherwise
+    // fill it with the previous one's licence.
+    Process {
+        id: brewFactsProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const info = JSON.parse(text);
+                    if (info.found === true && updatesDialog.brewFacts && info.name === updatesDialog.brewFacts.name)
+                        updatesDialog.brewFacts = info;
+                } catch (e) {
+                }
+            }
+        }
     }
 
     // Opened from a name in the log. It shows what is known about the package
@@ -173,7 +211,7 @@ FloatingWindow {
         // builds, the git-notes lookup. A plugin is not one of these, and
         // asking anyway left "Loading changelog…" on screen for good, because
         // nothing was ever going to arrive and clear it.
-        readonly property bool rowIsRpm: rowPkg !== null && rowPkg.repo !== "flatpak" && rowPkg.repo !== "firmware" && rowPkg.repo !== "dmsplugin"
+        readonly property bool rowIsRpm: rowPkg !== null && rowPkg.repo !== "flatpak" && rowPkg.repo !== "firmware" && rowPkg.repo !== "dmsplugin" && rowPkg.repo !== "brew" && rowPkg.repo !== "appimage"
         readonly property string rowBase: rowPkg ? win.store.stripArch(rowPkg.name || "") : ""
 
         // "" for anything not built from git, which is what keeps the
@@ -1580,8 +1618,26 @@ FloatingWindow {
     // Flat list model with explicit header rows. This sidesteps ListView's
     // section attachment (which mis-assigned headers) and lets headers carry
     // their own hover actions.
+    // Sections whose heading is the name of a source. A chip repeating it on
+    // every row underneath is the heading again in smaller type — the reader
+    // has just read it. Everywhere else it stays: Applications holds Flatpaks
+    // and AppImages together, Held holds anything at all, and during a run the
+    // groups are In progress and Waiting, where what a row *is* is the one
+    // thing the heading no longer says.
+    readonly property var sourceNamedCategories: ["2 · System packages", "4 · Firmware", "5 · Homebrew", "5 · DMS plugins"]
+
     readonly property var listModel: {
         const counts = {};
+        // And only where the section really does hold one kind. The heading
+        // naming a source is a promise about its contents; this checks it
+        // rather than trusting it, so a row that ends up somewhere unexpected
+        // keeps its chip instead of being quietly relabelled by its
+        // neighbours.
+        const sectionRepo = {};
+        for (const row of visibleRows) {
+            const repo = (row.pkg && row.pkg.repo) || "system";
+            sectionRepo[row.category] = sectionRepo[row.category] === undefined ? repo : (sectionRepo[row.category] === repo ? repo : "*");
+        }
         for (const row of visibleRows)
             counts[row.category] = (counts[row.category] || 0) + 1;
         const collapsible = ["6 · Held packages", "4 · Completed"];
@@ -1602,7 +1658,8 @@ FloatingWindow {
             if (collapsible.indexOf(row.category) !== -1 && collapsedCats[row.category] === true)
                 continue;
             out.push(Object.assign({
-                type: "card"
+                type: "card",
+                repeatsHeading: sourceNamedCategories.indexOf(row.category) !== -1 && sectionRepo[row.category] !== "*"
             }, row));
         }
         return out;
@@ -3224,6 +3281,26 @@ FloatingWindow {
             model: win.listModel
             visible: win.currentTab === 0 && (win.listModel.length > 0 || win.dashboardMode)
 
+            // The heading of the section you are in, held at the top — worth
+            // more now that the rows under it no longer each repeat their
+            // source. The header rows are rows of their own here, so the
+            // heading a row belongs to is simply the nearest one above it.
+            StickyHeader {
+                id: updatesSticky
+
+                view: cardsList
+                rows: win.listModel
+                headingOf: row => (row && row.type === "header") ? row : ""
+                barHeight: 36
+
+                content: Component {
+                    Loader {
+                        sourceComponent: headerRowComponent
+                        onLoaded: item.rowData = Qt.binding(() => updatesSticky.heading || ({}))
+                    }
+                }
+            }
+
             delegate: Loader {
                 required property var modelData
 
@@ -3331,6 +3408,7 @@ FloatingWindow {
                 property var rowData: ({})
 
                 width: cardsList.width
+                showSource: rowData.repeatsHeading !== true
                 shellIconPath: (rowData.pkg && win._isShellPkg(rowData.pkg) && win.widgetRoot) ? win.widgetRoot.dankLogoPath : ""
                 pkg: rowData.pkg || ({
                         name: "",

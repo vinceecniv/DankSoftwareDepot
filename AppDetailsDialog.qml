@@ -620,7 +620,11 @@ Item {
                                 parts.push(dialog.info.developer);
                             return parts.join(" · ");
                         }
-                        readonly property string licenseLine: dialog.info.license ? dialog.shortLicense(dialog.info.license) : ""
+                        // A formula's licence comes from brew rather than
+                        // from AppStream, which has never heard of one. Same
+                        // row, same glyph: where it was found is not
+                        // something the reader has to care about.
+                        readonly property string licenseLine: dialog.info.license ? dialog.shortLicense(dialog.info.license) : ((dialog.brewFacts && dialog.brewFacts.license) ? dialog.shortLicense(dialog.brewFacts.license) : "")
 
                         Layout.fillWidth: true
                         spacing: Theme.spacingXS
@@ -849,33 +853,6 @@ Item {
                         width: parent.width
                         spacing: 4
                         visible: dialog.isBrew
-
-                        RowLayout {
-                            width: parent.width
-                            spacing: Theme.spacingS
-
-                            DankIcon {
-                                name: "local_drink"
-                                size: 14
-                                color: Theme.surfaceVariantText
-                            }
-
-                            StyledText {
-                                Layout.fillWidth: true
-                                text: {
-                                    const facts = dialog.brewFacts || {};
-                                    const parts = ["Homebrew"];
-                                    if (facts.version)
-                                        parts.push(facts.version);
-                                    if (facts.license)
-                                        parts.push(facts.license);
-                                    return parts.join(" · ");
-                                }
-                                font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.surfaceVariantText
-                                wrapMode: Text.WordWrap
-                            }
-                        }
 
                         RowLayout {
                             width: parent.width

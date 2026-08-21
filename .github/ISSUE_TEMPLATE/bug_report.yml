@@ -63,6 +63,8 @@ body:
         - label: Flatpak
         - label: AppImage
         - label: Firmware (fwupd)
+        - label: Homebrew
+        - label: DMS plugins
         - label: None in particular — the window, the bar pill or a translation
 
   - type: textarea

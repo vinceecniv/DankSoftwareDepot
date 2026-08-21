@@ -661,7 +661,7 @@ PluginComponent {
                 repo: ri.pkg.repo || "",
                 from: ri.pkg.fromVersion || "",
                 to: ri.pkg.toVersion || "",
-                source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : (ri.pkg.repo === "dmsplugin" ? "DMS" : "System"))),
+                source: Ui.sourceName(ri.pkg.repo),
                 status: st.status || "",
                 reason: st.status === "error" ? (st.detail || "") : "",
                 error: engine.runErrorDetails[ri.key] || ""
@@ -1088,7 +1088,7 @@ PluginComponent {
                 repo: ri.pkg.repo || "",
                 from: ri.pkg.fromVersion || "",
                 to: landedAt,
-                source: ri.pkg.repo === "flatpak" ? "Flatpak" : (ri.pkg.repo === "firmware" ? "Firmware" : (ri.pkg.repo === "appimage" ? "AppImage" : (ri.pkg.repo === "dmsplugin" ? "DMS" : "System"))),
+                source: Ui.sourceName(ri.pkg.repo),
                 status: st.status || "",
                 // Short reason for reading, tool output for reporting
                 reason: st.status === "error" ? (st.detail || "") : "",

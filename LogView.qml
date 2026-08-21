@@ -421,6 +421,32 @@ Item {
             model: view.visibleEntries
             visible: view.visibleEntries.length > 0
 
+            // Which day you are looking at, held at the top. The log is the
+            // list where this is worth the most: every entry says a time and
+            // none of them says a date, so scrolling into last month is the
+            // one place the heading is the whole context.
+            StickyHeader {
+                id: logSticky
+
+                view: logList
+                rows: view.visibleEntries
+                headingOf: row => (row && row.dayLabel) || ""
+                barHeight: 26
+
+                content: Component {
+                    StyledText {
+                        anchors.left: parent.left
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 2
+                        anchors.leftMargin: Theme.spacingXS
+                        text: logSticky.heading || ""
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.DemiBold
+                        color: Theme.surfaceVariantText
+                    }
+                }
+            }
+
             // A day heading, then the entry on a rail: the log holds a
             // sequence of events, and a stack of identical cards hides that.
             delegate: Column {

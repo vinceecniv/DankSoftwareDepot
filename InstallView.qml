@@ -1721,6 +1721,24 @@ Item {
                     view.revealMoreOfSection();
             }
 
+            // The storefront section you are inside. Games is nearly 900
+            // rows here, which is a long way from the heading that said so.
+            StickyHeader {
+                id: installSticky
+
+                view: resultsList
+                rows: view.listModel
+                headingOf: row => (row && row.type === "header") ? row : ""
+                barHeight: 30
+
+                content: Component {
+                    Loader {
+                        sourceComponent: categoryHeaderComponent
+                        onLoaded: item.rowData = Qt.binding(() => installSticky.heading || ({}))
+                    }
+                }
+            }
+
             delegate: Loader {
                 required property var modelData
 

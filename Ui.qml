@@ -35,6 +35,61 @@ Item {
         }
     }
 
+    // ── Where a package came from ───────────────────────────────────────────
+    // One vocabulary, because it had been written out four times and every
+    // copy had a different hole in it: the update card knew Flatpak and DMS
+    // plugins, the action log knew four kinds, the details popup knew three,
+    // and not one of them knew Homebrew. Everything that fell through called
+    // itself a system package, which is how five brew formulae ended up
+    // labelled System on somebody's Ubuntu (#10) — under a section header
+    // correctly reading Homebrew, three centimetres away.
+    //
+    // The names are identifiers as much as labels: the log stores this string
+    // on disk and reads it back to work out what an old entry was about, so
+    // they stay in English and stay stable. sourceLabel is the one to draw.
+    function sourceName(repo) {
+        switch (repo) {
+        case "flatpak":
+            return "Flatpak";
+        case "appimage":
+            return "AppImage";
+        case "firmware":
+            return "Firmware";
+        case "dmsplugin":
+            return "DMS";
+        case "brew":
+            return "Homebrew";
+        default:
+            return "System";
+        }
+    }
+
+    // A repo this does not recognise is a package from the distribution, which
+    // is what an empty repo has always meant here — the daemon fills it in for
+    // some paths and not others, and "System" is right in both.
+    function sourceLabel(repo) {
+        const name = sourceName(repo);
+        return name === "System" ? Tr.t("System") : name;
+    }
+
+    // The glyph standing in where there is no logo to draw. Firmware and
+    // system packages share one, as they do on the dashboard: a chip is what
+    // both of them are about.
+    function sourceIcon(repo) {
+        switch (repo) {
+        case "flatpak":
+            return "apps";
+        case "appimage":
+            return "deployed_code";
+        case "dmsplugin":
+            return "extension";
+        case "brew":
+            return "local_drink";
+        default:
+            return "memory";
+        }
+    }
+
     // Failure color that stays readable everywhere: some palettes leave
     // Theme.error on the light M3 tone in light mode, which washes out to
     // an unreadable salmon on light surfaces.

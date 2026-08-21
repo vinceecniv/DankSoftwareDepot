@@ -57,7 +57,16 @@ Rectangle {
 
     readonly property string baseName: (pkg.name || "").replace(/\.(x86_64|i686|noarch|aarch64|armv7hl|ppc64le|s390x)$/, "")
     readonly property bool isFlatpak: pkg.repo === "flatpak"
-    readonly property string prettyName: (info && info.name) ? info.name : baseName
+    // Off under a heading that already names the source — see the list that
+    // decides it. The card still knows what it is; it just stops saying so
+    // twice within one screenful.
+    property bool showSource: true
+    // AppStream first, then whatever the row was built with: a formula from a
+    // tap, a plugin from its manifest and an AppImage all arrive with a name
+    // meant to be read, and the card was falling through to the raw one — so
+    // the list said dsd/test/dsd-demo while the popup one click away, which
+    // asks the store for the same thing, said dsd-demo.
+    readonly property string prettyName: (info && info.name) ? info.name : (pkg.displayName || baseName)
     readonly property string summary: (info && info.summary) ? info.summary : ""
     readonly property string homepage: (info && info.homepage) ? info.homepage : ""
     // The packages the shell is made of have no AppStream entry and so no
@@ -139,7 +148,7 @@ Rectangle {
                     // A plugin has no icon file to fail to load — it names a
                     // glyph in its manifest, and the generic one stands in
                     // when it names nothing
-                    name: card.pkg.repo === "dmsplugin" ? (card.pkg.icon || "extension") : (card.isFlatpak ? "apps" : "memory")
+                    name: card.pkg.repo === "dmsplugin" ? (card.pkg.icon || "extension") : Ui.sourceIcon(card.pkg.repo)
                     size: 24
                     color: Theme.primary
                 }
@@ -296,6 +305,7 @@ Rectangle {
                 }
 
                 Rectangle {
+                    visible: card.showSource
                     Layout.alignment: Qt.AlignVCenter
                     Layout.preferredWidth: repoChipText.implicitWidth + 14
                     Layout.preferredHeight: 18
@@ -305,10 +315,11 @@ Rectangle {
                     StyledText {
                         id: repoChipText
                         anchors.centerIn: parent
-                        // "System" is what a package is; a plugin is not one,
-                        // and calling it that was the chip claiming the wrong
-                        // thing about where it came from
-                        text: card.pkg.repo === "dmsplugin" ? "DMS" : (card.isFlatpak ? "Flatpak" : Tr.t("System"))
+                        // "System" is what a package is; a plugin, an
+                        // AppImage, a firmware blob and a brew formula are
+                        // not, and calling them that was the chip claiming
+                        // the wrong thing about where they came from
+                        text: Ui.sourceLabel(card.pkg.repo)
                         font.pixelSize: Theme.fontSizeSmall - 2
                         font.weight: Font.Medium
                         color: card.isFlatpak ? Theme.tertiary : Theme.secondary
