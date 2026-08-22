@@ -3,6 +3,31 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.1.2 — 2026-08-22
+
+A log entry saying three packages over a list of thirty-seven, thirty-four of
+them marked unfinished while every one was on disk. Two faults, both of them
+in the commit that was supposed to have fixed this in 1.1.0.
+
+- **The replay that heals a torn-down run asked the wrong question.** After a
+  DMS update reloads the shell, the entry is written again and checked against
+  the package database. That check was widened to cover every row the run did
+  not see finish — but the list of names actually sent to the database still
+  only collected the rows that had *failed*. So the pending rows were healed
+  against an answer nobody had asked for, and stayed pending forever
+- **The log was written before the verification could answer.** A run ends by
+  moving every system and Flatpak row into "confirming", starting the pass
+  that checks the packages are really no longer offered, and then emitting
+  finished — which is where the log entry was written. It recorded that
+  moment: a grey clock next to a package that installed perfectly, on any run
+  at all, no shell reload needed. The entry now waits for the answer, which
+  also means a package the check still finds pending arrives in the log as the
+  failure it is rather than as a success
+- Existing entries are not rewritten automatically — a log is a record, and
+  this one silently repairing itself is a worse habit than the bug. If yours
+  has grey clocks on packages you know landed, they are wrong about the past
+  and right from here on
+
 ## 1.1.1 — 2026-08-21
 
 Thanks to @kmf for reporting #10.
