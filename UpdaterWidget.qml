@@ -959,6 +959,8 @@ PluginComponent {
     }
 
     property bool _replayedPendingLog: false
+    // Set between a run finishing and its verification answering
+    property bool _logAwaitingVerification: false
 
     onPluginDataChanged: {
         _replayPendingRunLog();
@@ -973,13 +975,25 @@ PluginComponent {
         const stash = pluginData.pendingShellRunLog;
         if (!stash || !(stash.shell || []).length)
             return;
-        // Ask about the shell packages and about every system row that was
-        // still failing when the snapshot was taken — the shell pass sits
-        // between the two moments and can have changed the answer.
-        const names = stash.shell.map(s => s.base);
+        // Ask about the shell packages and about every system row the run did
+        // not see finish — the shell pass sits between the two moments and can
+        // have changed the answer.
+        //
+        // Every row, not only the failed ones. The healing below was widened
+        // to cover anything still pending and this list was not, so the
+        // pending rows were healed against an answer nobody had asked for:
+        // 34 packages that were on disk, in the log as unfinished, under a
+        // title counting the three the run happened to witness.
+        const names = [];
+        const want = base => {
+            if (base && names.indexOf(base) === -1)
+                names.push(base);
+        };
+        for (const s of stash.shell || [])
+            want(s.base);
         for (const it of stash.items || []) {
-            if (it.status === "error" && it.base)
-                names.push(it.base);
+            if (it.status !== "done")
+                want(it.base);
         }
         replayVerifyProcess.command = Backend.installedVersionsCommand(names);
         replayVerifyProcess.running = true;
@@ -1150,7 +1164,16 @@ PluginComponent {
         onFinished: ok => {
             root.confirmArmed = false;
             root._saveFailures();
-            root._logRun();
+            // A run that finishes into verification has every system and
+            // Flatpak row sitting at "confirming" — that is what verification
+            // is: done, pending confirmation. Writing the log here recorded
+            // that moment as the outcome, which is a grey clock next to a
+            // package that installed perfectly. It waits for the answer now,
+            // which is also what makes "still offered as an update after the
+            // run" reach the log as the failure it is.
+            root._logAwaitingVerification = engine.phase === "verifying";
+            if (!root._logAwaitingVerification)
+                root._logRun();
             eolProcess.running = true;
             // A run is the one thing that changes the AppStream catalogs, so
             // this is where the index is most likely to have just gone stale
@@ -1161,12 +1184,18 @@ PluginComponent {
             }
         }
 
-        // A package the follow-up check still finds pending failed after the
-        // run was already written down, so the persisted failures need saying
-        // again — otherwise the reason is gone at the next shell reload
+        // The answer the log entry was waiting for. A package the check still
+        // finds pending failed after the run believed it had finished, so the
+        // persisted failures need saying again — otherwise the reason is gone
+        // at the next shell reload — and the entry is written now, with that
+        // failure in it rather than a row saying "confirming".
         onVerified: stuck => {
             if (stuck > 0)
                 root._saveFailures();
+            if (!root._logAwaitingVerification)
+                return;
+            root._logAwaitingVerification = false;
+            root._logRun();
         }
     }
 

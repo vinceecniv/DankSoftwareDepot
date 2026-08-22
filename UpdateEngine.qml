@@ -476,9 +476,15 @@ Item {
     }
 
     // ── Run control ──────────────────────────────────────────────────────────
+    // Emitted before a run replaces the previous one's items, so anything
+    // still holding on to them — the log, waiting for a verification answer
+    // that will now never come — can write them down first.
+    signal aboutToStart
+
     function start(opts) {
         if (running)
             return;
+        aboutToStart();
         const options = opts || {};
         const daemonHasState = SystemUpdateService.lastCheckUnix > 0 || (SystemUpdateService.availableUpdates || []).length > 0;
         if (!daemonHasState && options.dnf !== false && (pendingUpdates || []).some(p => p.repo !== "flatpak")) {
