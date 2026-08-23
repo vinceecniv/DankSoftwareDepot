@@ -92,9 +92,27 @@ Item {
     // line, which every image has, rather than bindings it might not.
     readonly property string packageHelperRequirement: backendId === "apt" ? "python3-apt" : (backendId === "pacman" ? "pyalpm" : (atomic ? "rpm-ostree" : "python3-libdnf5"))
 
+    // A check asked for while one is running is a check with a *different*
+    // answer, because the only thing that changes it is which backend this
+    // is, and that is settled a moment after startup: backendId starts at
+    // "dnf" and /etc/os-release corrects it. Dropping the second request left
+    // an Arch machine holding the verdict of the dnf helper — a banner headed
+    // "pyalpm could not be loaded" over a line about python3-libdnf5, on a
+    // system with pyalpm installed (#11). It sat there until the Install
+    // button happened to ask again.
+    //
+    // Also reached on atomic Fedora, where /run/ostree-booted moves the same
+    // property, and on a slow first boot, which is why it was reported as
+    // happening only then: with a warm page cache os-release usually wins the
+    // race.
+    property bool _selftestStale: false
+
     function checkPackageHelper() {
-        if (selftestProcess.running)
+        if (selftestProcess.running) {
+            _selftestStale = true;
             return;
+        }
+        _selftestStale = false;
         selftestProcess._reason = "";
         selftestProcess.command = [python, packageHelper, "selftest"];
         selftestProcess.running = true;
@@ -175,6 +193,14 @@ Item {
         }
 
         onExited: (exitCode, exitStatus) => {
+            // This answer is about the helper of a backend we have since
+            // stopped being. Publishing it would be publishing the thing that
+            // was asked about, not the thing that is true.
+            if (backend._selftestStale) {
+                backend._selftestStale = false;
+                Qt.callLater(backend.checkPackageHelper);
+                return;
+            }
             backend.packageHelperStatus = exitCode === 0 ? "ok" : (_reason || Tr.t("the package helper could not start"));
         }
     }
