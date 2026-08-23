@@ -1289,6 +1289,7 @@ PluginComponent {
     }
 
     Component.onCompleted: {
+        _applyPillVisibility();
         if (pendingUpdates.length > 0)
             store.refresh(pendingUpdates);
     }
@@ -1440,8 +1441,25 @@ PluginComponent {
         return root.effectiveCount > 0 ? "deployed_code_update" : "check_circle";
     }
 
+    // Whether the bar pill should be on screen at all. "Hide when up to date"
+    // means exactly this and nothing else: a pill that has nothing to report
+    // stays out of the bar until it has.
+    readonly property bool pillWanted: !hideWhenUpToDate || root.effectiveCount > 0 || engine.running || SystemUpdateService.isChecking
+
     visibilityCommand: ""
-    conditionVisible: !hideWhenUpToDate || root.effectiveCount > 0 || engine.running || SystemUpdateService.isChecking
+
+    // Asked of the host rather than bound to its `conditionVisible`, which
+    // was doing nothing at all (#12). The host only consults that property
+    // when a visibilityCommand is set — with none, it returns true and, worse,
+    // assigns `conditionVisible = true` itself, which breaks any binding a
+    // plugin puts on it. setVisibilityOverride is the way a plugin says this,
+    // and it means the same thing in every DMS that has plugins.
+    function _applyPillVisibility() {
+        if (typeof setVisibilityOverride === "function")
+            setVisibilityOverride(pillWanted);
+    }
+
+    onPillWantedChanged: _applyPillVisibility()
 
     popoutWidth: 420
     popoutHeight: 520
