@@ -1637,7 +1637,18 @@ Item {
                 });
             } else {
                 failCount++;
-                _setError(map[base], _helperError || Tr.t("the package was not updated — try again"), _helperStderr || _helperError);
+                // A pass the daemon reported as clean, with the package not
+                // there: it has no error to hand over, which is why this row
+                // used to open onto an empty details panel. Its own output is
+                // still in the rolling log, and that is the only place the
+                // reason can be — a dnf that resolved to nothing, a key it
+                // wanted importing, a child that was killed mid-transaction.
+                //
+                // A window rather than a transcript, so it can hold lines from
+                // an earlier pass. It is offered as what the update service
+                // last said, which is what the details panel is for, and it
+                // beats the nothing that was there before.
+                _setError(map[base], _helperError || Tr.t("the package was not updated — try again"), _helperStderr || _helperError || (SystemUpdateService.recentLog || []).slice(-40).join("\n").trim());
             }
         }
         _daemonPassDone(okCount, failCount);
