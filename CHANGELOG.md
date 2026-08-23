@@ -3,6 +3,28 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.1.3 — 2026-08-23
+
+Thanks to @pdf for both reports.
+
+- **"Hide when up to date" works.** It never has, for anyone, on any
+  distribution: the pill expressed its visibility by binding a host property
+  that the host only reads when the plugin also supplies a shell command to
+  decide visibility — and with none supplied, the host assigns that property
+  itself, destroying the binding. The pill now tells the host directly (#12)
+- **The readiness banner is about your package manager.** On Arch, the first
+  window after a boot could carry a banner headed "pyalpm could not be loaded"
+  over a line about python3-libdnf5, on a machine with pyalpm installed. The
+  check runs at startup while the backend is still assumed to be dnf, and the
+  re-check that follows once `/etc/os-release` has been read was being dropped
+  rather than deferred, because the first one was still running. The same
+  fault could also hide a genuinely missing binding, when the wrong probe
+  happened to succeed. Atomic Fedora was affected by the same race (#11)
+- **A package that fails with nothing to show for it now shows something.**
+  When the update service reports a pass as clean and the packages are not
+  there, it hands over no error — so the details panel was empty. The last of
+  what the service said goes in there instead
+
 ## 1.1.2 — 2026-08-22
 
 A log entry saying three packages over a list of thirty-seven, thirty-four of
