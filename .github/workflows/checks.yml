@@ -48,6 +48,9 @@ jobs:
       - name: The Homebrew path
         run: python3 scripts/test_brew_helper.py
 
+      - name: The pacman path
+        run: python3 scripts/test_pacman_helper.py
+
       - name: Everything else at least parses
         run: python3 -m compileall -q scripts
 

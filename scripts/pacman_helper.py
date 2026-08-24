@@ -124,6 +124,29 @@ class Callbacks:
             emit({"event": "op-done", "name": target, "phase": phase})
 
 
+def refresh_syncdbs(handle):
+    """`pacman -Sy` — which nothing else in this path does.
+
+    A transaction resolves names against the sync databases as they are on
+    disk, and on Arch those sit behind whatever the update list was built
+    from: the daemon counts updates with `checkupdates`, which refreshes a
+    private copy and throws it away, and its own upgrade would be a full
+    `pacman -Syu`. So a list of eight updates resolved to the eight versions
+    already installed, libalpm answered "is up to date -- reinstalling" for
+    each, and the check afterwards found that nothing had reached its target
+    version (#13).
+
+    A failure here is not fatal. One unreachable mirror is a reason to
+    attempt the transaction with what is on disk, not a reason to refuse it.
+    """
+    for db in handle.get_syncdbs():
+        try:
+            db.update(False)
+        except pyalpm.error as exc:
+            emit({"event": "error",
+                  "message": "could not refresh %s: %s" % (db.name, exc)})
+
+
 def find_sync_pkg(handle, name):
     for db in handle.get_syncdbs():
         pkg = db.get_pkg(name)
@@ -134,6 +157,11 @@ def find_sync_pkg(handle, name):
 
 def run(action, specs, dry_run=False):
     handle = init_handle()
+    # Reading the repositories is the whole point of install and upgrade, so
+    # they get a fresh copy first. `plan` is deliberately left out: it runs
+    # unprivileged, and writing the sync databases needs root.
+    if action != "remove" and not dry_run:
+        refresh_syncdbs(handle)
     callbacks = Callbacks(handle)
     localdb = handle.get_localdb()
 
@@ -154,6 +182,15 @@ def run(action, specs, dry_run=False):
                     emit({"event": "error", "message": f"package not found: {name}"})
                     emit({"event": "done", "ok": False, "failed": list(specs)})
                     return 1
+                # --needed, which is what the daemon's own `pacman -Syu` uses.
+                # After the refresh a package can already be at the version
+                # the repositories offer — because something else updated it,
+                # or because it was never behind — and adding it anyway
+                # reinstalls the same files for nothing.
+                if action == "upgrade":
+                    have = localdb.get_pkg(name)
+                    if have is not None and have.version == pkg.version:
+                        continue
                 transaction.add_pkg(pkg)
         transaction.prepare()
 

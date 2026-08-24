@@ -3,6 +3,33 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.1.4 — 2026-08-24
+
+Thanks to @qu33rz for reporting #13.
+
+- **Updating system packages on Arch works.** The transaction resolved package
+  names against the sync databases exactly as they sit on disk, and nothing in
+  this plugin ever refreshed them — while the list of pending updates comes
+  from `checkupdates`, which refreshes a private copy of those databases and
+  throws it away. So the list was right, the transaction was resolved against
+  yesterday's answer, libalpm replied "is up to date -- reinstalling" for every
+  package, and the check afterwards correctly reported that nothing had reached
+  its new version. The databases are refreshed before a transaction now
+- **A package already at the version the repositories offer is left alone**,
+  which is what pacman's own `--needed` does and what the daemon's `pacman
+  -Syu` has always used. Those reinstall-the-same-files lines are gone
+- A failed refresh — one unreachable mirror — is a reason to attempt the
+  transaction with what is on disk, not to refuse it, and the reason travels
+  with the result either way
+- The Arch path now has a test, run against a stand-in for pyalpm, so it is
+  checked on machines that have neither pacman nor Arch — which is every
+  machine this plugin is developed on
+
+One thing to know on Arch: updating a *single* package refreshes the databases
+first, which makes it a partial upgrade — the thing Arch tells you not to do.
+Update All sends the whole pending list and is the safe path. Arch support is
+still marked experimental for reasons like this one.
+
 ## 1.1.3 — 2026-08-23
 
 Thanks to @pdf for both reports.
