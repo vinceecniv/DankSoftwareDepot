@@ -53,6 +53,20 @@ except (ImportError, ValueError) as exc:
     sys.exit(1)
 
 
+# libostree 2026.3 caps how large a decompressed delta part may be — a guard
+# against decompression bombs — and set the cap too low: an app whose delta
+# crosses it cannot be pulled at all, with "Decompressed delta part exceeds
+# configured limit of N bytes". It is a libostree regression, fixed in 2026.4,
+# and by upstream's own account there is nothing Flatpak can do about it.
+#
+# The update itself is fine. Pulling the objects instead of the delta walks
+# around the cap at the cost of more bytes — `flatpak update
+# --no-static-deltas` by hand — so that is what a failing operation is given
+# here, once, rather than reporting an update the machine is perfectly able to
+# perform.
+DELTA_LIMIT_MARKER = "delta part exceeds"
+
+
 def appid_of(ref_str):
     # ref format: app/org.example.App/x86_64/stable
     parts = ref_str.split("/")
@@ -81,10 +95,15 @@ class Runner:
             return []
         return [ref for ref in updates if self.wants(ref)]
 
-    def run_transaction(self, installation, label, refs):
+    def run_transaction(self, installation, label, refs, no_deltas=False):
+        """Runs `refs`; returns the refs that asked to be tried again without
+        static deltas."""
         if not refs:
-            return
+            return []
+        retry = []
         txn = Flatpak.Transaction.new_for_installation(installation, self.cancellable)
+        if no_deltas:
+            txn.set_disable_static_deltas(True)
 
         def on_ready(transaction):
             for op in transaction.get_operations():
@@ -118,9 +137,18 @@ class Runner:
 
         def on_operation_error(transaction, op, error, details):
             ref = op.get_ref()
+            message = error.message if error else "unknown error"
+            # Not a failure yet — it is about to be tried again without
+            # deltas, and a row that goes red and then green again describes
+            # the workaround rather than the update.
+            if not no_deltas and DELTA_LIMIT_MARKER in message:
+                retry.append(ref)
+                emit({"event": "warning", "ref": ref, "appid": appid_of(ref),
+                      "message": f"{message} — retrying without static deltas"})
+                return True
             self.failed.append(appid_of(ref))
             emit({"event": "op-error", "ref": ref, "appid": appid_of(ref),
-                  "message": error.message if error else "unknown error"})
+                  "message": message})
             return True  # continue with remaining operations
 
         txn.connect("ready", on_ready)
@@ -142,6 +170,7 @@ class Runner:
                 sys.exit(130)
             emit({"event": "error", "message": err.message})
             self.failed.append(label)
+        return retry
 
     def run(self):
         signal.signal(signal.SIGTERM, lambda *_: self.cancellable.cancel())
@@ -159,7 +188,11 @@ class Runner:
         for inst, label, refs in collected:
             if self.cancellable.is_cancelled():
                 break
-            self.run_transaction(inst, label, refs)
+            retry = self.run_transaction(inst, label, refs)
+            if retry and not self.cancellable.is_cancelled():
+                by_ref = {r.format_ref(): r for r in refs}
+                again = [by_ref[name] for name in retry if name in by_ref]
+                self.run_transaction(inst, label, again, no_deltas=True)
 
         emit({"event": "done", "ok": not self.failed, "failed": self.failed})
 
@@ -188,73 +221,99 @@ def run_install(remote, appid):
         emit({"event": "error", "message": f"remote '{remote}' not found"})
         sys.exit(1)
 
-    txn = Flatpak.Transaction.new_for_installation(installation, runner.cancellable)
+    def attempt(no_deltas):
+        """Runs the install once. True when it hit libostree's delta cap
+        and deserves another go with the deltas switched off."""
+        retry = []
+        txn = Flatpak.Transaction.new_for_installation(installation, runner.cancellable)
+        if no_deltas:
+            txn.set_disable_static_deltas(True)
 
-    def on_ready(transaction):
-        ops = [{
-            "ref": op.get_ref(),
-            "appid": appid_of(op.get_ref()),
-            "action": "install",
-            "downloadBytes": op.get_download_size(),
-            "installation": label,
-        } for op in transaction.get_operations()]
-        emit({"event": "plan", "installation": label, "ops": ops,
-              "totalDownloadBytes": sum(o["downloadBytes"] for o in ops)})
-        return True
+        def on_ready(transaction):
+            ops = [{
+                "ref": op.get_ref(),
+                "appid": appid_of(op.get_ref()),
+                "action": "install",
+                "downloadBytes": op.get_download_size(),
+                "installation": label,
+            } for op in transaction.get_operations()]
+            emit({"event": "plan", "installation": label, "ops": ops,
+                  "totalDownloadBytes": sum(o["downloadBytes"] for o in ops)})
+            return True
 
-    def on_new_operation(transaction, op, progress):
-        ref = op.get_ref()
-        emit({"event": "op-start", "ref": ref, "appid": appid_of(ref)})
+        def on_new_operation(transaction, op, progress):
+            ref = op.get_ref()
+            emit({"event": "op-start", "ref": ref, "appid": appid_of(ref)})
 
-        def on_changed(prog):
-            emit({"event": "progress", "ref": ref, "appid": appid_of(ref),
-                  "percent": prog.get_progress(),
-                  "bytesTransferred": prog.get_bytes_transferred(),
-                  "status": prog.get_status() or ""})
+            def on_changed(prog):
+                emit({"event": "progress", "ref": ref, "appid": appid_of(ref),
+                      "percent": prog.get_progress(),
+                      "bytesTransferred": prog.get_bytes_transferred(),
+                      "status": prog.get_status() or ""})
 
-        progress.set_update_frequency(250)
-        progress.connect("changed", on_changed)
+            progress.set_update_frequency(250)
+            progress.connect("changed", on_changed)
 
-    def on_operation_done(transaction, op, commit, result):
-        emit({"event": "op-done", "ref": op.get_ref(), "appid": appid_of(op.get_ref())})
+        def on_operation_done(transaction, op, commit, result):
+            emit({"event": "op-done", "ref": op.get_ref(), "appid": appid_of(op.get_ref())})
 
-    def on_operation_error(transaction, op, error, details):
-        runner.failed.append(appid_of(op.get_ref()))
-        emit({"event": "op-error", "ref": op.get_ref(), "appid": appid_of(op.get_ref()),
-              "message": error.message if error else "unknown error"})
-        return False
+        def on_operation_error(transaction, op, error, details):
+            ref = op.get_ref()
+            message = error.message if error else "unknown error"
+            # The same libostree cap an update can hit, hit while installing.
+            # Not a failure until it has been tried without deltas.
+            if not no_deltas and DELTA_LIMIT_MARKER in message:
+                retry.append(ref)
+                emit({"event": "warning", "ref": ref, "appid": appid_of(ref),
+                      "message": f"{message} — retrying without static deltas"})
+                return False
+            runner.failed.append(appid_of(ref))
+            emit({"event": "op-error", "ref": ref, "appid": appid_of(ref),
+                  "message": message})
+            return False
 
-    txn.connect("ready", on_ready)
-    txn.connect("new-operation", on_new_operation)
-    txn.connect("operation-done", on_operation_done)
-    txn.connect("operation-error", on_operation_error)
+        txn.connect("ready", on_ready)
+        txn.connect("new-operation", on_new_operation)
+        txn.connect("operation-done", on_operation_done)
+        txn.connect("operation-error", on_operation_error)
 
-    arch = Flatpak.get_default_arch()
-    try:
-        # Fast path: flathub apps nearly always live on the stable branch
-        txn.add_install(remote, f"app/{appid}/{arch}/stable", None)
-    except GLib.Error:
-        # Resolve the branch from the remote's published refs
+        arch = Flatpak.get_default_arch()
         try:
-            refs = installation.list_remote_refs_sync(remote, runner.cancellable)
-            match = next((r for r in refs
-                          if r.get_kind() == Flatpak.RefKind.APP
-                          and r.get_name() == appid and r.get_arch() == arch), None)
-            if match is None:
-                raise GLib.Error(f"'{appid}' not found in remote '{remote}'")
-            txn.add_install(remote, match.format_ref(), None)
-        except GLib.Error as err:
-            emit({"event": "error", "message": err.message})
-            sys.exit(1)
+            # Fast path: flathub apps nearly always live on the stable branch
+            txn.add_install(remote, f"app/{appid}/{arch}/stable", None)
+        except GLib.Error:
+            # Resolve the branch from the remote's published refs
+            try:
+                refs = installation.list_remote_refs_sync(remote, runner.cancellable)
+                match = next((r for r in refs
+                              if r.get_kind() == Flatpak.RefKind.APP
+                              and r.get_name() == appid and r.get_arch() == arch), None)
+                if match is None:
+                    raise GLib.Error(f"'{appid}' not found in remote '{remote}'")
+                txn.add_install(remote, match.format_ref(), None)
+            except GLib.Error as err:
+                emit({"event": "error", "message": err.message})
+                sys.exit(1)
 
-    try:
-        txn.run(runner.cancellable)
-    except GLib.Error as err:
-        if err.matches(Gio.io_error_quark(), Gio.IOErrorEnum.CANCELLED):
-            emit({"event": "done", "ok": False, "cancelled": True, "failed": runner.failed})
-            sys.exit(130)
-        emit({"event": "error", "message": err.message})
-        runner.failed.append(appid)
+        try:
+            txn.run(runner.cancellable)
+        except GLib.Error as err:
+            if err.matches(Gio.io_error_quark(), Gio.IOErrorEnum.CANCELLED):
+                emit({"event": "done", "ok": False, "cancelled": True, "failed": runner.failed})
+                sys.exit(130)
+            # Aborting is what returning False above does, so the delta cap
+            # arrives here as well as in the handler; either is enough.
+            if retry:
+                return True
+            if not no_deltas and DELTA_LIMIT_MARKER in (err.message or ""):
+                emit({"event": "warning", "message": f"{err.message} — retrying without static deltas"})
+                return True
+            emit({"event": "error", "message": err.message})
+            runner.failed.append(appid)
+        return bool(retry)
+
+    if attempt(False):
+        attempt(True)
 
     emit({"event": "done", "ok": not runner.failed, "failed": runner.failed})
     sys.exit(0 if not runner.failed else 1)

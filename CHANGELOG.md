@@ -3,6 +3,26 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.1.5 — 2026-08-24
+
+- **Flatpak updates that libostree refuses are pulled the long way instead.**
+  libostree 2026.3 caps how large a decompressed delta part may be — a guard
+  against decompression bombs, set too low — so an app whose delta crosses it
+  cannot be pulled at all: *"While pulling app/… from remote flathub:
+  Decompressed delta part exceeds configured limit of 67386875 bytes"*. It is
+  a libostree regression, fixed in 2026.4, and by upstream's own account
+  nothing Flatpak itself can do about. But the update is fine; only the
+  shortcut is broken. An operation that hits the cap is now retried once with
+  static deltas switched off — the whole objects instead of the difference,
+  more bytes for the same result, which is what `flatpak update
+  --no-static-deltas` does by hand. Installing takes the same way around it
+- Neither the failure nor the retry is reported as a failed update, because it
+  is not one. It is said out loud in the event stream, and a row that fails
+  for a different reason is still reported the moment it does
+- The Flatpak path has tests now, run against a stand-in for libflatpak that
+  can fail on cue — the real case needs an app whose delta happens to be big
+  enough, which is not something a machine can be asked for
+
 ## 1.1.4 — 2026-08-24
 
 Thanks to @qu33rz for reporting #13.
