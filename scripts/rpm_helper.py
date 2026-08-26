@@ -233,6 +233,40 @@ def enable_copr(project):
     return True
 
 
+def expire_repos(base):
+    """`dnf5 --refresh`, done the way dnf5 does it.
+
+    A transaction resolves against the metadata on disk; the list the user is
+    looking at does not, because the daemon builds it with a forced refresh.
+    When an update is published between the last expiry-driven refresh and the
+    run, the two disagree — and the resolve quietly finds nothing to do for a
+    package the window is offering. Not for one package: for every package in
+    the repository that moved.
+
+    Setting metadata_expire on the main configuration was meant to prevent
+    that and never could. Every Fedora repository file carries its own value —
+    6h for updates, 7d for fedora, 14d elsewhere — and a repository's own value
+    wins over the main one, so the setting only ever reached the Coprs, which
+    set none. On 26 August that showed: dnf-makecache had refreshed at 07:12,
+    the updates repository counted as fresh for another six hours, and a run at
+    07:27 resolved nineteen packages to nothing while the daemon's --refresh
+    saw all of them.
+
+    Expiring each repository is the only thing that overrides all of that, and
+    it is exactly what --refresh does. Revalidating everything costs a second
+    or two when nothing has changed. That is the price of the transaction being
+    about the same packages the list is.
+    """
+    try:
+        for repo in libdnf5.repo.RepoQuery(base):
+            repo.expire()
+    except Exception as exc:
+        # Better to attempt the transaction against what is on disk than to
+        # refuse to run; the verification afterwards is what catches a resolve
+        # that came up empty.
+        emit({"event": "warning", "message": "could not expire repositories: %s" % exc})
+
+
 def run(action, specs, dry_run=False, copr=""):
     if copr and not dry_run and not enable_copr(copr):
         emit({"event": "done", "ok": False, "failed": list(specs)})
@@ -245,22 +279,6 @@ def run(action, specs, dry_run=False, copr=""):
             base.get_config().get_cacheonly_option().set("all")
         except Exception:
             pass
-    else:
-        # Something close to `dnf5 --refresh`: the update was discovered by
-        # the daemon's refreshed check, but this cache follows
-        # metadata_expire — 48h for Coprs — and a transaction against the
-        # stale view ends in a silent "nothing to do" (a Copr build the
-        # daemon offered simply doesn't exist here yet).
-        #
-        # Five minutes rather than zero. Zero meant every transaction
-        # revalidated all fifteen repositories, including the second pass of
-        # the same run and the retry a minute after a failure — the one moment
-        # the answer certainly has not changed. Anything older than a few
-        # minutes is refreshed exactly as before.
-        try:
-            base.get_config().get_metadata_expire_option().set("300")
-        except Exception:
-            pass
     base.setup()
 
     downloads = DownloadProgress()
@@ -269,6 +287,8 @@ def run(action, specs, dry_run=False, copr=""):
 
     sack = base.get_repo_sack()
     sack.create_repos_from_system_configuration()
+    if not dry_run:
+        expire_repos(base)
     if hasattr(sack, "load_repos"):
         sack.load_repos()
     else:
@@ -314,6 +334,17 @@ def run(action, specs, dry_run=False, copr=""):
     if not ops:
         emit({"event": "done", "ok": True, "failed": [], "nothingToDo": True})
         return 0
+    # A package the caller asked to upgrade that is not in the resolved
+    # transaction has no candidate in the repositories — which is a fact worth
+    # stating. Silently leaving it out is what made a run of twenty packages
+    # install one and report the other nineteen as "not updated, try again",
+    # with nothing behind it to explain why trying again would help.
+    if action == "upgrade":
+        planned = {o["name"] for o in ops}
+        missing = [spec for spec in specs if spec.partition("=")[0] not in planned]
+        if missing:
+            emit({"event": "error",
+                  "message": "the repositories offer no newer build of: " + ", ".join(missing)})
     emit({"event": "plan", "ops": ops, "totalDownloadBytes": total_download,
           "installDeltaBytes": disk_delta})
     if dry_run:
