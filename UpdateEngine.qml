@@ -195,8 +195,7 @@ Item {
         case "firmware":
             return Tr.t("Updating firmware…");
         case "dms":
-            return _shellPassIsEverything ? Tr.t("Updating system packages… (shell may reload)")
-                                          : Tr.t("Updating DankMaterialShell… (shell may reload)");
+            return Tr.t("Updating DankMaterialShell… (shell may reload)");
         case "brew":
             return Tr.t("Upgrading Homebrew formulae… (building from source can take a while)");
         case "plugins":
@@ -243,7 +242,6 @@ Item {
     // Whether the shell pass is carrying the whole rpm set rather than only
     // the packages that reload the shell — it says so, rather than announcing
     // DankMaterialShell while installing somebody else's library
-    property bool _shellPassIsEverything: false
     property var _firmwareItems: []
     property real _firmwareFraction: 0
     property int _firmwareDone: 0
@@ -496,23 +494,24 @@ Item {
         const updates = pendingUpdates || [];
         const explicitFlatpak = (options.flatpakIds || []).length > 0;
         const dnfAll = updates.filter(p => p.repo !== "flatpak" && !held.has("system/" + _stripArch(p.name)));
-        // Two privileged passes meant two authorisations: the rpm helper runs
+        // Two privileged passes mean two authorisations: the rpm helper runs
         // under pkexec, the DMS packages go through the daemon, and those are
-        // different polkit actions, so a run carrying both asked twice. They
-        // are one transaction now whenever the shell's own packages are in it
-        // — everything goes through the daemon, which is the only one of the
-        // two that can outlive the shell reload it is about to cause anyway.
+        // different polkit actions. For a while a run carrying both put
+        // everything through the daemon to be asked once — on the assumption
+        // that such runs were rare.
         //
-        // The cost is that such a run gets the daemon's progress (package n of
-        // m, plus bytes read from the dnf cache) instead of the helper's
-        // per-package byte events. Runs without DMS packages in them — nearly
-        // all of them — keep the helper and asked only once to begin with.
-        const shellOnly = (options.dnf !== false) ? dnfAll.filter(p => shellPackagePattern.test(_stripArch(p.name))) : [];
-        const otherRpms = dnfAll.filter(p => !shellPackagePattern.test(_stripArch(p.name)));
-        const oneRpmPass = shellOnly.length > 0 && options.dnf !== false;
-        const shellPkgs = oneRpmPass ? shellOnly.concat(otherRpms) : shellOnly;
-        const dnfPkgs = oneRpmPass ? [] : otherRpms;
-        _shellPassIsEverything = oneRpmPass && otherRpms.length > 0;
+        // On a machine following dms-git and quickshell-git they are nearly
+        // every run, which inverted the trade: the daemon pass is
+        // `dnf5 upgrade --refresh -y`, so every update revalidated all
+        // repositories and reported progress as "package n of m" instead of
+        // the helper's per-package bytes. Seven days of this machine's journal
+        // held six daemon passes and not one helper call.
+        //
+        // So they are separate again. An update that touches both kinds asks
+        // twice; everything else — the common case on any machine not tracking
+        // the shell's own git builds — asks once, as it always did.
+        const shellPkgs = (options.dnf !== false) ? dnfAll.filter(p => shellPackagePattern.test(_stripArch(p.name))) : [];
+        const dnfPkgs = dnfAll.filter(p => !shellPackagePattern.test(_stripArch(p.name)));
         const flatpakPkgs = updates.filter(p => p.repo === "flatpak");
 
         _wantDnf = (options.dnf !== false) && dnfPkgs.length > 0;
@@ -1298,72 +1297,100 @@ Item {
     }
 
     // ── Confirming that the run took ─────────────────────────────────────────
-    // A transaction saying "installed" and the package no longer being offered
-    // as an update are two different claims, and the second one is the one
-    // worth making. The check that already runs after every run answers it, so
-    // the run is not over when the last byte lands — it is over when that
-    // answer is back. Until then the finished items wait in "confirming"
-    // instead of being declared done, which is also what makes the wait
-    // visible: it used to happen behind a list that already said Completed.
+    // A transaction saying "installed" and the package actually being at its
+    // new version are two different claims, and the second one is the one
+    // worth making. So the run is not over when the last byte lands — it is
+    // over when the package database agrees. Until then the finished items
+    // wait in "confirming" rather than being declared done, which is what
+    // makes the wait visible instead of hiding behind a list already saying
+    // Completed.
     //
-    // Only system packages and Flatpaks can be settled this way, because the
-    // daemon's list is what they are checked against. Firmware takes effect at
-    // the next boot and AppImages are not in that list at all, so those finish
-    // the way they always did rather than waiting on an answer that cannot
-    // come.
+    // It used to ask the daemon: trigger a fresh check and read its list of
+    // pending updates. That answer is authoritative but expensive — the
+    // daemon's check is `dnf5 check-update --refresh`, a full revalidation of
+    // every repository, seconds of network at the end of every run. Worse, it
+    // is a *different* cache from the one the transaction just wrote, so the
+    // work is done twice and neither warms the other, and the list it briefly
+    // publishes still holds the packages the run is finishing — which is how
+    // a completed run could raise "3 updates available" and then have none.
+    //
+    // rpm answers the same question locally, in milliseconds, from the
+    // database the transaction just changed. Firmware takes effect at the next
+    // boot and AppImages are not packages; Flatpaks are settled by libflatpak,
+    // which reports an operation done only once it is deployed. So this is
+    // about system packages, and it asks the system.
     signal verified(int stuck)
 
     property bool _verifyPending: false
-    property bool _verifySawCheck: false
 
     function _startVerification() {
         const states = Object.assign({}, itemStates);
-        let any = false;
+        const bases = [];
         for (const item of runItems) {
             const state = states[item.key];
             if (!state || state.status !== "done")
                 continue;
-            if (item.key.indexOf("system/") !== 0 && item.key.indexOf("flatpak/") !== 0)
+            if (item.key.indexOf("system/") !== 0)
                 continue;
             states[item.key] = Object.assign({}, state, {
                 status: "confirming"
             });
-            any = true;
+            bases.push(_stripArch(item.pkg.name || ""));
         }
-        if (!any)
+        if (bases.length === 0)
             return false;
         itemStates = states;
         _verifyPending = true;
-        _verifySawCheck = false;
         verifyTimeout.restart();
+        verifyLocalProcess.command = Backend.installedVersionsCommand(bases);
+        verifyLocalProcess.running = true;
         return true;
     }
 
-    // `judge` is false when the check never produced a fresh answer (it timed
-    // out, or it failed). The pending list is then the one from before the
-    // run, and reading it would accuse every package of not having installed.
-    // Saying nothing is the only honest option left.
-    function _resolveVerification(judge) {
+    // `judge` is false when no usable answer arrived — the query failed, or
+    // the timeout fired. Reading nothing would accuse every package of not
+    // having installed, so saying nothing is the only honest option left.
+    function _resolveVerification(judgeIn, text) {
+        let judge = judgeIn;
         if (!_verifyPending)
             return;
         verifyTimeout.stop();
         _verifyPending = false;
-        _verifySawCheck = false;
 
-        const stillPending = new Set();
-        if (judge) {
-            for (const pkg of (SystemUpdateService.availableUpdates || []))
-                stillPending.add(_keyFor(pkg));
+        const installed = {};
+        for (const line of (text || "").split("\n")) {
+            const parts = line.split("\t");
+            if (parts.length === 2)
+                (installed[parts[0].trim()] = installed[parts[0].trim()] || []).push(parts[1].trim());
         }
+        // An answer with nothing in it is not an answer. rpm prints a line
+        // per installed package and fails when one is missing, so an empty
+        // reading means the query itself went wrong — and treating that as
+        // "none of them arrived" would paint a whole successful run red.
+        if (judge && Object.keys(installed).length === 0)
+            judge = false;
+        const noEpoch = v => (v || "").replace(/^\d+:/, "");
+        // Rows carry the version they were going to; a row that never named
+        // one cannot be judged and keeps the transaction's verdict.
+        const wanted = {};
+        for (const item of runItems)
+            wanted[item.key] = noEpoch(item.pkg.toVersion || "");
+        const bases = {};
+        for (const item of runItems)
+            bases[item.key] = _stripArch(item.pkg.name || "");
+
         const states = Object.assign({}, itemStates);
         let stuck = 0;
         for (const key in states) {
             if (states[key].status !== "confirming")
                 continue;
-            if (judge && stillPending.has(key)) {
+            const want = wanted[key] || "";
+            const arrived = !judge || want === ""
+                || (installed[bases[key]] || []).some(evr => noEpoch(evr) === want);
+            if (!arrived) {
                 states[key] = Object.assign({}, states[key], {
                     status: "error",
-                    detail: Tr.t("still offered as an update after the run")
+                    detail: Tr.t("the package was not updated — try again")
                 });
                 stuck++;
             } else {
@@ -1384,32 +1411,27 @@ Item {
         verified(stuck);
     }
 
+    // Seconds, not minutes: this is one rpm query against a local database.
+    // If that has not answered by now it is not going to, and a run must not
+    // hang on the last word of a formality.
     Timer {
         id: verifyTimeout
-        interval: 180000
+        interval: 20000
         repeat: false
-        onTriggered: engine._resolveVerification(false)
+        onTriggered: engine._resolveVerification(false, "")
     }
 
-    Connections {
-        target: SystemUpdateService
+    Process {
+        id: verifyLocalProcess
 
-        // Either signal can be the one that lands first: a check that takes
-        // time flips isChecking, a cached answer only moves the timestamp.
-        function onIsCheckingChanged() {
-            if (!engine._verifyPending)
-                return;
-            if (SystemUpdateService.isChecking) {
-                engine._verifySawCheck = true;
-                return;
-            }
-            if (engine._verifySawCheck)
-                engine._resolveVerification(!SystemUpdateService.hasError);
+        stdout: StdioCollector {
+            onStreamFinished: engine._resolveVerification(true, text)
         }
 
-        function onLastCheckUnixChanged() {
-            if (engine._verifyPending && !SystemUpdateService.isChecking)
-                engine._resolveVerification(!SystemUpdateService.hasError);
+        onExited: (exitCode, exitStatus) => {
+            // A query that could not run says nothing about the packages
+            if (exitCode !== 0)
+                engine._resolveVerification(false, "");
         }
     }
 

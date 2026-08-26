@@ -246,13 +246,19 @@ def run(action, specs, dry_run=False, copr=""):
         except Exception:
             pass
     else:
-        # Force a metadata refresh (dnf5 --refresh equivalent): the update
-        # was discovered by the daemon's refreshed check, but this cache
-        # follows metadata_expire — 48h for Coprs — and a transaction
-        # against the stale view ends in a silent "nothing to do" (a Copr
-        # build the daemon offered simply doesn't exist here yet).
+        # Something close to `dnf5 --refresh`: the update was discovered by
+        # the daemon's refreshed check, but this cache follows
+        # metadata_expire — 48h for Coprs — and a transaction against the
+        # stale view ends in a silent "nothing to do" (a Copr build the
+        # daemon offered simply doesn't exist here yet).
+        #
+        # Five minutes rather than zero. Zero meant every transaction
+        # revalidated all fifteen repositories, including the second pass of
+        # the same run and the retry a minute after a failure — the one moment
+        # the answer certainly has not changed. Anything older than a few
+        # minutes is refreshed exactly as before.
         try:
-            base.get_config().get_metadata_expire_option().set("0")
+            base.get_config().get_metadata_expire_option().set("300")
         except Exception:
             pass
     base.setup()

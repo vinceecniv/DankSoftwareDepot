@@ -396,6 +396,19 @@ PluginComponent {
     }
 
     function _afterCheck() {
+        // A check that lands while a run is still going, or in the seconds
+        // after it, is looking at the list the run is in the middle of
+        // emptying — including the packages it just installed. Announcing
+        // those as new updates is how a finished run could end with "3 updates
+        // available" and a list that is empty a moment later.
+        //
+        // Bounded by time rather than by the result panel: a failed run stays
+        // on screen until someone dismisses it, and that must not be a reason
+        // to stop reporting updates for the rest of the day.
+        if (engine.running || engine.phase === "verifying" || SystemUpdateService.isUpgrading)
+            return;
+        if (Date.now() < _quietNotificationsUntil)
+            return;
         const count = effectiveCount;
         if (count === 0) {
             _lastNotifiedCount = 0;
@@ -961,6 +974,9 @@ PluginComponent {
     property bool _replayedPendingLog: false
     // Set between a run finishing and its verification answering
     property bool _logAwaitingVerification: false
+    // Set when a run ends: the daemon's own list takes a check or two to
+    // catch up with what just happened, and until it has, it is not news
+    property double _quietNotificationsUntil: 0
 
     onPluginDataChanged: {
         _replayPendingRunLog();
@@ -1163,6 +1179,7 @@ PluginComponent {
 
         onFinished: ok => {
             root.confirmArmed = false;
+            root._quietNotificationsUntil = Date.now() + 30000;
             root._saveFailures();
             // A run that finishes into verification has every system and
             // Flatpak row sitting at "confirming" — that is what verification
