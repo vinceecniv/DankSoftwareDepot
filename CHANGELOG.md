@@ -3,6 +3,43 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.1.6 — 2026-08-26
+
+Updates felt slower through this window than through dnf in a terminal. The
+transaction was not slower; everything around it was — and looking into that
+turned up a refresh that had never refreshed anything.
+
+- **Every system transaction now revalidates the repositories**, which is a
+  change for everyone and the reason for the rest. The helper was supposed to
+  do this already: it set `metadata_expire` to 0 so a transaction could not
+  resolve against a stale view. It never could — every Fedora repository file
+  carries its own value (6h for updates, 7d for fedora, 14d elsewhere) and a
+  repository's own value wins over the main one. So a package updated between
+  the last expiry-driven refresh and the run resolved to *nothing to do*,
+  silently, for the whole run. It expires each repository before loading now,
+  which is what `--refresh` does. Expect a second or two per run when nothing
+  has changed, and more on a slow connection
+- **A package with no candidate says so.** "The repositories offer no newer
+  build of: …" rather than leaving the check afterwards to report packages as
+  not updated with nothing behind it
+- **The end of a run no longer waits on a metadata refresh.** Confirming that
+  the packages really are at their new version used to mean triggering a
+  daemon check — `dnf5 check-update --refresh`, a full revalidation, at the
+  end of every run, into a different cache than the one the transaction just
+  wrote. rpm answers the same question from the database the transaction
+  changed, in milliseconds
+- **No more phantom "N updates available" when a run finishes.** That check
+  published a list still holding the packages the run was installing, and they
+  were announced as news. Suppressed while a run is going and for thirty
+  seconds after — bounded by time rather than by the result panel, so a failed
+  run left on screen does not silence updates for the day
+- **System packages and the shell's own packages are separate passes again.**
+  Folding them together bought one polkit prompt instead of two, on the
+  assumption that runs containing DMS packages were rare; on a machine
+  following dms-git they are nearly every run, and that assumption had cost the
+  per-package byte progress and forced a refresh on everything. A run touching
+  both kinds asks twice now
+
 ## 1.1.5 — 2026-08-24
 
 - **Flatpak updates that libostree refuses are pulled the long way instead.**
