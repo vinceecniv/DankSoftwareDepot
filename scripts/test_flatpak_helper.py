@@ -235,6 +235,41 @@ def run(scenario, *args):
         return events, trace.read_text().splitlines(), proc
 
 
+def selftest(gi_source, on_path=("flatpak",)):
+    """Run `selftest` against a gi that fails on cue.
+
+    The stub goes in a copy of the helper's own directory rather than on
+    PYTHONPATH: the script's directory is what an interpreter reads first, so
+    the copy sees the stub whichever python3 runs it. The handover is pinned
+    shut for the same reason — on a machine where /usr/bin/python3 can import
+    the real bindings, interp.ensure would otherwise answer with that one.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        home = Path(tmp) / "scripts"
+        home.mkdir()
+        for name in ("flatpak_helper.py", "interp.py"):
+            (home / name).write_text((HELPER.parent / name).read_text())
+        (home / "gi.py").write_text(gi_source)
+        bindir = Path(tmp) / "bin"
+        bindir.mkdir()
+        for tool in on_path:
+            exe = bindir / tool
+            exe.write_text("#!/bin/sh\nexit 0\n")
+            exe.chmod(0o755)
+        env = dict(os.environ)
+        env["PATH"] = str(bindir)
+        env["DSD_INTERP_HANDOVER"] = "1"
+        proc = subprocess.run([sys.executable, str(home / "flatpak_helper.py"), "selftest"],
+                              capture_output=True, text=True, env=env, timeout=60)
+        events = []
+        for line in proc.stdout.splitlines():
+            try:
+                events.append(json.loads(line))
+            except ValueError:
+                pass
+        return events, proc
+
+
 def check(label, condition, detail=""):
     print(("  ok   " if condition else "  FAIL ") + label + (" — " + detail if detail and not condition else ""))
     return condition
@@ -302,6 +337,26 @@ def main():
     events, trace, proc = run({"updates": []}, "update")
     done = [e for e in events if e.get("event") == "done"][-1]
     ok &= check("an empty run says nothing to do", done.get("nothingToDo") is True, json.dumps(done))
+
+    # Which half of the Flatpak requirement is missing decides which package
+    # the window may ask for. Naming the bindings for a missing typelib was
+    # issue #15: "python3-gobject-base is missing" on a machine that had it.
+    events, proc = selftest("raise ImportError(\"No module named 'gi'\")\n")
+    err = ([e for e in events if e.get("event") == "error"] or [{}])[0]
+    ok &= check("no PyGObject is reported as missing bindings",
+                proc.returncode != 0 and err.get("cause") == "bindings", json.dumps(err))
+
+    typelib_stub = ("def require_version(ns, ver):\n"
+                    "    raise ValueError('Namespace %s not available' % ns)\n")
+    events, proc = selftest(typelib_stub)
+    err = ([e for e in events if e.get("event") == "error"] or [{}])[0]
+    ok &= check("a missing typelib beside a flatpak that is there is not the bindings",
+                err.get("cause") == "typelib", json.dumps(err))
+
+    events, proc = selftest(typelib_stub, on_path=())
+    err = ([e for e in events if e.get("event") == "error"] or [{}])[0]
+    ok &= check("and with no flatpak at all there is nothing to ask for",
+                err.get("cause") == "absent", json.dumps(err))
 
     print("\n" + ("all checks passed" if ok else "FAILURES"))
     return 0 if ok else 1

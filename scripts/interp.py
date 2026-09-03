@@ -38,17 +38,32 @@ def _candidates():
     return found
 
 
-def ensure(module):
+def ensure(module, probe=None):
     """Re-exec under an interpreter that can import `module`, if this one cannot.
 
-    Returns quietly when the import already works, or when no better
+    `probe` is a source line testing what the caller actually needs, for
+    bindings whose import is only half the answer: `import gi` succeeds
+    against a pip-installed PyGObject in a pyenv or a virtualenv, while the
+    typelib that lives beside the distro's copy is nowhere in sight. Probing
+    the import alone then decided there was nothing to hand over, and the
+    helper reported the distro package missing on a machine that had it.
+
+    Returns quietly when the check already passes, or when no better
     interpreter exists — the caller reports that in its own protocol.
     """
+    source = probe or ("import " + module)
     try:
-        __import__(module)
+        exec(compile(source, "<probe>", "exec"), {})
         return
-    except ImportError:
+    except Exception:
         pass
+
+    # One handover, ever. The candidate is chosen by a `-c` probe, which does
+    # not start in the script's directory the way the replacement will; if
+    # something there shadows the binding, the replacement fails the same
+    # check and hands over again, forever.
+    if os.environ.get("DSD_INTERP_HANDOVER") == "1":
+        return
 
     script = os.path.abspath(sys.argv[0])
     if not os.path.isfile(script):
@@ -58,13 +73,15 @@ def ensure(module):
     env = dict(os.environ)
     for name in ("VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH", "CONDA_PREFIX"):
         env.pop(name, None)
+    env["DSD_INTERP_HANDOVER"] = "1"
     for candidate in _candidates():
         try:
-            probe = subprocess.run([candidate, "-c", "import " + module],
-                                   capture_output=True, timeout=20, env=env)
+            probe_run = subprocess.run([candidate, "-c", source],
+                                       capture_output=True, timeout=20,
+                                       env=env)
         except (OSError, subprocess.SubprocessError):
             continue
-        if probe.returncode != 0:
+        if probe_run.returncode != 0:
             continue
         try:
             os.execve(candidate, [candidate, script] + sys.argv[1:], env)

@@ -3,6 +3,33 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.1.7 — 2026-09-03
+
+Thanks to @Tartuffe-X for reporting #15.
+
+- **The Flatpak requirement no longer asks for a package that is already
+  there.** PyGObject and the Flatpak typelib are two separate things, and only
+  one of them was ever named on Fedora and Arch: a machine whose typelib was
+  missing — it comes with `flatpak` itself, so a system without Flatpak has
+  none — was told that `python3-gobject-base` was missing, on a system that
+  had it, and installing it again could not change the answer. The helper now
+  says which half it could not load and the banner asks for that one
+- **A system without Flatpak is no longer treated as a broken one.** There is
+  nothing there to update and nothing to fix, so the requirement is not shown
+  at all rather than as a warning nobody can act on
+- **Installing the Flatpak bindings from the banner re-checks the Flatpak
+  helper.** It re-ran the *package* helper's check instead, so the warning
+  stood over a system that had just fixed it — "clicked Install, nothing
+  changed" — until the shell was restarted. A check asked for while one is
+  running is also no longer dropped, for the same reason it is not dropped for
+  the package helper
+- **A pyenv or virtualenv interpreter with a pip-installed PyGObject hands the
+  command over again.** The hand-over to the system interpreter asked only
+  whether `gi` could be imported, which a pip copy answers yes to while
+  bringing no typelib with it, so the command stayed in the one interpreter
+  that could not finish it. It now probes what the helper actually needs, and
+  hands over at most once
+
 ## 1.1.6 — 2026-08-26
 
 Updates felt slower through this window than through dnf in a terminal. The

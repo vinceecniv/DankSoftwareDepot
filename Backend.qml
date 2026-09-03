@@ -136,17 +136,52 @@ Item {
     readonly property string flatpakHelper: Qt.resolvedUrl("scripts/flatpak_helper.py").toString().replace("file://", "")
 
     property string flatpakHelperStatus: ""
-    readonly property bool flatpakHelperBroken: flatpakHelperStatus !== "" && flatpakHelperStatus !== "ok"
+    // Which half the helper found missing: "bindings", "typelib", "absent",
+    // or "" when it did not say
+    property string flatpakHelperCause: ""
+
+    // A machine without Flatpak is not a machine with a broken plugin. There
+    // is nothing to update and nothing to fix, so it is not a requirement —
+    // asking such a system to install PyGObject was asking it to make no
+    // difference at all (#15).
+    readonly property bool flatpakAbsent: flatpakHelperCause === "absent"
+    readonly property bool flatpakHelperBroken: flatpakHelperStatus !== "" && flatpakHelperStatus !== "ok" && !flatpakAbsent
     readonly property string flatpakHelperError: flatpakHelperBroken ? flatpakHelperStatus : ""
 
-    // Naming both is deliberate: one of the two is usually already there, and
-    // installing the pair is what actually fixes it
-    readonly property string flatpakRequirement: backendId === "apt" ? "gir1.2-flatpak-1.0 python3-gi" : (backendId === "pacman" ? "python-gobject" : "python3-gobject-base")
+    // Two packages, two failures, and telling them apart is the whole point:
+    // the typelib is not in the PyGObject package on any of these distros —
+    // on Fedora and Arch it comes with flatpak itself, on Debian and Ubuntu
+    // it is gir1.2-flatpak-1.0, which flatpak does not pull in (#2). Naming
+    // the bindings package for a missing typelib is what #15 reported:
+    // "python3-gobject-base is missing" on a machine that had it, where
+    // installing it again could not change the answer.
+    //
+    // Without a cause both are named: one of the two is usually already
+    // there, and installing the pair is what fixes it either way.
+    readonly property string flatpakRequirement: {
+        const bindings = backendId === "apt" ? "python3-gi" : (backendId === "pacman" ? "python-gobject" : "python3-gobject-base");
+        const typelib = backendId === "apt" ? "gir1.2-flatpak-1.0" : "flatpak";
+        if (flatpakHelperCause === "bindings")
+            return bindings;
+        if (flatpakHelperCause === "typelib")
+            return typelib;
+        return typelib + " " + bindings;
+    }
+
+    // Same reason checkPackageHelper keeps one: a check asked for while one
+    // is running is asked for because something changed — the requirement was
+    // just installed — and dropping it leaves the banner standing over a
+    // system that no longer has the problem.
+    property bool _flatpakSelftestStale: false
 
     function checkFlatpakHelper() {
-        if (flatpakSelftestProcess.running)
+        if (flatpakSelftestProcess.running) {
+            _flatpakSelftestStale = true;
             return;
+        }
+        _flatpakSelftestStale = false;
         flatpakSelftestProcess._reason = "";
+        flatpakSelftestProcess._cause = "";
         flatpakSelftestProcess.command = [python, flatpakHelper, "selftest"];
         flatpakSelftestProcess.running = true;
     }
@@ -155,6 +190,7 @@ Item {
         id: flatpakSelftestProcess
 
         property string _reason: ""
+        property string _cause: ""
 
         stdout: SplitParser {
             onRead: line => {
@@ -166,10 +202,18 @@ Item {
                 }
                 if (event.event === "error" && event.message)
                     flatpakSelftestProcess._reason = event.message;
+                if (event.event === "error" && event.cause)
+                    flatpakSelftestProcess._cause = event.cause;
             }
         }
 
         onExited: (exitCode, exitStatus) => {
+            if (backend._flatpakSelftestStale) {
+                backend._flatpakSelftestStale = false;
+                Qt.callLater(backend.checkFlatpakHelper);
+                return;
+            }
+            backend.flatpakHelperCause = exitCode === 0 ? "" : _cause;
             backend.flatpakHelperStatus = exitCode === 0 ? "ok" : (_reason || Tr.t("the Flatpak helper could not start"));
         }
     }
@@ -352,9 +396,16 @@ Item {
             if (exitCode !== 0)
                 backend.requirementInstallError = exitCode === 126 || exitCode === 127 ? Tr.t("the authorisation was refused") : (_output || Tr.t("the installation failed"));
             backend.requirementInstalled(installProcess._pkg, exitCode === 0, exitCode === 0 ? "" : backend.requirementInstallError);
-            // Either way the check, not the exit code, decides
+            // Either way the check, not the exit code, decides — and it has
+            // to be the check for the thing that was installed. Sending the
+            // Flatpak bindings to the package-helper check re-answered a
+            // question nobody had asked and left the Flatpak banner standing
+            // over a system that had just fixed it, which is what #15 saw as
+            // "clicked Install, nothing changed".
             if (which === "appstream")
                 backend.checkAppstream();
+            else if (which === "flatpak")
+                backend.checkFlatpakHelper();
             else
                 backend.checkPackageHelper();
         }

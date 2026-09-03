@@ -23,6 +23,7 @@ transaction cleanly.
 """
 
 import json
+import shutil
 import signal
 import sys
 
@@ -39,16 +40,37 @@ def emit(obj):
 # Hand the command over rather than die, and if it still fails, say so inside
 # the protocol — an import that kills the process ends the stream before its
 # first event, and the caller can only report that everything failed.
-interp.ensure("gi")
+#
+# The handover probes both halves, not just `import gi`: a pip-installed
+# PyGObject satisfies the import without bringing a typelib with it, and
+# probing the import alone kept the command in the very interpreter that
+# cannot finish it.
+FLATPAK_PROBE = ("import gi; gi.require_version('Flatpak', '1.0'); "
+                 "from gi.repository import Flatpak")
+interp.ensure("gi", probe=FLATPAK_PROBE)
 
 try:
     import gi
     gi.require_version("Flatpak", "1.0")
     from gi.repository import Flatpak, Gio, GLib  # noqa: E402
 except (ImportError, ValueError) as exc:
+    # Which half is missing decides what the window may ask for. Naming the
+    # PyGObject package for a missing typelib is what issue #15 was: the
+    # banner asked for python3-gobject-base on a machine that had it, and
+    # installing it again changed nothing, because the typelib comes with
+    # flatpak itself. And a machine with no flatpak at all is not a machine
+    # with a broken plugin — there is nothing there to update.
+    if isinstance(exc, ImportError) and "gi.repository" not in str(exc):
+        cause, what = "bindings", "the PyGObject bindings"
+    elif shutil.which("flatpak") is None:
+        cause, what = "absent", "Flatpak"
+    else:
+        cause, what = "typelib", "the Flatpak typelib"
     emit({"event": "error",
-          "message": "the Flatpak bindings could not be loaded by %s (%s)"
-                     % (interp.describe(), exc)})
+          "cause": cause,
+          "message": "Flatpak is not installed" if cause == "absent" else
+                     "%s could not be loaded by %s (%s)"
+                     % (what, interp.describe(), exc)})
     emit({"event": "done", "ok": False, "failed": []})
     sys.exit(1)
 
