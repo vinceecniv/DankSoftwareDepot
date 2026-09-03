@@ -1019,6 +1019,18 @@ FloatingWindow {
                             onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "confirmBeforeUpdate", checked)
                         }
 
+                        // Reads Backend rather than widgetRoot for the same
+                        // reason the icon tint below reads Ui: the thing that
+                        // acts on it is Backend, which builds every
+                        // privileged command.
+                        DankToggle {
+                            width: parent.width
+                            text: Tr.t("Authorise with sudo")
+                            description: Tr.t("Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.")
+                            checked: Backend.useSudo
+                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "useSudo", checked)
+                        }
+
                         // Reads Ui rather than widgetRoot: this one is about
                         // how things are drawn rather than about what the
                         // updater does, and Ui is where the views that draw

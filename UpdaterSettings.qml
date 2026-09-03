@@ -70,6 +70,17 @@ PluginSettings {
         defaultValue: false
     }
 
+    // #14: a machine whose sudo needs no password is asked for one anyway,
+    // because pkexec asks polkit and a NOPASSWD line is a sudo rule. Off by
+    // default — on a machine without such a rule it changes nothing, and the
+    // command falls back to the prompt on its own.
+    ToggleSetting {
+        settingKey: "useSudo"
+        label: Tr.t("Authorise with sudo")
+        description: Tr.t("Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.")
+        defaultValue: false
+    }
+
     ToggleSetting {
         settingKey: "tintAppIcons"
         label: Tr.t("Tint app icons with the theme colour")

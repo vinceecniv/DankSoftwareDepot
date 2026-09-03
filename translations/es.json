@@ -489,5 +489,7 @@
     "%1 found in Homebrew, listed below": "%1 encontrados en Homebrew, listados abajo",
     "Nothing in Homebrew for \"%1\"": "Nada en Homebrew para «%1»",
     "Homebrew has no build of this for Linux": "Homebrew no tiene una versión de esto para Linux",
-    "Depends on: %1": "Depende de: %1"
+    "Depends on: %1": "Depende de: %1",
+    "Authorise with sudo": "Autorizar con sudo",
+    "Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.": "Ejecuta los comandos privilegiados mediante sudo en lugar de preguntar a polkit, para sistemas donde sudo está configurado para no pedir contraseña. Vuelve al aviso habitual siempre que sudo fuera a pedir una."
 }

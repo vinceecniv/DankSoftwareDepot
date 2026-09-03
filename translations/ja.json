@@ -489,5 +489,7 @@
     "%1 found in Homebrew, listed below": "Homebrew で %1 件見つかりました（下に表示）",
     "Nothing in Homebrew for \"%1\"": "「%1」は Homebrew にありません",
     "Homebrew has no build of this for Linux": "Homebrew にはこの Linux 向けビルドがありません",
-    "Depends on: %1": "依存: %1"
+    "Depends on: %1": "依存: %1",
+    "Authorise with sudo": "sudo で認証する",
+    "Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.": "polkit に問い合わせる代わりに、管理者権限が必要なコマンドを sudo で実行します。sudo がパスワードなしで使えるように設定されたシステム向けです。sudo がパスワードを求める場合は、通常の認証ダイアログに戻ります。"
 }

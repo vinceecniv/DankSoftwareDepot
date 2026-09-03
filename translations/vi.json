@@ -489,5 +489,7 @@
     "%1 found in Homebrew, listed below": "Tìm thấy %1 trong Homebrew, liệt kê bên dưới",
     "Nothing in Homebrew for \"%1\"": "Không có gì trong Homebrew cho “%1”",
     "Homebrew has no build of this for Linux": "Homebrew không có bản dựng Linux cho mục này",
-    "Depends on: %1": "Phụ thuộc vào: %1"
+    "Depends on: %1": "Phụ thuộc vào: %1",
+    "Authorise with sudo": "Xác thực bằng sudo",
+    "Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.": "Chạy các lệnh cần quyền quản trị qua sudo thay vì hỏi polkit, dành cho hệ thống đã cấu hình sudo không cần mật khẩu. Quay lại hộp thoại thông thường mỗi khi sudo vẫn hỏi mật khẩu."
 }

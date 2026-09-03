@@ -384,6 +384,18 @@ drawn in the active DMS accent, tuned separately for light and dark mode,
 since the effect maps an icon's own brightness onto the accent and that lands
 very differently on a light card than on a dark one.
 
+Also there: **authorise with sudo**. Off by default, and only useful on a
+machine where sudo has been configured to need no password. Privileged
+commands normally go through `pkexec`, which asks polkit — and a `NOPASSWD`
+line in sudoers is a rule in a different system, which is why such a machine
+is asked for a password anyway. With this on, those commands run under
+`sudo -n` instead. It never prompts: the command checks whether sudo would
+answer without asking and falls back to the usual polkit prompt when it would
+not, so narrow sudoers rules, or no sudo at all, end up exactly where they
+started. Two things stay outside it either way — DMS's own packages update
+through the DMS daemon, which has its own polkit action, and firmware goes to
+fwupd, which has its own too.
+
 | ![The plugin settings dialog with switches for the bar pill, firmware, the launcher entry and the .appimage association](screenshots/plugin-settings.png) | ![The command palette listing tabs, check for updates, software sources and settings](screenshots/command-palette.png) |
 |---|---|
 | **Plugin settings.** What the pill shows, whether firmware joins Update All, the launcher entry, themed app icons, and who opens `.appimage` files. | **Ctrl+K.** Every tab, the actions around them, and the two dialogs — without going looking for a button. |

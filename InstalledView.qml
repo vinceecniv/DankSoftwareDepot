@@ -673,7 +673,7 @@ Item {
             to: Tr.t("commit %1").arg(commit.substring(0, 8)),
             source: "Flatpak"
         };
-        mutationProcess.command = ["pkexec", "flatpak", "update", "--noninteractive", "--commit=" + commit, id];
+        mutationProcess.command = Backend.privileged(["flatpak", "update", "--noninteractive", "--commit=" + commit, id]);
         mutationProcess.running = true;
     }
 

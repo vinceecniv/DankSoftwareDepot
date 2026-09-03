@@ -489,5 +489,7 @@
     "%1 found in Homebrew, listed below": "%1 hittades i Homebrew, listas nedan",
     "Nothing in Homebrew for \"%1\"": "Inget i Homebrew för ”%1”",
     "Homebrew has no build of this for Linux": "Homebrew har inget Linux-bygge av detta",
-    "Depends on: %1": "Beror på: %1"
+    "Depends on: %1": "Beror på: %1",
+    "Authorise with sudo": "Auktorisera med sudo",
+    "Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.": "Kör privilegierade kommandon via sudo i stället för att fråga polkit, på system där sudo är inställt att inte kräva lösenord. Faller tillbaka till den vanliga dialogen så snart sudo skulle be om ett lösenord."
 }

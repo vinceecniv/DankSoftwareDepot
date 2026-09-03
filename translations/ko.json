@@ -489,5 +489,7 @@
     "%1 found in Homebrew, listed below": "Homebrew에서 %1개 발견, 아래 표시",
     "Nothing in Homebrew for \"%1\"": "“%1”에 대한 결과가 Homebrew에 없습니다",
     "Homebrew has no build of this for Linux": "Homebrew에 이 항목의 Linux 빌드가 없습니다",
-    "Depends on: %1": "의존성: %1"
+    "Depends on: %1": "의존성: %1",
+    "Authorise with sudo": "sudo로 인증",
+    "Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.": "polkit에 묻는 대신 sudo로 관리자 권한 명령을 실행합니다. sudo가 비밀번호 없이 실행되도록 설정된 시스템을 위한 것입니다. sudo가 비밀번호를 요구하는 경우에는 평소의 인증 창으로 돌아갑니다."
 }

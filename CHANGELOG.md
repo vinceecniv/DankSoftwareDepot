@@ -5,7 +5,20 @@ in-app when the plugin offers its own update.
 
 ## 1.1.7 — 2026-09-03
 
-Thanks to @Tartuffe-X for reporting #15.
+Thanks to @Tartuffe-X for reporting #15 and to @JDKamalakar for #14.
+
+- **New setting: authorise with sudo.** Off by default. A machine where sudo
+  has been made passwordless was asked for a password anyway (#14) — not
+  really a bug, but two authorisation systems: a `NOPASSWD` line is a rule in
+  sudoers, and `pkexec` asks polkit, which has never heard of it. With this on,
+  privileged commands run under `sudo -n` instead. It cannot hang: `-n` never
+  prompts, and the command checks whether sudo would answer before handing
+  itself over, so narrow sudoers rules — or no sudo at all — fall back to the
+  polkit prompt and end up exactly where they were. The shell's own packages
+  still go through the DMS daemon and firmware still goes through fwupd, each
+  with its own polkit action, so those keep asking. The plugin's eight
+  privileged call sites now build their command in one place rather than
+  writing `pkexec` out eight times
 
 - **The Flatpak requirement no longer asks for a package that is already
   there.** PyGObject and the Flatpak typelib are two separate things, and only

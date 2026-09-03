@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell.Io
+import qs.Services
 
 // The package-backend seam: every entry point that is specific to the
 // system package manager, in one place. The transaction helpers speak the
@@ -47,16 +48,63 @@ Item {
     // Transaction helper implementing the NDJSON event protocol
     readonly property string packageHelper: Qt.resolvedUrl("scripts/" + (backendId === "apt" ? "apt_helper.py" : (backendId === "pacman" ? "pacman_helper.py" : (atomic ? "ostree_helper.py" : "rpm_helper.py")))).toString().replace("file://", "")
 
+    // ── How a privileged command is authorised ──────────────────────────────
+    // pkexec by default: it asks polkit, the DMS agent draws the prompt, and
+    // it is the only route that needs nothing configured beforehand.
+    //
+    // Reported as #14: a machine where sudo has been made passwordless is
+    // asked for a password anyway. It is not a bug so much as two
+    // authorisation systems — a NOPASSWD line is a rule in sudoers, and
+    // pkexec asks polkit, which has never heard of it. The other direction —
+    // shipping a polkit rule for this plugin — is not something to offer: the
+    // helper such a rule would exempt lives under the user's own config
+    // directory, and a password-free root path to a file the user can rewrite
+    // is a back door rather than a setting. Sudoers is a decision this user
+    // has already made, in a file only root can write, so this defers to that
+    // one instead of inventing a second.
+    property bool useSudo: PluginService.loadPluginData("dankSoftwareDepot", "useSudo", false) === true
+
+    Connections {
+        target: PluginService
+
+        function onPluginDataChanged(pluginId) {
+            if (pluginId === "dankSoftwareDepot")
+                backend.useSudo = PluginService.loadPluginData("dankSoftwareDepot", "useSudo", false) === true;
+        }
+    }
+
+    // Whether sudo will answer without asking is decided inside the command
+    // itself, a moment before it runs, rather than by a probe here whose
+    // answer would already be minutes old. Two things make that necessary:
+    //
+    // `-n` is not optional. These helpers run without a terminal, so a sudo
+    // that decides to ask for a password has nowhere to ask and the run hangs
+    // with nothing on screen. With -n it refuses instead, and the refusal is
+    // something the command can act on.
+    //
+    // And the fall-back is gated on a separate `sudo -n true`, not on the
+    // exit code of the run: a transaction that failed on its own merits must
+    // never be quietly run a second time under pkexec. So the shell asks
+    // whether sudo would answer, and hands the whole thing to pkexec when it
+    // would not — a machine with narrow sudoers rules, or no sudo at all,
+    // ends up exactly where it is today. `exec` either way, so the exit code
+    // the callers read is still pkexec's own 126/127 for a refused prompt.
+    function privileged(words) {
+        if (!useSudo)
+            return ["pkexec"].concat(words);
+        return ["sh", "-c", "if sudo -n true 2>/dev/null; then exec sudo -n \"$@\"; fi; exec pkexec \"$@\"", "sh"].concat(words);
+    }
+
     // Command for a privileged helper transaction
     function helperCommand(action, specs) {
-        return ["pkexec", python, packageHelper, action].concat(specs);
+        return privileged([python, packageHelper, action].concat(specs));
     }
 
     // The same install, preceded by adding the Copr the package lives in —
     // one transaction, so one password. Both Fedora helpers take it: layering
     // a Copr package on an atomic system is the same two steps.
     function coprInstallCommand(project, specs) {
-        return ["pkexec", python, packageHelper, "install", "--copr", project].concat(specs);
+        return privileged([python, packageHelper, "install", "--copr", project].concat(specs));
     }
 
     // Which updates are security fixes. Only the dnf family ships updateinfo
@@ -364,7 +412,7 @@ Item {
         installingRequirement = id;
         installProcess._pkg = pkg;
         installProcess._output = "";
-        installProcess.command = ["pkexec"].concat(_installWords(pkg));
+        installProcess.command = backend.privileged(_installWords(pkg));
         installProcess.running = true;
     }
 
@@ -439,14 +487,14 @@ Item {
     // transaction to report, so it does not go through the helper protocol
     function cleanCacheCommand() {
         if (backendId === "apt")
-            return ["pkexec", "apt-get", "clean"];
+            return privileged(["apt-get", "clean"]);
         if (backendId === "pacman")
-            return ["pkexec", "pacman", "-Scc", "--noconfirm"];
+            return privileged(["pacman", "-Scc", "--noconfirm"]);
         // rpm-ostree keeps its own caches: -m the rpm-md metadata, -p a
         // deployment staged but not booted into
         if (atomic)
-            return ["pkexec", "rpm-ostree", "cleanup", "-m"];
-        return ["pkexec", "dnf", "clean", "packages"];
+            return privileged(["rpm-ostree", "cleanup", "-m"]);
+        return privileged(["dnf", "clean", "packages"]);
     }
 
     // Did the user ask for this package, and what would miss it if it went
@@ -504,7 +552,7 @@ Item {
     }
 
     function repoAdminCommand(args) {
-        return ["pkexec", python, repoHelper].concat(args);
+        return privileged([python, repoHelper].concat(args));
     }
 
     function repoUserCommand(args) {

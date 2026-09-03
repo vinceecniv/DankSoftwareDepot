@@ -489,5 +489,7 @@
     "%1 found in Homebrew, listed below": "Найдено в Homebrew: %1 — см. ниже",
     "Nothing in Homebrew for \"%1\"": "В Homebrew ничего нет по запросу «%1»",
     "Homebrew has no build of this for Linux": "У Homebrew нет сборки для Linux",
-    "Depends on: %1": "Зависит от: %1"
+    "Depends on: %1": "Зависит от: %1",
+    "Authorise with sudo": "Авторизация через sudo",
+    "Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.": "Выполнять привилегированные команды через sudo, а не через polkit, на системах, где sudo настроен без пароля. Возвращается к обычному запросу, если sudo всё же запросит пароль."
 }
