@@ -199,6 +199,15 @@ Item {
             simMeta = ({});
             return;
         }
+        // Both halves of this were wrong at once, and they hid each other:
+        // assigning `running` on a Process that is already running does
+        // nothing, so a second request was dropped — and the first one's
+        // answer then arrived after the mode had moved on and overwrote it.
+        // A recording that had just been switched away from was loaded, and
+        // the one actually selected never was. Stop the old request, and let
+        // an answer through only if it is still the answer to the question.
+        metaProcess.running = false;
+        metaProcess._for = simRecording;
         metaProcess.command = [python, simulateHelper, "meta", recordingsRoot + "/" + simRecording];
         metaProcess.running = true;
     }
@@ -206,8 +215,20 @@ Item {
     Process {
         id: metaProcess
 
+        property string _for: ""
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                if ((text || "").trim() !== "")
+                    backend.simDiagnostic = "stderr: " + text.trim().split("\n").pop();
+            }
+        }
+
         stdout: StdioCollector {
             onStreamFinished: {
+                backend.simDiagnostic = "read " + (text || "").length + " bytes for " + metaProcess._for;
+                if (metaProcess._for !== backend.simRecording || !backend.replaying)
+                    return;
                 let meta;
                 try {
                     meta = JSON.parse(text);
@@ -218,6 +239,16 @@ Item {
                 backend.simPackages = (meta && meta.packages) || [];
             }
         }
+    }
+
+    // Diagnostics for the simulation layer: which request is in flight, and
+    // what the last one answered. Every part of this is asynchronous, so when
+    // a replay does not appear this is what says where it stopped.
+    property string simDiagnostic: ""
+
+    function simDebug() {
+        return "req=" + (metaProcess._for || "-") + " busy=" + metaProcess.running
+            + " last=" + (simDiagnostic || "-");
     }
 
     // The recordings on disk, newest first, for the picker
@@ -320,6 +351,9 @@ Item {
         // settings panel, or the IPC entry point — has an answer rather than
         // starting a process and returning before it finishes.
         refreshRecordings();
+        // A shell that starts with a replay already selected gets no change
+        // signal to load it from — the mode was already what it is.
+        _loadSimMeta();
     }
 
     function checkRequirements() {

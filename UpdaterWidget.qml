@@ -1330,6 +1330,22 @@ PluginComponent {
             return wanted ? "the next run will be recorded" : "recording off";
         }
 
+        // What the simulation layer thinks is going on. Every part of it is
+        // asynchronous — the mode is stored, the package list is read back
+        // from disk, the run is started once that arrives — so when a replay
+        // does not appear, this says which of those three stalled.
+        function simstatus(): string {
+            return "mode=" + (Backend.simMode || "off")
+                + " recording=" + (Backend.simRecording || "-")
+                + " active=" + (Backend.activeRecording || "-")
+                + " packages=" + ((Backend.simPackages || []).length)
+                + " speed=" + Backend.simSpeed
+                + " running=" + engine.running
+                + " phase=" + engine.phase
+                + " root=" + Backend.recordingsRoot
+                + " | " + Backend.simDebug();
+        }
+
         function recordings(): string {
             Backend.refreshRecordings();
             const rows = (Backend.recordings || []).map(r => r.name + " (" + r.packages + " packages, " + r.seconds + "s, " + (r.tags || []).join("+") + ")");
