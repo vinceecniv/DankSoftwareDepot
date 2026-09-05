@@ -627,6 +627,57 @@ This plugin is developed with [Claude Code](https://claude.com/claude-code)
 and built with [Vito](https://vito.talk) — voice-driven development
 ([GitHub](https://github.com/vinceecniv/Vito)).
 
+### Recording a run, and playing it back
+
+Nothing the updater window draws comes from the system directly: every phase,
+row, byte counter and error arrives as NDJSON on some helper's stdout (see
+[PROTOCOL.md](PROTOCOL.md)). So a recording of those streams is a recording of
+everything the window can show, and playing one back puts the whole interface
+through a real run — same rows, same order, same pauses — without root,
+without a network, and without waiting for a distribution to ship thirty
+updates. Which is the point: the visual side of a run could otherwise only be
+worked on when there happened to be something to install, and then only once,
+because installing it is what makes it stop being pending.
+
+The seam is one function. Every process a run starts asks
+`Backend.instrument()` for its command and gets back the real one, the real
+one wrapped in a recorder, or `scripts/simulate.py` reading a recording. The
+engine above it cannot tell which, which is the whole design — a simulation
+taking a different path through the engine would be a simulation of a
+different program.
+
+Under the gear, on a working copy only (the plugin directory is a symlink),
+there is a **Developer** section: arm *Record the next update run*, update as
+usual, and the run lands in `recordings/`. Afterwards each recording is a row
+with a **Play** button and a playback speed. The same thing without the mouse,
+which is the faster loop when the point is to change QML and look again:
+
+```sh
+dms ipc call dankSoftwareDepot record on          # arm the recorder
+dms ipc call dankSoftwareDepot recordings         # what is on disk
+dms ipc call dankSoftwareDepot simulate run-20260905-101500
+dms ipc call dankSoftwareDepot simulate off
+```
+
+A recording is a directory: `meta.json` holds what was pending when it was
+taken (the daemon cannot be asked afterwards — the packages are installed),
+and one `<pass>.jsonl` per stream, each line carrying its own timestamp. They
+are gitignored, being one machine's package inventory at one moment; `git add
+-f` one that is worth sharing.
+
+Two things a replay leaves out, both because there is no stream of ours to
+record: the shell's own packages, which go through the DMS daemon, and
+anything a simulated run would otherwise write down — the action log, the
+reboot notice, the "last updated" time and the duration estimate all sit out a
+replay, because none of it happened.
+
+Recording is deliberately hard to fail with: it sits between the shell and a
+transaction that is really installing packages, so anything that goes wrong
+while setting up the recording falls through to running the command untouched.
+Note that `Backend.qml` is a QML singleton — `dms ipc call plugins reload`
+rebuilds the widget but keeps the singleton, so changes to it need the shell
+itself restarted.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

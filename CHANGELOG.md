@@ -3,6 +3,17 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **A run can be recorded and played back.** Development only, and invisible
+  on a normal install: nothing the window draws comes from the system
+  directly, so a recording of the helpers' NDJSON is a recording of everything
+  it can show. Playing one back drives the whole interface through a real run
+  without root and without waiting for a distribution to ship thirty updates —
+  which is what working on the *look* of an update used to require, once per
+  set of updates, since installing them is what makes them stop being pending.
+  See Development in the README
+
 ## 1.1.7 — 2026-09-03
 
 Thanks to @Tartuffe-X for reporting #15 and to @JDKamalakar for #14.

@@ -60,7 +60,12 @@ PluginComponent {
     // snapshot is shown, so previously found updates reappear immediately.
     readonly property bool _serviceHasState: SystemUpdateService.lastCheckUnix > 0 || (SystemUpdateService.availableUpdates || []).length > 0
     readonly property var pendingUpdates: {
-        const raw = _serviceHasState ? (SystemUpdateService.availableUpdates || []) : ((pluginData.updatesSnapshot || {}).packages || []);
+        // A replay shows what was pending when the recording was taken. The
+        // machine has moved on — those packages are installed — so the live
+        // list would be the one thing in a simulated run that is not part of
+        // the simulation.
+        const raw = Backend.replaying ? (Backend.simPackages || [])
+            : (_serviceHasState ? (SystemUpdateService.availableUpdates || []) : ((pluginData.updatesSnapshot || {}).packages || []));
         // The daemon can name the same package twice — one entry per
         // repository carrying it, which for a package in two enabled Coprs is
         // two. The list has always collapsed those, because it keys its rows
@@ -1169,16 +1174,35 @@ PluginComponent {
         // The dms pass is about to reload the shell — stash the log entry
         // and the failure reasons it would otherwise swallow
         onPhaseChanged: {
+            if (Backend.replaying)
+                return;
             if (phase === "dms") {
                 root._stashFromEngine();
                 root._saveFailures();
             }
         }
 
-        onRunMeasured: (seconds, items) => root._recordRun(seconds, items)
+        onRunMeasured: (seconds, items) => {
+            // A replay's duration is the recording's duration, possibly
+            // divided by a playback speed. Letting it into the estimate would
+            // teach the window that updates take four seconds.
+            if (!Backend.replaying)
+                root._recordRun(seconds, items);
+        }
 
         onFinished: ok => {
             root.confirmArmed = false;
+            // Nothing a simulation does happened. It must not reach the
+            // action log, the reboot notice, the failure list that survives a
+            // restart, or the "last updated" time — every one of those is a
+            // record of the machine, and the machine did not do this.
+            if (Backend.replaying)
+                return;
+            // The verification pass is part of the run and part of the
+            // recording, so a run that ends into it is not finished being
+            // recorded yet — the same reason the log entry waits.
+            if (engine.phase !== "verifying")
+                Backend.finishRecording();
             root._quietNotificationsUntil = Date.now() + 30000;
             root._saveFailures();
             // A run that finishes into verification has every system and
@@ -1207,6 +1231,9 @@ PluginComponent {
         // at the next shell reload — and the entry is written now, with that
         // failure in it rather than a row saying "confirming".
         onVerified: stuck => {
+            if (Backend.replaying)
+                return;
+            Backend.finishRecording();
             if (stuck > 0)
                 root._saveFailures();
             if (!root._logAwaitingVerification)
@@ -1275,6 +1302,38 @@ PluginComponent {
             SystemUpdateService.checkForUpdates();
             if (root.includeFirmware)
                 firmware.check();
+        }
+
+        // Play a recorded run through the real interface. Here rather than
+        // only behind the gear because the loop this exists for is: change
+        // the QML, reload the plugin, watch the run again — and a loop with
+        // a mouse click in it is a slower loop. An empty name stops.
+        function simulate(name: string): string {
+            if (name === "" || name === "off" || name === "stop") {
+                PluginService.savePluginData("dankSoftwareDepot", "simMode", "");
+                return "simulation off";
+            }
+            if (engine.running)
+                return "a run is already going";
+            PluginService.savePluginData("dankSoftwareDepot", "simRecording", name);
+            PluginService.savePluginData("dankSoftwareDepot", "simMode", "replay");
+            updaterWindow.activate();
+            updaterWindow.openTab(0);
+            updaterWindow.startSimulation();
+            return "playing " + name;
+        }
+
+        // Arm the recorder: the next update run is written to recordings/.
+        function record(on: string): string {
+            const wanted = on !== "off" && on !== "false" && on !== "0";
+            PluginService.savePluginData("dankSoftwareDepot", "simMode", wanted ? "record" : "");
+            return wanted ? "the next run will be recorded" : "recording off";
+        }
+
+        function recordings(): string {
+            Backend.refreshRecordings();
+            const rows = (Backend.recordings || []).map(r => r.name + " (" + r.packages + " packages, " + r.seconds + "s, " + (r.tags || []).join("+") + ")");
+            return rows.length > 0 ? rows.join("\n") : "nothing recorded yet in " + Backend.recordingsRoot;
         }
     }
 

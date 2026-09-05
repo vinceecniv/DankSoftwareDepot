@@ -897,8 +897,14 @@ FloatingWindow {
     property bool settingsOpen: false
 
     onSettingsOpenChanged: {
-        if (settingsOpen)
-            settingsFocus.forceActiveFocus();
+        if (!settingsOpen)
+            return;
+        settingsFocus.forceActiveFocus();
+        // Recordings appear on disk while the panel is closed — a run made
+        // one — so the list is read when the panel opens rather than once
+        // at startup.
+        if (Backend.developmentInstall)
+            Backend.refreshRecordings();
     }
 
     Rectangle {
@@ -1161,9 +1167,213 @@ FloatingWindow {
                             }
                         }
                     }
+
+                    // ── Developer: record a run, play it back ───────────────
+                    // Only on a working copy (the plugin directory is a
+                    // symlink), which is also the only place it means
+                    // anything. Deliberately untranslated: sixteen catalogs
+                    // carrying strings that appear on one machine in the
+                    // world is a cost with no reader.
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.topMargin: Theme.spacingM
+                        spacing: Theme.spacingS
+                        visible: Backend.developmentInstall
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: "Developer"
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.Bold
+                            color: Theme.surfaceVariantText
+                        }
+
+                        Column {
+                            Layout.fillWidth: true
+
+                            DankToggle {
+                                width: parent.width
+                                text: "Record the next update run"
+                                description: "Wraps every helper the run starts and writes what it says to recordings/, alongside the list of packages the window was showing. The run itself is untouched."
+                                checked: Backend.simMode === "record"
+                                onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "simMode", checked ? "record" : "")
+                            }
+                        }
+
+                        // A replay is a run in every respect the interface can
+                        // see, so it needs to be unmistakable from the outside.
+                        Rectangle {
+                            Layout.fillWidth: true
+                            visible: Backend.replaying
+                            implicitHeight: simulatingRow.implicitHeight + Theme.spacingM * 2
+                            radius: Theme.cornerRadius
+                            color: Theme.withAlpha(Theme.secondary, 0.12)
+                            border.width: 1
+                            border.color: Theme.withAlpha(Theme.secondary, 0.3)
+
+                            RowLayout {
+                                id: simulatingRow
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: Theme.spacingM
+                                anchors.rightMargin: Theme.spacingM
+                                spacing: Theme.spacingM
+
+                                DankIcon {
+                                    name: "science"
+                                    size: 20
+                                    color: Theme.secondary
+                                }
+
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    text: "Simulating " + Backend.simRecording + " — nothing is being installed, and nothing reaches the log"
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.surfaceText
+                                    wrapMode: Text.WordWrap
+                                }
+
+                                DankButton {
+                                    buttonHeight: 28
+                                    horizontalPadding: Theme.spacingM
+                                    text: "Stop"
+                                    backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                                    textColor: Theme.buttonText
+                                    onClicked: PluginService.savePluginData("dankSoftwareDepot", "simMode", "")
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingS
+
+                            StyledText {
+                                text: "Speed"
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.surfaceVariantText
+                            }
+
+                            Repeater {
+                                model: [1, 2, 4, 10]
+
+                                delegate: DankButton {
+                                    required property var modelData
+
+                                    buttonHeight: 26
+                                    horizontalPadding: Theme.spacingS
+                                    text: modelData + "×"
+                                    backgroundColor: Backend.simSpeed === modelData ? Theme.primary : Theme.withAlpha(Theme.buttonBg, 0.9)
+                                    textColor: Backend.simSpeed === modelData ? Theme.primaryText : Theme.buttonText
+                                    onClicked: PluginService.savePluginData("dankSoftwareDepot", "simSpeed", modelData)
+                                }
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                            }
+
+                            DankButton {
+                                buttonHeight: 26
+                                horizontalPadding: Theme.spacingS
+                                iconName: "refresh"
+                                iconSize: 14
+                                text: "Rescan"
+                                backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                                textColor: Theme.buttonText
+                                onClicked: Backend.refreshRecordings()
+                            }
+                        }
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            visible: Backend.recordings.length === 0
+                            text: Backend.simMode === "record" ? "Nothing recorded yet — the next Update All will be." : "Nothing recorded yet."
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceVariantText
+                            wrapMode: Text.WordWrap
+                        }
+
+                        Repeater {
+                            model: Backend.recordings
+
+                            delegate: RowLayout {
+                                required property var modelData
+
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingM
+
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    text: modelData.name + " · " + modelData.packages + " packages · "
+                                        + modelData.seconds + "s · " + (modelData.tags || []).join(", ")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Backend.simRecording === modelData.name ? Theme.primary : Theme.surfaceText
+                                    elide: Text.ElideRight
+                                }
+
+                                DankButton {
+                                    buttonHeight: 26
+                                    horizontalPadding: Theme.spacingM
+                                    iconName: "play_arrow"
+                                    iconSize: 14
+                                    text: "Play"
+                                    enabled: !win.engine.running
+                                    backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                                    textColor: Theme.buttonText
+                                    onClicked: {
+                                        PluginService.savePluginData("dankSoftwareDepot", "simRecording", modelData.name);
+                                        PluginService.savePluginData("dankSoftwareDepot", "simMode", "replay");
+                                        win.settingsOpen = false;
+                                        // The list the run is about arrives
+                                        // with the recording, and it arrives
+                                        // asynchronously — start when it is
+                                        // there, not before.
+                                        simulationStart.begin();
+                                    }
+                                }
+                            }
+                        }
+                    }
                     }
                 }
             }
+        }
+    }
+
+    function startSimulation() {
+        simulationStart.begin();
+    }
+
+    // The recording's package list is read from disk, so it arrives a moment
+    // after the mode changes — and starting a run before it is there would
+    // start a run over an empty list, which the engine correctly refuses.
+    Timer {
+        id: simulationStart
+
+        property int tries: 0
+
+        interval: 150
+        repeat: true
+
+        function begin() {
+            tries = 0;
+            restart();
+        }
+
+        onTriggered: {
+            if (!Backend.replaying || win.engine.running) {
+                stop();
+                return;
+            }
+            if ((Backend.simPackages || []).length > 0) {
+                stop();
+                win.engine.start({});
+                return;
+            }
+            if (++tries > 30)
+                stop();
         }
     }
 

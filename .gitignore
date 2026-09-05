@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+
+# Recorded update runs (scripts/simulate.py). A recording is the package
+# inventory of one machine at one moment plus a few hundred kilobytes of
+# progress events — a local fixture, not something every checkout wants.
+# Commit one deliberately with `git add -f` if it is worth sharing.
+recordings/

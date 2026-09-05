@@ -68,8 +68,12 @@ Item {
         target: PluginService
 
         function onPluginDataChanged(pluginId) {
-            if (pluginId === "dankSoftwareDepot")
-                backend.useSudo = PluginService.loadPluginData("dankSoftwareDepot", "useSudo", false) === true;
+            if (pluginId !== "dankSoftwareDepot")
+                return;
+            backend.useSudo = PluginService.loadPluginData("dankSoftwareDepot", "useSudo", false) === true;
+            backend.simMode = PluginService.loadPluginData("dankSoftwareDepot", "simMode", "");
+            backend.simRecording = PluginService.loadPluginData("dankSoftwareDepot", "simRecording", "");
+            backend.simSpeed = PluginService.loadPluginData("dankSoftwareDepot", "simSpeed", 1);
         }
     }
 
@@ -93,6 +97,149 @@ Item {
         if (!useSudo)
             return ["pkexec"].concat(words);
         return ["sh", "-c", "if sudo -n true 2>/dev/null; then exec sudo -n \"$@\"; fi; exec pkexec \"$@\"", "sh"].concat(words);
+    }
+
+    // ── Recording a run, and playing it back ────────────────────────────────
+    // Nothing the updater window draws comes from the system directly: every
+    // phase, row, byte counter and error arrives as NDJSON on some helper's
+    // stdout. So a recording of those streams is a recording of everything
+    // the window can show, and playing one back puts the whole interface
+    // through a real run without root, without a network, and without
+    // waiting for a distribution to ship thirty-one updates.
+    //
+    // Which is what this is for. The visual side of a run could only be
+    // worked on when there happened to be something to install, and then
+    // only once, because installing it is what makes it stop being pending.
+    //
+    // The seam is one function: every process the run starts asks
+    // instrument() for its command, and gets back either the real one, the
+    // real one wrapped in a recorder, or the player reading a recording. The
+    // engine above it cannot tell which, and that is the whole design — a
+    // simulation that took a different path through the engine would be a
+    // simulation of a different program.
+    readonly property string simulateHelper: Qt.resolvedUrl("scripts/simulate.py").toString().replace("file://", "")
+    readonly property string recordingsRoot: Qt.resolvedUrl("recordings").toString().replace("file://", "")
+
+    // "" (off), "record" (wrap the next run) or "replay" (play simRecording)
+    property string simMode: PluginService.loadPluginData("dankSoftwareDepot", "simMode", "")
+    property string simRecording: PluginService.loadPluginData("dankSoftwareDepot", "simRecording", "")
+    property real simSpeed: PluginService.loadPluginData("dankSoftwareDepot", "simSpeed", 1)
+
+    readonly property bool recording: simMode === "record"
+    readonly property bool replaying: simMode === "replay" && simRecording !== ""
+
+    // Only on a working copy. The plugin directory being a symlink is the
+    // same test the self-update check makes before refusing to update itself,
+    // and it is the honest definition of "this machine is where the plugin is
+    // written" — nobody who installed it normally has any use for a recorder.
+    property bool developmentInstall: false
+
+    Process {
+        running: true
+        command: ["sh", "-c", "[ -L \"$HOME/.config/DankMaterialShell/plugins/dankSoftwareDepot\" ] && echo yes || echo no"]
+
+        stdout: StdioCollector {
+            onStreamFinished: backend.developmentInstall = (text || "").trim() === "yes"
+        }
+    }
+
+    // Which recording a run is being written into, "" between runs. Kept
+    // apart from simRecording — the one picked for playback — because they
+    // are different questions, and conflating them meant the plan preview
+    // that runs whenever the window opens appended itself to whichever
+    // recording happened to be selected. A finished recording is finished.
+    property string activeRecording: ""
+
+    function instrument(tag, command) {
+        if (recording && activeRecording !== "")
+            return [python, simulateHelper, "record", recordingsRoot + "/" + activeRecording, tag, "--"].concat(command);
+        if (replaying)
+            return [python, simulateHelper, "play", recordingsRoot + "/" + simRecording, tag, "--speed", String(simSpeed)];
+        return command;
+    }
+
+    // Named for when it was taken, because that is the only thing that tells
+    // two recordings of the same machine apart.
+    function beginRecording(payload) {
+        const now = new Date();
+        const pad = n => (n < 10 ? "0" : "") + n;
+        activeRecording = "run-" + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate())
+            + "-" + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+        beginProcess.command = [python, simulateHelper, "begin", recordingsRoot, activeRecording, payload];
+        beginProcess.running = true;
+    }
+
+    // One run per arming. Recording every run from here on would fill the
+    // disk with the same thing, and the switch says "the next run".
+    function finishRecording() {
+        if (activeRecording === "")
+            return;
+        PluginService.savePluginData("dankSoftwareDepot", "simRecording", activeRecording);
+        PluginService.savePluginData("dankSoftwareDepot", "simMode", "");
+        activeRecording = "";
+        refreshRecordings();
+    }
+
+    Process {
+        id: beginProcess
+    }
+
+    // What was pending when the recording was taken. The list the daemon
+    // would normally supply is not available afterwards — the packages have
+    // been installed — so it travels with the recording.
+    property var simPackages: []
+    property var simMeta: ({})
+
+    onSimRecordingChanged: _loadSimMeta()
+    onSimModeChanged: _loadSimMeta()
+
+    function _loadSimMeta() {
+        if (!replaying) {
+            simPackages = [];
+            simMeta = ({});
+            return;
+        }
+        metaProcess.command = [python, simulateHelper, "meta", recordingsRoot + "/" + simRecording];
+        metaProcess.running = true;
+    }
+
+    Process {
+        id: metaProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let meta;
+                try {
+                    meta = JSON.parse(text);
+                } catch (e) {
+                    return;
+                }
+                backend.simMeta = meta || ({});
+                backend.simPackages = (meta && meta.packages) || [];
+            }
+        }
+    }
+
+    // The recordings on disk, newest first, for the picker
+    property var recordings: []
+
+    function refreshRecordings() {
+        listProcess.command = [python, simulateHelper, "list", recordingsRoot];
+        listProcess.running = true;
+    }
+
+    Process {
+        id: listProcess
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    backend.recordings = JSON.parse(text) || [];
+                } catch (e) {
+                    backend.recordings = [];
+                }
+            }
+        }
     }
 
     // Command for a privileged helper transaction
@@ -167,7 +314,13 @@ Item {
     }
 
     onBackendIdChanged: checkRequirements()
-    Component.onCompleted: checkRequirements()
+    Component.onCompleted: {
+        checkRequirements();
+        // Cheap, and it means the first thing that asks for the list — the
+        // settings panel, or the IPC entry point — has an answer rather than
+        // starting a process and returning before it finishes.
+        refreshRecordings();
+    }
 
     function checkRequirements() {
         checkPackageHelper();

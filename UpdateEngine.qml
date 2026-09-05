@@ -362,7 +362,7 @@ Item {
             return;
         }
         previewProcess._selected = new Set(names.map(n => _stripArch(n)));
-        previewProcess.command = Backend.planCommand("upgrade", names);
+        previewProcess.command = Backend.instrument("plan", Backend.planCommand("upgrade", names));
         previewProcess.running = true;
     }
 
@@ -484,7 +484,19 @@ Item {
             return;
         aboutToStart();
         const options = opts || {};
-        const daemonHasState = SystemUpdateService.lastCheckUnix > 0 || (SystemUpdateService.availableUpdates || []).length > 0;
+        // A recording is of a run, so it has to be taken from one: the list
+        // the window was showing goes in first, because afterwards there is
+        // no way back to it — the packages have been installed.
+        if (Backend.recording)
+            Backend.beginRecording(JSON.stringify({
+                backendId: Backend.backendId,
+                packages: pendingUpdates || [],
+                heldKeys: heldKeys || [],
+                packageSizes: packageSizes || ({})
+            }));
+        // Waiting for the daemon to have state is about the machine, and a
+        // replay is not about the machine. It plays what a machine did.
+        const daemonHasState = Backend.replaying || SystemUpdateService.lastCheckUnix > 0 || (SystemUpdateService.availableUpdates || []).length > 0;
         if (!daemonHasState && options.dnf !== false && (pendingUpdates || []).some(p => p.repo !== "flatpak")) {
             _deferredOpts = options;
             SystemUpdateService.checkForUpdates();
@@ -510,7 +522,12 @@ Item {
         // So they are separate again. An update that touches both kinds asks
         // twice; everything else — the common case on any machine not tracking
         // the shell's own git builds — asks once, as it always did.
-        const shellPkgs = (options.dnf !== false) ? dnfAll.filter(p => shellPackagePattern.test(_stripArch(p.name))) : [];
+        // The shell's own packages go through the DMS daemon rather than
+        // through a process of ours, so there is no stream to record and none
+        // to play back. A replay leaves them out of the run altogether rather
+        // than starting a real daemon pass in the middle of a simulation, or
+        // showing rows that nothing will ever move.
+        const shellPkgs = (options.dnf !== false && !Backend.replaying) ? dnfAll.filter(p => shellPackagePattern.test(_stripArch(p.name))) : [];
         const dnfPkgs = dnfAll.filter(p => !shellPackagePattern.test(_stripArch(p.name)));
         const flatpakPkgs = updates.filter(p => p.repo === "flatpak");
 
@@ -779,7 +796,7 @@ Item {
         const cmd = [Backend.python, Qt.resolvedUrl("scripts/brew_helper.py").toString().replace("file://", ""), "--upgrade"];
         for (const formula of _brewItems)
             cmd.push(formula.name);
-        brewProcess.command = cmd;
+        brewProcess.command = Backend.instrument("brew", cmd);
         brewProcess.running = true;
     }
 
@@ -907,7 +924,7 @@ Item {
         const cmd = [Backend.python, Qt.resolvedUrl("scripts/appimage.py").toString().replace("file://", ""), "--update-ids"];
         for (const ai of _appimageItems)
             cmd.push(ai.id);
-        appimageProcess.command = cmd;
+        appimageProcess.command = Backend.instrument("appimage", cmd);
         appimageProcess.running = true;
     }
 
@@ -1001,7 +1018,7 @@ Item {
             _verifyDaemonPass();
             return;
         }
-        helperProcess.command = Backend.helperCommand("upgrade", Object.keys(_dnfNameToKey));
+        helperProcess.command = Backend.instrument("system", Backend.helperCommand("upgrade", Object.keys(_dnfNameToKey)));
         helperProcess.running = true;
     }
 
@@ -1259,7 +1276,7 @@ Item {
 
     function _startFirmware() {
         phase = "firmware";
-        firmwareProcess.command = ["fwupdmgr", "update", "-y", "--no-reboot-check"];
+        firmwareProcess.command = Backend.instrument("firmware", ["fwupdmgr", "update", "-y", "--no-reboot-check"]);
         firmwareProcess.running = true;
     }
 
@@ -1292,7 +1309,7 @@ Item {
         const cmd = [Backend.python, Qt.resolvedUrl("scripts/flatpak_helper.py").toString().replace("file://", ""), "update"];
         for (const id of _flatpakIds)
             cmd.push(id);
-        flatpakProcess.command = cmd;
+        flatpakProcess.command = Backend.instrument("flatpak", cmd);
         flatpakProcess.running = true;
     }
 
@@ -1342,7 +1359,7 @@ Item {
         itemStates = states;
         _verifyPending = true;
         verifyTimeout.restart();
-        verifyLocalProcess.command = Backend.installedVersionsCommand(bases);
+        verifyLocalProcess.command = Backend.instrument("verify-local", Backend.installedVersionsCommand(bases));
         verifyLocalProcess.running = true;
         return true;
     }
@@ -1628,7 +1645,7 @@ Item {
             _daemonPassDone(0, 0);
             return;
         }
-        verifyProcess.command = Backend.installedVersionsCommand(names);
+        verifyProcess.command = Backend.instrument("verify", Backend.installedVersionsCommand(names));
         verifyProcess.running = true;
     }
 

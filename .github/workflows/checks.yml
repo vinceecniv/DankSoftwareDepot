@@ -54,6 +54,9 @@ jobs:
       - name: The Flatpak path
         run: python3 scripts/test_flatpak_helper.py
 
+      - name: Recording a run and playing it back
+        run: python3 scripts/test_simulate.py
+
       - name: Everything else at least parses
         run: python3 -m compileall -q scripts
 
