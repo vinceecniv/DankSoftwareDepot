@@ -1501,7 +1501,38 @@ PluginComponent {
         onTriggered: root.confirmArmed = false
     }
 
-    pillClickAction: root.pillOpensWindow ? (() => updaterWindow.toggle()) : null
+    // ── What the pill does when it is activated ─────────────────────────────
+    // DankBar has a "hover popouts" setting, and a widget that names a
+    // pillClickAction gets that action on hover as well — DMS calls the same
+    // function for both, with the same arguments, so there is nothing here
+    // that can tell them apart.
+    //
+    // For a widget that opens a popout that is fine: DMS can see its own
+    // popouts, knows the one it asked for is already up, and stops asking.
+    // This window is not one of them. It is a window, DMS never learns it
+    // opened, and it asks again at every hover tick — against a toggle, which
+    // answers open, closed, open, closed for as long as the pointer rests on
+    // the pill.
+    //
+    // So with hover popouts on, the pill only ever opens. Closing by clicking
+    // the pill again is not something that configuration can offer anyway:
+    // every click is preceded by the hover that would reopen it. Without the
+    // setting — the default — nothing changes.
+    readonly property bool barHoverPopouts: (barConfig && barConfig.hoverPopouts === true) || false
+
+    function activatePill() {
+        if (!barHoverPopouts) {
+            updaterWindow.toggle();
+            return;
+        }
+        // Deliberately not activate(): that focuses, and a hover tick every
+        // 150ms would take the keyboard away from whatever is under the
+        // pointer, over and over.
+        if (!updaterWindow.visible)
+            updaterWindow.visible = true;
+    }
+
+    pillClickAction: root.pillOpensWindow ? (() => root.activatePill()) : null
 
     // ── Bar pills ────────────────────────────────────────────────────────────
     readonly property bool _busy: SystemUpdateService.isChecking || engine.running

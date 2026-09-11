@@ -5,6 +5,19 @@ in-app when the plugin offers its own update.
 
 ## Unreleased
 
+- **The bar pill no longer opens and closes the window over and over while
+  the pointer rests on it.** DankBar has a "hover popouts" setting, and a
+  widget that names a click action gets that action on hover as well — the
+  same call, with the same arguments, so there is nothing on this side that
+  can tell the two apart. For a widget opening one of DMS's own popouts that
+  is fine: it can see that the popout it asked for is up, and stops asking.
+  This window is not one of those, DMS never learns it opened, and it asked
+  again at every hover tick — against a toggle, which answers open, closed,
+  open. With hover popouts on, the pill now only opens; closing it by clicking
+  the pill again was never available in that configuration anyway, since every
+  click is preceded by the hover that would reopen it. Without the setting,
+  which is the default, nothing changes
+
 - **A run can be recorded and played back.** Development only, and invisible
   on a normal install: nothing the window draws comes from the system
   directly, so a recording of the helpers' NDJSON is a recording of everything
