@@ -5,6 +5,19 @@ in-app when the plugin offers its own update.
 
 ## Unreleased
 
+Thanks to @kmf for reporting #16 and for the fix in #17.
+
+- **Flatpak apps without AppStream data are listed under their whole app id
+  again on Debian and Ubuntu.** They were being cut at the first letter `t`
+  and the remainder shown as a version — `io.github.kolunmi.Bazaar` appeared
+  as `io.gi` over `hub.kolunmi.Bazaar`. The listing read `flatpak list` with
+  `IFS=$'\t'`, which is bash syntax: `/bin/sh` is dash there, dash has no
+  ANSI-C quoting, and the separator quietly became "any of `$`, `\` or `t`"
+  rather than a tab. It is a portable `IFS="$(printf '\t')"` now, and a check
+  in CI reads every shell snippet in the QML for bash-only syntax — this class
+  of fault produces no error anywhere, only wrong output on one family of
+  distributions
+
 - **The bar pill no longer opens and closes the window over and over while
   the pointer rests on it.** DankBar has a "hover popouts" setting, and a
   widget that names a click action gets that action on hover as well — the

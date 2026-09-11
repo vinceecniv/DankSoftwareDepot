@@ -730,7 +730,7 @@ Item {
         id: flatpakListProcess
         // size column is human readable; the deploy dir mtime gives the last
         // install/update moment
-        command: ["sh", "-c", "LC_ALL=C flatpak list --app --columns=application,version,origin,installation,size 2>/dev/null | while IFS=$'\\t' read -r id ver origin inst size; do base=/var/lib/flatpak; [ \"$inst\" = user ] && base=\"$HOME/.local/share/flatpak\"; ts=$(stat -c %Y \"$base/app/$id/current/active\" 2>/dev/null || echo 0); printf '%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' \"$id\" \"$ver\" \"$origin\" \"$inst\" \"$size\" \"$ts\"; done"]
+        command: ["sh", "-c", "LC_ALL=C flatpak list --app --columns=application,version,origin,installation,size 2>/dev/null | while IFS=\"$(printf '\\t')\" read -r id ver origin inst size; do base=/var/lib/flatpak; [ \"$inst\" = user ] && base=\"$HOME/.local/share/flatpak\"; ts=$(stat -c %Y \"$base/app/$id/current/active\" 2>/dev/null || echo 0); printf '%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' \"$id\" \"$ver\" \"$origin\" \"$inst\" \"$size\" \"$ts\"; done"]
 
         function parseSize(text) {
             const match = /^([\d.,]+)\s*(kB|MB|GB|B)?/.exec((text || "").replace(",", "."));
