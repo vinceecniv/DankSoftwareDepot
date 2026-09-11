@@ -1303,6 +1303,18 @@ PluginComponent {
             if (root.includeFirmware)
                 firmware.check();
         }
+    }
+
+    // ── Development entry points ────────────────────────────────────────────
+    // Recording and replaying a run is a tool for working on this plugin, not
+    // a feature of it, so it is not offered to people who installed it. The
+    // settings panel already hides its section; this hides the other half,
+    // which would otherwise be listed for everyone by `dms ipc show`. A
+    // separate target rather than a guard inside each function: an `enabled`
+    // that is false registers nothing at all, so there is nothing to find.
+    IpcHandler {
+        target: "dankSoftwareDepotDev"
+        enabled: Backend.developmentInstall
 
         // Play a recorded run through the real interface. Here rather than
         // only behind the gear because the loop this exists for is: change

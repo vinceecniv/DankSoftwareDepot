@@ -653,11 +653,17 @@ with a **Play** button and a playback speed. The same thing without the mouse,
 which is the faster loop when the point is to change QML and look again:
 
 ```sh
-dms ipc call dankSoftwareDepot record on          # arm the recorder
-dms ipc call dankSoftwareDepot recordings         # what is on disk
-dms ipc call dankSoftwareDepot simulate run-20260905-101500
-dms ipc call dankSoftwareDepot simulate off
+dms ipc call dankSoftwareDepotDev record on          # arm the recorder
+dms ipc call dankSoftwareDepotDev recordings         # what is on disk
+dms ipc call dankSoftwareDepotDev simulate run-20260905-101500
+dms ipc call dankSoftwareDepotDev simstatus          # where a replay stalled
+dms ipc call dankSoftwareDepotDev simulate off
 ```
+
+That target only exists on a working copy: the handler is `enabled:` on the
+same symlink test as the settings section, and an IpcHandler that is not
+enabled registers nothing — a normal install does not list it in `dms ipc
+show` and cannot call it.
 
 A recording is a directory: `meta.json` holds what was pending when it was
 taken (the daemon cannot be asked afterwards — the packages are installed),
