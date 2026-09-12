@@ -21,12 +21,6 @@ honest per-package progress, an app store, [full AppImage
 management](#appimages-end-to-end), firmware support and an action log — and no
 terminal output anywhere.
 
-Six kinds of software, managed the same way: system packages, Flatpaks,
-AppImages, firmware, the DMS plugins running in the shell around it, and
-Homebrew formulae where brew is installed. It can also [search
-Copr](#3--install) for packages no configured repository carries, and be [the
-app that opens a downloaded `.appimage`](#appimages-end-to-end).
-
 ![The Updates tab: pending updates as cards, graded by severity, with a size
 and removal summary above Update All](screenshot.png)
 
@@ -35,75 +29,45 @@ and polkit prompts appear through the DMS agent.
 
 ## Status
 
-**Beta** — actively developed, things may move around. Feedback and issues are
-welcome.
+- **Beta** — actively developed, things may move around
+- **Fedora, Nobara, RHEL/CentOS** — the supported case: libdnf5 and Fedora
+  AppStream metadata
+- **Debian/Ubuntu, Arch, atomic Fedora** — implemented, experimental, and said
+  so in a banner. Atomic runs through `rpm-ostree`, so everything lands in the
+  *next* boot; AUR is out of scope
+- **Flatpak, AppImage and firmware** work the same everywhere
 
-**Fedora-based distros first** (Fedora, Nobara, RHEL/CentOS): libdnf5 and
-Fedora AppStream metadata. **Debian/Ubuntu and Arch are experimental** —
-transactions, search, sizes, inventory, holds, changelogs and the AppStream
-catalog are implemented but not yet validated on real desktop installs; AUR is
-out of scope. **Atomic Fedora** (Silverblue, Kinoite, Bazzite, Bluefin) is
-experimental too: driven through `rpm-ostree`, so installing layers a package
-and everything lands in the *next* boot, and removing something that came with
-the image is refused with a reason. The app says so in a banner on these
-distros and warns on unsupported ones. Flatpak, AppImage and firmware support
-are distro-agnostic. [PROTOCOL.md](PROTOCOL.md) has the full table of
-differences.
+[PROTOCOL.md](PROTOCOL.md) has the table of differences per backend.
 
 ## The five tabs
 
 ### 1 · Updates
 
-- Rich update cards: logo, name, summary, `old → new`, homepage, expandable
-  release notes (AppStream, with the rpm changelog as fallback), per-app update
-  button
-- Sections — Applications / System / Runtimes / Firmware / Homebrew / DMS
-  plugins / Held — each with a hover **Update these** button, and a chip on the
-  rows whose heading does not already say where they came from
-- Section headings stay put while you scroll, in all four lists
-- **Held packages**: dnf versionlock/excludepkgs detected automatically, plus
-  your own holds via the lock button — never counted, never updated, releasable
-  any time. A hold sitting on top of a security fix says so on the card
-- **Security advisories** from the distro's updateinfo, read locally with no
-  network: graded critical / important / moderate / low, with CVE numbers in
-  the details popup and a count in the summary — including how many are held
-  back
-- **Packages built from git** (a `*-git` Copr, an AUR `-git` build) have no
-  distro release to describe, so their notes come from the upstream forge: the
-  release being installed, or the commits between two snapshots
-- During a run the list regroups into **In progress**, **Waiting** and
-  **Completed**, each row with its own progress bar built from real bytes
-  (libflatpak events, libdnf5 callbacks). The stepper follows the work rather
-  than the running order, so a run that starts fetching Flatpaks steps *back*
-  to Downloading instead of standing on Installing
-- A package that fails keeps its reason on its card — including after the shell
-  reload a DMS update causes — with the tool's verbatim output one click away
-  under **Show details**
-- **DMS updates run last**: they live-reload the shell, so they go in a final
-  daemon pass that completes even if the shell reloads mid-way
-- **Arch Linux news** on the distribution that publishes it, since Arch
-  announces in prose, ahead of time, that an update needs a hand. The banner
-  appears only for something unread, the first fetch marks the backlog read
-  rather than opening with eleven interruptions, and items are kept so the
-  archive (Ctrl+K) still explains the state a machine is in
-- **Homebrew formulae** on a machine that has brew: their own section, counted
-  in the pill, upgraded in their own phase, with no privileges at all. Brew
-  reports no machine-readable progress, so a formula goes from active to done;
-  a pinned formula is left alone, and the index is refreshed at most every six
-  hours
-- **DMS plugins** are the fifth kind of software, listed and updated one at a
-  time in their own phase. This plugin excludes itself and offers its own
-  update from its own release notes instead. Installing and browsing plugins
-  stays in DMS, one button away
-- Reboot recommendation (kernel/systemd/glibc/firmware) with a confirm-restart
-  button, persisted per boot; end-of-life Flatpak detection; a notice when a
-  newer Fedora release is out
-- **Automatic updates**: off / notify only / auto-install Flatpaks
-- Up-to-date dashboard: installed-software counts per source, system info,
-  recently updated packages, **reclaimable space** (packages nothing needs any
-  more, and the download cache) and **the last year** read back out of the
-  action log — how much went through here, the longest quiet stretch, the
-  biggest run, the package you update most
+- **Rich update cards** — logo, name, summary, `old → new`, homepage, release
+  notes, and an update button per app
+- **Sections** — Applications, System, Runtimes, Firmware, Homebrew, DMS
+  plugins, Held — each with its own *Update these* button, headings staying put
+  as you scroll
+- **Held packages** — dnf versionlock and excludepkgs found automatically, plus
+  your own holds; never counted, never updated. A hold on top of a security fix
+  says so
+- **Security advisories** from the distro's updateinfo, read locally: graded
+  critical to low, with CVE numbers in the details
+- **Real byte progress per package** during a run, the list regrouped into In
+  progress, Waiting and Completed
+- **A failure keeps its reason** on the card, with the tool's verbatim output
+  under *Show details*
+- **Notes for git builds** come from the upstream forge, since a `*-git`
+  package has no distro release to describe
+- **Arch Linux news** where it is published — announced only when something is
+  unread, kept in an archive afterwards
+- **Homebrew and DMS plugins** update in their own phases; DMS's own packages
+  run last, because they reload the shell
+- **Reboot notice**, end-of-life Flatpaks, and a word when a newer Fedora
+  release is out
+- **Automatic updates** — off, notify only, or auto-install Flatpaks
+- **A dashboard when there is nothing to do** — counts per source, system info,
+  reclaimable space, and what the last year of the log adds up to
 
 | ![A run in progress: phase stepper, downloaded bytes, and a progress bar per package](screenshots/update-in-progress.png) | ![The up-to-date dashboard with installed-software counts, system info and recently updated packages](screenshots/updates-dashboard.png) |
 |---|---|
@@ -111,26 +75,19 @@ differences.
 
 ### 2 · Installed
 
-- All Flatpak apps, system packages and AppImages in one list: live search,
-  source filter, sorting (name / largest / recently updated) with sizes
-- **Applications first, supporting packages after** — anything owning a desktop
-  entry your launcher would show, which is also where packages outside
-  AppStream get their icon and name
-- **Homebrew formulae** and **DMS plugins** have their own groups, the plugins
-  read from the manifests on disk, with a details popup showing what a plugin
-  has instead of what a package has: author, category, scope, location,
-  declared permissions
-- Details popup per app: description, screenshots, star ratings and review
-  texts (ODRS), release notes, homepage, sandbox permissions — and you can
-  write a review yourself
-- **Where it comes from**: the same side-by-side comparison the Install tab
-  offers, with the one you actually have marked as installed
-- Actions: uninstall (with confirm), hold, open, and restore a previous version
-  (Flatpak via commit history, rpm via `dnf downgrade` where the repos still
-  carry one)
-- Link a GitHub project to any AppImage and its releases become the update
+- **Everything in one list** — Flatpaks, system packages, AppImages, Homebrew
+  formulae and DMS plugins, with live search, source filters and sorting by
+  name, size or date
+- **Applications first**, supporting packages after
+- **A details popup** with description, screenshots, ODRS ratings and reviews,
+  release notes, homepage and sandbox permissions — and you can write a review
+- **Where it comes from** — the same side-by-side source comparison the Install
+  tab uses, with the one you have marked
+- **Actions** — uninstall, hold, open, and restore a previous version (Flatpak
+  commits, rpm downgrade)
+- **Link an AppImage to a GitHub project** and its releases become its update
   channel
-- Live progress on every mutation: phase text and a bar, not terminal output
+- Phase text and a progress bar on every change, never terminal output
 
 | ![The Installed tab: search, source filters, applications grouped before supporting packages](screenshots/installed-library.png) | ![The details popup for VLC with screenshots, description, sandbox permissions and reviews](screenshots/app-details.png) |
 |---|---|
@@ -138,44 +95,24 @@ differences.
 
 ### 3 · Install
 
-- **A storefront you can walk through** before you search: thirteen sections
-  from Flathub's own categories, most-downloaded first. Every heading opens
-  onto the whole section rather than the handful that fitted on the shelf —
-  Games is nearly 900 apps — rows arrive as you scroll, and typing narrows the
-  section instead of leaving it. Anything matching no category lands in *Other*
-  rather than being dropped
-- Sections are cut from the same index the search uses, which is what makes
-  "all of it" and "searchable in full" one property instead of two promises
-- **Ordered by downloads**, from Flathub's installs-per-month figures fetched
-  once a day; software with no such figure sorts last with review volume
-  standing in. Reading never waits on the network
-- Live search across the system repos and Flathub, plus a package-name fallback
-  so plain CLI packages (`playerctl`) are found too, with chips above the
-  results to narrow to one kind
-- **One Install button, and a straight answer behind it.** An app carried by
-  both the distribution and Flathub opens a picker: the sources side by side
-  with version, download size, whether it is sandboxed and how many permissions
-  it has, and who stands behind it — plus what each kind of packaging gives you
-  and what it costs. A single source still installs with one click. The picker
-  is honest about what it cannot compare: sizes exclude what a package drags
-  in, and versions from two packagers are compared on leading digits only
-- **Search Copr** for software no configured repository has — one deliberate
-  press at the end of the results, since nothing in Copr can turn up in a local
-  search. Results are listed apart, under the name of the person who builds
-  them, and only from projects building for this Fedora and architecture.
-  Installing one adds its repository in the same transaction, so it asks for a
-  password once
-- **Search Homebrew** where brew is installed, through brew's own copy of the
-  index. Formulae that cannot run on Linux are listed greyed with the reason
-  rather than dropped, because "this exists, but not for you" is an answer
-- **Software sources** behind the header button (or Ctrl+K): repositories with
-  enable/disable switches, Flatpak remotes, one-click RPM Fusion and Flathub,
-  and Copr add/remove. Debug, source and testing repositories are folded away;
-  switching off a repository the distribution is made of asks twice. Only the
-  dnf family can be changed here — apt and pacman sources are read-only
-- ODRS star ratings, live install progress (repositories → download x/y →
-  install), a button that opens DMS's own plugin screen, and
-  [AppImages](#appimages-end-to-end) offered alongside everything else
+- **A storefront to walk through** — thirteen Flathub categories,
+  most-downloaded first, each heading opening onto the whole section rather
+  than a shelf. Games is nearly 900 apps
+- **Search across system repos, Flathub and package names**, so plain CLI tools
+  are found too, with chips to narrow to one kind
+- **One Install button.** When an app has more than one source a picker puts
+  them side by side — version, size, sandboxing, permissions, who stands behind
+  it, and what each kind of packaging costs you
+- **Search Copr** for what no configured repository carries: one deliberate
+  press, only projects building for this Fedora, and enabling the repository is
+  part of the same transaction
+- **Search Homebrew** where brew is installed — macOS-only formulae are greyed
+  with the reason rather than dropped
+- **Software sources** — repositories and Flatpak remotes with switches,
+  one-click RPM Fusion and Flathub, Copr add and remove (dnf family; apt and
+  pacman read-only)
+- ODRS ratings, live install progress, [AppImages](#appimages-end-to-end), and
+  a button through to DMS's own plugin screen
 
 | ![The Install tab storefront: popular apps by category with ratings and a source button per app](screenshots/install-storefront.png) | ![The Software sources dialog with Flatpak remotes, well-known sources to add, and repository switches](screenshots/software-sources.png) |
 |---|---|
@@ -192,21 +129,15 @@ chip](screenshots/firmware-devices.png)
 
 ### 5 · Log
 
-- Persistent history of everything the plugin did — runs, installs, removals,
-  restores, holds — expanding to per-package detail (old → new, source, result)
-- **A row that never finished says so**: a clock, not a tick. A DMS update
-  reloads the shell mid-run, which is exactly how a run ends without writing
-  its last lines; when a later check finds the package did land, the entry
-  heals itself
-- **What this log cannot account for**: the package database knows when every
-  package arrived, this log knows what the plugin did, and the difference is
-  somebody else — a terminal, an automatic-update timer, another software
-  centre. A line says how many and on how many occasions, expanding to names
-  and dates. System packages only
-- **The log follows the interface language**: entries record what happened as a
-  key and its numbers rather than as a finished sentence
-- Searchable, kept for two years — a window that throws away last winter cannot
-  answer anything about a year
+- **Everything the plugin did** — runs, installs, removals, restores, holds —
+  expanding to per-package detail
+- **A row that never finished says so**: a clock, not a tick, and it heals
+  itself when a later check finds the package did land
+- **What it cannot account for** — packages changed by a terminal, a timer or
+  another software centre, counted and named separately
+- **Follows the interface language**, because an entry is stored as a key and
+  its numbers rather than as a finished sentence
+- Searchable, and kept for two years
 
 | ![The Log tab: a timeline of update runs, installs and removals, with a notice about packages changed outside the app](screenshots/log-history.png) | ![A changelog popup listing the CVEs a Chromium update closes](screenshots/security-changelog.png) |
 |---|---|
@@ -218,23 +149,17 @@ An AppImage is a file, not a package: nothing knows it exists, nothing tells
 you when it changes, and deleting it leaves its menu entry behind. The whole
 life of one is handled here.
 
-- **Find one** in a searchable catalog of the appimage.github.io index (1400+
-  apps), listed next to repo and Flathub results
-- **Install one** from the app's own GitHub releases, from a URL, or from a
-  file you already have. They land in `~/AppImages` — the same folder Gearlever
-  uses, and its setting is honoured when it points elsewhere
-- **Double-click a downloaded `.appimage`** and the window opens on that file,
-  offering to install it, or to replace the build already installed — matched
-  on the name inside the image rather than the version in the file name, and
-  read without being modified, since a fresh download is never executable. The
-  association is claimed once and only when `.appimage` is going spare;
-  Settings hands it back at any time
-- **It shows up like an app**: icon and desktop entry are extracted from the
-  image
-- **Existing AppImages are adopted automatically** — images installed before
-  this plugin existed are managed from then on
-- **Updates** come from a linked GitHub project, appear in the Updates tab and
-  run in their own phase with byte progress
+- **Find one** in the appimage.github.io index (1400+ apps), listed beside repo
+  and Flathub results
+- **Install one** from GitHub releases, a URL, or a file you already have. They
+  land in `~/AppImages` — Gearlever's folder, and its setting is honoured
+- **Double-click a `.appimage`** and this window offers to install it, or to
+  replace the build you already have. A fresh download is never executable,
+  which is exactly when double-clicking otherwise does nothing at all
+- **It shows up like an app** — icon and desktop entry extracted from the image
+- **Existing AppImages are adopted**, including ones installed before this
+  plugin existed
+- **Updates** come from a linked GitHub project and run in their own phase
 - **Uninstall** takes the file, its desktop entry, its icon and its record
 
 ![Double-clicking an .appimage opens this dialog, which recognises the build already installed
@@ -242,14 +167,12 @@ and offers to replace it](screenshots/appimage-install.png)
 
 ## Bar widget & popout
 
-- Bar pill with the effective update count (held excluded), a spinning icon
-  while checking, a completed/planned counter during a run, a restart icon when
-  a reboot is recommended
-- Compact popout: enriched update list, Update All, phase label and current
-  item. While a check runs the Dank logo stays where it is and pulses — the
-  same two rings the shell's System Check page uses
-- Optional: hide the pill when up to date, or have a click open the window
-  directly
+- **The pill** shows the effective update count, spins while checking, counts
+  completed/planned during a run, and turns into a restart icon when a reboot
+  is recommended
+- **The popout** has the enriched list, Update All, and the phase and item
+  during a run. A check pulses the Dank logo rather than replacing it
+- Optionally: hide the pill when up to date, or have a click open the window
 
 ## Settings & command palette
 
@@ -263,15 +186,11 @@ Two worth knowing about:
 
 - **App icons in the theme colour.** Off by default — an app's icon is its own
   identity — but some palettes make a wall of unrelated logos look like
-  confetti, and this draws them in the active DMS accent instead, tuned
-  separately for light and dark.
-- **Authorise with sudo.** Off by default, and only useful where sudo needs no
-  password. Privileged commands normally go through `pkexec`, which asks
-  polkit; a `NOPASSWD` line is a rule in sudoers, which is why such a machine
-  is asked anyway. With this on they run under `sudo -n`, which never prompts —
-  and falls back to the polkit prompt whenever sudo would ask, so narrow
-  sudoers rules or no sudo at all end up where they started. DMS's own packages
-  and firmware keep their own polkit actions either way.
+  confetti.
+- **Authorise with sudo.** Off by default, for machines with a `NOPASSWD`
+  sudoers rule: privileged commands then run under `sudo -n` instead of
+  `pkexec`, falling back to the polkit prompt whenever sudo would ask. DMS's
+  own packages and firmware keep their own polkit actions either way.
 
 | ![The plugin settings dialog with switches for the bar pill, firmware, the launcher entry and the .appimage association](screenshots/plugin-settings.png) | ![The command palette listing tabs, check for updates, software sources and settings](screenshots/command-palette.png) |
 |---|---|
@@ -324,13 +243,11 @@ dms restart
 Enable **Dank Software Depot** in DMS Settings → Plugins, then add the widget
 to a DankBar layout.
 
-To launch the window from the app launcher like a standalone app, let the app
-place the entry itself: the Updates tab offers it once, and **Settings → Show
-in app launcher** switches it on or off at any time. Both write a desktop entry
-and its icon into your home directory — no root, and switching it off takes
-them away again. The entry runs `scripts/open.sh`, which calls the IPC below,
-so DMS must be running; it opens the window in the shell rather than starting a
-second process.
+To launch it from the app launcher, let the app place the entry: the Updates
+tab offers it once, and **Settings → Show in app launcher** toggles it any
+time. Entry and icon go into your home directory — no root — and switching it
+off removes them again. The entry calls the IPC below, so DMS has to be
+running.
 
 <details>
 <summary>The same by hand</summary>
