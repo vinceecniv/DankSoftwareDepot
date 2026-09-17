@@ -3,6 +3,22 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.1.9 — 2026-09-17
+
+- **AUR updates no longer fail the whole run on Arch with "package not
+  found".** The DMS daemon lists AUR packages as pending updates (its AUR
+  backend is paru or yay), but the update run handed every non-Flatpak
+  pending package to the pacman helper — which resolves official
+  repositories only, so the first AUR package in the list failed the entire
+  transaction and every package in the run reported a failure. AUR packages
+  now ride the shell pass on the DMS daemon instead, the same pass the
+  shell's own packages already travel on: it runs `paru -Syu` (or yay) in a
+  visible terminal, exactly the upgrade the shell's own updater performs,
+  and the plugin still builds no AUR packages itself. Official-repository
+  updates keep the pacman helper's per-package byte progress; the plan
+  preview now covers those only, since the daemon pass has no plan to
+  preview. Reported with stably-orca-bin on Arch (DMS 1.6.1).
+
 ## 1.1.8 — 2026-09-11
 
 Thanks to @kmf for reporting #16 and for the fix in #17.
