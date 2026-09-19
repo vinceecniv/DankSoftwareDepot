@@ -340,6 +340,7 @@ Item {
         }
         _selftestStale = false;
         selftestProcess._reason = "";
+        selftestProcess._stderr = "";
         selftestProcess.command = [python, packageHelper, "selftest"];
         selftestProcess.running = true;
     }
@@ -457,6 +458,10 @@ Item {
         id: selftestProcess
 
         property string _reason: ""
+        // Anything the helper said outside the protocol — a traceback, a
+        // loader error, the shell's complaint about the interpreter. Last
+        // line only: this goes on one detail line under the requirement.
+        property string _stderr: ""
 
         stdout: SplitParser {
             onRead: line => {
@@ -471,6 +476,13 @@ Item {
             }
         }
 
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const lines = (text || "").split("\n").map(l => l.trim()).filter(l => l !== "");
+                selftestProcess._stderr = lines.length > 0 ? lines[lines.length - 1] : "";
+            }
+        }
+
         onExited: (exitCode, exitStatus) => {
             // This answer is about the helper of a backend we have since
             // stopped being. Publishing it would be publishing the thing that
@@ -480,7 +492,13 @@ Item {
                 Qt.callLater(backend.checkPackageHelper);
                 return;
             }
-            backend.packageHelperStatus = exitCode === 0 ? "ok" : (_reason || Tr.t("the package helper could not start"));
+            // A helper that answered inside the protocol is quoted; one that
+            // died before it could is quoted from stderr; one that managed
+            // neither leaves only the way it ended, and that beats a sentence
+            // the reporter cannot add anything to (#18).
+            backend.packageHelperStatus = exitCode === 0 ? "ok"
+                : (_reason || _stderr
+                   || Tr.t("the package helper could not start") + " — exit " + exitCode + "/" + exitStatus);
         }
     }
 

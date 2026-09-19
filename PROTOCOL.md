@@ -120,10 +120,12 @@ AUR/foreign count on the dashboard, and an always-empty previous-versions
 answer (pacman repos keep no history). Its changelog answer comes from
 `pacman -Qc`, which is empty for the many packages that ship none; Arch
 reads its AppStream catalog from the same XML paths as Fedora, filled by
-`archlinux-appstream-data`. AUR is deliberately out of scope for
-transactions: read-only awareness (update notices via the AUR RPC) is a
-possible later step; building or installing AUR packages from a GUI is
-not — the interactive PKGBUILD review exists for safety.
+`archlinux-appstream-data`. AUR is deliberately out of scope for the
+transaction helpers: detection comes from the DMS daemon's AUR backend
+(paru/yay `-Qua`), and upgrades ride that same daemon pass —
+`paru -Syu` in a visible terminal, the shell updater's own answer. The
+plugin builds no AUR packages itself; the interactive PKGBUILD review
+exists for safety.
 
 ### An atomic Fedora is a fourth backend, not a broken third
 

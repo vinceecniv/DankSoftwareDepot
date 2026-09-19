@@ -6,8 +6,10 @@ rpm_helper.py.
 Usage: pacman_helper.py <install|remove|upgrade|plan|selftest> <name>...
 
 Transactions need root (run via pkexec); `plan` resolves against the
-existing sync databases and works unprivileged, and `selftest` only
-reports whether the bindings are present. `downgrade` is not offered:
+existing sync databases and works unprivileged, and `selftest` reports
+whether the bindings are present *and* usable — it opens a handle, which
+is where a pyalpm built against another libalpm gives way rather than at
+its import. `downgrade` is not offered:
 pacman keeps no version history in its repositories (that is the Arch
 Linux Archive's job, out of scope here). Official repositories only —
 AUR packages are never touched.
@@ -235,6 +237,24 @@ def run(action, specs, dry_run=False):
 def main():
     # Reaching this point means the bindings imported: the answer selftest exists for
     if len(sys.argv) == 2 and sys.argv[1] == "selftest":
+        # Importing pyalpm and being able to use it are not the same thing.
+        # The module is a binding over libalpm, and a pyalpm built against a
+        # different libalpm than the one installed imports perfectly well and
+        # then fails — or dies — at the first call into the library. A
+        # selftest that stopped at the import called such a system ready, so
+        # nothing was said at startup and the fault appeared much later as a
+        # run where every package failed without a reason (#18).
+        #
+        # So take the first step a transaction takes, and no more: build the
+        # handle and open the local database. That crosses into libalpm,
+        # while needing no root, no network and no database lock.
+        try:
+            init_handle().get_localdb()
+        except Exception as exc:
+            emit({"event": "error",
+                  "message": "pyalpm imported but libalpm could not be used: %s" % exc})
+            emit({"event": "done", "ok": False, "failed": []})
+            return 1
         emit({"event": "done", "ok": True, "failed": []})
         return 0
     # `plan <action> …` resolves without root and without changing anything

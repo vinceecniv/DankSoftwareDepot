@@ -101,6 +101,10 @@ class Transaction:
 
 class Handle:
     def __init__(self, root, dbpath):
+        # A pyalpm linked against a libalpm it was not built for imports
+        # cleanly and gives way here, at the first call into the library
+        if SCENARIO.get("handleFails"):
+            raise error("could not initialise the library")
         self._sync = [SyncDB()]
 
     def register_syncdb(self, name, level):
@@ -220,6 +224,39 @@ def main():
     events, trace, proc = run(fresh, "install", "newthing")
     ok &= check("install resolves against the refreshed database",
                 any(line == "add newthing-1.0-1" for line in trace), str(trace))
+
+    # An AUR-only package is absent from every sync database by definition —
+    # libalpm cannot resolve it, and the helper refuses the transaction with
+    # the reason on the wire rather than a silent half-run. This is the
+    # failure behind the "package not found" reports: the QML layer routes
+    # repo "aur" updates to the DMS daemon's AUR backend (paru/yay) and
+    # never hands them here. The test pins the refusal that routing exists
+    # to avoid, so a future caller cannot reintroduce it by accident.
+    events, trace, proc = run(behind, "upgrade", "some-aur-package")
+    ok &= check("a package outside every sync database fails with its reason",
+                any(e.get("event") == "error" and "package not found: some-aur-package" in e.get("message", "") for e in events))
+    done = event(events, "done")
+    ok &= check("and the failure names the package",
+                done is not None and done.get("ok") is False and "some-aur-package" in (done.get("failed") or []),
+                json.dumps(done))
+
+    # The startup check has to answer for the bindings the transaction will
+    # actually use, not merely for the import. A pyalpm that imports and then
+    # cannot open a handle used to pass the selftest, so the plugin said
+    # nothing at startup and every later run failed with no reason to show
+    # (#18); the selftest now takes that step itself.
+    events, trace, proc = run(behind, "selftest")
+    done = event(events, "done")
+    ok &= check("selftest passes when the library can be opened",
+                proc.returncode == 0 and done is not None and done.get("ok") is True,
+                json.dumps(done))
+
+    events, trace, proc = run({"packages": {}, "handleFails": True}, "selftest")
+    ok &= check("selftest fails when pyalpm imports but libalpm will not open",
+                proc.returncode != 0 and any(e.get("event") == "error" and "libalpm could not be used" in e.get("message", "") for e in events),
+                proc.stdout + proc.stderr)
+    ok &= check("and the reason libalpm gave travels with it",
+                any("could not initialise the library" in e.get("message", "") for e in events if e.get("event") == "error"))
 
     print("\n" + ("all checks passed" if ok else "FAILURES"))
     return 0 if ok else 1
