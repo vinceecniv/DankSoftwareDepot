@@ -3,7 +3,10 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## 1.1.9 — 2026-09-17
+## 1.1.9 — 2026-09-19
+
+Thanks to @bernardopg for reporting #19 and for the fix in #20, and to
+@vpedicino for reporting #18.
 
 - **AUR updates no longer fail the whole run on Arch with "package not
   found".** The DMS daemon lists AUR packages as pending updates (its AUR
@@ -18,6 +21,21 @@ in-app when the plugin offers its own update.
   updates keep the pacman helper's per-package byte progress; the plan
   preview now covers those only, since the daemon pass has no plan to
   preview. Reported with stably-orca-bin on Arch (DMS 1.6.1).
+
+- **A pacman backend whose bindings import but do not work is caught at
+  startup, and a helper that dies before it can speak now says how.** The
+  startup check asked pyalpm whether it could be imported, which a pyalpm
+  built against a different libalpm than the installed one answers yes to —
+  it gives way at the first call into the library, not at its import. So
+  nothing was said at startup and the fault arrived much later as a run
+  where every package failed with "the package helper could not start", a
+  sentence whose details panel held a copy of that same sentence and
+  nothing else. The check now opens a handle, which is the step that
+  actually crosses into libalpm and still needs no root, no network and no
+  database lock; and when a helper does end without a word, how it ended is
+  kept — a crash and a clean refusal are different faults and a report has
+  to be able to tell them apart. This does not itself fix #18, which is
+  still open: it is what the next report of it will be able to carry.
 
 ## 1.1.8 — 2026-09-11
 

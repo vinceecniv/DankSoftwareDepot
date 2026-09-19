@@ -950,6 +950,7 @@ Item {
         _passRequestedAt = Date.now();
         _nudgedBackendCheck = false;
         _helperError = "";
+        _helperExitNote = "";
         _sendDaemonUpgrade();
     }
 
@@ -965,6 +966,13 @@ Item {
     // Verbatim helper output kept for the "what really went wrong" view: the
     // short translated reason on a row is for reading, this is for reporting
     property string _helperStderr: ""
+    // How the process ended, for the case where that is the only thing left.
+    // A helper killed before it could speak sends no event on stdout and
+    // leaves stderr empty, so every row said "the package helper could not
+    // start" and its details panel repeated that same sentence and stopped —
+    // which is all a reporter could give us (#18). These numbers are not for
+    // reading; they are what tells a crash apart from a clean refusal.
+    property string _helperExitNote: ""
     property bool _helperSawPlan: false
 
     // Raw failure text of the last run, per item key, alongside the short
@@ -1002,8 +1010,10 @@ Item {
             // transaction at all — a missing dependency, a refused polkit
             // prompt, a crash. Carry that reason to the rows instead of
             // letting them report a mystery per package.
-            if (!engine._helperSawPlan && engine._helperError === "")
+            if (!engine._helperSawPlan && engine._helperError === "") {
                 engine._helperError = exitCode === 126 || exitCode === 127 ? Tr.t("the authorisation was refused") : Tr.t("the package helper could not start");
+                engine._helperExitNote = "helper exited before its plan — exit code " + exitCode + ", exit status " + exitStatus;
+            }
             // Success or failure, the rpm database is the arbiter: rows
             // whose target version arrived turn green, the rest carry the
             // helper's error message.
@@ -1018,6 +1028,7 @@ Item {
         _dnfStageY = 0;
         _helperError = "";
         _helperStderr = "";
+        _helperExitNote = "";
         _helperSawPlan = false;
         _helperPlanBytes = 0;
         _helperTransferred = 0;
@@ -1672,6 +1683,14 @@ Item {
         }
         const noEpoch = v => (v || "").replace(/^\d+:/, "");
         const map = _daemonKind === "shell" ? _shellNameToKey : _dnfNameToKey;
+        // Verbatim material for the details panel, most specific first: what
+        // the tool printed, then how its process ended, then the daemon's
+        // rolling log. The middle one exists because the first two used to be
+        // empty together, leaving the panel with nothing but the row's own
+        // sentence — the whole of what a report could then carry (#18).
+        const rawDetail = [_helperStderr, _helperExitNote].filter(s => s !== "").join("\n")
+            || _helperError
+            || (SystemUpdateService.recentLog || []).slice(-40).join("\n").trim();
         let okCount = 0;
         let failCount = 0;
         for (const base in map) {
@@ -1699,7 +1718,7 @@ Item {
                 // an earlier pass. It is offered as what the update service
                 // last said, which is what the details panel is for, and it
                 // beats the nothing that was there before.
-                _setError(map[base], _helperError || Tr.t("the package was not updated — try again"), _helperStderr || _helperError || (SystemUpdateService.recentLog || []).slice(-40).join("\n").trim());
+                _setError(map[base], _helperError || Tr.t("the package was not updated — try again"), rawDetail);
             }
         }
         _daemonPassDone(okCount, failCount);
