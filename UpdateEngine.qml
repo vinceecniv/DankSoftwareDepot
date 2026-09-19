@@ -354,6 +354,11 @@ Item {
         for (const pkg of pendingUpdates || []) {
             if (pkg.repo === "flatpak" || pkg.repo === "firmware" || pkg.repo === "appimage")
                 continue;
+            // The helper resolves official repositories only and answers
+            // "package not found" for an AUR name; AUR packages ride the
+            // daemon pass, which has no plan to preview
+            if (pkg.repo === "aur")
+                continue;
             if (!held.has("system/" + _stripArch(pkg.name)))
                 names.push(pkg.name);
         }
@@ -527,8 +532,15 @@ Item {
         // to play back. A replay leaves them out of the run altogether rather
         // than starting a real daemon pass in the middle of a simulation, or
         // showing rows that nothing will ever move.
-        const shellPkgs = (options.dnf !== false && !Backend.replaying) ? dnfAll.filter(p => shellPackagePattern.test(_stripArch(p.name))) : [];
-        const dnfPkgs = dnfAll.filter(p => !shellPackagePattern.test(_stripArch(p.name)));
+        // AUR updates ride the shell pass on the DMS daemon. The pacman
+        // helper resolves official repositories only — libalpm has no AUR —
+        // so an AUR name handed to it fails the whole transaction with
+        // "package not found". The daemon's AUR backend (paru or yay) is the
+        // one that can build and install these, and this is the same pass
+        // and the same terminal-wrapped `paru -Syu` the shell's own updater
+        // already runs; the plugin adds no AUR building of its own.
+        const shellPkgs = (options.dnf !== false && !Backend.replaying) ? dnfAll.filter(p => p.repo === "aur" || shellPackagePattern.test(_stripArch(p.name))) : [];
+        const dnfPkgs = dnfAll.filter(p => p.repo !== "aur" && !shellPackagePattern.test(_stripArch(p.name)));
         const flatpakPkgs = updates.filter(p => p.repo === "flatpak");
 
         _wantDnf = (options.dnf !== false) && dnfPkgs.length > 0;

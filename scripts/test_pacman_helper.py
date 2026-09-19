@@ -221,6 +221,21 @@ def main():
     ok &= check("install resolves against the refreshed database",
                 any(line == "add newthing-1.0-1" for line in trace), str(trace))
 
+    # An AUR-only package is absent from every sync database by definition —
+    # libalpm cannot resolve it, and the helper refuses the transaction with
+    # the reason on the wire rather than a silent half-run. This is the
+    # failure behind the "package not found" reports: the QML layer routes
+    # repo "aur" updates to the DMS daemon's AUR backend (paru/yay) and
+    # never hands them here. The test pins the refusal that routing exists
+    # to avoid, so a future caller cannot reintroduce it by accident.
+    events, trace, proc = run(behind, "upgrade", "some-aur-package")
+    ok &= check("a package outside every sync database fails with its reason",
+                any(e.get("event") == "error" and "package not found: some-aur-package" in e.get("message", "") for e in events))
+    done = event(events, "done")
+    ok &= check("and the failure names the package",
+                done is not None and done.get("ok") is False and "some-aur-package" in (done.get("failed") or []),
+                json.dumps(done))
+
     print("\n" + ("all checks passed" if ok else "FAILURES"))
     return 0 if ok else 1
 
