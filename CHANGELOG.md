@@ -3,7 +3,7 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 1.1.10 — 2026-09-20
 
 - **A package dnf skipped because of a dependency conflict now says so,
   instead of "try again".** An upgrade whose dependencies cannot be
