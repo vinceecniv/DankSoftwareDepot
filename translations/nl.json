@@ -268,6 +268,7 @@
     "%1 support is experimental — please report anything that misbehaves.": "%1-ondersteuning is experimenteel — meld alles wat niet goed werkt.",
     "Supports %1 packages, Flatpak and AppImage.": "Ondersteunt %1-pakketten, Flatpak en AppImage.",
     "the package helper could not start": "de pakket-helper kon niet starten",
+    "the package helper crashed": "de pakket-helper is gecrasht",
     "the authorisation was refused": "de autorisatie is geweigerd",
     "%1 is missing — install it to update system packages": "%1 ontbreekt — installeer het om systeempakketten bij te werken",
     "Show details": "Toon details",

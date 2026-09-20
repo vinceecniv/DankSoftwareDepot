@@ -269,6 +269,7 @@
     "%1 support is experimental — please report anything that misbehaves.": "%1 지원은 실험적입니다. 이상이 있으면 알려주세요.",
     "Supports %1 packages, Flatpak and AppImage.": "%1 패키지, Flatpak, AppImage를 지원합니다.",
     "the package helper could not start": "패키지 도우미를 시작할 수 없습니다",
+    "the package helper crashed": "패키지 도우미가 비정상 종료되었습니다",
     "the authorisation was refused": "권한 승인이 거부되었습니다",
     "%1 is missing — install it to update system packages": "%1이(가) 없습니다. 시스템 패키지를 업데이트하려면 설치하세요",
     "Show details": "자세히 보기",

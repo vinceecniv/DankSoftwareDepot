@@ -269,6 +269,7 @@
     "%1 support is experimental — please report anything that misbehaves.": "A(z) %1 támogatása kísérleti — kérjük, jelezzen minden hibás működést.",
     "Supports %1 packages, Flatpak and AppImage.": "Támogatja a(z) %1 csomagokat, a Flatpakot és az AppImage-et.",
     "the package helper could not start": "a csomagsegéd nem tudott elindulni",
+    "the package helper crashed": "a csomagsegéd összeomlott",
     "the authorisation was refused": "az engedélyezést elutasították",
     "%1 is missing — install it to update system packages": "Hiányzik: %1 — telepítse a rendszercsomagok frissítéséhez",
     "Show details": "Részletek megjelenítése",

@@ -269,6 +269,7 @@
     "%1 support is experimental — please report anything that misbehaves.": "%1 のサポートは実験的です。不具合があればご報告ください。",
     "Supports %1 packages, Flatpak and AppImage.": "%1 パッケージ、Flatpak、AppImage に対応しています。",
     "the package helper could not start": "パッケージヘルパーを起動できませんでした",
+    "the package helper crashed": "パッケージヘルパーがクラッシュしました",
     "the authorisation was refused": "認証が拒否されました",
     "%1 is missing — install it to update system packages": "%1 がありません。システムパッケージを更新するにはインストールしてください",
     "Show details": "詳細を表示",

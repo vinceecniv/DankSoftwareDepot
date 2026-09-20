@@ -269,6 +269,7 @@
     "%1 support is experimental — please report anything that misbehaves.": "O suporte a %1 é experimental — informe qualquer problema.",
     "Supports %1 packages, Flatpak and AppImage.": "Suporta pacotes do %1, Flatpak e AppImage.",
     "the package helper could not start": "o auxiliar de pacotes não conseguiu iniciar",
+    "the package helper crashed": "o auxiliar de pacotes terminou inesperadamente",
     "the authorisation was refused": "a autorização foi recusada",
     "%1 is missing — install it to update system packages": "Falta %1 — instale-o para atualizar pacotes do sistema",
     "Show details": "Mostrar detalhes",

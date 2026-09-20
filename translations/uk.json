@@ -269,6 +269,7 @@
     "%1 support is experimental — please report anything that misbehaves.": "Підтримка %1 є експериментальною — повідомляйте про будь-які негаразди.",
     "Supports %1 packages, Flatpak and AppImage.": "Підтримує пакети %1, Flatpak і AppImage.",
     "the package helper could not start": "не вдалося запустити помічник пакетів",
+    "the package helper crashed": "помічник пакетів аварійно завершився",
     "the authorisation was refused": "в авторизації відмовлено",
     "%1 is missing — install it to update system packages": "Бракує %1 — встановіть його, щоб оновлювати системні пакети",
     "Show details": "Показати подробиці",

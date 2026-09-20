@@ -269,6 +269,7 @@
     "%1 support is experimental — please report anything that misbehaves.": "Hỗ trợ %1 còn ở mức thử nghiệm — hãy báo lại nếu có gì sai sót.",
     "Supports %1 packages, Flatpak and AppImage.": "Hỗ trợ gói %1, Flatpak và AppImage.",
     "the package helper could not start": "không khởi động được trình trợ giúp gói",
+    "the package helper crashed": "trình trợ giúp gói đã gặp sự cố",
     "the authorisation was refused": "quyền truy cập bị từ chối",
     "%1 is missing — install it to update system packages": "Thiếu %1 — hãy cài đặt để cập nhật gói hệ thống",
     "Show details": "Xem chi tiết",

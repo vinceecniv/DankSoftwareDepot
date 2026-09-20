@@ -269,6 +269,7 @@
     "%1 support is experimental — please report anything that misbehaves.": "%1 支持仍处于实验阶段 — 请报告任何异常。",
     "Supports %1 packages, Flatpak and AppImage.": "支持 %1 软件包、Flatpak 和 AppImage。",
     "the package helper could not start": "软件包助手无法启动",
+    "the package helper crashed": "软件包助手已崩溃",
     "the authorisation was refused": "授权被拒绝",
     "%1 is missing — install it to update system packages": "缺少 %1 — 请安装后才能更新系统软件包",
     "Show details": "显示详情",

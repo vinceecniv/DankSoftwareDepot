@@ -269,6 +269,7 @@
     "%1 support is experimental — please report anything that misbehaves.": "Stödet för %1 är experimentellt — rapportera allt som inte fungerar.",
     "Supports %1 packages, Flatpak and AppImage.": "Stöder %1-paket, Flatpak och AppImage.",
     "the package helper could not start": "pakethjälpen kunde inte starta",
+    "the package helper crashed": "pakethjälpen kraschade",
     "the authorisation was refused": "behörigheten nekades",
     "%1 is missing — install it to update system packages": "%1 saknas — installera det för att uppdatera systempaket",
     "Show details": "Visa detaljer",

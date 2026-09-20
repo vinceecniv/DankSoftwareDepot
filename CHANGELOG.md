@@ -3,6 +3,17 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **A helper that was killed says it crashed, rather than that it could
+  not start.** The two arrive down different channels — an exit code and
+  an exit status — and only the first was being read, so a helper that ran
+  perfectly well until the signal that ended it reported the one thing it
+  had not done. That sentence sends a reader to their bindings, which is
+  where the first report of this spent a week on a machine whose bindings
+  were fine (#18, still open: the crash itself is upstream of the plugin,
+  and this is about naming it correctly).
+
 ## 1.1.10 — 2026-09-20
 
 - **A package dnf skipped because of a dependency conflict now says so,
