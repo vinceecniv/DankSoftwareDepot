@@ -1,4 +1,6 @@
+import QtQuick.Effects
 import QtQuick
+import QtQuick.Shapes
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -21,10 +23,12 @@ Item {
     id: dialog
 
     property var app: null
-    readonly property bool showing: app !== null
+    property bool animActive: false
+    readonly property bool showing: animActive || (app !== null)
     readonly property var appData: app || ({})
     property var info: ({})
     property bool loading: false
+    readonly property string effectiveDescription: (info.descriptionHtml || "") !== "" ? info.descriptionHtml : ((appData.descriptionHtml || "") !== "" ? appData.descriptionHtml : (info.description || appData.description || appData.summary || ""))
 
     // Extra content supplied by the host
     property var releases: []            // [{version, date, notesHtml, newer}]
@@ -121,11 +125,28 @@ Item {
 
     readonly property string scriptPath: Qt.resolvedUrl("scripts/enrich.py").toString().replace("file://", "")
 
+    Timer {
+        id: closeTimer
+        interval: 220
+        repeat: false
+        onTriggered: {
+            dialog.app = null;
+            dialog.info = {};
+            dialog._confirmUninstall = "";
+            dialog.lightboxIndex = -1;
+            dialog.reviewsShown = 10;
+            dialog.descExpanded = false;
+        }
+    }
+
     function open(appData) {
+        closeTimer.stop();
         app = appData;
+        animActive = true;
         info = {};
         _confirmUninstall = "";
-        reviewsShown = 5;
+        reviewsShown = 10;
+        descExpanded = false;
         reviewFormOpen = false;
         reviewStatus = "";
         reviewStars = 5;
@@ -145,15 +166,16 @@ Item {
     }
 
     function close() {
-        app = null;
-        info = {};
-        _confirmUninstall = "";
+        if (!showing) return;
+        animActive = false;
         lightboxIndex = -1;
-        reviewsShown = 5;
+        closeTimer.restart();
     }
 
     // Reviews are revealed incrementally while scrolling toward the bottom
-    property int reviewsShown: 5
+    property int reviewsShown: 10
+    // Expansion toggles for details dialog
+    property bool descExpanded: false
 
     // Launch button (installed flatpaks / AppImages). openCommand overrides
     // the default `flatpak run <id>`.
@@ -284,8 +306,7 @@ Item {
         return tokens.slice().sort((a, b) => rank(a) - rank(b));
     }
     property bool permsExpanded: false
-    readonly property int permsCollapsedCount: 8
-    readonly property var visiblePermissionTokens: permsExpanded ? permissionTokens : permissionTokens.slice(0, permsCollapsedCount)
+    readonly property int permsCollapsedCount: 4
 
     // ── Screenshot lightbox state ────────────────────────────────────────────
     property int lightboxIndex: -1
@@ -361,6 +382,8 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Qt.rgba(0, 0, 0, 0.45)
+        opacity: dialog.animActive ? 1.0 : 0.0
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -415,6 +438,10 @@ Item {
             source: dialog.lightboxOpen ? dialog.screenshotSource(dialog.screenshotUrls[dialog.lightboxIndex]) : ""
             fillMode: Image.PreserveAspectFit
             asynchronous: true
+            scale: dialog.lightboxOpen ? 1.0 : 0.92
+            opacity: dialog.lightboxOpen ? 1.0 : 0.0
+            Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: 200 } }
 
             MouseArea {
                 anchors.fill: parent
@@ -473,15 +500,19 @@ Item {
         }
     }
 
-    Rectangle {
+    StyledRect {
         id: card
         anchors.centerIn: parent
-        width: Math.min(680, dialog.width - Theme.spacingL * 2)
-        height: Math.min(dialog.height - Theme.spacingL * 2, 640)
-        radius: Theme.cornerRadius
+        width: Math.min(720, dialog.width - Theme.spacingL * 2)
+        height: Math.min(dialog.height - Theme.spacingL * 2, 660)
+        radius: Theme.cornerRadius + 4
         color: Theme.surfaceContainer
         border.width: 1
-        border.color: Theme.withAlpha(Theme.surfaceVariantText, 0.25)
+        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
+        scale: dialog.animActive ? 1.0 : 0.92
+        opacity: dialog.animActive ? 1.0 : 0.0
+        Behavior on scale { NumberAnimation { duration: dialog.animActive ? 320 : 200; easing.type: dialog.animActive ? Easing.OutBack : Easing.InQuad } }
+        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -492,19 +523,39 @@ Item {
             anchors.margins: Theme.spacingL
             spacing: Theme.spacingM
 
-            // ── Header ──────────────────────────────────────────────────────
-            RowLayout {
+            // ── Header Container Card ──────────────────────────────────────
+            StyledRect {
+                Layout.fillWidth: true
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                border.width: 1
+                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
+                implicitHeight: headerContentCol.implicitHeight + Theme.spacingM * 2
+
+                ColumnLayout {
+                    id: headerContentCol
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingM
+                    spacing: 0
+
+                                RowLayout {
                 Layout.fillWidth: true
                 spacing: Theme.spacingM
 
-                Item {
+                Rectangle {
                     Layout.preferredWidth: 48
                     Layout.preferredHeight: 48
+                    radius: Theme.cornerRadius
+                    color: Theme.withAlpha(Theme.primary, 0.08)
+                    border.width: 1
+                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
 
                     Image {
                         id: dialogLogo
                         anchors.fill: parent
+                        anchors.margins: 4
                         source: dialog.appData.iconPath ? (dialog.appData.iconPath.indexOf("http") === 0 ? dialog.appData.iconPath : "file://" + dialog.appData.iconPath) : ""
+                        fillMode: Image.PreserveAspectFit
                         // Themed icons, tuned in TintedIconEffect
                         layer.enabled: Ui.tintAppIcons
                         layer.effect: TintedIconEffect {}
@@ -513,17 +564,10 @@ Item {
                     DankIcon {
                         anchors.centerIn: parent
                         visible: dialogLogo.status !== Image.Ready
-                        // A plugin names its glyph in its manifest rather than
-                        // shipping an image, so it never has an icon file to
-                        // fall back from — this is its icon, not a stand-in
                         name: dialog.isPlugin
                             ? ((dialog.pluginFacts.icon || "") !== "" ? dialog.pluginFacts.icon : "extension")
                             : (dialog.appData.isFlatpak === false ? "memory" : "apps")
-                        size: 30
-                        // A package with no icon of its own falls back to this glyph, and a
-                        // list of them is most of what an installed-software list is. Left
-                        // grey it made the setting look half-applied — the apps with
-                        // artwork turned, the ones without stayed as they were.
+                        size: 28
                         color: Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText
                     }
                 }
@@ -731,30 +775,78 @@ Item {
                     }
                 }
 
-                DankActionButton {
+                Rectangle {
                     Layout.alignment: Qt.AlignTop
-                    buttonSize: 30
-                    iconName: "close"
-                    iconSize: 18
-                    iconColor: Theme.surfaceVariantText
-                    onClicked: dialog.close()
+                    Layout.preferredWidth: 32
+                    Layout.preferredHeight: 32
+                    radius: closeBtnMa.containsMouse ? (height / 2) : Theme.cornerRadius
+                    Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                    color: closeBtnMa.containsMouse ? Theme.withAlpha(Theme.error, 0.15) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    border.width: 1
+                    border.color: closeBtnMa.containsMouse ? Theme.error : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                    DankIcon {
+                        anchors.centerIn: parent
+                        name: "close"
+                        size: 16
+                        color: closeBtnMa.containsMouse ? Theme.error : Theme.surfaceVariantText
+                    }
+
+                    MouseArea {
+                        id: closeBtnMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: dialog.close()
+                    }
+                }
+            }
                 }
             }
 
             // ── Scrollable body (DankFlickable: same wheel feel as the lists)
             DankFlickable {
                 id: body
-                Component.onCompleted: Ui.softenScrollbar(body)
+                Component.onCompleted: {
+                    Ui.softenScrollbar(body);
+                    Ui.disableDefaultWheelHandler(body);
+                }
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
                 contentHeight: bodyColumn.height
 
-                // Reveal more reviews when the bottom is (almost) reached
-                onContentYChanged: {
-                    if (contentHeight - (contentY + height) < 220 && dialog.reviewsShown < (dialog.info.reviews || []).length)
-                        dialog.reviewsShown += 5;
+                WheelHandler {
+                    id: smoothWheel
+                    acceptedDevices: PointerDevice.Mouse
+                    onWheel: (event) => {
+                        if (body.contentHeight <= body.height) return;
+                        const delta = event.angleDelta.y;
+                        if (delta === 0) return;
+                        const lines = Math.round(Math.abs(delta) / 120) || 1;
+                        const scrollDelta = (delta > 0 ? -lines : lines) * 120;
+                        const currentTarget = bodyScrollAnim.running ? bodyScrollAnim.to : body.contentY;
+                        const maxScroll = Math.max(0, body.contentHeight - body.height);
+                        const newTarget = Math.max(0, Math.min(maxScroll, currentTarget + scrollDelta));
+                        bodyScrollAnim.stop();
+                        bodyScrollAnim.from = body.contentY;
+                        bodyScrollAnim.to = newTarget;
+                        bodyScrollAnim.start();
+                        event.accepted = true;
+                    }
                 }
+
+                NumberAnimation {
+                    id: bodyScrollAnim
+                    target: body
+                    property: "contentY"
+                    duration: 260
+                    easing.type: Easing.OutCubic
+                }
+
+
 
                 Column {
                     id: bodyColumn
@@ -772,80 +864,404 @@ Item {
                         }
                     }
 
-                    // Screenshots
-                    Flickable {
+                    // Screenshots Container Card
+                    StyledRect {
+                        id: screenshotsCard
                         width: parent.width
-                        height: 190
+                        implicitHeight: screenshotsInner.implicitHeight + Theme.spacingM * 2
                         visible: (dialog.info.screenshots || []).length > 0
-                        contentWidth: shotsRow.width
-                        clip: true
-                        boundsBehavior: Flickable.StopAtBounds
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                        border.width: 1
 
-                        Row {
-                            id: shotsRow
+                        ColumnLayout {
+                            id: screenshotsInner
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Theme.spacingM
                             spacing: Theme.spacingS
 
-                            Repeater {
-                                model: dialog.screenshotUrls
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
 
-                                delegate: Rectangle {
-                                    required property var modelData
-                                    required property int index
+                                DankIcon {
+                                    name: "photo_library"
+                                    size: 16
+                                    color: Theme.primary
+                                }
 
-                                    width: 320
-                                    height: 190
-                                    radius: Theme.cornerRadius
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.6)
+                                StyledText {
+                                    text: Tr.t("Screenshots (%1)").arg((dialog.screenshotUrls || []).length)
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
+                                }
+                            }
 
-                                    Image {
-                                        anchors.fill: parent
-                                        anchors.margins: 4
-                                        source: dialog.screenshotSource(modelData)
-                                        fillMode: Image.PreserveAspectFit
-                                        asynchronous: true
+                            Item {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 170
+
+                                NumberAnimation {
+                                    id: shotScrollAnim
+                                    target: shotsFlickable
+                                    property: "contentX"
+                                    duration: 350
+                                    easing.type: Easing.OutCubic
+                                }
+
+                                Flickable {
+                                    id: shotsFlickable
+                                    anchors.fill: parent
+                                    contentWidth: shotsRow.width
+                                    clip: true
+                                    boundsBehavior: Flickable.StopAtBounds
+
+                                    Row {
+                                        id: shotsRow
+                                        spacing: Theme.spacingS
+                                        height: parent.height
+
+                                        Repeater {
+                                            model: dialog.screenshotUrls
+
+                                            delegate: Item {
+                                                id: shotDelegate
+                                                required property var modelData
+                                                required property int index
+
+                                                width: 280
+                                                height: parent.height
+
+                                                readonly property bool isFirst: index === 0
+                                                readonly property bool isLast: index === ((dialog.screenshotUrls || []).length - 1)
+                                                readonly property real innerRadius: 6
+                                                readonly property real outerRadius: 14
+
+                                                property bool hovered: shotMa.containsMouse
+
+                                                property real tlr: hovered ? (height / 2) : (isFirst ? outerRadius : innerRadius)
+                                                property real trr: hovered ? (height / 2) : (isLast ? outerRadius : innerRadius)
+                                                property real blr: hovered ? (height / 2) : (isFirst ? outerRadius : innerRadius)
+                                                property real brr: hovered ? (height / 2) : (isLast ? outerRadius : innerRadius)
+
+                                                property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                                                property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                                                property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                                                property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+
+                                                // Mask for dynamic rounded corners directly on the image
+                                                Shape {
+                                                    id: shotMask
+                                                    anchors.fill: parent
+                                                    visible: false
+                                                    layer.enabled: true
+
+                                                    ShapePath {
+                                                        fillColor: "black"
+                                                        strokeColor: "transparent"
+
+                                                        startX: shotDelegate.tlrAnim; startY: 0
+                                                        PathLine { x: shotDelegate.width - shotDelegate.trrAnim; y: 0 }
+                                                        PathArc { x: shotDelegate.width; y: shotDelegate.trrAnim; radiusX: shotDelegate.trrAnim; radiusY: shotDelegate.trrAnim; direction: PathArc.Clockwise }
+                                                        PathLine { x: shotDelegate.width; y: shotDelegate.height - shotDelegate.brrAnim }
+                                                        PathArc { x: shotDelegate.width - shotDelegate.brrAnim; y: shotDelegate.height; radiusX: shotDelegate.brrAnim; radiusY: shotDelegate.brrAnim; direction: PathArc.Clockwise }
+                                                        PathLine { x: shotDelegate.blrAnim; y: shotDelegate.height }
+                                                        PathArc { x: 0; y: shotDelegate.height - shotDelegate.blrAnim; radiusX: shotDelegate.blrAnim; radiusY: shotDelegate.blrAnim; direction: PathArc.Clockwise }
+                                                        PathLine { x: 0; y: shotDelegate.tlrAnim }
+                                                        PathArc { x: shotDelegate.tlrAnim; y: 0; radiusX: shotDelegate.tlrAnim; radiusY: shotDelegate.tlrAnim; direction: PathArc.Clockwise }
+                                                    }
+                                                }
+
+                                                Item {
+                                                    id: thumbCont
+                                                    anchors.fill: parent
+
+                                                    Item {
+                                                        id: thumbSrc
+                                                        anchors.fill: parent
+                                                        visible: false
+
+                                                        Rectangle {
+                                                            anchors.fill: parent
+                                                            color: Theme.surfaceContainer
+                                                        }
+
+                                                        Image {
+                                                            anchors.fill: parent
+                                                            source: dialog.screenshotSource(shotDelegate.modelData)
+                                                            fillMode: Image.PreserveAspectCrop
+                                                            asynchronous: true
+                                                            mipmap: true
+                                                        }
+                                                    }
+
+                                                    MultiEffect {
+                                                        anchors.fill: parent
+                                                        source: thumbSrc
+                                                        maskEnabled: true
+                                                        maskSource: shotMask
+                                                    }
+                                                }
+
+                                                // Dynamic Corner Outline Border (matches QuickTote pattern)
+                                                Shape {
+                                                    id: shotBorder
+                                                    anchors.fill: parent
+                                                    layer.enabled: true
+                                                    layer.samples: 4
+                                                    property color borderColor: shotDelegate.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.7) : Qt.rgba(Theme.outline.r, Theme.outline.g, Theme.outline.b, 0.25)
+                                                    Behavior on borderColor { ColorAnimation { duration: 200 } }
+
+                                                    ShapePath {
+                                                        fillColor: "transparent"
+                                                        strokeColor: shotBorder.borderColor
+                                                        strokeWidth: 1.5
+
+                                                        startX: shotDelegate.tlrAnim; startY: 0
+                                                        PathLine { x: shotDelegate.width - shotDelegate.trrAnim; y: 0 }
+                                                        PathArc { x: shotDelegate.width; y: shotDelegate.trrAnim; radiusX: shotDelegate.trrAnim; radiusY: shotDelegate.trrAnim; direction: PathArc.Clockwise }
+                                                        PathLine { x: shotDelegate.width; y: shotDelegate.height - shotDelegate.brrAnim }
+                                                        PathArc { x: shotDelegate.width - shotDelegate.brrAnim; y: shotDelegate.height; radiusX: shotDelegate.brrAnim; radiusY: shotDelegate.brrAnim; direction: PathArc.Clockwise }
+                                                        PathLine { x: shotDelegate.blrAnim; y: shotDelegate.height }
+                                                        PathArc { x: 0; y: shotDelegate.height - shotDelegate.blrAnim; radiusX: shotDelegate.blrAnim; radiusY: shotDelegate.blrAnim; direction: PathArc.Clockwise }
+                                                        PathLine { x: 0; y: shotDelegate.tlrAnim }
+                                                        PathArc { x: shotDelegate.tlrAnim; y: 0; radiusX: shotDelegate.tlrAnim; radiusY: shotDelegate.tlrAnim; direction: PathArc.Clockwise }
+                                                    }
+                                                }
+
+                                                MouseArea {
+                                                    id: shotMa
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: dialog.lightboxIndex = shotDelegate.index
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Left navigation arrow
+                                Rectangle {
+                                    id: leftShotBtn
+                                    width: 34
+                                    height: 34
+                                    radius: 17
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    z: 10
+                                    visible: shotsFlickable.contentWidth > shotsFlickable.width && shotsFlickable.contentX > 5
+                                    opacity: visible ? (leftShotMa.containsMouse ? 1.0 : 0.85) : 0.0
+                                    color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.95)
+                                    border.color: leftShotMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
+                                    border.width: 1
+
+                                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                                    scale: leftShotMa.pressed ? 0.92 : (leftShotMa.containsMouse ? 1.08 : 1.0)
+
+                                    DankIcon {
+                                        anchors.centerIn: parent
+                                        name: "chevron_left"
+                                        size: 20
+                                        color: Theme.primary
                                     }
 
                                     MouseArea {
+                                        id: leftShotMa
                                         anchors.fill: parent
+                                        hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: dialog.lightboxIndex = index
+                                        onClicked: {
+                                            shotScrollAnim.stop();
+                                            shotScrollAnim.from = shotsFlickable.contentX;
+                                            shotScrollAnim.to = Math.max(0, shotsFlickable.contentX - 288);
+                                            shotScrollAnim.start();
+                                        }
+                                    }
+                                }
+
+                                // Right navigation arrow
+                                Rectangle {
+                                    id: rightShotBtn
+                                    width: 34
+                                    height: 34
+                                    radius: 17
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    z: 10
+                                    visible: shotsFlickable.contentWidth > shotsFlickable.width && (shotsFlickable.contentX < shotsFlickable.contentWidth - shotsFlickable.width - 5)
+                                    opacity: visible ? (rightShotMa.containsMouse ? 1.0 : 0.85) : 0.0
+                                    color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.95)
+                                    border.color: rightShotMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
+                                    border.width: 1
+
+                                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                                    scale: rightShotMa.pressed ? 0.92 : (rightShotMa.containsMouse ? 1.08 : 1.0)
+
+                                    DankIcon {
+                                        anchors.centerIn: parent
+                                        name: "chevron_right"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    MouseArea {
+                                        id: rightShotMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            shotScrollAnim.stop();
+                                            shotScrollAnim.from = shotsFlickable.contentX;
+                                            shotScrollAnim.to = Math.min(Math.max(0, shotsFlickable.contentWidth - shotsFlickable.width), shotsFlickable.contentX + 288);
+                                            shotScrollAnim.start();
+                                        }
                                     }
                                 }
                             }
                         }
                     }
 
-    // Description: appstream enrichment first, then the catalog-provided
+                    // Description: appstream enrichment first, then the catalog-provided
                     // sanitized HTML (e.g. AppImage feed), then the plain summary
                     readonly property string effectiveDescription: (dialog.info.descriptionHtml || "") !== "" ? dialog.info.descriptionHtml : (dialog.appData.descriptionHtml || "")
 
-                    SelectableText {
+                    // ── Description Container Card ───────────────────────────
+                    StyledRect {
                         width: parent.width
-                        visible: bodyColumn.effectiveDescription !== ""
-                        text: bodyColumn.effectiveDescription
-                        textFormat: Text.RichText
-                        wrapMode: Text.WordWrap
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.surfaceText
-                    }
+                        implicitHeight: descCardCol.implicitHeight + Theme.spacingM * 2
+                        visible: bodyColumn.effectiveDescription !== "" || (!dialog.loading && (dialog.appData.summary || "") !== "") || (dialog.appData.holdReason || "") !== ""
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                        border.width: 1
 
-                    StyledText {
-                        width: parent.width
-                        visible: !dialog.loading && bodyColumn.effectiveDescription === "" && (dialog.appData.summary || "") !== ""
-                        text: dialog.appData.summary || ""
-                        wrapMode: Text.WordWrap
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.surfaceText
-                    }
+                        ColumnLayout {
+                            id: descCardCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
 
-                    // Held reason
-                    StyledText {
-                        width: parent.width
-                        visible: (dialog.appData.holdReason || "") !== ""
-                        text: Tr.t("Held: %1").arg(dialog.appData.holdReason)
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.warning
-                        wrapMode: Text.WordWrap
+                            // Section header
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+
+                                DankIcon {
+                                    name: "description"
+                                    size: 16
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Description")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
+                                }
+                            }
+
+                            // Animated expandable description container
+                            Item {
+                                id: descTextWrapper
+                                Layout.fillWidth: true
+                                clip: true
+
+                                readonly property real collapsedMaxH: 96
+                                readonly property bool needsTruncation: rawDescText.implicitHeight > collapsedMaxH
+                                readonly property real targetH: (!needsTruncation || dialog.descExpanded) ? rawDescText.implicitHeight : collapsedMaxH
+
+                                implicitHeight: animatedH
+                                property real animatedH: targetH
+                                Behavior on animatedH {
+                                    NumberAnimation {
+                                        duration: 250
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                height: animatedH
+
+                                SelectableText {
+                                    id: rawDescText
+                                    width: descTextWrapper.width
+                                    visible: bodyColumn.effectiveDescription !== ""
+                                    text: bodyColumn.effectiveDescription
+                                    textFormat: Text.RichText
+                                    wrapMode: Text.WordWrap
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    color: Theme.surfaceText
+                                }
+
+                                // Fade out gradient at bottom when collapsed
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.bottom: parent.bottom
+                                    height: 36
+                                    visible: descTextWrapper.needsTruncation && !dialog.descExpanded
+                                    gradient: Gradient {
+                                        GradientStop { position: 0.0; color: "transparent" }
+                                        GradientStop { position: 1.0; color: Theme.surfaceContainerHigh }
+                                    }
+                                }
+                            }
+
+                            // Read more / Show less toggle button (Centered)
+                            Item {
+                                Layout.fillWidth: true
+                                implicitHeight: 28
+                                visible: descTextWrapper.needsTruncation
+
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    implicitWidth: readMoreRow.implicitWidth + 24
+                                    implicitHeight: 28
+                                    radius: height / 2
+                                    color: readMoreMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                    border.width: 1
+                                    border.color: readMoreMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                    RowLayout {
+                                        id: readMoreRow
+                                        anchors.centerIn: parent
+                                        spacing: 6
+
+                                        StyledText {
+                                            text: dialog.descExpanded ? Tr.t("Show less") : Tr.t("Read more")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            font.weight: Font.Medium
+                                            color: Theme.primary
+                                        }
+
+                                        DankIcon {
+                                            name: dialog.descExpanded ? "expand_less" : "expand_more"
+                                            size: 14
+                                            color: Theme.primary
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: readMoreMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: dialog.descExpanded = !dialog.descExpanded
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     // ── What brew knows about a formula ─────────────────────
@@ -867,8 +1283,6 @@ Item {
 
                             StyledText {
                                 Layout.fillWidth: true
-                                // Homebrew's own analytics, the same kind of
-                                // number the Flathub rows carry
                                 text: Tr.t("%1 installs last month").arg(dialog.brewFacts ? dialog.formatCount(dialog.brewFacts.installs30d) : "")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.surfaceVariantText
@@ -906,10 +1320,6 @@ Item {
                     }
 
                     // ── What a plugin is, in the terms a plugin has ─────────
-                    // No repository, no download size, no ODRS reviews and
-                    // nothing dnf has ever heard of. A manifest, though: who
-                    // wrote it, what it calls itself, where it sits on disk,
-                    // and what it asked the shell for.
                     Column {
                         width: parent.width
                         spacing: 4
@@ -952,26 +1362,51 @@ Item {
                             color: Theme.surfaceVariantText
                             wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                         }
-
                     }
 
-                    // ── Where it comes from ─────────────────────────────────
-                    // Merging the sources into one app is what makes it
-                    // findable, and it also hides a choice. This is that
-                    // choice put back: which version, how big, out of whose
-                    // hands, and how much of the machine it gets.
-                    StyledText {
-                        visible: dialog.origins.length > 1
-                        text: Tr.t("Where it comes from")
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: Font.DemiBold
-                        color: Theme.surfaceText
-                    }
-
-                    OriginComparison {
+                    // ── Where it comes from Container Card ──────────────
+                    StyledRect {
                         width: parent.width
-                        origins: dialog.origins
-                        installedRefs: dialog.installedRefs
+                        implicitHeight: originsCardCol.implicitHeight + Theme.spacingM * 2
+                        visible: dialog.origins.length > 0
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                        border.width: 1
+
+                        ColumnLayout {
+                            id: originsCardCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            // Section header
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+
+                                DankIcon {
+                                    name: "deployed_code"
+                                    size: 16
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Where it comes from")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
+                                }
+                            }
+
+                            OriginComparison {
+                                Layout.fillWidth: true
+                                origins: dialog.origins
+                                installedRefs: dialog.installedRefs
+                            }
+                        }
                     }
 
                     // AppImage update source (GitHub releases)
@@ -1022,15 +1457,9 @@ Item {
                                 size: 18
                             }
 
-                            // Wrapper Item: DankButton sizes itself through `width`, which a layout does not read
                             Item {
                                 Layout.preferredWidth: updateSourceSaveButton.width
                                 Layout.preferredHeight: updateSourceSaveButton.height
-                                // No `visible: updateSourceSaveButton.visible`
-                                // here: this dialog starts hidden, so a wrapper
-                                // reading its child would read false once and
-                                // stay there. The button has no condition of
-                                // its own — it is shown whenever the row is.
 
                                 DankButton {
                                     id: updateSourceSaveButton
@@ -1065,81 +1494,169 @@ Item {
                         }
                     }
 
-                    // Sandbox permissions (directly in the popup, as compact chips)
-                    StyledText {
-                        visible: dialog.permissionTokens.length > 0
-                        text: Tr.t("Permissions")
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: Font.DemiBold
-                        color: Theme.surfaceText
-                    }
-
-                    Flow {
+                    // ── Sandbox Permissions Container Card ──────────────
+                    StyledRect {
                         width: parent.width
-                        spacing: Theme.spacingXS
+                        implicitHeight: permsCardCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.permissionTokens.length > 0
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                        border.width: 1
 
-                        Repeater {
-                            model: dialog.visiblePermissionTokens
+                        ColumnLayout {
+                            id: permsCardCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
 
-                            delegate: Rectangle {
-                                required property var modelData
-
-                                width: permChipRow.implicitWidth + 14
-                                height: 22
-                                radius: 11
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.8)
-
-                                RowLayout {
-                                    id: permChipRow
-                                    anchors.centerIn: parent
-                                    spacing: 4
-
-                                    DankIcon {
-                                        name: modelData === "network" ? "public" : (modelData.indexOf("fs:") === 0 ? "folder" : (modelData.indexOf("devices") === 0 ? "usb" : "shield"))
-                                        size: 12
-                                        color: (modelData === "devices:all" || modelData === "fs:host") ? Theme.warning : Theme.surfaceVariantText
-                                    }
-
-                                    StyledText {
-                                        text: dialog.permLabel(modelData)
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        color: Theme.surfaceText
-                                    }
-                                }
-                            }
-                        }
-
-                        // Expand / collapse chip
-                        Rectangle {
-                            visible: dialog.permissionTokens.length > dialog.permsCollapsedCount
-                            width: permToggleRow.implicitWidth + 14
-                            height: 22
-                            radius: 11
-                            color: Theme.withAlpha(Theme.primary, 0.12)
-
+                            // Section header
                             RowLayout {
-                                id: permToggleRow
-                                anchors.centerIn: parent
-                                spacing: 4
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
 
                                 DankIcon {
-                                    name: dialog.permsExpanded ? "expand_less" : "expand_more"
-                                    size: 12
+                                    name: "security"
+                                    size: 16
                                     color: Theme.primary
                                 }
 
                                 StyledText {
-                                    text: dialog.permsExpanded ? Tr.t("Show fewer") : ("+" + (dialog.permissionTokens.length - dialog.permsCollapsedCount))
-                                    font.pixelSize: Theme.fontSizeSmall - 2
-                                    color: Theme.primary
+                                    text: Tr.t("Permissions")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
+                                    Layout.fillWidth: true
+                                }
+
+                                // Quick high-risk badge
+                                Rectangle {
+                                    visible: dialog.permissionTokens.some(t => t === "devices:all" || t === "fs:host" || t === "fs:host:ro")
+                                    implicitWidth: riskLabel.implicitWidth + 10
+                                    implicitHeight: 18
+                                    radius: 9
+                                    color: Theme.withAlpha(Theme.warning, 0.18)
+
+                                    StyledText {
+                                        id: riskLabel
+                                        anchors.centerIn: parent
+                                        text: Tr.t("High access")
+                                        font.pixelSize: Theme.fontSizeSmall - 2
+                                        font.weight: Font.Medium
+                                        color: Theme.warning
+                                    }
                                 }
                             }
 
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: dialog.permsExpanded = !dialog.permsExpanded
+                            // Chips with animated expand / collapse
+                            Item {
+                                id: permsAnimWrapper
+                                Layout.fillWidth: true
+                                clip: true
+
+                                readonly property real targetH: dialog.permsExpanded ? permsFlow.implicitHeight : Math.min(permsFlow.implicitHeight, 30)
+                                implicitHeight: animatedPermsH
+                                property real animatedPermsH: targetH
+                                Behavior on animatedPermsH {
+                                    NumberAnimation {
+                                        duration: 250
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                                height: animatedPermsH
+
+                                Flow {
+                                    id: permsFlow
+                                    width: permsAnimWrapper.width
+                                    spacing: Theme.spacingXS
+
+                                    Repeater {
+                                        model: dialog.permissionTokens
+
+                                        delegate: Rectangle {
+                                            required property var modelData
+
+                                            width: permChipRow.implicitWidth + 14
+                                            height: 24
+                                            radius: 12
+                                            color: (modelData === "devices:all" || modelData === "fs:host" || modelData === "fs:host:ro")
+                                                ? Theme.withAlpha(Theme.warning, 0.15)
+                                                : Theme.withAlpha(Theme.surfaceContainerHighest, 0.8)
+                                            border.width: 1
+                                            border.color: (modelData === "devices:all" || modelData === "fs:host" || modelData === "fs:host:ro")
+                                                ? Theme.withAlpha(Theme.warning, 0.35)
+                                                : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+
+                                            RowLayout {
+                                                id: permChipRow
+                                                anchors.centerIn: parent
+                                                spacing: 4
+
+                                                DankIcon {
+                                                    name: modelData === "network" ? "public" : (modelData.indexOf("fs:") === 0 ? "folder" : (modelData.indexOf("devices") === 0 ? "usb" : "shield"))
+                                                    size: 12
+                                                    color: (modelData === "devices:all" || modelData === "fs:host" || modelData === "fs:host:ro")
+                                                        ? Theme.warning
+                                                        : Theme.primary
+                                                }
+
+                                                StyledText {
+                                                    text: dialog.permLabel(modelData)
+                                                    font.pixelSize: Theme.fontSizeSmall - 2
+                                                    color: Theme.surfaceText
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Expand / collapse toggle row (Centered)
+                            Item {
+                                Layout.fillWidth: true
+                                implicitHeight: 28
+                                visible: dialog.permissionTokens.length > dialog.permsCollapsedCount
+
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    implicitWidth: permToggleRow.implicitWidth + 24
+                                    implicitHeight: 28
+                                    radius: height / 2
+                                    color: permToggleMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                    border.width: 1
+                                    border.color: permToggleMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                    RowLayout {
+                                        id: permToggleRow
+                                        anchors.centerIn: parent
+                                        spacing: 6
+
+                                        DankIcon {
+                                            name: dialog.permsExpanded ? "expand_less" : "expand_more"
+                                            size: 14
+                                            color: Theme.primary
+                                        }
+
+                                        StyledText {
+                                            text: dialog.permsExpanded ? Tr.t("Show fewer permissions") : Tr.t("Show all permissions (%1)").arg(dialog.permissionTokens.length)
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            font.weight: Font.Medium
+                                            color: Theme.primary
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: permToggleMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: dialog.permsExpanded = !dialog.permsExpanded
+                                    }
+                                }
                             }
                         }
                     }
@@ -1209,521 +1726,794 @@ Item {
                         }
                     }
 
-                    // Release notes (AppStream releases from the host)
-                    StyledText {
+                    // Release notes Container Card
+                    StyledRect {
+                        width: parent.width
+                        height: relCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.releases.length > 0
-                        text: dialog.releasesTitle
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: Font.DemiBold
-                        color: Theme.surfaceText
-                    }
-
-                    Repeater {
-                        model: dialog.releases
-
-                        delegate: Column {
-                            required property var modelData
-
-                            width: bodyColumn.width
-                            spacing: 2
-
-                            RowLayout {
-                                spacing: Theme.spacingS
-
-                                Rectangle {
-                                    Layout.preferredWidth: versionChip.implicitWidth + 14
-                                    Layout.preferredHeight: 18
-                                    radius: 9
-                                    color: Theme.withAlpha(Theme.primary, 0.12)
-
-                                    StyledText {
-                                        id: versionChip
-                                        anchors.centerIn: parent
-                                        text: modelData.version || ""
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        color: Theme.primary
-                                    }
-                                }
-
-                                StyledText {
-                                    visible: (modelData.date || 0) > 0
-                                    text: modelData.date > 0 ? new Date(modelData.date * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat) : ""
-                                    font.pixelSize: Theme.fontSizeSmall - 1
-                                    color: Theme.surfaceVariantText
-                                }
-                            }
-
-                            SelectableText {
-                                width: parent.width
-                                text: modelData.notesHtml || ("<i>" + Tr.t("No release notes published.") + "</i>")
-                                textFormat: Text.RichText
-                                font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.surfaceText
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-                    }
-
-                    // Upstream notes for a git build. The distro has nothing
-                    // to say about a commit, so this comes from the forge the
-                    // package is built from.
-                    StyledText {
-                        visible: dialog.gitNotesLoading || dialog.gitReleases.length > 0
-                        text: dialog.gitNotesKind === "commits" ? Tr.t("Commits since your build") : Tr.t("What's new upstream")
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: Font.DemiBold
-                        color: Theme.surfaceText
-                    }
-
-                    StyledText {
-                        visible: dialog.gitNotesLoading
-                        text: Tr.t("Asking upstream…")
-                        font.pixelSize: Theme.fontSizeSmall - 1
-                        color: Theme.surfaceVariantText
-                    }
-
-                    Repeater {
-                        model: dialog.gitReleases
-
-                        delegate: Column {
-                            required property var modelData
-
-                            width: bodyColumn.width
-                            spacing: 2
-
-                            RowLayout {
-                                spacing: Theme.spacingS
-
-                                Rectangle {
-                                    Layout.preferredWidth: gitVersionChip.implicitWidth + 14
-                                    Layout.preferredHeight: 18
-                                    radius: 9
-                                    color: Theme.withAlpha(Theme.primary, 0.12)
-
-                                    StyledText {
-                                        id: gitVersionChip
-                                        anchors.centerIn: parent
-                                        text: modelData.version || ""
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        font.family: dialog.gitNotesKind === "commits" ? (Theme.monoFontFamily || "monospace") : Theme.fontFamily
-                                        color: Theme.primary
-                                    }
-                                }
-
-                                StyledText {
-                                    visible: dialog.gitNotesKind === "commits" && dialog.gitNotesCommits > 0
-                                    text: Tr.t("%1 commits").arg(dialog.gitNotesCommits)
-                                    font.pixelSize: Theme.fontSizeSmall - 1
-                                    color: Theme.surfaceVariantText
-                                }
-
-                                StyledText {
-                                    visible: (modelData.date || 0) > 0
-                                    text: modelData.date > 0 ? new Date(modelData.date * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat) : ""
-                                    font.pixelSize: Theme.fontSizeSmall - 1
-                                    color: Theme.surfaceVariantText
-                                }
-                            }
-
-                            SelectableText {
-                                width: parent.width
-                                text: modelData.notesHtml || ("<i>" + Tr.t("No release notes published.") + "</i>")
-                                textFormat: Text.RichText
-                                font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.surfaceText
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-                    }
-
-                    // Notes long enough to be cut short are worth finishing
-                    // somewhere, and the page they came from is the place
-                    RowLayout {
-                        width: parent.width
-                        spacing: Theme.spacingXS
-                        visible: dialog.gitNotesUrl !== "" && dialog.gitReleases.length > 0
-
-                        DankIcon {
-                            name: "open_in_new"
-                            size: 13
-                            color: Theme.primary
-                        }
-
-                        StyledText {
-                            text: dialog.gitNotesMore > 0 && dialog.gitNotesKind === "commits" ? Tr.t("%1 more commits upstream").arg(dialog.gitNotesMore) : (dialog.gitNotesMore > 0 ? Tr.t("Read the rest upstream") : Tr.t("Open upstream"))
-                            font.pixelSize: Theme.fontSizeSmall - 1
-                            color: Theme.primary
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
-
-                        HoverHandler {
-                            cursorShape: Qt.PointingHandCursor
-                        }
-
-                        TapHandler {
-                            onTapped: Qt.openUrlExternally(dialog.gitNotesUrl)
-                        }
-                    }
-
-                    // rpm changelog
-                    StyledText {
-                        visible: dialog.changelogLoading || dialog.changelog !== ""
-                        text: Tr.t("Changelog")
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: Font.DemiBold
-                        color: Theme.surfaceText
-                    }
-
-                    SelectableText {
-                        width: parent.width
-                        visible: dialog.changelogLoading || dialog.changelog !== ""
-                        text: dialog.changelogLoading ? Tr.t("Loading changelog…") : dialog.changelog
-                        font.pixelSize: Theme.fontSizeSmall - 1
-                        font.family: Theme.monoFontFamily || "monospace"
-                        color: Theme.surfaceText
-                        wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-                        textFormat: Text.PlainText
-                    }
-
-                    // Previous versions
-                    StyledText {
-                        visible: dialog.versionsLoading || dialog.previousVersions.length > 0 || dialog.noOlderVersions
-                        text: Tr.t("Previous versions")
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: Font.DemiBold
-                        color: Theme.surfaceText
-                    }
-
-                    StyledText {
-                        visible: dialog.versionsLoading
-                        text: Tr.t("Checking available versions…")
-                        font.pixelSize: Theme.fontSizeSmall - 1
-                        color: Theme.surfaceVariantText
-                    }
-
-                    StyledText {
-                        visible: !dialog.versionsLoading && dialog.noOlderVersions && dialog.previousVersions.length === 0
-                        text: Tr.t("No older version available.")
-                        font.pixelSize: Theme.fontSizeSmall - 1
-                        color: Theme.surfaceVariantText
-                    }
-
-                    Flow {
-                        width: parent.width
-                        spacing: Theme.spacingS
-                        visible: dialog.previousVersions.length > 0
-
-                        Repeater {
-                            model: dialog.previousVersions
-
-                            delegate: DankButton {
-                                required property var modelData
-
-                                buttonHeight: 26
-                                horizontalPadding: Theme.spacingM
-                                iconName: "history"
-                                iconSize: 13
-                                text: Tr.t("Restore %1").arg(modelData.label)
-                                backgroundColor: Theme.surfaceContainerHighest
-                                textColor: Theme.surfaceText
-                                enabled: !dialog.busy
-                                onClicked: dialog.restoreRequested(modelData.payload)
-                            }
-                        }
-                    }
-
-                    // Reviews
-                    RowLayout {
-                        width: parent.width
-                        visible: dialog.reviewable && ((dialog.info.reviews || []).length > 0 || dialog.installedChipVisible || dialog.showOpenButton)
-
-                        StyledText {
-                            text: Tr.t("Reviews")
-                            font.pixelSize: Theme.fontSizeMedium
-                            font.weight: Font.DemiBold
-                            color: Theme.surfaceText
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
-
-                        StyledText {
-                            visible: dialog.reviewStatus === "done"
-                            text: Tr.t("Thanks — your review was submitted.")
-                            font.pixelSize: Theme.fontSizeSmall - 1
-                            color: Theme.success
-                        }
-
-                        // Wrapper Item: DankButton sizes itself via `width`,
-                        // which the RowLayout would ignore and cramp the label
-                        Item {
-                            visible: !dialog.reviewFormOpen && dialog.reviewStatus !== "done"
-                            Layout.preferredWidth: writeReviewButton.width
-                            Layout.preferredHeight: writeReviewButton.height
-
-                            DankButton {
-                                id: writeReviewButton
-                                buttonHeight: 26
-                                horizontalPadding: Theme.spacingM
-                                iconName: "rate_review"
-                                iconSize: 13
-                                text: Tr.t("Write a review")
-                                backgroundColor: Theme.buttonBg
-                                textColor: Theme.buttonText
-                                onClicked: dialog.reviewFormOpen = true
-                            }
-                        }
-                    }
-
-                    // Inline review form
-                    Rectangle {
-                        width: parent.width
-                        visible: dialog.reviewFormOpen
-                        implicitHeight: reviewForm.implicitHeight + Theme.spacingM * 2
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.6)
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 1
 
                         ColumnLayout {
-                            id: reviewForm
+                            id: relCol
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.leftMargin: Theme.spacingM
-                            anchors.rightMargin: Theme.spacingM
+                            anchors.top: parent.top
+                            anchors.margins: Theme.spacingM
                             spacing: Theme.spacingS
 
-                            Row {
-                                id: reviewStarsRow
-                                spacing: 2
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
 
-                                // Hover previews the rating live; a click
-                                // confirms it
-                                property int hoverStars: 0
+                                DankIcon {
+                                    name: "new_releases"
+                                    size: 16
+                                    color: Theme.primary
+                                }
 
-                                Repeater {
-                                    model: 5
-
-                                    delegate: DankIcon {
-                                        required property int index
-
-                                        readonly property int shownStars: reviewStarsRow.hoverStars > 0 ? reviewStarsRow.hoverStars : dialog.reviewStars
-
-                                        name: "star"
-                                        filled: index < shownStars
-                                        size: 20
-                                        color: index < shownStars ? Theme.primary : Theme.withAlpha(Theme.surfaceVariantText, 0.5)
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onEntered: reviewStarsRow.hoverStars = index + 1
-                                            onExited: {
-                                                if (reviewStarsRow.hoverStars === index + 1)
-                                                    reviewStarsRow.hoverStars = 0;
-                                            }
-                                            onClicked: dialog.reviewStars = index + 1
-                                        }
-                                    }
+                                StyledText {
+                                    text: dialog.releasesTitle
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
                                 }
                             }
 
-                            DankTextField {
-                                id: reviewNameField
+                            Repeater {
+                                model: dialog.releases
+
+                                delegate: ColumnLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 4
+
+                                    RowLayout {
+                                        spacing: Theme.spacingS
+
+                                        Rectangle {
+                                            Layout.preferredWidth: versionChip.implicitWidth + 14
+                                            Layout.preferredHeight: 18
+                                            radius: 9
+                                            color: Theme.withAlpha(Theme.primary, 0.12)
+
+                                            StyledText {
+                                                id: versionChip
+                                                anchors.centerIn: parent
+                                                text: modelData.version || ""
+                                                font.pixelSize: Theme.fontSizeSmall - 2
+                                                color: Theme.primary
+                                            }
+                                        }
+
+                                        StyledText {
+                                            visible: (modelData.date || 0) > 0
+                                            text: modelData.date > 0 ? new Date(modelData.date * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat) : ""
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: Theme.surfaceVariantText
+                                        }
+                                    }
+
+                                    SelectableText {
+                                        Layout.fillWidth: true
+                                        text: modelData.notesHtml || ("<i>" + Tr.t("No release notes published.") + "</i>")
+                                        textFormat: Text.RichText
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: Theme.surfaceText
+                                        wrapMode: Text.WordWrap
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Upstream git notes Container Card
+                    StyledRect {
+                        width: parent.width
+                        height: gitNotesCol.implicitHeight + Theme.spacingM * 2
+                        visible: dialog.gitNotesLoading || dialog.gitReleases.length > 0
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 1
+
+                        ColumnLayout {
+                            id: gitNotesCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            RowLayout {
                                 Layout.fillWidth: true
-                                // Says what happens if it is left alone: the
-                                // backend falls back to the login name, which
-                                // is a thing worth knowing before you publish
-                                // rather than after
-                                placeholderText: Tr.t("Display name — empty publishes as \"%1\"").arg(Quickshell.env("USER") || "user")
-                                FieldPlaceholder {
-                                    text: Tr.t("Display name — empty publishes as \"%1\"").arg(Quickshell.env("USER") || "user")
+                                spacing: Theme.spacingS
+
+                                DankIcon {
+                                    name: "commit"
+                                    size: 16
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: dialog.gitNotesKind === "commits" ? Tr.t("Commits since your build") : Tr.t("What's new upstream")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
                                 }
                             }
 
                             StyledText {
                                 Layout.fillWidth: true
-                                text: Tr.t("Shown publicly with your review. Any name will do — it does not have to be the one you log in with.")
+                                visible: dialog.gitNotesLoading
+                                text: Tr.t("Asking upstream…")
                                 font.pixelSize: Theme.fontSizeSmall - 1
                                 color: Theme.surfaceVariantText
-                                wrapMode: Text.WordWrap
                             }
 
-                            DankTextField {
-                                id: reviewSummaryField
-                                Layout.fillWidth: true
-                                placeholderText: Tr.t("Summary")
-                                FieldPlaceholder {
-                                    text: Tr.t("Summary")
-                                }
-                            }
+                            Repeater {
+                                model: dialog.gitReleases
 
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 96
-                                radius: Theme.cornerRadius
-                                color: Theme.surfaceContainer
-                                border.width: 1
-                                border.color: Theme.withAlpha(Theme.surfaceVariantText, 0.3)
+                                delegate: ColumnLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    spacing: 4
 
-                                TextEdit {
-                                    id: reviewBodyEdit
-                                    anchors.fill: parent
-                                    anchors.margins: Theme.spacingS
-                                    wrapMode: TextEdit.Wrap
-                                    color: Theme.surfaceText
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    clip: true
+                                    RowLayout {
+                                        spacing: Theme.spacingS
 
-                                    StyledText {
-                                        visible: reviewBodyEdit.text === ""
-                                        text: Tr.t("Your review")
+                                        Rectangle {
+                                            Layout.preferredWidth: gitVersionChip.implicitWidth + 14
+                                            Layout.preferredHeight: 18
+                                            radius: 9
+                                            color: Theme.withAlpha(Theme.primary, 0.12)
+
+                                            StyledText {
+                                                id: gitVersionChip
+                                                anchors.centerIn: parent
+                                                text: modelData.version || ""
+                                                font.pixelSize: Theme.fontSizeSmall - 2
+                                                font.family: dialog.gitNotesKind === "commits" ? (Theme.monoFontFamily || "monospace") : Theme.fontFamily
+                                                color: Theme.primary
+                                            }
+                                        }
+
+                                        StyledText {
+                                            visible: dialog.gitNotesKind === "commits" && dialog.gitNotesCommits > 0
+                                            text: Tr.t("%1 commits").arg(dialog.gitNotesCommits)
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: Theme.surfaceVariantText
+                                        }
+
+                                        StyledText {
+                                            visible: (modelData.date || 0) > 0
+                                            text: modelData.date > 0 ? new Date(modelData.date * 1000).toLocaleDateString(Qt.locale(), Locale.ShortFormat) : ""
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: Theme.surfaceVariantText
+                                        }
+                                    }
+
+                                    SelectableText {
+                                        Layout.fillWidth: true
+                                        text: modelData.notesHtml || ("<i>" + Tr.t("No release notes published.") + "</i>")
+                                        textFormat: Text.RichText
                                         font.pixelSize: Theme.fontSizeSmall
-                                        color: Theme.withAlpha(Theme.surfaceVariantText, 0.7)
+                                        color: Theme.surfaceText
+                                        wrapMode: Text.WordWrap
                                     }
                                 }
                             }
 
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: Theme.spacingS
+                                spacing: Theme.spacingXS
+                                visible: dialog.gitNotesUrl !== "" && dialog.gitReleases.length > 0
+
+                                DankIcon {
+                                    name: "open_in_new"
+                                    size: 13
+                                    color: Theme.primary
+                                }
 
                                 StyledText {
-                                    Layout.fillWidth: true
-                                    visible: dialog.reviewStatus.indexOf("error:") === 0
-                                    text: Tr.t("Review failed: %1").arg(dialog.reviewStatus.substring(6))
+                                    text: dialog.gitNotesMore > 0 && dialog.gitNotesKind === "commits" ? Tr.t("%1 more commits upstream").arg(dialog.gitNotesMore) : (dialog.gitNotesMore > 0 ? Tr.t("Read the rest upstream") : Tr.t("Open upstream"))
                                     font.pixelSize: Theme.fontSizeSmall - 1
-                                    color: Theme.error
-                                    elide: Text.ElideRight
+                                    color: Theme.primary
                                 }
 
                                 Item {
                                     Layout.fillWidth: true
-                                    visible: dialog.reviewStatus.indexOf("error:") !== 0
                                 }
 
-                                DankSpinner {
-                                    visible: dialog.reviewStatus === "sending"
+                                HoverHandler {
+                                    cursorShape: Qt.PointingHandCursor
+                                }
+
+                                TapHandler {
+                                    onTapped: Qt.openUrlExternally(dialog.gitNotesUrl)
+                                }
+                            }
+                        }
+                    }
+
+                    // rpm changelog Container Card
+                    StyledRect {
+                        width: parent.width
+                        height: clCol.implicitHeight + Theme.spacingM * 2
+                        visible: dialog.changelogLoading || dialog.changelog !== ""
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+
+                        ColumnLayout {
+                            id: clCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+
+                                DankIcon {
+                                    name: "history_edu"
                                     size: 18
+                                    color: Theme.primary
                                 }
 
-                                // Wrapper Items: DankButton sizes itself via
-                                // `width`, which the RowLayout would ignore
-                                Item {
-                                    Layout.preferredWidth: reviewCancelButton.width
-                                    Layout.preferredHeight: reviewCancelButton.height
+                                StyledText {
+                                    text: Tr.t("Changelog")
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
+                                }
+                            }
 
-                                    DankButton {
-                                        id: reviewCancelButton
-                                        buttonHeight: 26
+                            SelectableText {
+                                Layout.fillWidth: true
+                                text: dialog.changelogLoading ? Tr.t("Loading changelog…") : dialog.changelog
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                font.family: Theme.monoFontFamily || "monospace"
+                                color: Theme.surfaceText
+                                wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                                textFormat: Text.PlainText
+                            }
+                        }
+                    }
+
+                    // Previous versions Container Card
+                    StyledRect {
+                        width: parent.width
+                        height: prevVerCol.implicitHeight + Theme.spacingM * 2
+                        visible: dialog.versionsLoading || dialog.previousVersions.length > 0 || dialog.noOlderVersions
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+
+                        ColumnLayout {
+                            id: prevVerCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+
+                                DankIcon {
+                                    name: "history"
+                                    size: 18
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Previous versions")
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
+                                }
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                visible: dialog.versionsLoading
+                                text: Tr.t("Checking available versions…")
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                color: Theme.surfaceVariantText
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                visible: !dialog.versionsLoading && dialog.noOlderVersions && dialog.previousVersions.length === 0
+                                text: Tr.t("No older version available.")
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                color: Theme.surfaceVariantText
+                            }
+
+                            Flow {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+                                visible: dialog.previousVersions.length > 0
+
+                                Repeater {
+                                    model: dialog.previousVersions
+
+                                    delegate: DankButton {
+                                        required property var modelData
+
+                                        buttonHeight: 28
                                         horizontalPadding: Theme.spacingM
-                                        text: Tr.t("Cancel")
+                                        iconName: "history"
+                                        iconSize: 13
+                                        text: Tr.t("Restore %1").arg(modelData.label)
                                         backgroundColor: Theme.surfaceContainerHighest
                                         textColor: Theme.surfaceText
-                                        onClicked: {
-                                            dialog.reviewFormOpen = false;
-                                            dialog.reviewStatus = "";
-                                        }
-                                    }
-                                }
-
-                                Item {
-                                    Layout.preferredWidth: reviewSubmitButton.width
-                                    Layout.preferredHeight: reviewSubmitButton.height
-
-                                    DankButton {
-                                        id: reviewSubmitButton
-                                        buttonHeight: 26
-                                        horizontalPadding: Theme.spacingM
-                                        iconName: "send"
-                                        iconSize: 13
-                                        text: Tr.t("Submit")
-                                        backgroundColor: Theme.buttonBg
-                                        textColor: Theme.buttonText
-                                        enabled: dialog.reviewStatus !== "sending" && (reviewSummaryField.text.trim() !== "" || reviewBodyEdit.text.trim() !== "")
-                                        onClicked: dialog.submitReview(reviewSummaryField.text.trim(), reviewBodyEdit.text.trim(), reviewNameField.text.trim())
+                                        enabled: !dialog.busy
+                                        onClicked: dialog.restoreRequested(modelData.payload)
                                     }
                                 }
                             }
                         }
                     }
 
-                    Repeater {
-                        model: (dialog.info.reviews || []).slice(0, dialog.reviewsShown)
+                    // Reviews Main Container Card
+                    StyledRect {
+                        id: mainReviewsRect
+                        width: parent.width
+                        implicitHeight: mainReviewsCol.implicitHeight + Theme.spacingM * 2
+                        visible: dialog.reviewable && ((dialog.info.reviews || []).length > 0 || dialog.installedChipVisible || dialog.showOpenButton)
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
 
-                        delegate: Rectangle {
-                            required property var modelData
+                        ColumnLayout {
+                            id: mainReviewsCol
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingM
 
-                            width: bodyColumn.width
-                            implicitHeight: reviewColumn.implicitHeight + Theme.spacingM
-                            radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
 
-                            ColumnLayout {
-                                id: reviewColumn
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: Theme.spacingM
-                                anchors.rightMargin: Theme.spacingM
-                                spacing: 2
+                                DankIcon {
+                                    name: "star"
+                                    size: 16
+                                    color: Theme.primary
+                                }
 
-                                RowLayout {
+                                StyledText {
+                                    text: Tr.t("Reviews & Ratings")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
+                                }
+
+                                Item {
                                     Layout.fillWidth: true
-                                    spacing: Theme.spacingS
+                                }
 
-                                    Row {
-                                        spacing: 1
+                                StyledText {
+                                    visible: dialog.reviewStatus === "done"
+                                    text: Tr.t("Thanks — your review was submitted.")
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    color: Theme.success
+                                }
 
-                                        Repeater {
-                                            model: 5
+                                Rectangle {
+                                    visible: !dialog.reviewFormOpen && dialog.reviewStatus !== "done"
+                                    Layout.preferredWidth: writeRevContent.implicitWidth + 24
+                                    Layout.preferredHeight: 28
+                                    radius: 14
+                                    color: writeRevMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                                    border.width: 1
+                                    border.color: writeRevMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
 
-                                            delegate: DankIcon {
-                                                required property int index
+                                    RowLayout {
+                                        id: writeRevContent
+                                        anchors.centerIn: parent
+                                        spacing: 6
 
-                                                name: "star"
-                                                filled: index < modelData.stars
-                                                size: 12
-                                                color: index < modelData.stars ? Theme.primary : Theme.withAlpha(Theme.surfaceVariantText, 0.4)
-                                            }
+                                        DankIcon {
+                                            name: "rate_review"
+                                            size: 14
+                                            color: Theme.primary
+                                        }
+
+                                        StyledText {
+                                            text: Tr.t("Write a review")
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            font.weight: Font.Medium
+                                            color: Theme.primary
                                         }
                                     }
 
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        text: modelData.user + (modelData.date > 0 ? (" · " + Qt.formatDate(new Date(modelData.date * 1000), "MMM yyyy")) : "")
-                                        font.pixelSize: Theme.fontSizeSmall - 1
-                                        color: Theme.surfaceVariantText
-                                        elide: Text.ElideRight
+                                    MouseArea {
+                                        id: writeRevMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: dialog.reviewFormOpen = true
                                     }
                                 }
+                            }
 
-                                // Summary as a clear title, body text muted
-                                // underneath so the two read differently
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    visible: (modelData.summary || "") !== ""
-                                    text: modelData.summary
-                                    textFormat: Text.PlainText
-                                    font.pixelSize: Theme.fontSizeMedium
-                                    font.weight: Font.DemiBold
-                                    color: Theme.surfaceText
-                                    wrapMode: Text.WordWrap
+                            // Inline review form (Animated expand & collapse)
+                            Item {
+                                Layout.fillWidth: true
+                                clip: true
+                                visible: Layout.preferredHeight > 0 || opacity > 0.001
+                                Layout.preferredHeight: dialog.reviewFormOpen ? (reviewFormRect.implicitHeight + 4) : 0
+                                Behavior on Layout.preferredHeight { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
+                                opacity: dialog.reviewFormOpen ? 1.0 : 0.0
+                                Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
+
+                                Rectangle {
+                                    id: reviewFormRect
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    implicitHeight: reviewForm.implicitHeight + Theme.spacingM * 2
+                                    radius: Theme.cornerRadius
+                                    color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
+                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                                    border.width: 1
+
+                                    ColumnLayout {
+                                        id: reviewForm
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.leftMargin: Theme.spacingM
+                                        anchors.rightMargin: Theme.spacingM
+                                        spacing: Theme.spacingS
+
+                                        Row {
+                                            id: reviewStarsRow
+                                            spacing: 2
+
+                                            property int hoverStars: 0
+
+                                            Repeater {
+                                                model: 5
+
+                                                delegate: DankIcon {
+                                                    required property int index
+
+                                                    name: "star"
+                                                    filled: (reviewStarsRow.hoverStars > 0 ? index < reviewStarsRow.hoverStars : index < dialog.reviewStars)
+                                                    size: 20
+                                                    color: (reviewStarsRow.hoverStars > 0 ? index < reviewStarsRow.hoverStars : index < dialog.reviewStars)
+                                                        ? Theme.primary
+                                                        : Theme.withAlpha(Theme.surfaceVariantText, 0.3)
+
+                                                    MouseArea {
+                                                        anchors.fill: parent
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        onEntered: reviewStarsRow.hoverStars = index + 1
+                                                        onExited: reviewStarsRow.hoverStars = 0
+                                                        onClicked: dialog.reviewStars = index + 1
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        DankTextField {
+                                            id: reviewSummaryField
+                                            Layout.fillWidth: true
+                                            placeholderText: Tr.t("One-line summary")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                        }
+
+                                        DankTextField {
+                                            id: reviewBodyField
+                                            Layout.fillWidth: true
+                                            placeholderText: Tr.t("What did you think? (optional)")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                        }
+
+                                        DankTextField {
+                                            id: reviewAuthorField
+                                            Layout.fillWidth: true
+                                            placeholderText: Tr.t("Your name (optional)")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                        }
+
+                                        StyledText {
+                                            visible: dialog.reviewStatus !== "" && dialog.reviewStatus !== "done"
+                                            text: dialog.reviewStatus === "submitting" ? Tr.t("Submitting…") : Tr.t("Could not submit review. Please try again.")
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: dialog.reviewStatus === "error" ? Theme.error : Theme.surfaceVariantText
+                                        }
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            spacing: Theme.spacingS
+
+                                            Item { Layout.fillWidth: true }
+
+                                            DankButton {
+                                                buttonHeight: 28
+                                                horizontalPadding: Theme.spacingM
+                                                iconName: "close"
+                                                iconSize: 14
+                                                text: Tr.t("Cancel")
+                                                onClicked: dialog.reviewFormOpen = false
+                                            }
+
+                                            DankButton {
+                                                buttonHeight: 28
+                                                horizontalPadding: Theme.spacingM
+                                                iconName: "send"
+                                                iconSize: 14
+                                                text: Tr.t("Submit")
+                                                backgroundColor: Theme.primary
+                                                textColor: Theme.primaryText
+                                                enabled: (reviewSummaryField.text || "").trim() !== "" && dialog.reviewStatus !== "submitting"
+                                                onClicked: dialog.submitReview(reviewSummaryField.text, reviewBodyField.text, reviewAuthorField.text)
+                                            }
+                                        }
+                                    }
                                 }
+                            }
 
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    Layout.topMargin: 2
-                                    visible: (modelData.text || "") !== ""
-                                    text: modelData.text || ""
-                                    textFormat: Text.PlainText
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.surfaceVariantText
-                                    wrapMode: Text.WordWrap
+                            // Animated Reviews List Wrapper
+                            Item {
+                                id: revListWrapper
+                                Layout.fillWidth: true
+                                clip: true
+                                implicitHeight: animatedRevH
+                                property real animatedRevH: revListCol.implicitHeight
+                                Behavior on animatedRevH {
+                                    NumberAnimation {
+                                        duration: 350
+                                        easing.type: Easing.OutExpo
+                                    }
+                                }
+                                height: animatedRevH
+
+                                ColumnLayout {
+                                    id: revListCol
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    spacing: Theme.spacingS
+
+                                    Repeater {
+                                        model: (dialog.info.reviews || []).slice(0, dialog.reviewsShown)
+
+                                        delegate: Rectangle {
+                                            id: revCard
+                                            Layout.fillWidth: true
+                                            implicitHeight: revCardInner.implicitHeight + Theme.spacingM * 2
+                                            radius: Theme.cornerRadius
+                                            color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.4)
+                                            border.width: 1
+                                            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08)
+
+                                            opacity: 1.0
+                                            Component.onCompleted: {
+                                                if (index >= 10) {
+                                                    revCard.opacity = 0.0;
+                                                    fadeRevTimer.start();
+                                                }
+                                            }
+                                            Timer {
+                                                id: fadeRevTimer
+                                                interval: Math.min((index - 10) * 35, 200)
+                                                onTriggered: revCard.opacity = 1.0
+                                            }
+                                            Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
+
+                                            ColumnLayout {
+                                                id: revCardInner
+                                                anchors.fill: parent
+                                                anchors.margins: Theme.spacingM
+                                                spacing: 4
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: Theme.spacingS
+
+                                                    Row {
+                                                        spacing: 1
+
+                                                        Repeater {
+                                                            model: 5
+
+                                                            delegate: DankIcon {
+                                                                required property int index
+
+                                                                name: "star"
+                                                                filled: index < modelData.stars
+                                                                size: 12
+                                                                color: index < modelData.stars ? Theme.primary : Theme.withAlpha(Theme.surfaceVariantText, 0.4)
+                                                            }
+                                                        }
+                                                    }
+
+                                                    StyledText {
+                                                        Layout.fillWidth: true
+                                                        text: modelData.user + (modelData.date > 0 ? (" · " + Qt.formatDate(new Date(modelData.date * 1000), "MMM yyyy")) : "")
+                                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                                        color: Theme.surfaceVariantText
+                                                        elide: Text.ElideRight
+                                                    }
+                                                }
+
+                                                StyledText {
+                                                    Layout.fillWidth: true
+                                                    visible: (modelData.summary || "") !== ""
+                                                    text: modelData.summary
+                                                    textFormat: Text.PlainText
+                                                    font.pixelSize: Theme.fontSizeMedium
+                                                    font.weight: Font.DemiBold
+                                                    color: Theme.surfaceText
+                                                    wrapMode: Text.WordWrap
+                                                }
+
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    Layout.topMargin: 2
+                                                    visible: (modelData.text || "") !== ""
+                                                    text: modelData.text || ""
+                                                    textFormat: Text.PlainText
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    color: Theme.surfaceVariantText
+                                                    wrapMode: Text.WordWrap
+                                                    maximumLineCount: 4
+                                                    elide: Text.ElideRight
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Centered expand / collapse toggle buttons
+                            Item {
+                                Layout.fillWidth: true
+                                implicitHeight: 32
+                                visible: (dialog.info.reviews || []).length > 10
+
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: Theme.spacingS
+
+                                    // Show 10 more
+                                    Rectangle {
+                                        visible: dialog.reviewsShown < (dialog.info.reviews || []).length
+                                        implicitWidth: rev10MoreRow.implicitWidth + 24
+                                        implicitHeight: 28
+                                        radius: height / 2
+                                        color: rev10MoreMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                        border.width: 1
+                                        border.color: rev10MoreMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                        Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                        RowLayout {
+                                            id: rev10MoreRow
+                                            anchors.centerIn: parent
+                                            spacing: 6
+
+                                            DankIcon {
+                                                name: "expand_more"
+                                                size: 14
+                                                color: Theme.primary
+                                            }
+
+                                            StyledText {
+                                                text: Tr.t("Show 10 more (%1 remaining)").arg(Math.max(0, (dialog.info.reviews || []).length - dialog.reviewsShown))
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                font.weight: Font.Medium
+                                                color: Theme.primary
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: rev10MoreMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: dialog.reviewsShown += 10
+                                        }
+                                    }
+
+                                    // Show all
+                                    Rectangle {
+                                        visible: dialog.reviewsShown < (dialog.info.reviews || []).length && ((dialog.info.reviews || []).length - dialog.reviewsShown > 10)
+                                        implicitWidth: revAllRow.implicitWidth + 24
+                                        implicitHeight: 28
+                                        radius: height / 2
+                                        color: revAllMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                        border.width: 1
+                                        border.color: revAllMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                        Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                        RowLayout {
+                                            id: revAllRow
+                                            anchors.centerIn: parent
+                                            spacing: 6
+
+                                            DankIcon {
+                                                name: "unfold_more"
+                                                size: 14
+                                                color: Theme.primary
+                                            }
+
+                                            StyledText {
+                                                text: Tr.t("Show all (%1)").arg((dialog.info.reviews || []).length)
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                font.weight: Font.Medium
+                                                color: Theme.primary
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: revAllMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: dialog.reviewsShown = (dialog.info.reviews || []).length
+                                        }
+                                    }
+
+                                    // Show fewer
+                                    Rectangle {
+                                        visible: dialog.reviewsShown > 10
+                                        implicitWidth: revLessRow.implicitWidth + 24
+                                        implicitHeight: 28
+                                        radius: height / 2
+                                        color: revLessMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                        border.width: 1
+                                        border.color: revLessMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                        Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                        RowLayout {
+                                            id: revLessRow
+                                            anchors.centerIn: parent
+                                            spacing: 6
+
+                                            DankIcon {
+                                                name: "expand_less"
+                                                size: 14
+                                                color: Theme.primary
+                                            }
+
+                                            StyledText {
+                                                text: Tr.t("Show fewer")
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                font.weight: Font.Medium
+                                                color: Theme.primary
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: revLessMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                dialog.reviewsShown = 10;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1731,233 +2521,625 @@ Item {
                 }
             }
 
-            // ── Footer actions ──────────────────────────────────────────────
-            // Anchored rows instead of a RowLayout: DankButton sizes itself
-            // via `width`, which layouts ignore — anchors keep the right edge
-            // exactly flush with the content above.
-            Item {
+            // ── Footer actions Container ────────────────────────────────────
+            StyledRect {
                 Layout.fillWidth: true
-                implicitHeight: 32
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                border.width: 1
+                implicitHeight: footerLayout.implicitHeight + Theme.spacingM * 2
 
-                Row {
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: Theme.spacingS
-                    // The busy detail in the right-hand row can grow long
-                    // (download counters) — yield the space during a run
-                    visible: !dialog.busy
-
-                    DankActionButton {
-                        buttonSize: 30
-                        iconName: "language"
-                        iconSize: 16
-                        iconColor: Theme.surfaceVariantText
-                        visible: (dialog.appData.homepage || "") !== ""
-                        tooltipText: Tr.t("Open website — %1").arg(dialog.appData.homepage || "")
-                        onClicked: Qt.openUrlExternally(dialog.appData.homepage)
-                    }
-
-                    DankActionButton {
-                        buttonSize: 30
-                        iconName: dialog.appData.held === true ? "lock_open" : "lock"
-                        iconSize: 15
-                        iconColor: dialog.appData.held === true ? Theme.warning : Theme.surfaceVariantText
-                        visible: dialog.showHoldToggle
-                        tooltipText: dialog.appData.held === true ? Tr.t("Stop holding (updates allowed again)") : Tr.t("Hold (skip in updates)")
-                        enabled: !dialog.busy
-                        onClicked: dialog.holdToggleRequested()
-                    }
-                }
-
-                Row {
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
+                RowLayout {
+                    id: footerLayout
+                    anchors.fill: parent
+                    anchors.leftMargin: Theme.spacingM
+                    anchors.rightMargin: Theme.spacingM
+                    anchors.topMargin: Theme.spacingS
+                    anchors.bottomMargin: Theme.spacingS
                     spacing: Theme.spacingS
 
-                    // The way out to where plugins are installed and removed.
-                    // It sat in the middle of the facts, which put a button
-                    // between two things being read; it belongs with the other
-                    // things this popup can do.
-                    DankButton {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: dialog.isPlugin
-                        buttonHeight: 30
-                        horizontalPadding: Theme.spacingM
-                        iconName: "open_in_new"
-                        iconSize: 14
-                        text: Tr.t("Manage plugins")
-                        backgroundColor: Theme.buttonBg
-                        textColor: Theme.buttonText
-                        onClicked: {
-                            dialog.close();
-                            PopoutService.openSettingsWithTab("plugins");
+                    // Left actions (Web & Hold - SteamFriends paired capsule style)
+                    Row {
+                        spacing: 2
+                        visible: !dialog.busy
+
+                        // Website Button Container
+                        Rectangle {
+                            id: webBtnRoot
+                            visible: (dialog.appData.homepage || "") !== ""
+                            width: 32
+                            height: 32
+                            property bool isHovered: webBtnMa.containsMouse
+                            readonly property bool hasSibling: dialog.showHoldToggle
+
+                            topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                            bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                            topRightRadius: isHovered ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
+                            bottomRightRadius: isHovered ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
+
+                            Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                            color: isHovered ? Theme.withAlpha(Theme.primary, 0.18) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            border.width: 1
+                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                            scale: webBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                            DankRipple {
+                                id: webRip
+                                anchors.fill: parent
+                                cornerRadius: parent.topLeftRadius
+                                rippleColor: Theme.primary
+                            }
+
+                            DankIcon {
+                                anchors.centerIn: parent
+                                name: "language"
+                                size: 16
+                                color: webBtnRoot.isHovered ? Theme.primary : Theme.surfaceVariantText
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                            }
+
+                            MouseArea {
+                                id: webBtnMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onPressed: (m) => webRip.trigger(m.x, m.y)
+                                onClicked: Qt.openUrlExternally(dialog.appData.homepage)
+                            }
+                        }
+
+                        // Hold Toggle Button Container
+                        Rectangle {
+                            id: holdBtnRoot
+                            visible: dialog.showHoldToggle
+                            width: 32
+                            height: 32
+                            property bool isHovered: holdBtnMa.containsMouse
+                            readonly property bool hasSibling: (dialog.appData.homepage || "") !== ""
+
+                            topLeftRadius: isHovered ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
+                            bottomLeftRadius: isHovered ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
+                            topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                            bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+
+                            Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                            color: isHovered ? (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.25) : Theme.withAlpha(Theme.primary, 0.18)) : (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.15) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6))
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            border.width: 1
+                            border.color: isHovered ? (dialog.appData.held === true ? Theme.warning : Theme.primary) : (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.4) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12))
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                            scale: holdBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                            DankRipple {
+                                id: holdRip
+                                anchors.fill: parent
+                                cornerRadius: parent.topRightRadius
+                                rippleColor: dialog.appData.held === true ? Theme.warning : Theme.primary
+                            }
+
+                            DankIcon {
+                                anchors.centerIn: parent
+                                name: dialog.appData.held === true ? "lock_open" : "lock"
+                                size: 15
+                                color: dialog.appData.held === true ? Theme.warning : (holdBtnRoot.isHovered ? Theme.primary : Theme.surfaceVariantText)
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                            }
+
+                            MouseArea {
+                                id: holdBtnMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                enabled: !dialog.busy
+                                onPressed: (m) => holdRip.trigger(m.x, m.y)
+                                onClicked: dialog.holdToggleRequested()
+                            }
                         }
                     }
 
-                    DankButton {
-                        anchors.verticalCenter: parent.verticalCenter
+                    Item { Layout.fillWidth: true }
+
+                    // Middle/Right busy or action items
+                    Rectangle {
+                        id: pluginBtnRoot
+                        visible: dialog.isPlugin
+                        Layout.preferredWidth: pluginBtnRow.implicitWidth + 24
+                        Layout.preferredHeight: 32
+                        property bool isHovered: pluginBtnMa.containsMouse
+
+                        topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+
+                        Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                        color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                        border.width: 1
+                        border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                        Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                        scale: pluginBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                        DankRipple {
+                            id: pluginRip
+                            anchors.fill: parent
+                            cornerRadius: parent.topLeftRadius
+                            rippleColor: Theme.primary
+                        }
+
+                        RowLayout {
+                            id: pluginBtnRow
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            DankIcon {
+                                name: "open_in_new"
+                                size: 14
+                                color: Theme.primary
+                            }
+
+                            StyledText {
+                                text: Tr.t("Manage plugins")
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.weight: Font.Medium
+                                color: Theme.primary
+                            }
+                        }
+
+                        MouseArea {
+                            id: pluginBtnMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: (m) => pluginRip.trigger(m.x, m.y)
+                            onClicked: {
+                                dialog.close();
+                                PopoutService.openSettingsWithTab("plugins");
+                            }
+                        }
+                    }
+
+                    // Open Button (Custom Action Button)
+                    Rectangle {
+                        id: openBtnRoot
                         visible: dialog.showOpenButton
-                        buttonHeight: 30
-                        horizontalPadding: Theme.spacingM
-                        iconName: "launch"
-                        iconSize: 14
-                        text: Tr.t("Open")
-                        backgroundColor: Theme.buttonBg
-                        textColor: Theme.buttonText
-                        onClicked: {
-                            Quickshell.execDetached(dialog.openCommand.length > 0 ? dialog.openCommand : ["flatpak", "run", dialog.appData.id]);
-                            dialog.close();
+                        Layout.preferredWidth: openBtnRow.implicitWidth + 24
+                        Layout.preferredHeight: 32
+                        property bool isHovered: openBtnMa.containsMouse
+
+                        topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+
+                        Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                        color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                        border.width: 1
+                        border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                        Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                        scale: openBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                        DankRipple {
+                            id: openRip
+                            anchors.fill: parent
+                            cornerRadius: parent.topLeftRadius
+                            rippleColor: Theme.primary
+                        }
+
+                        RowLayout {
+                            id: openBtnRow
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            DankIcon {
+                                name: "launch"
+                                size: 14
+                                color: Theme.primary
+                            }
+
+                            StyledText {
+                                text: Tr.t("Open")
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.weight: Font.Medium
+                                color: Theme.primary
+                            }
+                        }
+
+                        MouseArea {
+                            id: openBtnMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: (m) => openRip.trigger(m.x, m.y)
+                            onClicked: {
+                                Quickshell.execDetached(dialog.openCommand.length > 0 ? dialog.openCommand : ["flatpak", "run", dialog.appData.id]);
+                                dialog.close();
+                            }
                         }
                     }
 
                     StyledText {
-                        anchors.verticalCenter: parent.verticalCenter
                         visible: dialog.busy && dialog.busyDetail !== ""
                         text: dialog.busyDetail
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.Medium
                         color: Theme.primary
                         elide: Text.ElideLeft
-                        width: Math.min(implicitWidth, 260)
+                        Layout.maximumWidth: 260
                     }
 
                     M3WaveProgress {
-                        anchors.verticalCenter: parent.verticalCenter
                         visible: dialog.busy && dialog.busyFraction > 0
-                        width: 110
-                        height: 18
+                        Layout.preferredWidth: 110
+                        Layout.preferredHeight: 18
                         value: dialog.busyFraction
                         isPlaying: visible
                     }
 
                     DankSpinner {
-                        anchors.verticalCenter: parent.verticalCenter
                         visible: dialog.busy && dialog.busyFraction <= 0
                         size: 22
                     }
 
                     Rectangle {
                         visible: dialog.installedChipVisible
-                        width: installedChipText.implicitWidth + 16
-                        height: 24
-                        anchors.verticalCenter: parent.verticalCenter
-                        radius: 12
+                        Layout.preferredWidth: installedChipText.implicitWidth + 18
+                        Layout.preferredHeight: 26
+                        radius: 13
                         color: Theme.withAlpha(Theme.success, 0.15)
+                        border.width: 1
+                        border.color: Theme.withAlpha(Theme.success, 0.3)
 
                         StyledText {
                             id: installedChipText
                             anchors.centerIn: parent
                             text: Tr.t("Installed")
                             font.pixelSize: Theme.fontSizeSmall - 1
+                            font.weight: Font.Medium
                             color: Theme.success
                         }
                     }
 
-                    DankButton {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: dialog.showUninstall
-                        buttonHeight: 30
-                        horizontalPadding: Theme.spacingM
-                        iconName: "delete"
-                        iconSize: 14
-                        text: dialog._confirmUninstall === (dialog.appData.id || "") ? Tr.t("Confirm uninstall?") : Tr.t("Uninstall")
-                        backgroundColor: dialog._confirmUninstall === (dialog.appData.id || "") ? Theme.error : Theme.errorPressed
-                        // On the solid error fill, pick black/white by the fill's
-                        // lightness — no theme tone is guaranteed to contrast.
-                        textColor: dialog._confirmUninstall === (dialog.appData.id || "") ? Ui.onColor(Theme.error) : Theme.surfaceText
-                        enabled: !dialog.busy
-                        onClicked: {
-                            if (dialog._confirmUninstall === (dialog.appData.id || "")) {
-                                dialog._confirmUninstall = "";
-                                dialog.uninstallRequested();
-                            } else {
-                                dialog._confirmUninstall = dialog.appData.id || "";
-                                confirmTimer.restart();
+                    // Action buttons group (Uninstall, Update, Install - paired capsule style)
+                    Row {
+                        spacing: 2
+                        visible: !dialog.busy
+
+                        // Uninstall Button (Custom Danger Button)
+                        Rectangle {
+                            id: uninstBtnRoot
+                            visible: dialog.showUninstall
+                            width: uninstBtnRow.implicitWidth + 24
+                            height: 32
+                            property bool isHovered: uninstBtnMa.containsMouse
+                            readonly property bool confirming: dialog._confirmUninstall === (dialog.appData.id || "")
+                            readonly property bool hasRightSibling: dialog.showUpdateButton || (dialog.showInstallButtons && !dialog.installedChipVisible && (dialog.appData.sources || []).length > 0)
+
+                            topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                            bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                            topRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+                            bottomRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+
+                            Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                            color: confirming ? Theme.error : (isHovered ? Theme.withAlpha(Theme.error, 0.18) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5))
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            border.width: 1
+                            border.color: confirming ? Theme.error : (isHovered ? Theme.error : Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.2))
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                            scale: uninstBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                            DankRipple {
+                                id: uninstRip
+                                anchors.fill: parent
+                                cornerRadius: parent.topLeftRadius
+                                rippleColor: Theme.error
+                            }
+
+                            RowLayout {
+                                id: uninstBtnRow
+                                anchors.centerIn: parent
+                                spacing: 6
+
+                                DankIcon {
+                                    name: uninstBtnRoot.confirming ? "delete_forever" : "delete"
+                                    size: 14
+                                    color: uninstBtnRoot.confirming ? Ui.onColor(Theme.error) : (uninstBtnRoot.isHovered ? Theme.error : Theme.surfaceText)
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                }
+
+                                StyledText {
+                                    text: uninstBtnRoot.confirming ? Tr.t("Confirm uninstall") : Tr.t("Uninstall")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.Medium
+                                    color: uninstBtnRoot.confirming ? Ui.onColor(Theme.error) : (uninstBtnRoot.isHovered ? Theme.error : Theme.surfaceText)
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                }
+                            }
+
+                            MouseArea {
+                                id: uninstBtnMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                enabled: !dialog.busy
+                                onPressed: (m) => uninstRip.trigger(m.x, m.y)
+                                onClicked: {
+                                    if (dialog._confirmUninstall === (dialog.appData.id || "")) {
+                                        dialog._confirmUninstall = "";
+                                        dialog.uninstallRequested();
+                                    } else {
+                                        dialog._confirmUninstall = dialog.appData.id || "";
+                                        confirmTimer.restart();
+                                    }
+                                }
+                            }
+                        }
+
+                        // Update Button (Custom Action Button)
+                        Rectangle {
+                            id: updateBtnRoot
+                            visible: dialog.showUpdateButton
+                            width: updateBtnRow.implicitWidth + 24
+                            height: 32
+                            property bool isHovered: updateBtnMa.containsMouse
+                            readonly property bool hasLeftSibling: dialog.showUninstall
+                            readonly property bool hasRightSibling: dialog.showInstallButtons && !dialog.installedChipVisible && (dialog.appData.sources || []).length > 0
+
+                            topLeftRadius: isHovered ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
+                            bottomLeftRadius: isHovered ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
+                            topRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+                            bottomRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+
+                            Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                            Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                            color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            border.width: 1
+                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                            scale: updateBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                            DankRipple {
+                                id: updateRip
+                                anchors.fill: parent
+                                cornerRadius: parent.topLeftRadius
+                                rippleColor: Theme.primary
+                            }
+
+                            RowLayout {
+                                id: updateBtnRow
+                                anchors.centerIn: parent
+                                spacing: 6
+
+                                DankIcon {
+                                    name: "download"
+                                    size: 14
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Update")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.Medium
+                                    color: Theme.primary
+                                }
+                            }
+
+                            MouseArea {
+                                id: updateBtnMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                enabled: !dialog.busy
+                                onPressed: (m) => updateRip.trigger(m.x, m.y)
+                                onClicked: dialog.updateRequested()
+                            }
+                        }
+
+                        // Install Buttons (Custom Action Buttons - paired capsule with dynamic corner morphing)
+                        Repeater {
+                            model: (dialog.showInstallButtons && !dialog.installedChipVisible) ? (dialog.appData.sources || []) : []
+
+                            delegate: Rectangle {
+                                id: instBtnRoot
+                                required property var modelData
+                                required property int index
+
+                                readonly property int totalSources: (dialog.appData.sources || []).length
+                                readonly property bool isFirstSource: index === 0
+                                readonly property bool isLastSource: index === totalSources - 1
+                                readonly property bool hasLeftSibling: !isFirstSource || dialog.showUninstall || dialog.showUpdateButton
+                                readonly property bool hasRightSibling: !isLastSource
+
+                                property bool isHovered: instBtnMa.containsMouse
+                                readonly property bool isFlathub: modelData.kind === "flatpak"
+
+                                width: instBtnRow.implicitWidth + 24
+                                height: 32
+
+                                topLeftRadius: isHovered ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
+                                bottomLeftRadius: isHovered ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
+                                topRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+                                bottomRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+
+                                Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                                color: isHovered ? (isFlathub ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.9)) : (isFlathub ? Theme.withAlpha(Theme.primary, 0.15) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6))
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                                border.width: 1
+                                border.color: isHovered ? (isFlathub ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)) : (isFlathub ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12))
+                                Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                scale: instBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                                DankRipple {
+                                    id: instBtnRip
+                                    anchors.fill: parent
+                                    cornerRadius: parent.topLeftRadius
+                                    rippleColor: instBtnRoot.isFlathub ? Theme.primary : Theme.surfaceText
+                                }
+
+                                RowLayout {
+                                    id: instBtnRow
+                                    anchors.centerIn: parent
+                                    spacing: 6
+
+                                    DankIcon {
+                                        name: "download"
+                                        size: 14
+                                        color: instBtnRoot.isFlathub ? Theme.primary : Theme.surfaceText
+                                    }
+
+                                    StyledText {
+                                        text: modelData.kind === "flatpak" ? Tr.t("Install from Flathub") : (modelData.kind === "appimage" ? Tr.t("Install AppImage") : Tr.t("Install from %1").arg(modelData.kind === "copr" ? modelData.project : Backend.systemRepoLabel))
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.weight: Font.Medium
+                                        color: instBtnRoot.isFlathub ? Theme.primary : Theme.surfaceText
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: instBtnMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    enabled: !dialog.busy
+                                    onPressed: (m) => instBtnRip.trigger(m.x, m.y)
+                                    onClicked: dialog.installRequested(modelData)
+                                }
                             }
                         }
                     }
-
-                    DankButton {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: dialog.showUpdateButton
-                        buttonHeight: 30
-                        horizontalPadding: Theme.spacingM
-                        iconName: "download"
-                        iconSize: 14
-                        text: Tr.t("Update")
-                        backgroundColor: Theme.buttonBg
-                        textColor: Theme.buttonText
-                        enabled: !dialog.busy
-                        onClicked: dialog.updateRequested()
-                    }
-
-                    Repeater {
-                        model: (dialog.showInstallButtons && !dialog.installedChipVisible) ? (dialog.appData.sources || []) : []
-
-                        delegate: DankButton {
-                            required property var modelData
-
-                            anchors.verticalCenter: parent.verticalCenter
-                            buttonHeight: 30
-                            horizontalPadding: Theme.spacingM
-                            iconName: "download"
-                            iconSize: 14
-                            // A Copr is named after the person who builds it,
-                            // which is the part worth reading on the button
-                            text: modelData.kind === "flatpak" ? Tr.t("Install from Flathub") : (modelData.kind === "appimage" ? Tr.t("Install AppImage") : Tr.t("Install from %1").arg(modelData.kind === "copr" ? modelData.project : Backend.systemRepoLabel))
-                            backgroundColor: modelData.kind === "flatpak" ? Theme.buttonBg : Theme.secondaryContainer
-                            textColor: modelData.kind === "flatpak" ? Theme.buttonText : Theme.surfaceText
-                            enabled: !dialog.busy
-                            onClicked: dialog.installRequested(modelData)
-                        }
-                    }
                 }
             }
 
-            // ── Why this is here ────────────────────────────────────────────
-            // Two facts settle it: did you ask for this package, and what
-            // would miss it if it went. Every package manager can answer,
-            // behind a flag nobody remembers.
-            StyledText {
+            // ── Why this is here (Containerized) ────────────────────────────
+            StyledRect {
                 Layout.fillWidth: true
                 visible: dialog.provenance !== null && !dialog.busy
-                text: {
-                    const prov = dialog.provenance;
-                    if (!prov)
-                        return "";
-                    const origin = prov.userInstalled ? Tr.t("You installed this") : Tr.t("Came in as a dependency");
-                    const count = prov.requiredByCount || 0;
-                    if (count === 0)
-                        return origin + " · " + Tr.t("nothing else needs it");
-                    const names = (prov.requiredBy || []).slice(0, 3).join(", ");
-                    return origin + " · " + (count === 1 ? Tr.t("needed by %1").arg(names) : Tr.t("needed by %1 packages, among them %2").arg(count).arg(names));
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                border.width: 1
+                implicitHeight: provInfoCol.implicitHeight + Theme.spacingS * 2
+
+                RowLayout {
+                    id: provInfoCol
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingS
+                    spacing: Theme.spacingS
+
+                    DankIcon {
+                        name: "alt_route"
+                        size: 15
+                        color: Theme.surfaceVariantText
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: {
+                            const prov = dialog.provenance;
+                            if (!prov)
+                                return "";
+                            const origin = prov.userInstalled ? Tr.t("You installed this") : Tr.t("Came in as a dependency");
+                            const count = prov.requiredByCount || 0;
+                            if (count === 0)
+                                return origin + " · " + Tr.t("nothing else needs it");
+                            const names = (prov.requiredBy || []).slice(0, 3).join(", ");
+                            return origin + " · " + (count === 1 ? Tr.t("needed by %1").arg(names) : Tr.t("needed by %1 packages, among them %2").arg(count).arg(names));
+                        }
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeSmall - 1
+                        color: Theme.surfaceVariantText
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                    }
                 }
-                font.pixelSize: Theme.fontSizeSmall - 1
-                color: Theme.surfaceVariantText
-                wrapMode: Text.WordWrap
-                maximumLineCount: 2
-                elide: Text.ElideRight
             }
 
-            // ── What else goes ──────────────────────────────────────────────
-            // The resolver knows that removing one package can take others
-            // with it. Until now it happened silently: the run only ever
-            // showed rows for what the user picked.
-            StyledText {
+            // ── What else goes (Containerized) ──────────────────────────────
+            StyledRect {
                 Layout.fillWidth: true
                 visible: dialog.showUninstall && dialog.alsoRemoves.length > 0 && !dialog.busy
-                text: {
-                    const names = dialog.alsoRemoves;
-                    const listed = names.slice(0, 4).join(", ");
-                    const rest = names.length - 4;
-                    const tail = rest > 0 ? listed + Tr.t(" and %1 more").arg(rest) : listed;
-                    return (names.length === 1 ? Tr.t("Uninstalling also removes %1") : Tr.t("Uninstalling also removes %1 packages: %2").arg(names.length)).arg(tail);
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.warning, 0.12)
+                border.color: Theme.withAlpha(Theme.warning, 0.3)
+                border.width: 1
+                implicitHeight: alsoRemovesCol.implicitHeight + Theme.spacingS * 2
+
+                RowLayout {
+                    id: alsoRemovesCol
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingS
+                    spacing: Theme.spacingS
+
+                    DankIcon {
+                        name: "warning"
+                        size: 16
+                        color: Theme.warning
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: {
+                            const names = dialog.alsoRemoves;
+                            const listed = names.slice(0, 4).join(", ");
+                            const rest = names.length - 4;
+                            const tail = rest > 0 ? listed + Tr.t(" and %1 more").arg(rest) : listed;
+                            return (names.length === 1 ? Tr.t("Uninstalling also removes %1") : Tr.t("Uninstalling also removes %1 packages: %2").arg(names.length)).arg(tail);
+                        }
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeSmall - 1
+                        color: Theme.warning
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 3
+                        elide: Text.ElideRight
+                    }
                 }
-                font.pixelSize: Theme.fontSizeSmall - 1
-                color: Theme.warning
-                wrapMode: Text.WordWrap
-                maximumLineCount: 3
-                elide: Text.ElideRight
             }
         }
     }

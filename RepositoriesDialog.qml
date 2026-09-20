@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -20,19 +21,14 @@ Item {
 
     property var logger: null
 
-    property bool showing: false
-    // Not `data`: that is Item's own default property, the one every child
-    // element lands in, and shadowing it stops the component loading at all
+    property bool animActive: false
+    readonly property bool showing: animActive || closeTimer.running
     property var sourceData: ({})
     property bool loading: false
     property bool busy: false
     property string busyLabel: ""
     property string error: ""
-    // Debug and source repositories outnumber the usable ones on Fedora and
-    // are the reason a plain repository list is unreadable
     property bool showNoise: false
-    // A distro repository is what the system is made of; switching one off is
-    // asked twice rather than once
     property string confirmId: ""
 
     readonly property bool writable: sourceData.writable === true
@@ -43,15 +39,24 @@ Item {
 
     readonly property var visibleRepos: repos.filter(r => dialog.showNoise || (!r.noise && !r.testing))
 
+    Timer {
+        id: closeTimer
+        interval: 220
+        repeat: false
+    }
+
     function open() {
-        showing = true;
+        closeTimer.stop();
+        animActive = true;
         error = "";
         confirmId = "";
         refresh();
     }
 
     function close() {
-        showing = false;
+        if (!animActive) return;
+        animActive = false;
+        closeTimer.restart();
     }
 
     function refresh() {
@@ -183,6 +188,12 @@ Item {
     visible: showing
     z: 120
 
+    Shortcut {
+        sequence: "Escape"
+        enabled: dialog.showing
+        onActivated: dialog.close()
+    }
+
     onShowingChanged: {
         if (showing)
             dialogFocus.forceActiveFocus();
@@ -274,6 +285,8 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Qt.rgba(0, 0, 0, 0.45)
+        opacity: dialog.animActive ? 1.0 : 0.0
+        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -282,16 +295,20 @@ Item {
         }
     }
 
-    Rectangle {
+    StyledRect {
         id: sheet
 
         anchors.centerIn: parent
         width: Math.min(parent.width - Theme.spacingXL * 2, 760)
         height: Math.min(parent.height - Theme.spacingXL * 2, 640)
-        radius: Theme.cornerRadius
-        color: Theme.surfaceContainerHigh
+        radius: Theme.cornerRadius + 4
+        color: Theme.surfaceContainer
         border.width: 1
-        border.color: Theme.withAlpha(Theme.outline, 0.2)
+        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
+        scale: dialog.animActive ? 1.0 : 0.94
+        opacity: dialog.animActive ? 1.0 : 0.0
+        Behavior on scale { NumberAnimation { duration: dialog.animActive ? 320 : 200; easing.type: dialog.animActive ? Easing.OutBack : Easing.InQuad } }
+        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -377,87 +394,150 @@ Item {
                 ColumnLayout {
                     id: content
                     width: scroll.width
-                    spacing: Theme.spacingL
+                    spacing: Theme.spacingM
 
-                    // ── Sources worth having ────────────────────────────────
-                    ColumnLayout {
+                    // ── Sources worth having (Container Card) ───────────────
+                    StyledRect {
                         Layout.fillWidth: true
                         visible: dialog.suggestions.length > 0
-                        spacing: Theme.spacingS
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        implicitHeight: suggCol.implicitHeight + Theme.spacingM * 2
 
-                        StyledText {
-                            text: Tr.t("Not configured yet")
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.weight: Font.DemiBold
-                            color: Theme.surfaceVariantText
-                        }
+                        ColumnLayout {
+                            id: suggCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
 
-                        Repeater {
-                            model: dialog.suggestions
-
-                            delegate: Rectangle {
-                                id: suggestionCard
-
-                                required property var modelData
-
+                            RowLayout {
                                 Layout.fillWidth: true
-                                implicitHeight: suggestionRow.implicitHeight + Theme.spacingM * 2
-                                radius: Theme.cornerRadius
-                                color: Theme.withAlpha(Theme.secondary, 0.08)
-                                border.width: 1
-                                border.color: Theme.withAlpha(Theme.secondary, 0.25)
+                                spacing: Theme.spacingS
 
-                                RowLayout {
-                                    id: suggestionRow
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.leftMargin: Theme.spacingM
-                                    anchors.rightMargin: Theme.spacingM
-                                    spacing: Theme.spacingM
+                                DankIcon {
+                                    name: "recommend"
+                                    size: 18
+                                    color: Theme.primary
+                                }
 
-                                    DankIcon {
-                                        name: "extension"
-                                        size: 20
-                                        color: Theme.secondary
+                                StyledText {
+                                    text: Tr.t("Not configured yet")
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceText
+                                }
+                            }
+
+                            Repeater {
+                                model: dialog.suggestions
+
+                                delegate: Item {
+                                    id: suggestionCard
+                                    required property var modelData
+                                    required property int index
+
+                                    readonly property int totalCount: dialog.suggestions.length
+                                    readonly property bool isFirst: index === 0
+                                    readonly property bool isLast: index === totalCount - 1
+
+                                    Layout.fillWidth: true
+                                    implicitHeight: suggestionRow.implicitHeight + Theme.spacingM * 2
+
+                                    Shape {
+                                        id: suggBg
+                                        anchors.fill: parent
+
+                                        property real innerRadius: 6
+                                        property real outerRadius: 12
+                                        property bool hovered: suggMa.containsMouse
+
+                                        property real tlr: hovered ? (height / 2) : (suggestionCard.isFirst ? outerRadius : innerRadius)
+                                        property real trr: hovered ? (height / 2) : (suggestionCard.isFirst ? outerRadius : innerRadius)
+                                        property real blr: hovered ? (height / 2) : (suggestionCard.isLast ? outerRadius : innerRadius)
+                                        property real brr: hovered ? (height / 2) : (suggestionCard.isLast ? outerRadius : innerRadius)
+
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                                        ShapePath {
+                                            fillColor: suggBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+                                            strokeColor: suggBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                                            strokeWidth: 1
+
+                                            startX: suggBg.tlrAnim; startY: 0
+                                            PathLine { x: suggBg.width - suggBg.trrAnim; y: 0 }
+                                            PathArc { x: suggBg.width; y: suggBg.trrAnim; radiusX: suggBg.trrAnim; radiusY: suggBg.trrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: suggBg.width; y: suggBg.height - suggBg.brrAnim }
+                                            PathArc { x: suggBg.width - suggBg.brrAnim; y: suggBg.height; radiusX: suggBg.brrAnim; radiusY: suggBg.brrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: suggBg.blrAnim; y: suggBg.height }
+                                            PathArc { x: 0; y: suggBg.height - suggBg.blrAnim; radiusX: suggBg.blrAnim; radiusY: suggBg.blrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: 0; y: suggBg.tlrAnim }
+                                            PathArc { x: suggBg.tlrAnim; y: 0; radiusX: suggBg.tlrAnim; radiusY: suggBg.tlrAnim; direction: PathArc.Clockwise }
+                                        }
                                     }
 
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 2
-
-                                        StyledText {
-                                            Layout.fillWidth: true
-                                            text: dialog.suggestionTitle(suggestionCard.modelData)
-                                            font.pixelSize: Theme.fontSizeSmall
-                                            font.weight: Font.DemiBold
-                                            color: Theme.surfaceText
-                                        }
-
-                                        StyledText {
-                                            Layout.fillWidth: true
-                                            text: dialog.suggestionDetail(suggestionCard.modelData)
-                                            font.pixelSize: Theme.fontSizeSmall - 1
-                                            color: Theme.surfaceVariantText
-                                            wrapMode: Text.WordWrap
-                                        }
+                                    MouseArea {
+                                        id: suggMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
                                     }
 
-                                    Item {
-                                        implicitWidth: suggestionButton.width
-                                        implicitHeight: suggestionButton.height
+                                    RowLayout {
+                                        id: suggestionRow
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.leftMargin: Theme.spacingM
+                                        anchors.rightMargin: Theme.spacingM
+                                        spacing: Theme.spacingM
 
-                                        DankButton {
-                                            id: suggestionButton
-                                            buttonHeight: 28
-                                            horizontalPadding: Theme.spacingM
-                                            iconName: "add"
-                                            iconSize: 14
-                                            text: Tr.t("Add")
-                                            enabled: !dialog.busy
-                                            backgroundColor: Theme.primary
-                                            textColor: Theme.primaryText
-                                            onClicked: dialog.addSuggestion(suggestionCard.modelData)
+                                        DankIcon {
+                                            name: "extension"
+                                            size: 20
+                                            color: Theme.primary
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 2
+
+                                            StyledText {
+                                                Layout.fillWidth: true
+                                                text: dialog.suggestionTitle(suggestionCard.modelData)
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                font.weight: Font.DemiBold
+                                                color: Theme.surfaceText
+                                            }
+
+                                            StyledText {
+                                                Layout.fillWidth: true
+                                                text: dialog.suggestionDetail(suggestionCard.modelData)
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                color: Theme.surfaceVariantText
+                                                wrapMode: Text.WordWrap
+                                            }
+                                        }
+
+                                        Item {
+                                            implicitWidth: suggestionButton.width
+                                            implicitHeight: suggestionButton.height
+
+                                            DankButton {
+                                                id: suggestionButton
+                                                buttonHeight: 28
+                                                horizontalPadding: Theme.spacingM
+                                                iconName: "add"
+                                                iconSize: 14
+                                                text: Tr.t("Add")
+                                                enabled: !dialog.busy
+                                                backgroundColor: Theme.buttonBg
+                                                textColor: Theme.buttonText
+                                                onClicked: dialog.addSuggestion(suggestionCard.modelData)
+                                            }
                                         }
                                     }
                                 }
@@ -465,345 +545,162 @@ Item {
                         }
                     }
 
-                    // ── Flatpak remotes ─────────────────────────────────────
-                    ColumnLayout {
+                    // ── Flatpak remotes (Container Card) ─────────────────────
+                    StyledRect {
                         Layout.fillWidth: true
                         visible: dialog.remotes.length > 0
-                        spacing: Theme.spacingS
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        implicitHeight: remotesCol.implicitHeight + Theme.spacingM * 2
 
-                        StyledText {
-                            text: Tr.t("Flatpak remotes (%1)").arg(dialog.remotes.length)
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.weight: Font.DemiBold
-                            color: Theme.surfaceVariantText
-                        }
+                        ColumnLayout {
+                            id: remotesCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
 
-                        Repeater {
-                            model: dialog.remotes
-
-                            delegate: RowLayout {
-                                id: remoteRow
-
-                                required property var modelData
-
+                            RowLayout {
                                 Layout.fillWidth: true
-                                spacing: Theme.spacingM
+                                spacing: Theme.spacingS
 
                                 DankIcon {
                                     name: "deployed_code"
                                     size: 18
-                                    color: Theme.surfaceVariantText
-                                }
-
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 0
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        text: remoteRow.modelData.title !== "" ? remoteRow.modelData.title : remoteRow.modelData.name
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: Theme.surfaceText
-                                        elide: Text.ElideRight
-                                    }
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        text: remoteRow.modelData.url
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        color: Theme.surfaceVariantText
-                                        elide: Text.ElideRight
-                                    }
-                                }
-
-                                Rectangle {
-                                    implicitWidth: scopeLabel.implicitWidth + Theme.spacingS * 2
-                                    implicitHeight: 20
-                                    radius: height / 2
-                                    color: Theme.withAlpha(Theme.surfaceVariantText, 0.15)
-
-                                    StyledText {
-                                        id: scopeLabel
-                                        anchors.centerIn: parent
-                                        text: remoteRow.modelData.scope === "user" ? Tr.t("user") : Tr.t("system")
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        color: Theme.surfaceVariantText
-                                    }
-                                }
-
-                                DankActionButton {
-                                    buttonSize: 28
-                                    iconName: "delete"
-                                    iconSize: 15
-                                    enabled: !dialog.busy
-                                    iconColor: dialog.confirmId === "remote:" + remoteRow.modelData.name + remoteRow.modelData.scope ? Theme.error : Theme.surfaceVariantText
-                                    tooltipText: dialog.confirmId === "remote:" + remoteRow.modelData.name + remoteRow.modelData.scope ? Tr.t("Click again to confirm") : Tr.t("Remove")
-                                    onClicked: {
-                                        const key = "remote:" + remoteRow.modelData.name + remoteRow.modelData.scope;
-                                        if (dialog.confirmId === key)
-                                            dialog.removeRemote(remoteRow.modelData);
-                                        else
-                                            dialog.confirmId = key;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // ── Well-known Flatpak sources ──────────────────────────
-                    // As buttons rather than as addresses to look up: these
-                    // five are what almost everyone means by "add a remote"
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        visible: dialog.flatpakCatalog.length > 0
-                        spacing: Theme.spacingS
-
-                        StyledText {
-                            text: Tr.t("Well-known Flatpak sources")
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.weight: Font.DemiBold
-                            color: Theme.surfaceVariantText
-                        }
-
-                        Repeater {
-                            model: dialog.flatpakCatalog
-
-                            delegate: RowLayout {
-                                id: catalogRow
-
-                                required property var modelData
-
-                                Layout.fillWidth: true
-                                spacing: Theme.spacingM
-
-                                DankIcon {
-                                    name: "storefront"
-                                    size: 18
-                                    color: catalogRow.modelData.present ? Theme.success : Theme.secondary
-                                }
-
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 0
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        text: catalogRow.modelData.title
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: Theme.surfaceText
-                                        elide: Text.ElideRight
-                                    }
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        text: dialog.remoteDetail(catalogRow.modelData.name)
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        color: Theme.surfaceVariantText
-                                        wrapMode: Text.WordWrap
-                                    }
+                                    color: Theme.primary
                                 }
 
                                 StyledText {
-                                    visible: catalogRow.modelData.present
-                                    text: Tr.t("Added")
-                                    font.pixelSize: Theme.fontSizeSmall - 1
-                                    color: Theme.success
-                                }
-
-                                Item {
-                                    visible: !catalogRow.modelData.present
-                                    implicitWidth: catalogButton.width
-                                    implicitHeight: catalogButton.height
-
-                                    DankButton {
-                                        id: catalogButton
-                                        buttonHeight: 28
-                                        horizontalPadding: Theme.spacingM
-                                        iconName: "add"
-                                        iconSize: 14
-                                        text: Tr.t("Add")
-                                        enabled: !dialog.busy
-                                        backgroundColor: catalogRow.modelData.name === "flathub" ? Theme.primary : Theme.withAlpha(Theme.buttonBg, 0.9)
-                                        textColor: catalogRow.modelData.name === "flathub" ? Theme.primaryText : Theme.buttonText
-                                        onClicked: dialog.addCatalogRemote(catalogRow.modelData)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // ── Add a Flatpak remote ────────────────────────────────
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacingS
-
-                        StyledText {
-                            text: Tr.t("Add a Flatpak remote")
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.weight: Font.DemiBold
-                            color: Theme.surfaceVariantText
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingM
-
-                            DankTextField {
-                                id: remoteField
-                                Layout.fillWidth: true
-                                placeholderText: Tr.t("Address of a .flatpakrepo file")
-                                FieldPlaceholder {
-                                    text: Tr.t("Address of a .flatpakrepo file")
-                                }
-                                leftIconName: "link"
-                                onAccepted: {
-                                    dialog.addRemote(text);
-                                    text = "";
+                                    text: Tr.t("Flatpak remotes (%1)").arg(dialog.remotes.length)
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceText
                                 }
                             }
 
-                            Item {
-                                implicitWidth: remoteButton.width
-                                implicitHeight: remoteButton.height
+                            Repeater {
+                                model: dialog.remotes
 
-                                DankButton {
-                                    id: remoteButton
-                                    buttonHeight: 30
-                                    horizontalPadding: Theme.spacingM
-                                    iconName: "add"
-                                    iconSize: 14
-                                    text: Tr.t("Add")
-                                    enabled: !dialog.busy && remoteField.text.trim() !== ""
-                                    backgroundColor: Theme.primary
-                                    textColor: Theme.primaryText
-                                    onClicked: {
-                                        dialog.addRemote(remoteField.text);
-                                        remoteField.text = "";
-                                    }
-                                }
-                            }
-                        }
+                                delegate: Item {
+                                    id: remoteRow
+                                    required property var modelData
+                                    required property int index
 
-                        StyledText {
-                            Layout.fillWidth: true
-                            text: Tr.t("For anything not listed above. Added for you alone, so it needs no password.")
-                            font.pixelSize: Theme.fontSizeSmall - 1
-                            color: Theme.surfaceVariantText
-                            wrapMode: Text.WordWrap
-                        }
-                    }
+                                    readonly property int totalCount: dialog.remotes.length
+                                    readonly property bool isFirst: index === 0
+                                    readonly property bool isLast: index === totalCount - 1
 
-                    // ── Configured repositories ─────────────────────────────
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacingS
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingM
-
-                            StyledText {
-                                Layout.fillWidth: true
-                                text: Tr.t("Repositories (%1)").arg(dialog.visibleRepos.length)
-                                font.pixelSize: Theme.fontSizeSmall
-                                font.weight: Font.DemiBold
-                                color: Theme.surfaceVariantText
-                            }
-
-                            Item {
-                                implicitWidth: noiseButton.width
-                                implicitHeight: noiseButton.height
-
-                                DankButton {
-                                    id: noiseButton
-                                    buttonHeight: 26
-                                    horizontalPadding: Theme.spacingM
-                                    text: dialog.showNoise ? Tr.t("Hide debug and source repositories") : Tr.t("Show debug and source repositories")
-                                    backgroundColor: "transparent"
-                                    textColor: Theme.surfaceVariantText
-                                    onClicked: dialog.showNoise = !dialog.showNoise
-                                }
-                            }
-                        }
-
-                        Repeater {
-                            model: dialog.visibleRepos
-
-                            delegate: RowLayout {
-                                id: repoRow
-
-                                required property var modelData
-
-                                readonly property bool isDistro: modelData.kind === "distro"
-                                readonly property string confirmKey: "repo:" + modelData.id
-                                readonly property bool awaitingConfirm: dialog.confirmId === confirmKey
-
-                                Layout.fillWidth: true
-                                spacing: Theme.spacingM
-
-                                DankIcon {
-                                    name: repoRow.modelData.kind === "copr" ? "person" : (repoRow.isDistro ? "verified" : "public")
-                                    size: 18
-                                    color: repoRow.isDistro ? Theme.primary : Theme.surfaceVariantText
-                                }
-
-                                ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 0
+                                    implicitHeight: remoteInnerRow.implicitHeight + Theme.spacingS * 2
 
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        text: dialog.repoLabel(repoRow.modelData)
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: Theme.surfaceText
-                                        elide: Text.ElideRight
-                                    }
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        text: repoRow.awaitingConfirm ? Tr.t("This is part of the distribution — click the switch again to confirm.") : repoRow.modelData.id
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        color: repoRow.awaitingConfirm ? Theme.warning : Theme.surfaceVariantText
-                                        elide: Text.ElideRight
-                                    }
-                                }
-
-                                DankActionButton {
-                                    visible: repoRow.modelData.kind === "copr" && repoRow.modelData.project !== ""
-                                    buttonSize: 28
-                                    iconName: "delete"
-                                    iconSize: 15
-                                    enabled: !dialog.busy && dialog.writable
-                                    iconColor: dialog.confirmId === "copr:" + repoRow.modelData.project ? Theme.error : Theme.surfaceVariantText
-                                    tooltipText: dialog.confirmId === "copr:" + repoRow.modelData.project ? Tr.t("Click again to confirm") : Tr.t("Remove")
-                                    onClicked: {
-                                        const key = "copr:" + repoRow.modelData.project;
-                                        if (dialog.confirmId === key)
-                                            dialog.removeCopr(repoRow.modelData.project);
-                                        else
-                                            dialog.confirmId = key;
-                                    }
-                                }
-
-                                // Wrapped, because DankToggle sizes itself and
-                                // a layout writing its width fights that
-                                Item {
-                                    implicitWidth: 52
-                                    implicitHeight: 30
-
-                                    DankToggle {
+                                    Shape {
+                                        id: remoteBg
                                         anchors.fill: parent
-                                        hideText: true
-                                        checked: repoRow.modelData.enabled
-                                        enabled: dialog.writable && !dialog.busy
-                                        onToggled: checked => {
-                                            // Switching off a repository the system
-                                            // is built from is asked twice
-                                            if (!checked && repoRow.isDistro && !repoRow.awaitingConfirm) {
-                                                dialog.confirmId = repoRow.confirmKey;
-                                                return;
+
+                                        property real innerRadius: 6
+                                        property real outerRadius: 12
+                                        property bool hovered: remoteMa.containsMouse
+
+                                        property real tlr: hovered ? (height / 2) : (remoteRow.isFirst ? outerRadius : innerRadius)
+                                        property real trr: hovered ? (height / 2) : (remoteRow.isFirst ? outerRadius : innerRadius)
+                                        property real blr: hovered ? (height / 2) : (remoteRow.isLast ? outerRadius : innerRadius)
+                                        property real brr: hovered ? (height / 2) : (remoteRow.isLast ? outerRadius : innerRadius)
+
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                                        ShapePath {
+                                            fillColor: remoteBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+                                            strokeColor: remoteBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                                            strokeWidth: 1
+
+                                            startX: remoteBg.tlrAnim; startY: 0
+                                            PathLine { x: remoteBg.width - remoteBg.trrAnim; y: 0 }
+                                            PathArc { x: remoteBg.width; y: remoteBg.trrAnim; radiusX: remoteBg.trrAnim; radiusY: remoteBg.trrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: remoteBg.width; y: remoteBg.height - remoteBg.brrAnim }
+                                            PathArc { x: remoteBg.width - remoteBg.brrAnim; y: remoteBg.height; radiusX: remoteBg.brrAnim; radiusY: remoteBg.brrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: remoteBg.blrAnim; y: remoteBg.height }
+                                            PathArc { x: 0; y: remoteBg.height - remoteBg.blrAnim; radiusX: remoteBg.blrAnim; radiusY: remoteBg.blrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: 0; y: remoteBg.tlrAnim }
+                                            PathArc { x: remoteBg.tlrAnim; y: 0; radiusX: remoteBg.tlrAnim; radiusY: remoteBg.tlrAnim; direction: PathArc.Clockwise }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: remoteMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                    }
+
+                                    RowLayout {
+                                        id: remoteInnerRow
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.margins: Theme.spacingS
+                                        spacing: Theme.spacingM
+
+                                        DankIcon {
+                                            name: "cloud_done"
+                                            size: 18
+                                            color: Theme.primary
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 0
+
+                                            StyledText {
+                                                Layout.fillWidth: true
+                                                text: remoteRow.modelData.title !== "" ? remoteRow.modelData.title : remoteRow.modelData.name
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                font.weight: Font.Medium
+                                                color: Theme.surfaceText
+                                                elide: Text.ElideRight
                                             }
-                                            dialog.setRepoEnabled(repoRow.modelData, checked);
+
+                                            StyledText {
+                                                Layout.fillWidth: true
+                                                text: remoteRow.modelData.url
+                                                font.pixelSize: Theme.fontSizeSmall - 2
+                                                color: Theme.surfaceVariantText
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            implicitWidth: scopeLabel.implicitWidth + Theme.spacingS * 2
+                                            implicitHeight: 20
+                                            radius: height / 2
+                                            color: Theme.withAlpha(Theme.primary, 0.15)
+
+                                            StyledText {
+                                                id: scopeLabel
+                                                anchors.centerIn: parent
+                                                text: remoteRow.modelData.scope === "user" ? Tr.t("user") : Tr.t("system")
+                                                font.pixelSize: Theme.fontSizeSmall - 2
+                                                font.weight: Font.Medium
+                                                color: Theme.primary
+                                            }
+                                        }
+
+                                        DankActionButton {
+                                            buttonSize: 28
+                                            iconName: "delete"
+                                            iconSize: 15
+                                            enabled: !dialog.busy
+                                            iconColor: dialog.confirmId === "remote:" + remoteRow.modelData.name + remoteRow.modelData.scope ? Theme.error : Theme.surfaceVariantText
+                                            tooltipText: dialog.confirmId === "remote:" + remoteRow.modelData.name + remoteRow.modelData.scope ? Tr.t("Click again to confirm") : Tr.t("Remove")
+                                            onClicked: {
+                                                const key = "remote:" + remoteRow.modelData.name + remoteRow.modelData.scope;
+                                                if (dialog.confirmId === key)
+                                                    dialog.removeRemote(remoteRow.modelData);
+                                                else
+                                                    dialog.confirmId = key;
+                                            }
                                         }
                                     }
                                 }
@@ -811,65 +708,524 @@ Item {
                         }
                     }
 
-                    // ── Add a Copr ──────────────────────────────────────────
-                    ColumnLayout {
+                    // ── Well-known Flatpak sources (Container Card) ─────────
+                    StyledRect {
                         Layout.fillWidth: true
-                        visible: dialog.writable
-                        spacing: Theme.spacingS
+                        visible: dialog.flatpakCatalog.length > 0
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        implicitHeight: catalogCol.implicitHeight + Theme.spacingM * 2
 
-                        StyledText {
-                            text: Tr.t("Add a Copr")
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.weight: Font.DemiBold
-                            color: Theme.surfaceVariantText
-                        }
+                        ColumnLayout {
+                            id: catalogCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingM
-
-                            DankTextField {
-                                id: coprField
+                            RowLayout {
                                 Layout.fillWidth: true
-                                placeholderText: Tr.t("owner/project")
-                                FieldPlaceholder {
-                                    text: Tr.t("owner/project")
+                                spacing: Theme.spacingS
+
+                                DankIcon {
+                                    name: "storefront"
+                                    size: 18
+                                    color: Theme.primary
                                 }
-                                leftIconName: "person_add"
-                                onAccepted: {
-                                    dialog.addCopr(text);
-                                    text = "";
+
+                                StyledText {
+                                    text: Tr.t("Well-known Flatpak sources")
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceText
                                 }
                             }
 
-                            Item {
-                                implicitWidth: coprButton.width
-                                implicitHeight: coprButton.height
+                            Repeater {
+                                model: dialog.flatpakCatalog
 
-                                DankButton {
-                                    id: coprButton
-                                    buttonHeight: 30
-                                    horizontalPadding: Theme.spacingM
-                                    iconName: "add"
-                                    iconSize: 14
-                                    text: Tr.t("Add")
-                                    enabled: !dialog.busy && coprField.text.trim() !== ""
-                                    backgroundColor: Theme.primary
-                                    textColor: Theme.primaryText
-                                    onClicked: {
-                                        dialog.addCopr(coprField.text);
-                                        coprField.text = "";
+                                delegate: Item {
+                                    id: catalogRow
+                                    required property var modelData
+                                    required property int index
+
+                                    readonly property int totalCount: dialog.flatpakCatalog.length
+                                    readonly property bool isFirst: index === 0
+                                    readonly property bool isLast: index === totalCount - 1
+
+                                    Layout.fillWidth: true
+                                    implicitHeight: catalogInnerRow.implicitHeight + Theme.spacingS * 2
+
+                                    Shape {
+                                        id: catBg
+                                        anchors.fill: parent
+
+                                        property real innerRadius: 6
+                                        property real outerRadius: 12
+                                        property bool hovered: catMa.containsMouse
+
+                                        property real tlr: hovered ? (height / 2) : (catalogRow.isFirst ? outerRadius : innerRadius)
+                                        property real trr: hovered ? (height / 2) : (catalogRow.isFirst ? outerRadius : innerRadius)
+                                        property real blr: hovered ? (height / 2) : (catalogRow.isLast ? outerRadius : innerRadius)
+                                        property real brr: hovered ? (height / 2) : (catalogRow.isLast ? outerRadius : innerRadius)
+
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                                        ShapePath {
+                                            fillColor: catBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+                                            strokeColor: catBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                                            strokeWidth: 1
+
+                                            startX: catBg.tlrAnim; startY: 0
+                                            PathLine { x: catBg.width - catBg.trrAnim; y: 0 }
+                                            PathArc { x: catBg.width; y: catBg.trrAnim; radiusX: catBg.trrAnim; radiusY: catBg.trrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: catBg.width; y: catBg.height - catBg.brrAnim }
+                                            PathArc { x: catBg.width - catBg.brrAnim; y: catBg.height; radiusX: catBg.brrAnim; radiusY: catBg.brrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: catBg.blrAnim; y: catBg.height }
+                                            PathArc { x: 0; y: catBg.height - catBg.blrAnim; radiusX: catBg.blrAnim; radiusY: catBg.blrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: 0; y: catBg.tlrAnim }
+                                            PathArc { x: catBg.tlrAnim; y: 0; radiusX: catBg.tlrAnim; radiusY: catBg.tlrAnim; direction: PathArc.Clockwise }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: catMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                    }
+
+                                    RowLayout {
+                                        id: catalogInnerRow
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.margins: Theme.spacingS
+                                        spacing: Theme.spacingM
+
+                                        DankIcon {
+                                            name: catalogRow.modelData.present ? "check_circle" : "store"
+                                            size: 18
+                                            color: catalogRow.modelData.present ? Theme.success : Theme.primary
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 0
+
+                                            StyledText {
+                                                Layout.fillWidth: true
+                                                text: catalogRow.modelData.title
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                font.weight: Font.Medium
+                                                color: Theme.surfaceText
+                                                elide: Text.ElideRight
+                                            }
+
+                                            StyledText {
+                                                Layout.fillWidth: true
+                                                text: dialog.remoteDetail(catalogRow.modelData.name)
+                                                font.pixelSize: Theme.fontSizeSmall - 2
+                                                color: Theme.surfaceVariantText
+                                                wrapMode: Text.WordWrap
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            visible: catalogRow.modelData.present
+                                            implicitWidth: addedBadge.implicitWidth + Theme.spacingS * 2
+                                            implicitHeight: 20
+                                            radius: height / 2
+                                            color: Theme.withAlpha(Theme.success, 0.15)
+
+                                            StyledText {
+                                                id: addedBadge
+                                                anchors.centerIn: parent
+                                                text: Tr.t("Added")
+                                                font.pixelSize: Theme.fontSizeSmall - 2
+                                                font.weight: Font.Medium
+                                                color: Theme.success
+                                            }
+                                        }
+
+                                        Item {
+                                            visible: !catalogRow.modelData.present
+                                            implicitWidth: catalogButton.width
+                                            implicitHeight: catalogButton.height
+
+                                            DankButton {
+                                                id: catalogButton
+                                                buttonHeight: 28
+                                                horizontalPadding: Theme.spacingM
+                                                iconName: "add"
+                                                iconSize: 14
+                                                text: Tr.t("Add")
+                                                enabled: !dialog.busy
+                                                backgroundColor: Theme.buttonBg
+                                                textColor: Theme.buttonText
+                                                onClicked: dialog.addCatalogRemote(catalogRow.modelData)
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
+                    }
 
-                        StyledText {
-                            Layout.fillWidth: true
-                            text: Tr.t("Copr repositories are built by individuals, not by the distribution. Their packages are as trustworthy as their owner.")
-                            font.pixelSize: Theme.fontSizeSmall - 1
-                            color: Theme.surfaceVariantText
-                            wrapMode: Text.WordWrap
+                    // ── Add a Flatpak remote (Container Card) ────────────────
+                    StyledRect {
+                        Layout.fillWidth: true
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        implicitHeight: addRemoteCol.implicitHeight + Theme.spacingM * 2
+
+                        ColumnLayout {
+                            id: addRemoteCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+
+                                DankIcon {
+                                    name: "add_link"
+                                    size: 18
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Add a Flatpak remote")
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceText
+                                }
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingM
+
+                                DankTextField {
+                                    id: remoteField
+                                    Layout.fillWidth: true
+                                    placeholderText: Tr.t("Address of a .flatpakrepo file")
+                                    FieldPlaceholder {
+                                        text: Tr.t("Address of a .flatpakrepo file")
+                                    }
+                                    leftIconName: "link"
+                                    onAccepted: {
+                                        dialog.addRemote(text);
+                                        text = "";
+                                    }
+                                }
+
+                                Item {
+                                    implicitWidth: remoteButton.width
+                                    implicitHeight: remoteButton.height
+
+                                    DankButton {
+                                        id: remoteButton
+                                        buttonHeight: 30
+                                        horizontalPadding: Theme.spacingM
+                                        iconName: "add"
+                                        iconSize: 14
+                                        text: Tr.t("Add")
+                                        enabled: !dialog.busy && remoteField.text.trim() !== ""
+                                        backgroundColor: Theme.buttonBg
+                                        textColor: Theme.buttonText
+                                        onClicked: {
+                                            dialog.addRemote(remoteField.text);
+                                            remoteField.text = "";
+                                        }
+                                    }
+                                }
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: Tr.t("For anything not listed above. Added for you alone, so it needs no password.")
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                color: Theme.surfaceVariantText
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                    }
+
+                    // ── Configured repositories (Container Card) ────────────
+                    StyledRect {
+                        Layout.fillWidth: true
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        implicitHeight: reposCol.implicitHeight + Theme.spacingM * 2
+
+                        ColumnLayout {
+                            id: reposCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingM
+
+                                DankIcon {
+                                    name: "inventory_2"
+                                    size: 18
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    text: Tr.t("Repositories (%1)").arg(dialog.visibleRepos.length)
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceText
+                                }
+
+                                Item {
+                                    implicitWidth: noiseButton.width
+                                    implicitHeight: noiseButton.height
+
+                                    DankButton {
+                                        id: noiseButton
+                                        buttonHeight: 26
+                                        horizontalPadding: Theme.spacingM
+                                        iconName: dialog.showNoise ? "visibility_off" : "visibility"
+                                        iconSize: 14
+                                        text: dialog.showNoise ? Tr.t("Hide debug/source repos") : Tr.t("Show debug/source repos")
+                                        backgroundColor: Theme.surfaceContainerHighest
+                                        textColor: Theme.surfaceVariantText
+                                        onClicked: dialog.showNoise = !dialog.showNoise
+                                    }
+                                }
+                            }
+
+                            Repeater {
+                                model: dialog.visibleRepos
+
+                                delegate: Item {
+                                    id: repoRow
+                                    required property var modelData
+                                    required property int index
+
+                                    readonly property bool isDistro: modelData.kind === "distro"
+                                    readonly property string confirmKey: "repo:" + modelData.id
+                                    readonly property bool awaitingConfirm: dialog.confirmId === confirmKey
+                                    readonly property int totalCount: dialog.visibleRepos.length
+                                    readonly property bool isFirst: index === 0
+                                    readonly property bool isLast: index === totalCount - 1
+
+                                    Layout.fillWidth: true
+                                    implicitHeight: repoInnerRow.implicitHeight + Theme.spacingS * 2
+
+                                    Shape {
+                                        id: repoBg
+                                        anchors.fill: parent
+
+                                        property real innerRadius: 6
+                                        property real outerRadius: 12
+                                        property bool hovered: repoMa.containsMouse
+
+                                        property real tlr: hovered ? (height / 2) : (repoRow.isFirst ? outerRadius : innerRadius)
+                                        property real trr: hovered ? (height / 2) : (repoRow.isFirst ? outerRadius : innerRadius)
+                                        property real blr: hovered ? (height / 2) : (repoRow.isLast ? outerRadius : innerRadius)
+                                        property real brr: hovered ? (height / 2) : (repoRow.isLast ? outerRadius : innerRadius)
+
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                                        ShapePath {
+                                            fillColor: repoBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+                                            strokeColor: repoBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                                            strokeWidth: 1
+
+                                            startX: repoBg.tlrAnim; startY: 0
+                                            PathLine { x: repoBg.width - repoBg.trrAnim; y: 0 }
+                                            PathArc { x: repoBg.width; y: repoBg.trrAnim; radiusX: repoBg.trrAnim; radiusY: repoBg.trrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: repoBg.width; y: repoBg.height - repoBg.brrAnim }
+                                            PathArc { x: repoBg.width - repoBg.brrAnim; y: repoBg.height; radiusX: repoBg.brrAnim; radiusY: repoBg.brrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: repoBg.blrAnim; y: repoBg.height }
+                                            PathArc { x: 0; y: repoBg.height - repoBg.blrAnim; radiusX: repoBg.blrAnim; radiusY: repoBg.blrAnim; direction: PathArc.Clockwise }
+                                            PathLine { x: 0; y: repoBg.tlrAnim }
+                                            PathArc { x: repoBg.tlrAnim; y: 0; radiusX: repoBg.tlrAnim; radiusY: repoBg.tlrAnim; direction: PathArc.Clockwise }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: repoMa
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                    }
+
+                                    RowLayout {
+                                        id: repoInnerRow
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.margins: Theme.spacingS
+                                        spacing: Theme.spacingM
+
+                                        DankIcon {
+                                            name: repoRow.modelData.kind === "copr" ? "person" : (repoRow.isDistro ? "verified" : "public")
+                                            size: 18
+                                            color: repoRow.isDistro ? Theme.primary : Theme.surfaceVariantText
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 0
+
+                                            StyledText {
+                                                Layout.fillWidth: true
+                                                text: dialog.repoLabel(repoRow.modelData)
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                font.weight: Font.Medium
+                                                color: Theme.surfaceText
+                                                elide: Text.ElideRight
+                                            }
+
+                                            StyledText {
+                                                Layout.fillWidth: true
+                                                text: repoRow.awaitingConfirm ? Tr.t("This is part of the distribution — click the switch again to confirm.") : repoRow.modelData.id
+                                                font.pixelSize: Theme.fontSizeSmall - 2
+                                                color: repoRow.awaitingConfirm ? Theme.warning : Theme.surfaceVariantText
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+
+                                        DankActionButton {
+                                            visible: repoRow.modelData.kind === "copr" && repoRow.modelData.project !== ""
+                                            buttonSize: 28
+                                            iconName: "delete"
+                                            iconSize: 15
+                                            enabled: !dialog.busy && dialog.writable
+                                            iconColor: dialog.confirmId === "copr:" + repoRow.modelData.project ? Theme.error : Theme.surfaceVariantText
+                                            tooltipText: dialog.confirmId === "copr:" + repoRow.modelData.project ? Tr.t("Click again to confirm") : Tr.t("Remove")
+                                            onClicked: {
+                                                const key = "copr:" + repoRow.modelData.project;
+                                                if (dialog.confirmId === key)
+                                                    dialog.removeCopr(repoRow.modelData.project);
+                                                else
+                                                    dialog.confirmId = key;
+                                            }
+                                        }
+
+                                        Item {
+                                            implicitWidth: 52
+                                            implicitHeight: 30
+
+                                            DankToggle {
+                                                anchors.fill: parent
+                                                hideText: true
+                                                checked: repoRow.modelData.enabled
+                                                enabled: dialog.writable && !dialog.busy
+                                                onToggled: checked => {
+                                                    if (!checked && repoRow.isDistro && !repoRow.awaitingConfirm) {
+                                                        dialog.confirmId = repoRow.confirmKey;
+                                                        return;
+                                                    }
+                                                    dialog.setRepoEnabled(repoRow.modelData, checked);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ── Add a Copr (Container Card) ─────────────────────────
+                    StyledRect {
+                        Layout.fillWidth: true
+                        visible: dialog.writable
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        implicitHeight: addCoprCol.implicitHeight + Theme.spacingM * 2
+
+                        ColumnLayout {
+                            id: addCoprCol
+                            anchors.fill: parent
+                            anchors.margins: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
+
+                                DankIcon {
+                                    name: "person_add"
+                                    size: 18
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Add a Copr")
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceText
+                                }
+                            }
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingM
+
+                                DankTextField {
+                                    id: coprField
+                                    Layout.fillWidth: true
+                                    placeholderText: Tr.t("owner/project")
+                                    FieldPlaceholder {
+                                        text: Tr.t("owner/project")
+                                    }
+                                    leftIconName: "person_add"
+                                    onAccepted: {
+                                        dialog.addCopr(text);
+                                        text = "";
+                                    }
+                                }
+
+                                Item {
+                                    implicitWidth: coprButton.width
+                                    implicitHeight: coprButton.height
+
+                                    DankButton {
+                                        id: coprButton
+                                        buttonHeight: 30
+                                        horizontalPadding: Theme.spacingM
+                                        iconName: "add"
+                                        iconSize: 14
+                                        text: Tr.t("Add")
+                                        enabled: !dialog.busy && coprField.text.trim() !== ""
+                                        backgroundColor: Theme.buttonBg
+                                        textColor: Theme.buttonText
+                                        onClicked: {
+                                            dialog.addCopr(coprField.text);
+                                            coprField.text = "";
+                                        }
+                                    }
+                                }
+                            }
+
+                            StyledText {
+                                Layout.fillWidth: true
+                                text: Tr.t("Copr repositories are built by individuals, not by the distribution. Their packages are as trustworthy as their owner.")
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                color: Theme.surfaceVariantText
+                                wrapMode: Text.WordWrap
+                            }
                         }
                     }
                 }

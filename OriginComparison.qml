@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import QtQuick.Layouts
 import qs.Common
 import qs.Widgets
@@ -117,23 +118,71 @@ Column {
     }
 
     Repeater {
+        id: origRepeater
         model: root.origins
 
-        delegate: Rectangle {
+        delegate: Item {
+            id: origDelegate
             required property var modelData
+            required property int index
 
+            readonly property bool isFirst: index === 0
+            readonly property bool isLast: index === root.origins.length - 1
             readonly property bool newest: (modelData.version || "") !== "" && modelData.version === root.newestVersion && root.origins.length > 1
             readonly property bool here: root.installedRefs.indexOf(modelData.ref) !== -1
 
+            readonly property real outerRadius: 16
+            readonly property real innerRadius: 6
+
+            property real tlr: origMa.containsMouse ? 18 : (isFirst ? outerRadius : innerRadius)
+            property real trr: origMa.containsMouse ? 18 : (isFirst ? outerRadius : innerRadius)
+            property real blr: origMa.containsMouse ? 18 : (isLast ? outerRadius : innerRadius)
+            property real brr: origMa.containsMouse ? 18 : (isLast ? outerRadius : innerRadius)
+
+            Behavior on tlr { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on trr { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on blr { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on brr { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+
             width: root.width
             implicitHeight: originColumn.implicitHeight + Theme.spacingS * 2
-            radius: Theme.cornerRadius / 2
-            // The installed one is lifted out of the row of alternatives
-            // rather than labelled inside it, because which one you already
-            // have is read before anything else on this list
-            color: here ? Theme.withAlpha(Theme.success, 0.12) : Theme.withAlpha(Theme.surfaceVariant, 0.4)
-            border.width: here ? 1 : 0
-            border.color: Theme.withAlpha(Theme.success, 0.35)
+
+            Shape {
+                id: origBg
+                anchors.fill: parent
+                layer.enabled: true
+                layer.samples: 4
+                smooth: true
+
+                ShapePath {
+                    fillColor: origMa.containsMouse
+                        ? (here ? Theme.withAlpha(Theme.success, 0.22) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.16))
+                        : (here ? Theme.withAlpha(Theme.success, 0.12) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
+                    strokeColor: origMa.containsMouse
+                        ? (here ? Theme.withAlpha(Theme.success, 0.7) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4))
+                        : (here ? Theme.withAlpha(Theme.success, 0.35) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1))
+                    strokeWidth: 1
+                    joinStyle: ShapePath.RoundJoin
+
+                    startX: 0
+                    startY: origDelegate.tlr
+
+                    PathArc { x: origDelegate.tlr; y: 0; radiusX: origDelegate.tlr; radiusY: origDelegate.tlr }
+                    PathLine { x: origDelegate.width - origDelegate.trr; y: 0 }
+                    PathArc { x: origDelegate.width; y: origDelegate.trr; radiusX: origDelegate.trr; radiusY: origDelegate.trr }
+                    PathLine { x: origDelegate.width; y: origDelegate.height - origDelegate.brr }
+                    PathArc { x: origDelegate.width - origDelegate.brr; y: origDelegate.height; radiusX: origDelegate.brr; radiusY: origDelegate.brr }
+                    PathLine { x: origDelegate.blr; y: origDelegate.height }
+                    PathArc { x: 0; y: origDelegate.height - origDelegate.blr; radiusX: origDelegate.blr; radiusY: origDelegate.blr }
+                    PathLine { x: 0; y: origDelegate.tlr }
+                }
+            }
+
+            MouseArea {
+                id: origMa
+                anchors.fill: parent
+                hoverEnabled: true
+            }
 
             Column {
                 id: originColumn
@@ -273,9 +322,6 @@ Column {
         }
     }
 
-    // Said once, under the lot: an rpm of 188 kB next to a Flatpak of 53 MB
-    // is not the comparison it looks like. Neither figure counts what it
-    // drags in — the rpm its dependencies, the Flatpak its runtime.
     StyledText {
         width: root.width
         visible: root.origins.length > 1

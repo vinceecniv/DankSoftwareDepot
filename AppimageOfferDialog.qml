@@ -1,27 +1,30 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Quickshell.Io
 import qs.Common
 import qs.Modals.FileBrowser
 import qs.Widgets
 
 // Installing an AppImage from a file, asked in one place.
-//
-// There are two ways in — the button in the toolbar, and double-clicking a
-// .appimage in the file manager — and they used to look like two different
-// features: a row wedged in between the search field and the results, and a
-// card above them. One dialog serves both. It opens empty from the toolbar
-// and already filled from the file manager, which is the only difference
-// between them worth keeping.
-//
-// The file is read before anything is offered, because the question is not
-// the same for a new app as for a newer build of one that is already here.
-// The reading never touches the file: an AppImage has to be executable to
-// list its own contents, and a fresh download is not.
 Item {
     id: dialog
 
-    property bool showing: false
+    property bool animActive: false
+    readonly property bool showing: animActive || closeTimer.running
+
+    Timer {
+        id: closeTimer
+        interval: 220
+        repeat: false
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        enabled: dialog.showing
+        onActivated: dialog.close()
+    }
+
     // Path or URL as typed, picked or handed over
     property string source: ""
     property var info: null            // inspection of a local file, or null
@@ -40,7 +43,8 @@ Item {
         source = "";
         info = null;
         failed = false;
-        showing = true;
+        closeTimer.stop();
+        animActive = true;
         sourceField.text = "";
         sourceField.forceActiveFocus();
     }
@@ -50,122 +54,145 @@ Item {
         sourceField.text = path;
         info = null;
         failed = false;
-        showing = true;
+        closeTimer.stop();
+        animActive = true;
         inspect();
     }
 
     function close() {
-        showing = false;
-        inspecting = false;
-    }
-
-    // Only a local file can be looked into; a URL is a download first and an
-    // AppImage afterwards, so it is offered as it stands
-    function inspect() {
-        const path = source.trim();
-        info = null;
-        failed = false;
-        if (path === "" || sourceIsUrl || inspectProcess.running)
+        if (!animActive)
             return;
-        inspecting = true;
-        inspectProcess.command = [Backend.python, scriptPath, "--inspect", path];
-        inspectProcess.running = true;
+        animActive = false;
+        inspecting = false;
+        closeTimer.restart();
     }
 
     function accept() {
-        const path = source.trim();
-        if (path === "")
+        const target = source.trim();
+        if (target === "" || inspecting || failed || busy)
             return;
-        const label = (info && info.name) ? info.name : path.split("/").pop().replace(/\.appimage$/i, "");
-        if (installedMatch && installedMatch.id)
-            installRequested(["--replace", installedMatch.id, path], label);
-        else
-            installRequested(["--install", path, (info && info.name) ? info.name : ""], label);
-        close();
+
+        let label = "AppImage";
+        if (info && info.name)
+            label = info.name;
+        else if (sourceIsUrl)
+            label = target.split("/").pop().replace(/\.AppImage$/i, "") || "AppImage";
+
+        dialog.installRequested(["install", target], label);
+        dialog.close();
+    }
+
+    function inspect() {
+        if (sourceIsUrl || source.trim() === "") {
+            info = null;
+            failed = false;
+            return;
+        }
+        inspectProc.running = false;
+        inspecting = true;
+        failed = false;
+        inspectProc.arguments = ["--json", "inspect", source.trim()];
+        inspectProc.running = true;
+    }
+
+    Timer {
+        id: inspectDebounce
+        interval: 350
+        repeat: false
+        onTriggered: dialog.inspect()
     }
 
     Process {
-        id: inspectProcess
-
+        id: inspectProc
+        command: ["python3", dialog.scriptPath]
         stdout: StdioCollector {
-            onStreamFinished: {
-                let result = null;
+            onDataChanged: {
                 try {
-                    result = JSON.parse(text);
+                    const parsed = JSON.parse(value.trim());
+                    if (parsed && parsed.success) {
+                        dialog.info = parsed;
+                        dialog.failed = false;
+                    } else {
+                        dialog.info = null;
+                        dialog.failed = true;
+                    }
                 } catch (e) {
-                    result = null;
-                }
-                if (result && result.ok)
-                    dialog.info = result;
-                else
+                    dialog.info = null;
                     dialog.failed = true;
+                }
+                dialog.inspecting = false;
             }
         }
-
-        onExited: (exitCode, exitStatus) => {
-            dialog.inspecting = false;
-            if (dialog.info === null)
+        onExited: exitCode => {
+            if (exitCode !== 0 && !dialog.info) {
                 dialog.failed = true;
+                dialog.inspecting = false;
+            }
         }
-    }
-
-    // Typing a path by hand deserves the same answer as dropping one in,
-    // once the typing stops
-    Timer {
-        id: inspectDebounce
-        interval: 400
-        onTriggered: dialog.inspect()
     }
 
     Loader {
         id: pickerLoader
         active: false
-
-        sourceComponent: FileBrowserModal {
-            browserTitle: Tr.t("Choose an AppImage file")
-            browserIcon: "note_add"
-            browserType: "generic"
-            fileExtensions: ["*.AppImage", "*.appimage"]
-
-            onFileSelected: path => {
-                const clean = path.replace("file://", "");
-                dialog.source = clean;
-                sourceField.text = clean;
-                dialog.inspect();
+        sourceComponent: Component {
+            FileBrowserModal {
+                browserTitle: Tr.t("Select an AppImage")
+                fileExtensions: ["*.AppImage", "*.appimage", "*.*"]
+                onFileSelected: path => {
+                    dialog.source = path;
+                    sourceField.text = path;
+                    dialog.inspect();
+                }
             }
         }
     }
 
     anchors.fill: parent
     visible: showing
-    z: 120
+    z: 9999
 
     Rectangle {
+        id: dim
         anchors.fill: parent
         color: Qt.rgba(0, 0, 0, 0.45)
+        opacity: dialog.animActive ? 1.0 : 0.0
+        Behavior on opacity {
+            NumberAnimation { duration: 220; easing.type: Easing.OutQuad }
+        }
 
         MouseArea {
             anchors.fill: parent
             onClicked: dialog.close()
-            onWheel: wheel => wheel.accepted = true
         }
     }
 
-    Rectangle {
+    StyledRect {
+        id: appimageSheet
         anchors.centerIn: parent
-        width: Math.min(parent.width - Theme.spacingXL * 2, 520)
+        width: Math.min(parent.width - Theme.spacingXL * 2, 480)
         height: sheetColumn.implicitHeight + Theme.spacingL * 2
-        radius: Theme.cornerRadius
-        color: Theme.surfaceContainerHigh
+        radius: Theme.cornerRadius + 4
+        color: Theme.surfaceContainer
+        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
         border.width: 1
-        border.color: Theme.withAlpha(Theme.outline, 0.2)
+
+        scale: dialog.animActive ? 1.0 : 0.94
+        opacity: dialog.animActive ? 1.0 : 0.0
+        Behavior on scale {
+            NumberAnimation {
+                duration: dialog.animActive ? 320 : 200
+                easing.type: dialog.animActive ? Easing.OutBack : Easing.InQuad
+                easing.overshoot: 1.15
+            }
+        }
+        Behavior on opacity {
+            NumberAnimation { duration: 220; easing.type: Easing.OutQuad }
+        }
 
         MouseArea {
             anchors.fill: parent
             onWheel: wheel => wheel.accepted = true
         }
-
-        Keys.onEscapePressed: dialog.close()
 
         ColumnLayout {
             id: sheetColumn
@@ -179,10 +206,17 @@ Item {
                 Layout.fillWidth: true
                 spacing: Theme.spacingM
 
-                DankIcon {
-                    name: "note_add"
-                    size: 22
-                    color: Theme.primary
+                Rectangle {
+                    width: 32
+                    height: 32
+                    radius: 10
+                    color: Theme.withAlpha(Theme.primary, 0.15)
+                    DankIcon {
+                        anchors.centerIn: parent
+                        name: "note_add"
+                        size: 18
+                        color: Theme.primary
+                    }
                 }
 
                 StyledText {
@@ -225,10 +259,10 @@ Item {
                 }
 
                 DankActionButton {
-                    buttonSize: 32
+                    buttonSize: 34
                     iconName: "folder_open"
-                    iconSize: 17
-                    iconColor: Theme.surfaceText
+                    iconSize: 18
+                    iconColor: Theme.primary
                     tooltipText: Tr.t("Choose an AppImage file")
                     onClicked: {
                         pickerLoader.active = true;
@@ -238,67 +272,85 @@ Item {
                 }
             }
 
-            // What the file turned out to be. A URL says nothing until it is
-            // downloaded, so it gets no panel rather than an empty one.
-            RowLayout {
+            // Info Card
+            Rectangle {
                 Layout.fillWidth: true
-                spacing: Theme.spacingM
                 visible: dialog.inspecting || dialog.info !== null || dialog.failed
+                implicitHeight: infoRow.implicitHeight + Theme.spacingM * 2
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.surface, 0.5)
+                border.color: dialog.failed ? Theme.withAlpha(Theme.error, 0.3) : Theme.withAlpha(Theme.outline, 0.1)
+                border.width: 1
 
-                Image {
-                    id: appIcon
-                    Layout.preferredWidth: 40
-                    Layout.preferredHeight: 40
-                    source: (dialog.info && dialog.info.icon) ? "file://" + dialog.info.icon : ""
-                    sourceSize.width: 80
-                    sourceSize.height: 80
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    visible: status === Image.Ready
-                }
+                RowLayout {
+                    id: infoRow
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.margins: Theme.spacingM
+                    spacing: Theme.spacingM
 
-                DankIcon {
-                    Layout.preferredWidth: 40
-                    Layout.preferredHeight: 40
-                    visible: !appIcon.visible
-                    name: dialog.failed ? "error" : "deployed_code"
-                    size: 32
-                    color: dialog.failed ? Theme.error : Theme.primary
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 2
-
-                    StyledText {
-                        Layout.fillWidth: true
-                        text: {
-                            if (dialog.failed)
-                                return Tr.t("That file could not be read as an AppImage.");
-                            if (dialog.inspecting || !dialog.info)
-                                return Tr.t("Reading the AppImage…");
-                            const version = dialog.info.version || "";
-                            return version !== "" ? (dialog.info.name || "") + " " + version : (dialog.info.name || "");
-                        }
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: Font.DemiBold
-                        color: Theme.surfaceText
-                        elide: Text.ElideRight
+                    Image {
+                        id: appIcon
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
+                        source: (dialog.info && dialog.info.icon) ? "file://" + dialog.info.icon : ""
+                        sourceSize.width: 80
+                        sourceSize.height: 80
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                        visible: status === Image.Ready
                     }
 
-                    StyledText {
-                        Layout.fillWidth: true
-                        visible: dialog.info !== null && !dialog.failed
-                        text: {
-                            if (!dialog.info)
-                                return "";
-                            const size = dialog.formatBytes(dialog.info.sizeBytes);
-                            const line = dialog.installedMatch ? Tr.t("You already have this one — replace it with this build?") : Tr.t("Install this AppImage into your AppImages folder?");
-                            return size !== "" ? line + " · " + size : line;
+                    Rectangle {
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
+                        radius: 10
+                        color: dialog.failed ? Theme.withAlpha(Theme.error, 0.15) : Theme.withAlpha(Theme.primary, 0.15)
+                        visible: !appIcon.visible
+
+                        DankIcon {
+                            anchors.centerIn: parent
+                            name: dialog.failed ? "error" : "deployed_code"
+                            size: 22
+                            color: dialog.failed ? Theme.error : Theme.primary
                         }
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceVariantText
-                        wrapMode: Text.WordWrap
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 3
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: {
+                                if (dialog.failed)
+                                    return Tr.t("That file could not be read as an AppImage.");
+                                if (dialog.inspecting || !dialog.info)
+                                    return Tr.t("Reading the AppImage…");
+                                const version = dialog.info.version || "";
+                                return version !== "" ? (dialog.info.name || "") + " " + version : (dialog.info.name || "");
+                            }
+                            font.pixelSize: Theme.fontSizeMedium
+                            font.weight: Font.DemiBold
+                            color: Theme.surfaceText
+                            elide: Text.ElideRight
+                        }
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            visible: dialog.info !== null && !dialog.failed
+                            text: {
+                                if (!dialog.info)
+                                    return "";
+                                const size = dialog.formatBytes(dialog.info.sizeBytes);
+                                const line = dialog.installedMatch ? Tr.t("You already have this one — replace it with this build?") : Tr.t("Install this AppImage into your AppImages folder?");
+                                return size !== "" ? line + " · " + size : line;
+                            }
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceVariantText
+                            wrapMode: Text.WordWrap
+                        }
                     }
                 }
             }
@@ -306,45 +358,144 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
                 Layout.topMargin: Theme.spacingXS
-                spacing: Theme.spacingS
+                spacing: 0
 
                 Item {
                     Layout.fillWidth: true
                 }
 
-                // Wrapper Items: DankButton sizes itself through `width`, which
-                // a layout neither reads nor honours — so the last button in
-                // the row ran past the sheet's own margin
-                Item {
-                    Layout.preferredWidth: cancelButton.width
-                    Layout.preferredHeight: cancelButton.height
+                // Paired button group matching AppDetailsDialog:
+                // Left button (Cancel): outer left rounded (Theme.cornerRadius), inner right flat (4)
+                // Right button (Install/Replace): inner left flat (4), outer right rounded (Theme.cornerRadius)
+                // On hover: all 4 corners expand dynamically to pill shape (height / 2)!
+                Rectangle {
+                    id: cancelBtn
+                    width: cancelRow.implicitWidth + 24
+                    height: 32
+                    property bool isHovered: cancelMa.containsMouse
 
-                    DankButton {
-                        id: cancelButton
-                        buttonHeight: 32
-                        horizontalPadding: Theme.spacingM
-                        text: Tr.t("Cancel")
-                        backgroundColor: Theme.withAlpha(Theme.surfaceVariantText, 0.12)
-                        textColor: Theme.surfaceText
+                    topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                    bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                    topRightRadius: isHovered ? (height / 2) : 4
+                    bottomRightRadius: isHovered ? (height / 2) : 4
+
+                    Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                    Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                    Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                    Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                    color: isHovered ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.95) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    border.width: 1
+                    border.color: isHovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                    scale: cancelMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                    DankRipple {
+                        id: cancelRip
+                        anchors.fill: parent
+                        cornerRadius: parent.topLeftRadius
+                        rippleColor: Theme.surfaceText
+                    }
+
+                    RowLayout {
+                        id: cancelRow
+                        anchors.centerIn: parent
+                        spacing: 6
+
+                        DankIcon {
+                            name: "close"
+                            size: 14
+                            color: Theme.surfaceText
+                        }
+
+                        StyledText {
+                            text: Tr.t("Cancel")
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.Medium
+                            color: Theme.surfaceText
+                        }
+                    }
+
+                    MouseArea {
+                        id: cancelMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onPressed: (m) => cancelRip.trigger(m.x, m.y)
                         onClicked: dialog.close()
                     }
                 }
 
-                Item {
-                    Layout.preferredWidth: acceptButton.width
-                    Layout.preferredHeight: acceptButton.height
+                Rectangle {
+                    id: acceptBtn
+                    readonly property bool btnEnabled: dialog.source.trim() !== "" && !dialog.inspecting && !dialog.failed && !dialog.busy
+                    width: acceptRow.implicitWidth + 24
+                    height: 32
+                    property bool isHovered: acceptMa.containsMouse && btnEnabled
 
-                    DankButton {
-                        id: acceptButton
-                        buttonHeight: 32
-                        horizontalPadding: Theme.spacingM
-                        iconName: dialog.installedMatch ? "sync" : "download"
-                        iconSize: 14
-                        text: dialog.installedMatch ? Tr.t("Replace") : Tr.t("Install")
-                        backgroundColor: Theme.primary
-                        textColor: Theme.primaryText
-                        enabled: dialog.source.trim() !== "" && !dialog.inspecting && !dialog.failed && !dialog.busy
-                        onClicked: dialog.accept()
+                    topLeftRadius: isHovered ? (height / 2) : 4
+                    bottomLeftRadius: isHovered ? (height / 2) : 4
+                    topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                    bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+
+                    Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                    Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                    Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                    Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+
+                    color: isHovered ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.primary, 0.15)
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    border.width: 1
+                    border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
+                    Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                    scale: acceptMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                    opacity: btnEnabled ? 1.0 : 0.5
+                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                    DankRipple {
+                        id: acceptRip
+                        anchors.fill: parent
+                        cornerRadius: parent.topRightRadius
+                        rippleColor: Theme.primary
+                    }
+
+                    RowLayout {
+                        id: acceptRow
+                        anchors.centerIn: parent
+                        spacing: 6
+
+                        DankIcon {
+                            name: dialog.installedMatch ? "sync" : "download"
+                            size: 14
+                            color: Theme.primary
+                        }
+
+                        StyledText {
+                            text: dialog.installedMatch ? Tr.t("Replace") : Tr.t("Install")
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.Medium
+                            color: Theme.primary
+                        }
+                    }
+
+                    MouseArea {
+                        id: acceptMa
+                        anchors.fill: parent
+                        hoverEnabled: acceptBtn.btnEnabled
+                        cursorShape: acceptBtn.btnEnabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onPressed: (m) => {
+                            if (acceptBtn.btnEnabled)
+                                acceptRip.trigger(m.x, m.y);
+                        }
+                        onClicked: {
+                            if (acceptBtn.btnEnabled)
+                                dialog.accept();
+                        }
                     }
                 }
             }

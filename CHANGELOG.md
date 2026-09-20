@@ -3,22 +3,6 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## 1.1.10 — 2026-09-20
-
-- **A package dnf skipped because of a dependency conflict now says so,
-  instead of "try again".** An upgrade whose dependencies cannot be
-  satisfied — a package from another repository requiring the installed
-  version exactly, which is what RPM Fusion's `libheif-freeworld` does to
-  `libheif` — is skipped by dnf, which then reports success: skipping was
-  what it was asked to do. The row went red on verification, correctly,
-  but its reason was an invitation to retry something that resolves to the
-  same nothing every time, and its details panel was empty. The solver
-  explains itself in its resolve logs rather than in `get_problems()`,
-  which stays clean for exactly this case; the helper now passes that on,
-  naming the conflict on the row and putting the solver's own report
-  behind it. A genuine "everything is already current" logs nothing there,
-  so it stays as quiet as it was.
-
 ## 1.1.9 — 2026-09-19
 
 Thanks to @bernardopg for reporting #19 and for the fix in #20, and to

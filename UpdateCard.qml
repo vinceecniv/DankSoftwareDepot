@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import qs.Common
 import qs.Widgets
 
@@ -19,6 +20,7 @@ Rectangle {
     property string holdReason: ""
     property bool isIgnored: false
     property bool canHold: false
+    property bool active: false
     // Verbatim tool output behind the short failure reason, revealed on request
     property string errorDetail: ""
     // {type, severity, ids} from updateinfo, null when the update carries no
@@ -57,6 +59,7 @@ Rectangle {
 
     readonly property string baseName: (pkg.name || "").replace(/\.(x86_64|i686|noarch|aarch64|armv7hl|ppc64le|s390x)$/, "")
     readonly property bool isFlatpak: pkg.repo === "flatpak"
+    readonly property bool isAppImage: pkg && pkg.repo === "appimage"
     // Off under a heading that already names the source — see the list that
     // decides it. The card still knows what it is; it just stops saying so
     // twice within one screenful.
@@ -89,14 +92,11 @@ Rectangle {
     }
     readonly property string status: itemState ? itemState.status : "pending"
 
-    radius: Theme.cornerRadius
-    color: Theme.surfaceContainerHigh
+    color: "transparent"
     opacity: held ? 0.65 : 1
-    border.width: 1
-    border.color: status === "error" ? Theme.withAlpha(Theme.error, 0.5) : Theme.withAlpha(Theme.outline, 0.12)
     clip: true
 
-    implicitHeight: contentColumn.implicitHeight + Theme.spacingM * 2
+    implicitHeight: contentColumn.implicitHeight + (Theme.spacingS + 2) * 2
 
     Behavior on implicitHeight {
         NumberAnimation {
@@ -105,10 +105,60 @@ Rectangle {
         }
     }
 
+    property bool isSectionFirst: false
+    property bool isSectionLast: false
+
+    Rectangle {
+        id: cardBg
+        anchors.fill: parent
+
+        property real innerRadius: 6
+        property real outerRadius: Theme.cornerRadius || 12
+        property real pillRadius: 20
+        property bool isHighlighted: cardMa.containsMouse || card.active
+
+        property real tlr: isHighlighted ? pillRadius : (isSectionFirst ? outerRadius : innerRadius)
+        property real trr: isHighlighted ? pillRadius : (isSectionFirst ? outerRadius : innerRadius)
+        property real blr: isHighlighted ? pillRadius : (isSectionLast ? outerRadius : innerRadius)
+        property real brr: isHighlighted ? pillRadius : (isSectionLast ? outerRadius : innerRadius)
+
+        topLeftRadius: tlr
+        topRightRadius: trr
+        bottomLeftRadius: blr
+        bottomRightRadius: brr
+
+        Behavior on topLeftRadius { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
+        Behavior on topRightRadius { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
+        Behavior on bottomLeftRadius { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
+        Behavior on bottomRightRadius { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
+
+        color: isHighlighted
+            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+            : Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+
+        border.width: 1
+        border.color: card.status === "error"
+            ? Theme.withAlpha(Theme.error, 0.5)
+            : (isHighlighted ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.38) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.12))
+
+        Behavior on color { ColorAnimation { duration: 150 } }
+        Behavior on border.color { ColorAnimation { duration: 150 } }
+    }
+
+    DankRipple {
+        id: cardRip
+        anchors.fill: parent
+        cornerRadius: cardBg.topLeftRadius
+        rippleColor: Theme.primary
+    }
+
     // Clicking the card opens the details popup (buttons sit on top)
     MouseArea {
+        id: cardMa
         anchors.fill: parent
+        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
+        onPressed: (m) => cardRip.trigger(m.x, m.y)
         onClicked: card.detailsRequested()
     }
 
@@ -117,8 +167,11 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: Theme.spacingM
-        spacing: Theme.spacingS
+        anchors.leftMargin: Theme.spacingM
+        anchors.rightMargin: Theme.spacingM
+        anchors.topMargin: Theme.spacingS + 2
+        anchors.bottomMargin: Theme.spacingS + 2
+        spacing: Theme.spacingXS
 
         RowLayout {
             Layout.fillWidth: true
@@ -341,7 +394,7 @@ Rectangle {
                         iconName: "download"
                         iconSize: 17
                         iconColor: Theme.primary
-                        tooltipText: Tr.t("Update only this app")
+                        tooltipText: (card.isFlatpak || card.isAppImage) ? Tr.t("Update only this app") : Tr.t("Update only this package")
                         onClicked: card.updateRequested()
                     }
 

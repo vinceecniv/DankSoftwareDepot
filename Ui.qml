@@ -181,6 +181,19 @@ Item {
         }
     }
 
+    // Disable the built-in jumpy mouse wheel handler in DankFlickable / DankListView
+    // so our smooth interpolated scroll handler controls the animation smoothly.
+    function disableDefaultWheelHandler(view) {
+        if (!view) return;
+        const kids = view.children || [];
+        for (let i = 0; i < kids.length; i++) {
+            const child = kids[i];
+            if (child && child.acceptedDevices !== undefined && child.touchpadSpeed !== undefined) {
+                child.enabled = false;
+            }
+        }
+    }
+
     // AND-search: every whitespace-separated word must occur somewhere in the
     // haystack, order-independent.
     function matchesWords(haystack, query) {
