@@ -332,6 +332,26 @@ def run(action, specs, dry_run=False, copr=""):
             disk_delta -= entry["installBytes"]
         ops.append(entry)
     if not ops:
+        # "Nothing to do" is not always the same as nothing to say. dnf skips
+        # a package whose upgrade cannot be satisfied — a dependency pinned to
+        # the installed version by a package from another repository is the
+        # usual cause — and calls that a success, because skipping is what it
+        # was asked to do. The caller is then left with rows that did not move
+        # and "try again" as their reason, which is advice that cannot work:
+        # the next resolve reaches the same conclusion, and the one after it.
+        #
+        # The solver does explain itself, but in its logs rather than in
+        # get_problems(), which stays NO_PROBLEM for exactly this reason. So
+        # pass the explanation on: a short line for the row, and the solver's
+        # own report on stderr for the details panel. A genuine no-op — every
+        # spec already at its newest build — logs nothing here, so this stays
+        # quiet for the case it is named after.
+        logs = [line for line in transaction.get_resolve_logs_as_strings() if line.strip()]
+        if specs and logs:
+            print("\n".join(logs), file=sys.stderr)
+            emit({"event": "error",
+                  "message": "a dependency conflict is holding back: "
+                             + ", ".join(spec.partition("=")[0] for spec in specs)})
         emit({"event": "done", "ok": True, "failed": [], "nothingToDo": True})
         return 0
     # A package the caller asked to upgrade that is not in the resolved
