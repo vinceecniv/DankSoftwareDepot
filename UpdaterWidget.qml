@@ -1749,7 +1749,7 @@ PluginComponent {
                         Rectangle {
                             width: 38
                             height: 38
-                            radius: 19
+                            radius: width / 2
                             color: Theme.withAlpha(Theme.primary, 0.2)
                             Layout.alignment: Qt.AlignVCenter
 
@@ -2291,7 +2291,7 @@ PluginComponent {
                                 anchors.centerIn: parent
                                 width: 48
                                 height: 48
-                                radius: 24
+                                radius: width / 2
                                 color: {
                                     if (Theme.isLightMode)
                                         return emptyStateArea.containsMouse && !SystemUpdateService.isChecking ? Qt.darker(Theme.primary, 1.15) : Theme.primary;

@@ -4954,7 +4954,7 @@ FloatingWindow {
                                     anchors.centerIn: parent
                                     width: 72
                                     height: 72
-                                    radius: 36
+                                    radius: width / 2
                                     // Light mode: solid primary disc so the white penguin stays visible
                                     color: {
                                         if (Theme.isLightMode)

@@ -1047,7 +1047,7 @@ Item {
                                     id: leftShotBtn
                                     width: 34
                                     height: 34
-                                    radius: 17
+                                    radius: width / 2
                                     anchors.left: parent.left
                                     anchors.leftMargin: 8
                                     anchors.verticalCenter: parent.verticalCenter
@@ -1088,7 +1088,7 @@ Item {
                                     id: rightShotBtn
                                     width: 34
                                     height: 34
-                                    radius: 17
+                                    radius: width / 2
                                     anchors.right: parent.right
                                     anchors.rightMargin: 8
                                     anchors.verticalCenter: parent.verticalCenter
