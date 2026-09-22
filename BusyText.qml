@@ -61,7 +61,7 @@ Row {
                         target: dot
                         property: "opacity"
                         to: 1
-                        duration: 260
+                        duration: Theme.longDuration
                         easing.type: Easing.InOutSine
                     }
 
@@ -69,7 +69,7 @@ Row {
                         target: dot
                         property: "opacity"
                         to: 0.25
-                        duration: 420
+                        duration: Theme.extraLongDuration
                         easing.type: Easing.InOutSine
                     }
 

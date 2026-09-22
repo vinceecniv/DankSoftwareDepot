@@ -7,6 +7,22 @@ import qs.Services
 Item {
     id: ui
 
+    // ── Surface roles, with a floor ─────────────────────────────────────────
+    // DMS names the surfaces a plugin draws on — a card, a chip, a chip
+    // inside a chip — and lets the user set each one, so a plugin that names
+    // the underlying container instead ignores that choice while the rest of
+    // the shell follows it.
+    //
+    // The names arrived after 1.6.2, which is the current stable release, and
+    // plugin.json asks only for 1.5.0. On a shell without them the property
+    // reads as undefined and the colour is simply invalid — not a fallback, a
+    // hole. So they are asked for here, once, with the container each one
+    // defaults to as the floor. Identical pixels either way; the difference
+    // is whether a newer shell's setting reaches us.
+    readonly property color cardSurface: Theme.cardSurface !== undefined ? Theme.cardSurface : Theme.surfaceContainer
+    readonly property color chipSurface: Theme.chipSurface !== undefined ? Theme.chipSurface : Theme.surfaceContainerHigh
+    readonly property color chipSurfaceNested: Theme.chipSurfaceNested !== undefined ? Theme.chipSurfaceNested : Theme.surfaceContainerHighest
+
     // ── Themed app icons ────────────────────────────────────────────────────
     // On by default. The argument against it is that an app's icon is its own
     // identity and a catalog where every one is the same colour is harder to
@@ -177,6 +193,19 @@ Item {
                 const bar = child;
                 bar.contentItem.opacity = Qt.binding(() => bar.pressed ? 0.85 : 0.5);
                 return;
+            }
+        }
+    }
+
+    // Disable the built-in jumpy mouse wheel handler in DankFlickable / DankListView
+    // so our smooth interpolated scroll handler controls the animation smoothly.
+    function disableDefaultWheelHandler(view) {
+        if (!view) return;
+        const kids = view.children || [];
+        for (let i = 0; i < kids.length; i++) {
+            const child = kids[i];
+            if (child && child.acceptedDevices !== undefined && child.touchpadSpeed !== undefined) {
+                child.enabled = false;
             }
         }
     }

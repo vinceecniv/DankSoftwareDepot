@@ -1,5 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import qs.Common
@@ -1609,8 +1611,8 @@ PluginComponent {
 
     onPillWantedChanged: _applyPillVisibility()
 
-    popoutWidth: 420
-    popoutHeight: 520
+    popoutWidth: 480
+    popoutHeight: 0
 
     // Popout list: run snapshot while running, otherwise pending minus held
     readonly property var popoutModel: {
@@ -1657,7 +1659,7 @@ PluginComponent {
                 RotationAnimator on rotation {
                     from: 0
                     to: 360
-                    duration: 1000
+                    duration: Theme.extraLongDuration
                     loops: Animation.Infinite
                     running: SystemUpdateService.isChecking
 
@@ -1695,7 +1697,7 @@ PluginComponent {
                 RotationAnimator on rotation {
                     from: 0
                     to: 360
-                    duration: 1000
+                    duration: Theme.extraLongDuration
                     loops: Animation.Infinite
                     running: SystemUpdateService.isChecking
 
@@ -1718,123 +1720,264 @@ PluginComponent {
 
     // ── Compact popout ───────────────────────────────────────────────────────
     popoutContent: Component {
-        Item {
-            // PluginPopout derives the popup height from implicitHeight
-            implicitHeight: 520
-            height: implicitHeight
+        PopoutComponent {
+            id: popoutContainer
+            headerText: ""
+            detailsText: ""
+            showCloseButton: false
 
-            // Header
-            Item {
-                id: popoutHeader
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.leftMargin: Theme.spacingL
-                anchors.rightMargin: Theme.spacingL
-                anchors.topMargin: Theme.spacingL
-                height: 40
+            Column {
+                id: mainCol
+                width: parent.width
+                spacing: Theme.spacingM
+                topPadding: 0
+                bottomPadding: 2
 
-                Image {
-                    id: popoutHeaderLogo
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 32
-                    height: 32
-                    source: root.appIconSource
-                    sourceSize.width: 64
-                    sourceSize.height: 64
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                }
+                // --- Header Card ---
+                StyledRect {
+                    width: parent.width
+                    height: 68
+                    radius: Theme.cornerRadius
+                    color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                    border.width: 0
 
-                Column {
-                    anchors.left: popoutHeaderLogo.right
-                    anchors.leftMargin: Theme.spacingM
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 0
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: Theme.spacingM
+                        spacing: Theme.spacingM
 
-                    StyledText {
-                        text: "Dank Software Depot"
-                        font.pixelSize: Theme.fontSizeLarge
-                        font.weight: Font.Medium
-                        color: Theme.surfaceText
-                    }
+                        Rectangle {
+                            width: 38
+                            height: 38
+                            radius: width / 2
+                            color: Theme.withAlpha(Theme.primary, 0.2)
+                            Layout.alignment: Qt.AlignVCenter
 
-                    BusyText {
-                        text: {
-                            if (engine.running)
-                                return engine.phaseLabel;
-                            if (SystemUpdateService.isChecking)
-                                return Tr.t("Checking…");
-                            if (SystemUpdateService.hasError)
-                                return Tr.t("Check failed");
-                            const count = root.effectiveCount;
-                            return count === 0 ? Tr.t("Up to date") : (count === 1 ? Tr.t("%1 update available") : Tr.t("%1 updates available")).arg(count);
+                            Image {
+                                id: popoutHeaderLogo
+                                anchors.centerIn: parent
+                                width: 24
+                                height: 24
+                                source: root.appIconSource
+                                sourceSize.width: 48
+                                sourceSize.height: 48
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                visible: status === Image.Ready
+                            }
+
+                            DankIcon {
+                                anchors.centerIn: parent
+                                visible: !popoutHeaderLogo.visible
+                                name: "system_update"
+                                size: 20
+                                color: Theme.primary
+                            }
                         }
-                        pixelSize: Theme.fontSizeSmall
-                        color: SystemUpdateService.hasError ? Ui.failColor : Theme.surfaceVariantText
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: 0
+
+                            StyledText {
+                                text: "Dank Software Depot"
+                                font.bold: true
+                                font.pixelSize: Theme.fontSizeLarge
+                                color: Theme.surfaceText
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                                height: popoutStatusText.implicitHeight
+                                clip: true
+
+                                StyledText {
+                                    id: popoutStatusText
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    color: SystemUpdateService.hasError ? Ui.failColor : Theme.primary
+                                    font.family: "Monospace"
+                                    opacity: 0.85
+
+                                    property string targetText: {
+                                        if (engine.running)
+                                            return engine.phaseLabel;
+                                        if (SystemUpdateService.isChecking)
+                                            return Tr.t("Checking…");
+                                        if (SystemUpdateService.hasError)
+                                            return Tr.t("Check failed");
+                                        const count = root.effectiveCount;
+                                        return count === 0 ? Tr.t("Up to date") : (count === 1 ? Tr.t("%1 update ready") : Tr.t("%1 updates ready")).arg(count);
+                                    }
+
+                                    Component.onCompleted: text = targetText
+                                    onTargetTextChanged: {
+                                        if (text !== targetText)
+                                            flipAnim.restart();
+                                    }
+
+                                    SequentialAnimation {
+                                        id: flipAnim
+
+                                        ParallelAnimation {
+                                            NumberAnimation { target: popoutStatusText; property: "opacity"; to: 0; duration: Theme.shortDuration }
+                                            NumberAnimation { target: popoutStatusText; property: "y"; to: 8; duration: Theme.shortDuration; easing.type: Easing.InQuad }
+                                        }
+                                        PropertyAction { target: popoutStatusText; property: "text"; value: popoutStatusText.targetText }
+                                        ParallelAnimation {
+                                            NumberAnimation { target: popoutStatusText; property: "opacity"; to: 0.85; duration: Theme.shortDuration }
+                                            NumberAnimation { target: popoutStatusText; property: "y"; to: 0; duration: Theme.shortDuration; easing.type: Easing.OutQuad }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Header Action Buttons (SteamFriends style paired capsule)
+                        Row {
+                            Layout.alignment: Qt.AlignVCenter
+                            spacing: 1
+
+                            // Refresh Button (Left side of capsule)
+                            Rectangle {
+                                id: headerRefreshBtn
+                                property bool isHovered: refreshMa.containsMouse
+                                property bool isBusy: SystemUpdateService.isChecking || engine.running
+
+                                width: 38
+                                height: 38
+
+                                color: isHovered ? Theme.withAlpha(Theme.primary, 0.15) : Theme.withAlpha(Ui.cardSurface, 0.4)
+                                border.width: 1
+                                border.color: Theme.withAlpha(Theme.primary, isHovered ? 0.3 : 0.15)
+
+                                topLeftRadius: isHovered || isBusy ? (height / 2) : Theme.cornerRadius
+                                bottomLeftRadius: isHovered || isBusy ? (height / 2) : Theme.cornerRadius
+                                topRightRadius: isHovered || isBusy ? (height / 2) : 4
+                                bottomRightRadius: isHovered || isBusy ? (height / 2) : 4
+
+                                Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                                scale: refreshMa.pressed ? 0.92 : (isHovered ? 1.05 : 1.0)
+                                Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                                DankRipple { id: refreshRip; anchors.fill: parent; cornerRadius: parent.topLeftRadius; rippleColor: Theme.primary }
+
+                                DankIcon {
+                                    id: refreshBtnIcon
+                                    name: "refresh"
+                                    size: 20
+                                    color: Theme.primary
+                                    anchors.centerIn: parent
+                                    smoothTransform: true
+                                    rotation: (headerRefreshBtn.isBusy) ? 0 : (headerRefreshBtn.isHovered ? 180 : 0)
+
+                                    Behavior on rotation {
+                                        NumberAnimation { duration: Theme.popoutAnimationDuration; easing.type: Easing.OutBack }
+                                    }
+
+                                    RotationAnimation on rotation {
+                                        from: 0; to: 360; duration: Theme.extraLongDuration; loops: Animation.Infinite
+                                        running: headerRefreshBtn.isBusy
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: refreshMa
+                                    anchors.fill: parent
+                                    hoverEnabled: !headerRefreshBtn.isBusy
+                                    cursorShape: headerRefreshBtn.isBusy ? Qt.ArrowCursor : Qt.PointingHandCursor
+                                    onPressed: (m) => refreshRip.trigger(m.x, m.y)
+                                    onClicked: {
+                                        if (!headerRefreshBtn.isBusy)
+                                            SystemUpdateService.checkForUpdates();
+                                    }
+                                }
+                            }
+
+                            // Open Window Button (Right side of capsule)
+                            Rectangle {
+                                id: headerOpenBtn
+                                property bool isHovered: openMa.containsMouse
+
+                                width: 38
+                                height: 38
+
+                                color: isHovered ? Theme.withAlpha(Theme.secondary, 0.2) : Theme.withAlpha(Ui.cardSurface, 0.4)
+                                border.width: 1
+                                border.color: Theme.withAlpha(Theme.secondary, isHovered ? 0.4 : 0.15)
+
+                                topLeftRadius: isHovered ? (height / 2) : 4
+                                bottomLeftRadius: isHovered ? (height / 2) : 4
+                                topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                                bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+
+                                Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                                scale: openMa.pressed ? 0.92 : (isHovered ? 1.05 : 1.0)
+                                Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                                DankRipple { id: openRip; anchors.fill: parent; cornerRadius: parent.topRightRadius; rippleColor: Theme.secondary }
+
+                                DankIcon {
+                                    id: openBtnIcon
+                                    name: "open_in_new"
+                                    size: 20
+                                    color: Theme.secondary
+                                    anchors.centerIn: parent
+                                    smoothTransform: true
+                                    rotation: headerOpenBtn.isHovered ? 45 : 0
+                                    Behavior on rotation {
+                                        NumberAnimation { duration: Theme.popoutAnimationDuration; easing.type: Easing.OutBack }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: openMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onPressed: (m) => openRip.trigger(m.x, m.y)
+                                    onClicked: {
+                                        root.closePopout();
+                                        updaterWindow.visible = true;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
-                DankActionButton {
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    buttonSize: 30
-                    iconName: "open_in_new"
-                    iconSize: 18
-                    iconColor: Theme.surfaceText
-                    tooltipText: Tr.t("Open updater window")
-                    onClicked: {
-                        root.closePopout();
-                        updaterWindow.visible = true;
-                    }
-                }
-            }
+                // Reboot recommendation banner
+                StyledRect {
+                    id: popoutRebootBanner
+                    width: parent.width
+                    visible: root.rebootRecommended
+                    height: visible ? 40 : 0
+                    radius: Theme.cornerRadius
+                    color: Theme.withAlpha(Theme.warning, 0.14)
+                    border.width: 1
+                    border.color: Theme.withAlpha(Theme.warning, 0.35)
 
-            // Reboot recommendation banner
-            Rectangle {
-                id: popoutRebootBanner
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: popoutHeader.bottom
-                anchors.leftMargin: Theme.spacingL
-                anchors.rightMargin: Theme.spacingL
-                anchors.topMargin: Theme.spacingS
-                visible: root.rebootRecommended
-                height: visible ? 40 : 0
-                radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.warning, 0.14)
-                border.width: 1
-                border.color: Theme.withAlpha(Theme.warning, 0.35)
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: Theme.spacingS
+                        anchors.rightMargin: Theme.spacingXS
+                        spacing: Theme.spacingS
 
-                RowLayout {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: Theme.spacingS
-                    anchors.rightMargin: Theme.spacingXS
-                    spacing: Theme.spacingS
-
-                    DankIcon {
-                        name: "restart_alt"
-                        size: 17
-                        color: Theme.warning
-                    }
-
-                    StyledText {
-                        Layout.fillWidth: true
-                        text: Tr.t("Computer restart recommended")
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceText
-                        elide: Text.ElideRight
-                    }
-
-                    Item {
-                        Layout.preferredWidth: popoutRebootButton.width
-                        Layout.preferredHeight: popoutRebootButton.height
-
+                        DankIcon { name: "restart_alt"; size: 17; color: Theme.warning }
+                        StyledText { Layout.fillWidth: true; text: Tr.t("Computer restart recommended"); font.pixelSize: Theme.fontSizeSmall; color: Theme.surfaceText; elide: Text.ElideRight }
                         DankButton {
-                            id: popoutRebootButton
                             buttonHeight: 26
                             horizontalPadding: Theme.spacingM
                             text: root.confirmReboot ? Tr.t("Confirm?") : Tr.t("Restart")
@@ -1844,364 +1987,531 @@ PluginComponent {
                         }
                     }
                 }
-            }
 
-            // Progress block while running
-            Rectangle {
-                id: popoutProgress
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: popoutRebootBanner.bottom
-                anchors.leftMargin: Theme.spacingL
-                anchors.rightMargin: Theme.spacingL
-                anchors.topMargin: Theme.spacingM
-                visible: engine.phase !== "idle"
-                height: visible ? progressContent.implicitHeight + Theme.spacingM * 2 : 0
-                radius: Theme.cornerRadius
-                color: Theme.surfaceContainer
-
-                Column {
-                    id: progressContent
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: Theme.spacingM
-                    anchors.rightMargin: Theme.spacingM
-                    spacing: Theme.spacingXS
-
-                    PhaseIndicator {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        // The popout's panel already stays until the run is
-                        // dismissed; the stepper left before it did
-                        step: engine.phaseStep
-                        running: engine.running || engine.phase === "verifying"
-                        failed: engine.failedCount > 0
-                        compact: true
-                    }
-
-                    // No overall bar/percentage: an aggregate fraction over
-                    // parallel downloads and mixed phases misleads more than
-                    // it informs — per-item rows carry the progress.
-                    StyledText {
-                        width: parent.width
-                        text: {
-                            if (engine.running) {
-                                const current = engine.currentItem ? " · " + store.prettyId(engine.currentItem) : "";
-                                return engine.phaseLabel + current;
-                            }
-                            if (engine.phase === "done")
-                                return Tr.t("%1 updated").arg(engine.completedCount) + (engine.failedCount > 0 ? ", " + Tr.t("%1 failed").arg(engine.failedCount) : "");
-                            return engine.phaseLabel;
-                        }
-                        font.pixelSize: Theme.fontSizeSmall - 1
-                        color: Theme.surfaceVariantText
-                        elide: Text.ElideMiddle
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    StyledText {
-                        width: parent.width
-                        visible: engine.running && engine.progressDetail !== ""
-                        text: engine.progressDetail
-                        font.pixelSize: Theme.fontSizeSmall - 1
-                        color: Theme.surfaceVariantText
-                        elide: Text.ElideRight
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-                }
-            }
-
-            // Compact list
-            DankListView {
-                id: compactList
-                Component.onCompleted: Ui.softenScrollbar(compactList)
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: popoutProgress.visible ? popoutProgress.bottom : popoutHeader.bottom
-                anchors.bottom: popoutButtons.visible ? popoutButtons.top : parent.bottom
-                anchors.leftMargin: Theme.spacingL
-                anchors.rightMargin: Theme.spacingL
-                anchors.topMargin: Theme.spacingM
-                anchors.bottomMargin: Theme.spacingM
-                clip: true
-                spacing: 2
-                model: root.popoutModel
-                visible: root.popoutModel.length > 0
-
-                delegate: Rectangle {
-                    id: compactRow
-
-                    required property var modelData
-
-                    readonly property var info: store.infoFor(modelData)
-                    readonly property var itemState: engine.stateFor(modelData)
-                    readonly property string displayName: store.displayName(modelData)
-
-                    width: compactList.width
-                    height: 40
+                // Progress block while running
+                StyledRect {
+                    id: popoutProgress
+                    width: parent.width
+                    visible: engine.phase !== "idle"
+                    height: visible ? progressContent.implicitHeight + Theme.spacingM * 2 : 0
                     radius: Theme.cornerRadius
-                    color: rowHover.hovered ? Theme.surfaceHover : "transparent"
+                    color: Ui.cardSurface
+                    border.width: 0
 
-                    HoverHandler {
-                        id: rowHover
-                    }
+                    Column {
+                        id: progressContent
+                        anchors.fill: parent
+                        anchors.margins: Theme.spacingM
+                        spacing: Theme.spacingXS
 
-                    Row {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.leftMargin: Theme.spacingS
-                        anchors.rightMargin: Theme.spacingS
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: Theme.spacingS
-
-                        Item {
-                            width: 26
-                            height: 26
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            Image {
-                                id: rowLogo
-                                anchors.fill: parent
-                                source: (compactRow.info && compactRow.info.icon) ? "file://" + compactRow.info.icon : ""
-                                // Themed icons, tuned in TintedIconEffect
-                                layer.enabled: Ui.tintAppIcons
-                                layer.effect: TintedIconEffect {}
-                            }
-
-                            DankIcon {
-                                anchors.centerIn: parent
-                                visible: rowLogo.status !== Image.Ready
-                                name: compactRow.modelData.repo === "flatpak" ? "apps" : "memory"
-                                size: 18
-                                // A package with no icon of its own falls back to this glyph, and a
-                                // list of them is most of what an installed-software list is. Left
-                                // grey it made the setting look half-applied — the apps with
-                                // artwork turned, the ones without stayed as they were.
-                                color: Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText
-                            }
+                        PhaseIndicator {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            step: engine.phaseStep
+                            running: engine.running || engine.phase === "verifying"
+                            failed: engine.failedCount > 0
+                            compact: true
                         }
 
                         StyledText {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: compactRow.displayName
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceText
-                            elide: Text.ElideRight
-                            width: parent.width - 26 - statusIndicator.width - Theme.spacingS * 2
+                            width: parent.width
+                            text: {
+                                if (engine.running) {
+                                    const current = engine.currentItem ? " · " + store.prettyId(engine.currentItem) : "";
+                                    return engine.phaseLabel + current;
+                                }
+                                if (engine.phase === "done")
+                                    return Tr.t("%1 updated").arg(engine.completedCount) + (engine.failedCount > 0 ? ", " + Tr.t("%1 failed").arg(engine.failedCount) : "");
+                                return engine.phaseLabel;
+                            }
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            color: Theme.surfaceVariantText
+                            elide: Text.ElideMiddle
+                            horizontalAlignment: Text.AlignHCenter
                         }
+
+                        StyledText {
+                            width: parent.width
+                            visible: engine.running && engine.progressDetail !== ""
+                            text: engine.progressDetail
+                            font.pixelSize: Theme.fontSizeSmall - 1
+                            color: Theme.surfaceVariantText
+                            elide: Text.ElideRight
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+                }
+
+                // --- Updates List Section Container ---
+                StyledRect {
+                    id: updatesListContainer
+                    width: parent.width
+                    visible: root.popoutModel.length > 0
+                    height: Math.min(300, 34 + (root.popoutModel.length * 44) + Theme.spacingM * 2)
+                    radius: Theme.cornerRadius
+                    // The rows it holds are containers already; a box around
+                    // them is a tonal level the popout cannot afford at this
+                    // size. The header card above it still has one.
+                    color: "transparent"
+                    border.width: 0
+
+                    Column {
+                        id: compactContentCol
+                        anchors.fill: parent
+                        anchors.margins: Theme.spacingM
+                        spacing: Theme.spacingS
+
+                        // Section Header
+                        RowLayout {
+                            width: parent.width
+                            spacing: Theme.spacingXS
+
+                            DankIcon { name: "system_update"; size: 14; color: Theme.surfaceText }
+                            StyledText { text: Tr.t("Available Updates"); font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Bold; color: Theme.surfaceText; Layout.fillWidth: true }
+                            Rectangle {
+                                visible: root.effectiveCount > 0
+                                Layout.preferredHeight: 18
+                                Layout.preferredWidth: updateBadgeText.implicitWidth + 12
+                                radius: 9
+                                color: Theme.withAlpha(Theme.primary, 0.2)
+                                StyledText { id: updateBadgeText; anchors.centerIn: parent; text: String(root.effectiveCount); font.pixelSize: Theme.fontSizeSmall - 2; font.weight: Font.Bold; color: Theme.primary }
+                            }
+                        }
+
+                        DankListView {
+                            id: compactList
+                            Component.onCompleted: Ui.softenScrollbar(compactList)
+                            width: parent.width
+                            height: Math.max(0, parent.height - 30)
+                            clip: true
+                            spacing: 2
+                            model: root.popoutModel
+
+                            delegate: Item {
+                                id: compactRow
+
+                                required property var modelData
+                                required property int index
+
+                                readonly property var info: store.infoFor(modelData)
+                                readonly property var itemState: engine.stateFor(modelData)
+                                readonly property string displayName: store.displayName(modelData)
+                                readonly property int totalCount: root.popoutModel.length
+                                readonly property bool isFirst: index === 0
+                                readonly property bool isLast: index === totalCount - 1
+                                readonly property bool isActive: (updaterWindow && updaterWindow.updatesDialog && updaterWindow.updatesDialog.showing && updaterWindow.updatesDialog.rowData && updaterWindow.updatesDialog.rowData.pkg && updaterWindow.updatesDialog.rowData.pkg.name === modelData.name)
+
+                                width: compactList.width
+                                height: 42
+
+                                Rectangle {
+                                    id: dlBg
+                                    anchors.fill: parent
+
+                                    property real innerRadius: 6
+                                    property real outerRadius: 12
+                                    property bool hovered: rowMa.containsMouse || compactRow.isActive
+
+                                    property real tlr: hovered ? 21 : (isFirst ? outerRadius : innerRadius)
+                                    property real trr: hovered ? 21 : (isFirst ? outerRadius : innerRadius)
+                                    property real blr: hovered ? 21 : (isLast ? outerRadius : innerRadius)
+                                    property real brr: hovered ? 21 : (isLast ? outerRadius : innerRadius)
+
+                                    topLeftRadius: tlr
+                                    topRightRadius: trr
+                                    bottomLeftRadius: blr
+                                    bottomRightRadius: brr
+
+                                    Behavior on topLeftRadius { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
+                                    Behavior on topRightRadius { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
+                                    Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
+                                    Behavior on bottomRightRadius { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
+
+                                    color: hovered
+                                        ? Theme.primaryHover
+                                        : Theme.withAlpha(Theme.secondary, 0.04)
+
+                                    border.width: 1
+                                    border.color: hovered
+                                        ? Theme.withAlpha(Theme.primary, 0.35)
+                                        : Theme.withAlpha(Theme.secondary, 0.12)
+
+                                    Behavior on color { ColorAnimation { duration: Theme.popoutAnimationDuration } }
+                                    Behavior on border.color { ColorAnimation { duration: Theme.popoutAnimationDuration } }
+                                }
+
+                                DankRipple {
+                                    id: dlRip
+                                    anchors.fill: parent
+                                    cornerRadius: dlBg.topLeftRadius
+                                    rippleColor: Theme.primary
+                                }
+
+                                MouseArea {
+                                    id: rowMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onPressed: (m) => dlRip.trigger(m.x, m.y)
+                                    onClicked: {
+                                        root.closePopout();
+                                        updaterWindow.openUpdateDetails({ pkg: compactRow.modelData }, compactRow.info);
+                                    }
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingS
+
+                                    Item {
+                                        id: rowThumb
+                                        width: 28
+                                        height: 28
+                                        Layout.alignment: Qt.AlignVCenter
+
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            color: Ui.cardSurface
+                                            radius: height / 2
+                                        }
+
+                                        Image {
+                                            id: rowLogo
+                                            anchors.fill: parent
+                                            source: (compactRow.info && compactRow.info.icon) ? "file://" + compactRow.info.icon : ""
+                                            layer.enabled: Ui.tintAppIcons
+                                            layer.effect: TintedIconEffect {}
+                                        }
+
+                                        DankIcon {
+                                            anchors.centerIn: parent
+                                            visible: rowLogo.status !== Image.Ready
+                                            name: compactRow.modelData.repo === "flatpak" ? "apps" : "memory"
+                                            size: 16
+                                            color: rowMa.containsMouse ? Theme.primary : (Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText)
+                                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                        }
+                                    }
+
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        Layout.alignment: Qt.AlignVCenter
+                                        text: compactRow.displayName
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: rowMa.containsMouse ? Theme.surfaceText : Theme.surfaceVariantText
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 1
+                                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                    }
+
+                                    Item {
+                                        id: statusIndicator
+                                        width: 90
+                                        height: 20
+                                        Layout.alignment: Qt.AlignVCenter
+
+                                        StyledText {
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: !compactRow.itemState || compactRow.itemState.status === "pending"
+                                            text: compactRow.modelData.toVersion || (compactRow.info && compactRow.info.releases && compactRow.info.releases.length > 0 && compactRow.info.releases[0].newer ? compactRow.info.releases[0].version : "")
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: Theme.primary
+                                            elide: Text.ElideMiddle
+                                            width: parent.width
+                                            horizontalAlignment: Text.AlignRight
+                                        }
+
+                                        StyledText {
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: compactRow.itemState && compactRow.itemState.status === "active"
+                                            text: compactRow.itemState ? Math.round((compactRow.itemState.fraction || 0) * 100) + "%" : ""
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            font.weight: Font.Medium
+                                            color: Theme.primary
+                                        }
+
+                                        DankIcon {
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: compactRow.itemState && compactRow.itemState.status === "done"
+                                            name: "check_circle"
+                                            size: 16
+                                            color: Theme.success
+                                        }
+
+                                        DankIcon {
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: compactRow.itemState && compactRow.itemState.status === "error"
+                                            name: "error"
+                                            size: 16
+                                            color: Ui.failColor
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Empty state
+                StyledRect {
+                    id: popoutEmptyContainer
+                    width: parent.width
+                    height: 240
+                    visible: root.popoutModel.length === 0
+                    radius: Theme.cornerRadius
+                    color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                    border.width: 0
+
+                    MouseArea {
+                        id: emptyStateArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: SystemUpdateService.isChecking ? Qt.ArrowCursor : Qt.PointingHandCursor
+                        onClicked: {
+                            if (!SystemUpdateService.isChecking && !engine.running)
+                                SystemUpdateService.checkForUpdates();
+                        }
+                    }
+
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: Theme.spacingS
 
                         Item {
-                            id: statusIndicator
-                            width: 104
-                            height: 20
-                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: Math.round(48 * 1.87)
+                            height: Math.round(48 * 1.87)
 
-                            StyledText {
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: !compactRow.itemState || compactRow.itemState.status === "pending"
-                                text: compactRow.modelData.toVersion || (compactRow.info && compactRow.info.releases && compactRow.info.releases.length > 0 && compactRow.info.releases[0].newer ? compactRow.info.releases[0].version : "")
-                                font.pixelSize: Theme.fontSizeSmall - 1
-                                color: Theme.primary
-                                elide: Text.ElideMiddle
-                                width: parent.width
-                                horizontalAlignment: Text.AlignRight
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 48
+                                height: 48
+                                radius: width / 2
+                                color: {
+                                    if (Theme.isLightMode)
+                                        return emptyStateArea.containsMouse && !SystemUpdateService.isChecking ? Qt.darker(Theme.primary, 1.15) : Theme.primary;
+                                    return emptyStateArea.containsMouse && !SystemUpdateService.isChecking ? Theme.withAlpha(Theme.primary, 0.12) : "transparent";
+                                }
+
+                                Behavior on color { ColorAnimation { duration: Theme.shortDuration } }
                             }
 
-                            StyledText {
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: compactRow.itemState && compactRow.itemState.status === "active"
-                                text: compactRow.itemState ? Math.round((compactRow.itemState.fraction || 0) * 100) + "%" : ""
-                                font.pixelSize: Theme.fontSizeSmall - 1
-                                font.weight: Font.Medium
-                                color: Theme.primary
+                            PulseRings {
+                                id: popoutPulse
+                                anchors.fill: parent
+                                running: SystemUpdateService.isChecking
+                            }
+
+                            Image {
+                                id: popoutLogoImage
+                                anchors.centerIn: parent
+                                width: 34
+                                height: 34
+                                source: root.dankLogoPath !== "" ? "file://" + root.dankLogoPath : ""
+                                sourceSize.width: 68
+                                sourceSize.height: 68
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                scale: popoutPulse.breath
+                                visible: status === Image.Ready && (SystemUpdateService.isChecking || !emptyStateArea.containsMouse)
                             }
 
                             DankIcon {
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: compactRow.itemState && compactRow.itemState.status === "done"
-                                name: "check_circle"
-                                size: 16
-                                color: Theme.success
-                            }
-
-                            DankIcon {
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: compactRow.itemState && compactRow.itemState.status === "error"
-                                name: "error"
-                                size: 16
-                                color: Ui.failColor
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Empty state: the big icon doubles as a check-for-updates button
-            Item {
-                anchors.fill: compactList
-                visible: root.popoutModel.length === 0
-
-                MouseArea {
-                    id: emptyStateArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: SystemUpdateService.isChecking ? Qt.ArrowCursor : Qt.PointingHandCursor
-                    onClicked: {
-                        if (!SystemUpdateService.isChecking && !engine.running)
-                            SystemUpdateService.checkForUpdates();
-                    }
-                }
-
-                Column {
-                    anchors.centerIn: parent
-                    spacing: Theme.spacingS
-
-                    // Room for the pulse rings around the 48px disc, at the
-                    // same ratio the window's hero uses
-                    Item {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: Math.round(48 * 1.87)
-                        height: Math.round(48 * 1.87)
-
-                        Rectangle {
-                            anchors.centerIn: parent
-                            width: 48
-                            height: 48
-                            radius: 24
-                            // Light mode: solid primary disc so the white penguin stays visible
-                            color: {
-                                if (Theme.isLightMode)
-                                    return emptyStateArea.containsMouse && !SystemUpdateService.isChecking ? Qt.darker(Theme.primary, 1.15) : Theme.primary;
-                                return emptyStateArea.containsMouse && !SystemUpdateService.isChecking ? Theme.withAlpha(Theme.primary, 0.12) : "transparent";
-                            }
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Theme.shortDuration
+                                id: popoutEmptyIcon
+                                anchors.centerIn: parent
+                                visible: !popoutLogoImage.visible
+                                scale: popoutPulse.breath
+                                name: (SystemUpdateService.isChecking || emptyStateArea.containsMouse) ? "refresh" : "task_alt"
+                                size: 40
+                                color: {
+                                    if (Theme.isLightMode)
+                                        return "white";
+                                    if (SystemUpdateService.isChecking || emptyStateArea.containsMouse)
+                                        return Theme.primary;
+                                    return Theme.success;
                                 }
                             }
                         }
 
-                        // Same treatment as the window's hero: the logo stays
-                        // and the check pulses around it
-                        PulseRings {
-                            id: popoutPulse
+                        StyledText {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: {
+                                if (SystemUpdateService.isChecking)
+                                    return Tr.t("Checking for updates…");
+                                if (emptyStateArea.containsMouse)
+                                    return Tr.t("Check for updates");
+                                return Tr.t("Your system is up to date!");
+                            }
+                            font.pixelSize: Theme.fontSizeMedium
+                            color: Theme.surfaceText
+                        }
+
+                        StyledText {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            visible: emptyStateArea.containsMouse && !SystemUpdateService.isChecking && root.lastUpdateUnix > 0
+                            text: Tr.t("Updated %1").arg(root.formatAgo(root.lastUpdateUnix))
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.surfaceVariantText
+                        }
+                    }
+                }
+
+                // Footer Action Buttons (SteamFriends style paired capsule with dynamic Easing.OutExpo morphing)
+                Row {
+                    id: popoutButtons
+                    width: parent.width
+                    height: 42
+                    spacing: 2
+                    visible: (root.effectiveCount > 0 && !(engine.phase !== "idle" && !engine.running && SystemUpdateService.isChecking)) || engine.running
+
+                    // Primary Action Button (Update All / Cancel / Confirm) - Left of paired capsule
+                    Rectangle {
+                        id: updateAllBtn
+                        property bool isHovered: updateAllMa.containsMouse
+                        readonly property bool busyRun: engine.running || engine.deferred
+                        readonly property string btnText: {
+                            if (busyRun)
+                                return Tr.t("Cancel");
+                            if (root.confirmArmed)
+                                return Tr.t("Confirm?");
+                            return Tr.t("Update All") + (root.updateSizeText !== "" ? " · " + root.updateSizeText : "");
+                        }
+                        readonly property string btnIcon: busyRun ? "close" : (root.confirmArmed ? "help" : "download")
+                        readonly property color btnBaseColor: busyRun ? Theme.error : (root.confirmArmed ? Theme.warning : Theme.primary)
+
+                        width: (parent.width - 2) / 2
+                        height: parent.height
+
+                        color: isHovered
+                            ? Theme.withAlpha(btnBaseColor, 0.22)
+                            : Theme.withAlpha(btnBaseColor, 0.12)
+                        border.width: 1
+                        border.color: Theme.withAlpha(btnBaseColor, isHovered ? 0.45 : 0.22)
+
+                        topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        topRightRadius: isHovered ? (height / 2) : 4
+                        bottomRightRadius: isHovered ? (height / 2) : 4
+
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                        scale: updateAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                        DankRipple { id: updateAllRip; anchors.fill: parent; cornerRadius: parent.topLeftRadius; rippleColor: updateAllBtn.btnBaseColor }
+
+                        MouseArea {
+                            id: updateAllMa
                             anchors.fill: parent
-                            running: SystemUpdateService.isChecking
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: (m) => updateAllRip.trigger(m.x, m.y)
+                            onClicked: {
+                                if (updateAllBtn.busyRun) {
+                                    engine.cancel();
+                                } else {
+                                    root.requestUpdateAll();
+                                }
+                            }
                         }
 
-                        Image {
-                            id: popoutLogoImage
+                        RowLayout {
                             anchors.centerIn: parent
-                            width: 34
-                            height: 34
-                            source: root.dankLogoPath !== "" ? "file://" + root.dankLogoPath : ""
-                            sourceSize.width: 68
-                            sourceSize.height: 68
-                            fillMode: Image.PreserveAspectFit
-                            asynchronous: true
-                            scale: popoutPulse.breath
-                            visible: status === Image.Ready && (SystemUpdateService.isChecking || !emptyStateArea.containsMouse)
-                        }
+                            spacing: Theme.spacingXS
 
-                        DankIcon {
-                            id: popoutEmptyIcon
-                            anchors.centerIn: parent
-                            visible: !popoutLogoImage.visible
-                            scale: popoutPulse.breath
-                            name: (SystemUpdateService.isChecking || emptyStateArea.containsMouse) ? "refresh" : "task_alt"
-                            size: 40
-                            color: {
-                                if (Theme.isLightMode)
-                                    return "white";
-                                if (SystemUpdateService.isChecking || emptyStateArea.containsMouse)
-                                    return Theme.primary;
-                                return Theme.success;
+                            DankIcon {
+                                name: updateAllBtn.btnIcon
+                                size: 18
+                                color: updateAllBtn.btnBaseColor
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            StyledText {
+                                text: updateAllBtn.btnText
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.weight: Font.DemiBold
+                                color: updateAllBtn.btnBaseColor
+                                Layout.alignment: Qt.AlignVCenter
                             }
                         }
                     }
 
-                    StyledText {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: {
-                            if (SystemUpdateService.isChecking)
-                                return Tr.t("Checking for updates…");
-                            if (emptyStateArea.containsMouse)
-                                return Tr.t("Check for updates");
-                            return Tr.t("Your system is up to date!");
+                    // Secondary Action Button (Details) - Right of paired capsule
+                    Rectangle {
+                        id: detailsBtn
+                        property bool isHovered: detailsMa.containsMouse
+
+                        width: (parent.width - 2) / 2
+                        height: parent.height
+
+                        color: isHovered
+                            ? Theme.withAlpha(Theme.secondary, 0.2)
+                            : Theme.withAlpha(Ui.chipSurface, 0.6)
+                        border.width: 1
+                        border.color: Theme.withAlpha(Theme.secondary, isHovered ? 0.4 : 0.18)
+
+                        topLeftRadius: isHovered ? (height / 2) : 4
+                        bottomLeftRadius: isHovered ? (height / 2) : 4
+                        topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                        scale: detailsMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                        DankRipple { id: detailsRip; anchors.fill: parent; cornerRadius: parent.topRightRadius; rippleColor: Theme.secondary }
+
+                        MouseArea {
+                            id: detailsMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: (m) => detailsRip.trigger(m.x, m.y)
+                            onClicked: {
+                                root.closePopout();
+                                updaterWindow.visible = true;
+                            }
                         }
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.surfaceText
-                    }
 
-                    StyledText {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        visible: emptyStateArea.containsMouse && !SystemUpdateService.isChecking && root.lastUpdateUnix > 0
-                        text: Tr.t("Updated %1").arg(root.formatAgo(root.lastUpdateUnix))
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceVariantText
-                    }
-                }
-            }
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: Theme.spacingXS
 
-            // Footer buttons
-            Row {
-                id: popoutButtons
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.leftMargin: Theme.spacingL
-                anchors.rightMargin: Theme.spacingL
-                anchors.bottomMargin: Theme.spacingL
-                height: 40
-                spacing: Theme.spacingM
-                // Hidden while a finished run's trailing check still lists
-                // the just-updated packages
-                visible: (root.effectiveCount > 0 && !(engine.phase !== "idle" && !engine.running && SystemUpdateService.isChecking)) || engine.running
+                            DankIcon {
+                                name: "open_in_new"
+                                size: 18
+                                color: detailsBtn.isHovered ? Theme.primary : Theme.surfaceText
+                                Layout.alignment: Qt.AlignVCenter
+                                rotation: detailsBtn.isHovered ? 45 : 0
+                                Behavior on rotation { NumberAnimation { duration: Theme.popoutAnimationDuration; easing.type: Easing.OutBack } }
+                                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                            }
 
-                DankButton {
-                    width: (parent.width - Theme.spacingM) / 2
-                    buttonHeight: parent.height
-
-                    readonly property bool busyRun: engine.running || engine.deferred
-
-                    text: {
-                        if (busyRun)
-                            return Tr.t("Cancel");
-                        if (root.confirmArmed)
-                            return Tr.t("Confirm?");
-                        return Tr.t("Update All") + (root.updateSizeText !== "" ? " · " + root.updateSizeText : "");
-                    }
-                    backgroundColor: {
-                        if (busyRun)
-                            return Theme.errorPressed;
-                        if (root.confirmArmed)
-                            return Theme.warning;
-                        return Theme.buttonBg;
-                    }
-                    textColor: busyRun ? Theme.surfaceText : Theme.buttonText
-                    onClicked: {
-                        if (busyRun) {
-                            engine.cancel();
-                        } else {
-                            root.requestUpdateAll();
+                            StyledText {
+                                text: Tr.t("Details")
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.weight: Font.DemiBold
+                                color: detailsBtn.isHovered ? Theme.primary : Theme.surfaceText
+                                Layout.alignment: Qt.AlignVCenter
+                                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                            }
                         }
-                    }
-                }
-
-                DankButton {
-                    width: (parent.width - Theme.spacingM) / 2
-                    buttonHeight: parent.height
-                    text: Tr.t("Details")
-                    backgroundColor: Theme.surfaceContainerHigh
-                    textColor: Theme.surfaceText
-                    onClicked: {
-                        root.closePopout();
-                        updaterWindow.visible = true;
                     }
                 }
             }

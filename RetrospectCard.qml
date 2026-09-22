@@ -145,7 +145,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Theme.cornerRadius
-        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+        color: Theme.withAlpha(Ui.chipSurface, 0.45)
     }
 
     ColumnLayout {

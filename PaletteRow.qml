@@ -3,74 +3,101 @@ import QtQuick.Layouts
 import qs.Common
 import qs.Widgets
 
-// One result slot. Placed by hand rather than generated, because generated
-// delegates in this window never receive the mouse — measured across a
-// ListView, a plain ListView and a Repeater, while an identical hand-placed
-// row worked every time. A palette shows a bounded number of results, so a
-// fixed pool of slots costs nothing and sidesteps the question entirely.
+// One result slot with dynamic containerized first/middle/last rounded corners
 Item {
     id: slot
 
-    // Index into the palette's results; the row shows itself only when the
-    // list actually reaches this far
     property int index: 0
     property var entry: null
     property bool selected: false
+    property bool isFirst: false
+    property bool isLast: false
 
     signal activated
     signal hovered
 
     readonly property string group: entry ? (entry.group || "") : ""
-    // A heading appears where the group changes, so the list reads as
-    // sections without becoming separate lists
     property bool showGroup: false
 
     visible: entry !== null
-    height: visible ? (showGroup ? 20 : 0) + 40 : 0
+    height: visible ? (showGroup ? 24 : 0) + 42 : 0
 
     StyledText {
         id: groupLabel
 
         anchors.left: parent.left
         anchors.top: parent.top
-        anchors.leftMargin: Theme.spacingXS
-        height: 20
+        anchors.leftMargin: Theme.spacingS
+        height: 24
         verticalAlignment: Text.AlignVCenter
         visible: slot.showGroup
         text: slot.group
         font.pixelSize: Theme.fontSizeSmall - 2
         font.weight: Font.DemiBold
-        color: Theme.surfaceVariantText
+        color: Theme.primary
     }
 
     Rectangle {
         id: body
 
+        readonly property real outerRadius: Theme.cornerRadius
+        readonly property real innerRadius: 4
+        readonly property real pillRadius: 21
+        readonly property bool isHighlighted: slot.selected || rowArea.containsMouse
+
+        property real tlr: isHighlighted ? pillRadius : (slot.isFirst ? outerRadius : innerRadius)
+        property real trr: isHighlighted ? pillRadius : (slot.isFirst ? outerRadius : innerRadius)
+        property real blr: isHighlighted ? pillRadius : (slot.isLast ? outerRadius : innerRadius)
+        property real brr: isHighlighted ? pillRadius : (slot.isLast ? outerRadius : innerRadius)
+
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: 40
-        radius: Theme.cornerRadius / 2
-        color: slot.selected ? Theme.withAlpha(Theme.primary, 0.28) : (rowArea.containsMouse ? Theme.withAlpha(Theme.surfaceVariantText, 0.10) : "transparent")
 
-        Behavior on color {
-            ColorAnimation {
-                duration: Theme.shortDuration
-            }
+        topLeftRadius: tlr
+        topRightRadius: trr
+        bottomLeftRadius: blr
+        bottomRightRadius: brr
+
+        Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+        Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+        color: isHighlighted
+            ? Theme.withAlpha(Theme.primary, slot.selected ? 0.24 : 0.14)
+            : Theme.withAlpha(Ui.chipSurface, 0.45)
+        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+
+        border.width: 1
+        border.color: isHighlighted
+            ? (slot.selected ? Theme.primary : Theme.withAlpha(Theme.primary, 0.35))
+            : Theme.withAlpha(Theme.primary, 0.08)
+        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+        scale: rowArea.pressed ? 0.98 : (slot.selected ? 1.01 : 1.0)
+        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
+
+        DankRipple {
+            id: rowRip
+            anchors.fill: parent
+            cornerRadius: parent.topLeftRadius
+            rippleColor: Theme.primary
         }
 
         RowLayout {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: Theme.spacingS
-            anchors.rightMargin: Theme.spacingS
+            anchors.leftMargin: Theme.spacingM
+            anchors.rightMargin: Theme.spacingM
             spacing: Theme.spacingS
 
             DankIcon {
                 name: slot.entry ? (slot.entry.icon || "chevron_right") : "chevron_right"
-                size: 16
-                color: slot.entry && slot.entry.colour ? slot.entry.colour : Theme.surfaceVariantText
+                size: 18
+                color: slot.entry && slot.entry.colour ? slot.entry.colour : (slot.selected ? Theme.primary : Theme.surfaceVariantText)
             }
 
             StyledText {
@@ -96,10 +123,8 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            // Movement, not entry: a row that appears under a resting pointer
-            // fires `entered` without the mouse having done anything, which
-            // would hand the selection to wherever the cursor happened to be
             onPositionChanged: slot.hovered()
+            onPressed: (m) => rowRip.trigger(m.x, m.y)
             onClicked: slot.activated()
         }
     }

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import QtQuick.Layouts
+import QtQuick.Shapes
 import QtQuick.Window
 import Quickshell
 import Quickshell.Io
@@ -239,7 +240,7 @@ FloatingWindow {
                 return false;
             return SystemUpdateService.canIgnorePackage(rowPkg);
         }
-        showUpdateButton: rowPkg !== null && rowPkg.repo === "flatpak" && !win.engine.running && win.singleBusyKey === "" && (rowData.ignored !== true)
+        showUpdateButton: rowPkg !== null && rowPkg.repo !== "firmware" && !win.engine.running && win.singleBusyKey === "" && (rowData.ignored !== true)
         busy: {
             if (!rowPkg || !win.engine.running)
                 return false;
@@ -332,6 +333,10 @@ FloatingWindow {
             singleUpdateProcess._label = store.displayName(pkg);
             singleUpdateProcess.command = ["fwupdmgr", "update", "-y", "--no-reboot-check", rowData.fwInfo.deviceId];
             singleUpdateProcess.running = true;
+            return;
+        }
+        if (pkg.name) {
+            _daemonUpgradeOnly([pkg.name]);
         }
     }
 
@@ -409,6 +414,9 @@ FloatingWindow {
         onActivated: palette.open()
     }
 
+    // Whether any modal popup / dialog is open over the window content
+    readonly property bool anyPopupShowing: sourcesDialog.showing || newsDialog.showing || logDialog.showing || updatesDialog.showing || settingsOpen || aboutOpen || palette.showing || (windowOverlayLayer.children.length > 0 && Array.prototype.some.call(windowOverlayLayer.children, function(c) { return c && c.showing; }))
+
     // Full-window layer that hosts the view-local detail popups, so their
     // dim overlay covers the entire window instead of just the tab area.
     Item {
@@ -442,6 +450,12 @@ FloatingWindow {
 
     // ── About popup (info icon in the header) ───────────────────────────────
     property bool aboutOpen: false
+    onAboutOpenChanged: {
+        if (aboutOpen) {
+            aboutOpen = false;
+            settingsOpen = true;
+        }
+    }
     property var pluginManifest: ({})
     readonly property string githubUrl: "https://github.com/vinceecniv/DankSoftwareDepot"
 
@@ -456,10 +470,7 @@ FloatingWindow {
         }
     }
 
-    onAboutOpenChanged: {
-        if (aboutOpen)
-            aboutFocus.forceActiveFocus();
-    }
+
 
     // ── Self-update: offer a newer plugin release published on GitHub ───────
     // Compares the version in main's plugin.json with the installed one and
@@ -609,300 +620,15 @@ FloatingWindow {
         }
     }
 
-    Rectangle {
-        anchors.fill: parent
-        visible: win.aboutOpen
-        z: 90
-        color: Qt.rgba(0, 0, 0, 0.45)
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: win.aboutOpen = false
-            onWheel: wheel => wheel.accepted = true
-        }
-
-        Item {
-            id: aboutFocus
-            Keys.onEscapePressed: win.aboutOpen = false
-        }
-
-        Rectangle {
-            anchors.centerIn: parent
-            width: Math.min(420, parent.width - Theme.spacingL * 2)
-            height: aboutColumn.implicitHeight + Theme.spacingL * 2
-            radius: Theme.cornerRadius
-            color: Theme.surfaceContainer
-            border.width: 1
-            border.color: Theme.withAlpha(Theme.surfaceVariantText, 0.25)
-
-            MouseArea {
-                anchors.fill: parent
-            }
-
-            // Anchored to the card so it is always in the top-right corner,
-            // independent of how the header row lays out
-            DankActionButton {
-                anchors.top: parent.top
-                anchors.right: parent.right
-                anchors.margins: Theme.spacingS
-                buttonSize: 30
-                iconName: "close"
-                iconSize: 18
-                iconColor: Theme.surfaceVariantText
-                onClicked: win.aboutOpen = false
-            }
-
-            ColumnLayout {
-                id: aboutColumn
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.margins: Theme.spacingL
-                spacing: Theme.spacingM
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Theme.spacingM
-
-                    Image {
-                        Layout.preferredWidth: 40
-                        Layout.preferredHeight: 40
-                        source: win.appIconSource
-                        sourceSize.width: 80
-                        sourceSize.height: 80
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: true
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-
-                        StyledText {
-                            text: "Dank Software Depot"
-                            font.pixelSize: Theme.fontSizeLarge
-                            font.weight: Font.Medium
-                            color: Theme.surfaceText
-                        }
-
-                        StyledText {
-                            text: Tr.t("Version %1 (beta)").arg(win.pluginManifest.version || "?")
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceVariantText
-                        }
-                    }
-                }
-
-                StyledText {
-                    Layout.fillWidth: true
-                    text: win.pluginManifest.description ? Tr.t(win.pluginManifest.description) : ""
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceText
-                    wrapMode: Text.WordWrap
-                }
-
-                StyledText {
-                    Layout.fillWidth: true
-                    text: Tr.t("Supports %1 packages, Flatpak and AppImage.").arg(Backend.systemRepoLabel)
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceText
-                    wrapMode: Text.WordWrap
-                }
-
-                // Update notice: About is opened deliberately, so this shows
-                // whenever a newer version exists — also after the banner in
-                // the Updates tab was dismissed
-                Rectangle {
-                    Layout.fillWidth: true
-                    visible: win.selfUpdateVersion !== ""
-                    implicitHeight: aboutUpdateColumn.implicitHeight + Theme.spacingM * 2
-                    radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.primary, 0.10)
-                    border.width: 1
-                    border.color: Theme.withAlpha(Theme.primary, 0.30)
-
-                    ColumnLayout {
-                        id: aboutUpdateColumn
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: Theme.spacingM
-                        anchors.rightMargin: Theme.spacingM
-                        spacing: Theme.spacingS
-
-                        StyledText {
-                            Layout.fillWidth: true
-                            textFormat: Text.StyledText
-                            text: Tr.t("Dank Software Depot %1 is available").arg("<b>" + win.selfUpdateVersion + "</b>")
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.weight: Font.Medium
-                            color: Theme.surfaceText
-                            wrapMode: Text.WordWrap
-                        }
-
-                        Item {
-                            Layout.preferredWidth: aboutUpdateButton.width
-                            Layout.preferredHeight: aboutUpdateButton.height
-
-                            DankButton {
-                                id: aboutUpdateButton
-                                buttonHeight: 30
-                                iconName: "download"
-                                iconSize: 14
-                                horizontalPadding: Theme.spacingM
-                                enabled: !win.selfUpdateBusy
-                                text: win.selfUpdateBusy ? Tr.t("Updating…") : Tr.t("Update and reload shell")
-                                backgroundColor: Theme.buttonBg
-                                textColor: Theme.buttonText
-                                onClicked: {
-                                    win.selfUpdateBusy = true;
-                                    Quickshell.execDetached(["sh", "-c", "dms plugins update dankSoftwareDepot && dms restart"]);
-                                }
-                            }
-                        }
-                        StyledText {
-                            Layout.fillWidth: true
-                            visible: win._selfUpdateSections > 1
-                            text: Tr.t("%1 releases since yours").arg(win._selfUpdateSections)
-                            font.pixelSize: Theme.fontSizeSmall - 1
-                            font.weight: Font.DemiBold
-                            color: Theme.surfaceVariantText
-                        }
-
-                        // What changed, where someone came looking for it.
-                        // Bounded and scrollable for the same reason as the
-                        // banner: several releases' notes do not fit a card.
-                        DankFlickable {
-                            id: aboutNotesView
-
-                            Component.onCompleted: Ui.softenScrollbar(aboutNotesView)
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: Math.min(aboutNotesText.implicitHeight, 160)
-                            visible: win.selfUpdateNotes !== ""
-                            clip: true
-                            contentHeight: aboutNotesText.implicitHeight
-                            // Same as the banner: drag-to-scroll and
-                            // drag-to-select are the same gesture, and the
-                            // wheel and the scrollbar do not need it
-                            interactive: false
-
-                            SelectableText {
-                                id: aboutNotesText
-
-                                width: aboutNotesView.width
-                                textFormat: Text.RichText
-                                text: win.selfUpdateNotes
-                                // The same notes as the banner, so the same
-                                // size — this is where people come to read them
-                                font.pixelSize: Theme.fontSizeMedium
-                                color: Theme.surfaceVariantText
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-                    }                }
-
-                StyledText {
-                    text: Tr.t("By %1 · MIT license").arg(win.pluginManifest.author || "") + " · " + Tr.t("requires DMS %1").arg(win.pluginManifest.requires_dms || "")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                }
-
-                StyledText {
-                    text: Tr.t("Developed with Claude Code")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                }
-
-
-                // Ctrl+F was never written down anywhere either
-                StyledText {
-                    Layout.fillWidth: true
-                    Layout.topMargin: Theme.spacingS
-                    text: Tr.t("Keyboard") + ":  Ctrl+K " + Tr.t("Search everything") + "   ·   Ctrl+F " + Tr.t("Search this tab")
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                    wrapMode: Text.WordWrap
-                }
-                // Wrapper Item: DankButton sizes itself via `width`, which a
-                // ColumnLayout ignores — anchoring keeps its natural width.
-                Item {
-                    Layout.fillWidth: true
-                    implicitHeight: 32
-
-                    DankButton {
-                        anchors.left: parent.left
-                        buttonHeight: 32
-                        iconName: "open_in_new"
-                        iconSize: 15
-                        horizontalPadding: Theme.spacingM
-                        text: Tr.t("Open GitHub page")
-                        backgroundColor: Theme.buttonBg
-                        textColor: Theme.buttonText
-                        onClicked: Qt.openUrlExternally(win.githubUrl)
-                    }
-                }
-
-                // A row of its own rather than beside the button above: the
-                // card is 420 wide, and two labels side by side fit in English
-                // and stop fitting in German.
-                Item {
-                    Layout.fillWidth: true
-                    implicitHeight: 32
-
-                    DankButton {
-                        anchors.left: parent.left
-                        buttonHeight: 32
-                        iconName: "description"
-                        iconSize: 15
-                        horizontalPadding: Theme.spacingM
-                        text: Tr.t("Read the changelog")
-                        backgroundColor: Theme.buttonBg
-                        textColor: Theme.buttonText
-                        // The whole history, not the section for the version
-                        // being offered — that one is already on this card
-                        // when there is an update to describe
-                        onClicked: Qt.openUrlExternally(win.githubUrl + "/blob/main/CHANGELOG.md")
-                    }
-                }
-
-                // The same three links as the dashboard. Someone who opened
-                // About went looking for who made this, which is exactly the
-                // moment the question is welcome.
-                //
-                // Wrapped in a plain Item because the card's height comes from
-                // this column's implicitHeight, and a nested layout does not
-                // contribute one — the chips ended up below the card's own
-                // rounded corner.
-                Item {
-                    Layout.fillWidth: true
-                    implicitHeight: aboutChips.chipCount * aboutChips.chipHeight + (aboutChips.chipCount - 1) * Theme.spacingXS
-
-                    SupportChips {
-                        id: aboutChips
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        columns: 1
-                        // Everything else in this card starts at the left
-                        // margin, including the button right above
-                        chipAlignment: Qt.AlignLeft
-                        repoUrl: win.githubUrl
-                    }
-                }
-            }
-        }
-    }
-
-    // ── Plugin settings popup (gear icon in the header) ─────────────────────
+    // ── Plugin settings popup (gear icon in header) ────────────────────────
     property bool settingsOpen: false
+    property string settingsTab: "settings"
+    property bool showUpdateChangelog: false
 
     onSettingsOpenChanged: {
         if (!settingsOpen)
             return;
         settingsFocus.forceActiveFocus();
-        // Recordings appear on disk while the panel is closed — a run made
-        // one — so the list is read when the panel opens rather than once
-        // at startup.
         if (Backend.developmentInstall)
             Backend.refreshRecordings();
     }
@@ -911,7 +637,7 @@ FloatingWindow {
         anchors.fill: parent
         visible: win.settingsOpen
         z: 90
-        color: Qt.rgba(0, 0, 0, 0.45)
+        color: Qt.rgba(0, 0, 0, 0.55)
 
         MouseArea {
             anchors.fill: parent
@@ -925,13 +651,18 @@ FloatingWindow {
         }
 
         Rectangle {
+            id: settingsCard
             anchors.centerIn: parent
-            width: Math.min(480, parent.width - Theme.spacingL * 2)
-            height: Math.min(settingsHeaderRow.implicitHeight + settingsScrollColumn.implicitHeight + Theme.spacingM + Theme.spacingL * 2, parent.height - Theme.spacingL * 2)
-            radius: Theme.cornerRadius
-            color: Theme.surfaceContainer
-            border.width: 1
-            border.color: Theme.withAlpha(Theme.surfaceVariantText, 0.25)
+            width: Math.min(560, parent.width - Theme.spacingL * 2)
+            height: Math.min(620, parent.height - Theme.spacingL * 2)
+            radius: Theme.cornerRadius + 4
+            color: Ui.cardSurface
+            border.width: 0
+
+            scale: win.settingsOpen ? 1.0 : 0.94
+            opacity: win.settingsOpen ? 1.0 : 0.0
+            Behavior on scale { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutBack } }
+            Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
 
             MouseArea {
                 anchors.fill: parent
@@ -943,405 +674,1606 @@ FloatingWindow {
                 anchors.margins: Theme.spacingL
                 spacing: Theme.spacingM
 
+                // Header row
                 RowLayout {
                     id: settingsHeaderRow
                     Layout.fillWidth: true
+                    spacing: Theme.spacingM
 
-                    DankIcon {
-                        name: "settings"
-                        size: 20
-                        color: Theme.surfaceText
+                    Rectangle {
+                        Layout.preferredWidth: 36
+                        Layout.preferredHeight: 36
+                        radius: 8
+                        color: Theme.withAlpha(Theme.primary, 0.10)
+                        border.width: 0
+
+                        DankIcon {
+                            anchors.centerIn: parent
+                            name: win.settingsTab === "about" ? "info" : "settings"
+                            size: 20
+                            color: Theme.primary
+                        }
                     }
 
                     StyledText {
                         Layout.fillWidth: true
-                        text: Tr.t("Plugin settings")
+                        text: win.settingsTab === "about" ? Tr.t("About & System Info") : Tr.t("Plugin Settings")
                         font.pixelSize: Theme.fontSizeLarge
                         font.weight: Font.Medium
                         color: Theme.surfaceText
                     }
 
-                    DankActionButton {
-                        buttonSize: 30
-                        iconName: "close"
-                        iconSize: 18
-                        iconColor: Theme.surfaceVariantText
-                        onClicked: win.settingsOpen = false
+                    Rectangle {
+                        id: settingsCloseBtn
+                        width: 32
+                        height: 32
+                        property bool isHovered: setCloseMa.containsMouse
+
+                        radius: isHovered ? (height / 2) : (Theme.cornerRadius / 2)
+                        Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+                        color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Ui.chipSurfaceNested, 0.5)
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                        border.width: 1
+                        border.color: isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.15)
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                        scale: setCloseMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                        DankRipple {
+                            id: setCloseRip
+                            anchors.fill: parent
+                            cornerRadius: parent.radius
+                            rippleColor: Theme.error
+                        }
+
+                        DankIcon {
+                            anchors.centerIn: parent
+                            name: "close"
+                            size: 18
+                            color: settingsCloseBtn.isHovered ? Theme.error : Theme.surfaceVariantText
+                        }
+
+                        MouseArea {
+                            id: setCloseMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: (m) => setCloseRip.trigger(m.x, m.y)
+                            onClicked: win.settingsOpen = false
+                        }
                     }
                 }
 
-                // Everything below the header scrolls when the window is
-                // shorter than the settings content
-                Flickable {
-                    id: settingsScroll
+                // Dynamic segmented switcher between Settings and About
+                Rectangle {
+                    id: settingsTabsSegment
+                    Layout.fillWidth: true
+                    height: 38
+                    radius: Theme.cornerRadius
+                    color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                    border.width: 0
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 3
+                        spacing: 4
+
+                        // Tab 1: Preferences
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            readonly property bool isTabActive: win.settingsTab === "settings"
+                            property bool isTabHovered: setTabMa.containsMouse
+
+                            topLeftRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
+                            bottomLeftRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
+                            topRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
+                            bottomRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
+
+                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+                            color: isTabActive ? Theme.primary : (isTabHovered ? Theme.withAlpha(Theme.primary, 0.15) : "transparent")
+                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                            RowLayout {
+                                anchors.centerIn: parent
+                                spacing: 6
+
+                                DankIcon {
+                                    name: "settings"
+                                    size: 16
+                                    color: parent.parent.isTabActive ? Theme.buttonText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Preferences")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: parent.parent.isTabActive ? Font.DemiBold : Font.Normal
+                                    color: parent.parent.isTabActive ? Theme.buttonText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
+                                }
+                            }
+
+                            MouseArea {
+                                id: setTabMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: win.settingsTab = "settings"
+                            }
+                        }
+
+                        // Tab 2: About / Info
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            readonly property bool isTabActive: win.settingsTab === "about"
+                            property bool isTabHovered: abtTabMa.containsMouse
+
+                            topLeftRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
+                            bottomLeftRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
+                            topRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
+                            bottomRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
+
+                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+                            color: isTabActive ? Theme.primary : (isTabHovered ? Theme.withAlpha(Theme.primary, 0.15) : "transparent")
+                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                            RowLayout {
+                                anchors.centerIn: parent
+                                spacing: 6
+
+                                DankIcon {
+                                    name: "info"
+                                    size: 16
+                                    color: parent.parent.isTabActive ? Theme.buttonText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
+                                }
+
+                                StyledText {
+                                    text: Tr.t("About & Info")
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: parent.parent.isTabActive ? Font.DemiBold : Font.Normal
+                                    color: parent.parent.isTabActive ? Theme.buttonText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
+                                }
+                            }
+
+                            MouseArea {
+                                id: abtTabMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: win.settingsTab = "about"
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    id: settingsContentContainer
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    contentWidth: width
-                    contentHeight: settingsScrollColumn.implicitHeight
                     clip: true
-                    boundsBehavior: Flickable.StopAtBounds
 
-                    ColumnLayout {
-                        id: settingsScrollColumn
-                        width: settingsScroll.width
-                        spacing: Theme.spacingM
+                    // ═════════════════════════════════════════════════════
+                    // 1. PREFERENCES VIEW (Dynamic Segmented Rows with Icons)
+                    // ═════════════════════════════════════════════════════
+                    Flickable {
+                        id: prefFlickable
+                        anchors.fill: parent
+                        contentWidth: width
+                        contentHeight: prefColumn.implicitHeight
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
 
-                    // Plain Column: DankToggle sizes itself via `height` (its
-                    // implicitHeight stays 0), which a ColumnLayout would ignore —
-                    // stacking by actual height keeps wrapped descriptions apart.
-                    Column {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacingS
-
-                        DankToggle {
-                            width: parent.width
-                            text: Tr.t("Hide when up to date")
-                            description: Tr.t("Hide the bar pill while there are no pending updates.")
-                            checked: win.widgetRoot ? win.widgetRoot.hideWhenUpToDate : false
-                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "hideWhenUpToDate", checked)
+                        opacity: win.settingsTab === "settings" ? 1.0 : 0.0
+                        transform: Translate {
+                            x: win.settingsTab === "settings" ? 0 : -24
+                            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
                         }
+                        Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
+                        visible: opacity > 0.0
 
-                        DankToggle {
-                            width: parent.width
-                            text: Tr.t("Show runtimes and extensions")
-                            description: Tr.t("List Flatpak runtimes, locales and codec extensions. They are always included in Update All.")
-                            checked: win.widgetRoot ? win.widgetRoot.showRuntimes : false
-                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "showRuntimes", checked)
-                        }
+                        Column {
+                            id: prefColumn
+                            width: prefFlickable.width
+                            spacing: 2
 
-                        DankToggle {
-                            width: parent.width
-                            text: Tr.t("Include firmware updates")
-                            description: Tr.t("Check for device firmware updates via fwupd (LVFS) and include them in Update All.")
-                            checked: win.widgetRoot ? win.widgetRoot.includeFirmware : true
-                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "includeFirmware", checked)
-                        }
+                            // 1. Hide when up to date (First)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: row1.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: true
+                                readonly property bool isLast: false
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
 
-                        DankToggle {
-                            width: parent.width
-                            text: Tr.t("Confirm before updating")
-                            description: Tr.t("Require a second click on Update All before the run starts.")
-                            checked: win.widgetRoot ? win.widgetRoot.confirmBeforeUpdate : false
-                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "confirmBeforeUpdate", checked)
-                        }
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
 
-                        // Reads Backend rather than widgetRoot for the same
-                        // reason the icon tint below reads Ui: the thing that
-                        // acts on it is Backend, which builds every
-                        // privileged command.
-                        DankToggle {
-                            width: parent.width
-                            text: Tr.t("Authorise with sudo")
-                            description: Tr.t("Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.")
-                            checked: Backend.useSudo
-                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "useSudo", checked)
-                        }
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
 
-                        // Reads Ui rather than widgetRoot: this one is about
-                        // how things are drawn rather than about what the
-                        // updater does, and Ui is where the views that draw
-                        // them already look for the answer
-                        DankToggle {
-                            width: parent.width
-                            text: Tr.t("Tint app icons with the theme colour")
-                            description: Tr.t("Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.")
-                            checked: Ui.tintAppIcons
-                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "tintAppIcons", checked)
-                        }
+                                RowLayout {
+                                    id: row1
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingM
 
-                        DankToggle {
-                            width: parent.width
-                            text: Tr.t("Show in app launcher")
-                            description: Tr.t("Place a desktop entry so this window can be opened from the application launcher, like a standalone app.")
-                            checked: Backend.launcherEntryPresent
-                            enabled: Backend.launcherEntryChecked && !Backend.launcherEntryBusy
-                            onToggled: checked => {
-                                if (checked)
-                                    Backend.installLauncherEntry();
-                                else
-                                    Backend.removeLauncherEntry();
-                                // However it is answered, it has now been asked
-                                PluginService.savePluginData("dankSoftwareDepot", "launcherPromptDone", true);
-                            }
-                        }
+                                    DankIcon {
+                                        name: "visibility_off"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
 
-                        DankToggle {
-                            width: parent.width
-                            text: Tr.t("Open .appimage files with this app")
-                            description: Tr.t("Double-clicking an AppImage opens this window, which offers to install it — or to replace the copy you already have. Adds the launcher entry if it is not there yet.")
-                            checked: Backend.appimageHandlerDefault
-                            enabled: Backend.appimageHandlerChecked && !Backend.appimageHandlerBusy && !Backend.launcherEntryBusy
-                            onToggled: checked => {
-                                if (checked)
-                                    Backend.setAppimageHandler();
-                                else
-                                    Backend.clearAppimageHandler();
-                            }
-                        }
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
 
-                        DankToggle {
-                            width: parent.width
-                            text: Tr.t("Bar click opens window")
-                            description: Tr.t("Open this window instead of the compact popout when clicking the bar pill.")
-                            checked: win.widgetRoot ? win.widgetRoot.pillOpensWindow : false
-                            onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "pillOpensWindow", checked)
-                        }
+                                        StyledText {
+                                            text: Tr.t("Hide when up to date")
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Medium
+                                            color: Theme.surfaceText
+                                        }
 
-                        DankDropdown {
-                            readonly property var autoMap: ({
-                                    "Off": "off",
-                                    "Notify only": "notify",
-                                    "Auto-install Flatpaks": "auto"
-                                })
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: Tr.t("Hide the bar pill while there are no pending updates.")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
 
-                            width: parent.width
-                            text: Tr.t("Automatic updates")
-                            description: Tr.t("Notify when updates are found, and optionally install Flatpak updates automatically. System packages always ask first.")
-                            options: Object.keys(autoMap).map(k => Tr.t(k))
-                            currentValue: {
-                                const mode = win.widgetRoot ? win.widgetRoot.autoUpdateMode : "notify";
-                                for (const label in autoMap) {
-                                    if (autoMap[label] === mode)
-                                        return Tr.t(label);
-                                }
-                                return Tr.t("Off");
-                            }
-                            onValueChanged: value => {
-                                for (const label in autoMap) {
-                                    if (Tr.t(label) === value) {
-                                        PluginService.savePluginData("dankSoftwareDepot", "autoUpdateMode", autoMap[label]);
-                                        return;
+                                    DankToggle {
+                                        id: t1
+                                        hideText: true
+                                        checked: win.widgetRoot ? win.widgetRoot.hideWhenUpToDate : false
+                                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "hideWhenUpToDate", checked)
                                     }
                                 }
                             }
-                        }
-                    }
 
-                    StyledText {
-                        Layout.fillWidth: true
-                        text: Tr.t("Check interval and ignored packages are managed in DMS Settings → System Updater.")
-                        font.pixelSize: Theme.fontSizeSmall - 1
-                        color: Theme.surfaceVariantText
-                        wrapMode: Text.WordWrap
-                    }
+                            // 2. Show runtimes and extensions (Middle)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: row2.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: false
+                                readonly property bool isLast: false
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
 
-                    Item {
-                        Layout.preferredWidth: dmsSettingsLinkButton.width
-                        Layout.preferredHeight: dmsSettingsLinkButton.height
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
 
-                        DankButton {
-                            id: dmsSettingsLinkButton
-                            buttonHeight: 30
-                            horizontalPadding: Theme.spacingM
-                            iconName: "open_in_new"
-                            iconSize: 14
-                            text: Tr.t("Open DMS System Updater settings")
-                            backgroundColor: Theme.buttonBg
-                            textColor: Theme.buttonText
-                            onClicked: {
-                                win.settingsOpen = false;
-                                PopoutService.openSettingsWithTab("updater");
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
+
+                                RowLayout {
+                                    id: row2
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingM
+
+                                    DankIcon {
+                                        name: "extension"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: Tr.t("Show runtimes and extensions")
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Medium
+                                            color: Theme.surfaceText
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: Tr.t("List Flatpak runtimes, locales and codec extensions. They are always included in Update All.")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    DankToggle {
+                                        id: t2
+                                        hideText: true
+                                        checked: win.widgetRoot ? win.widgetRoot.showRuntimes : false
+                                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "showRuntimes", checked)
+                                    }
+                                }
                             }
-                        }
-                    }
 
-                    // Plugin updates are shown and run from the Updates tab,
-                    // but installing, removing and browsing them lives in DMS
-                    // itself. Rather than reimplement that, point at it.
-                    Item {
-                        Layout.preferredWidth: dmsPluginsLinkButton.width
-                        Layout.preferredHeight: dmsPluginsLinkButton.height
+                            // 3. Include firmware updates (Middle)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: row3.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: false
+                                readonly property bool isLast: false
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
 
-                        DankButton {
-                            id: dmsPluginsLinkButton
-                            buttonHeight: 30
-                            horizontalPadding: Theme.spacingM
-                            iconName: "open_in_new"
-                            iconSize: 14
-                            text: Tr.t("Manage DMS plugins")
-                            backgroundColor: Theme.buttonBg
-                            textColor: Theme.buttonText
-                            onClicked: {
-                                win.settingsOpen = false;
-                                PopoutService.openSettingsWithTab("plugins");
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
+
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
+
+                                RowLayout {
+                                    id: row3
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingM
+
+                                    DankIcon {
+                                        name: "memory"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: Tr.t("Include firmware updates")
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Medium
+                                            color: Theme.surfaceText
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: Tr.t("Check for device firmware updates via fwupd (LVFS) and include them in Update All.")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    DankToggle {
+                                        id: t3
+                                        hideText: true
+                                        checked: win.widgetRoot ? win.widgetRoot.includeFirmware : true
+                                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "includeFirmware", checked)
+                                    }
+                                }
                             }
-                        }
-                    }
 
-                    // ── Developer: record a run, play it back ───────────────
-                    // Only on a working copy (the plugin directory is a
-                    // symlink), which is also the only place it means
-                    // anything. Deliberately untranslated: sixteen catalogs
-                    // carrying strings that appear on one machine in the
-                    // world is a cost with no reader.
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.topMargin: Theme.spacingM
-                        spacing: Theme.spacingS
-                        visible: Backend.developmentInstall
+                            // 4. Confirm before updating (Middle)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: row4.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: false
+                                readonly property bool isLast: false
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
 
-                        StyledText {
-                            Layout.fillWidth: true
-                            text: "Developer"
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.weight: Font.Bold
-                            color: Theme.surfaceVariantText
-                        }
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
 
-                        Column {
-                            Layout.fillWidth: true
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
 
-                            DankToggle {
-                                width: parent.width
-                                text: "Record the next update run"
-                                description: "Wraps every helper the run starts and writes what it says to recordings/, alongside the list of packages the window was showing. The run itself is untouched."
-                                checked: Backend.simMode === "record"
-                                onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "simMode", checked ? "record" : "")
+                                RowLayout {
+                                    id: row4
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingM
+
+                                    DankIcon {
+                                        name: "check_circle"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: Tr.t("Confirm before updating")
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Medium
+                                            color: Theme.surfaceText
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: Tr.t("Require a second click on Update All before the run starts.")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    DankToggle {
+                                        id: t4
+                                        hideText: true
+                                        checked: win.widgetRoot ? win.widgetRoot.confirmBeforeUpdate : false
+                                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "confirmBeforeUpdate", checked)
+                                    }
+                                }
                             }
-                        }
 
-                        // A replay is a run in every respect the interface can
-                        // see, so it needs to be unmistakable from the outside.
-                        Rectangle {
-                            Layout.fillWidth: true
-                            visible: Backend.replaying
-                            implicitHeight: simulatingRow.implicitHeight + Theme.spacingM * 2
-                            radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.secondary, 0.12)
-                            border.width: 1
-                            border.color: Theme.withAlpha(Theme.secondary, 0.3)
+                            // 5. Authorise with sudo (Middle)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: row5.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: false
+                                readonly property bool isLast: false
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
 
-                            RowLayout {
-                                id: simulatingRow
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: Theme.spacingM
-                                anchors.rightMargin: Theme.spacingM
-                                spacing: Theme.spacingM
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
 
-                                DankIcon {
-                                    name: "science"
-                                    size: 20
-                                    color: Theme.secondary
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
+
+                                RowLayout {
+                                    id: row5
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingM
+
+                                    DankIcon {
+                                        name: "admin_panel_settings"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: Tr.t("Authorise with sudo")
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Medium
+                                            color: Theme.surfaceText
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: Tr.t("Run privileged commands through sudo instead of asking polkit, for systems where sudo has been configured to need no password. Falls back to the usual prompt whenever sudo would ask for one.")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    DankToggle {
+                                        id: t5
+                                        hideText: true
+                                        checked: Backend.useSudo
+                                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "useSudo", checked)
+                                    }
+                                }
+                            }
+
+                            // 6. Tint app icons with the theme colour (Middle)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: row6.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: false
+                                readonly property bool isLast: false
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
+
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
+
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
+
+                                RowLayout {
+                                    id: row6
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingM
+
+                                    DankIcon {
+                                        name: "palette"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: Tr.t("Tint app icons with the theme colour")
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Medium
+                                            color: Theme.surfaceText
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: Tr.t("Draw app icons in greyscale and colour them with the active DMS accent, instead of showing each app's own colours.")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    DankToggle {
+                                        id: t6
+                                        hideText: true
+                                        checked: Ui.tintAppIcons
+                                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "tintAppIcons", checked)
+                                    }
+                                }
+                            }
+
+                            // 7. Show in app launcher (Middle)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: row7.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: false
+                                readonly property bool isLast: false
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
+
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
+
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
+
+                                RowLayout {
+                                    id: row7
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingM
+
+                                    DankIcon {
+                                        name: "apps"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: Tr.t("Show in app launcher")
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Medium
+                                            color: Theme.surfaceText
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: Tr.t("Place a desktop entry so this window can be opened from the application launcher, like a standalone app.")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    DankToggle {
+                                        id: t7
+                                        hideText: true
+                                        checked: Backend.launcherEntryPresent
+                                        enabled: Backend.launcherEntryChecked && !Backend.launcherEntryBusy
+                                        onToggled: checked => {
+                                            if (checked)
+                                                Backend.installLauncherEntry();
+                                            else
+                                                Backend.removeLauncherEntry();
+                                            PluginService.savePluginData("dankSoftwareDepot", "launcherPromptDone", true);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 8. Open .appimage files with this app (Middle)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: row8.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: false
+                                readonly property bool isLast: false
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
+
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
+
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
+
+                                RowLayout {
+                                    id: row8
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingM
+
+                                    DankIcon {
+                                        name: "insert_drive_file"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: Tr.t("Open .appimage files with this app")
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Medium
+                                            color: Theme.surfaceText
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: Tr.t("Double-clicking an AppImage opens this window, which offers to install it — or to replace the copy you already have. Adds the launcher entry if it is not there yet.")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    DankToggle {
+                                        id: t8
+                                        hideText: true
+                                        checked: Backend.appimageHandlerDefault
+                                        enabled: Backend.appimageHandlerChecked && !Backend.appimageHandlerBusy && !Backend.launcherEntryBusy
+                                        onToggled: checked => {
+                                            if (checked)
+                                                Backend.setAppimageHandler();
+                                            else
+                                                Backend.clearAppimageHandler();
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 9. Bar click opens window (Middle)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: row9.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: false
+                                readonly property bool isLast: false
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
+
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
+
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
+
+                                RowLayout {
+                                    id: row9
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingM
+
+                                    DankIcon {
+                                        name: "open_in_browser"
+                                        size: 20
+                                        color: Theme.primary
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2
+
+                                        StyledText {
+                                            text: Tr.t("Bar click opens window")
+                                            font.pixelSize: Theme.fontSizeMedium
+                                            font.weight: Font.Medium
+                                            color: Theme.surfaceText
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: Tr.t("Open this window instead of the compact popout when clicking the bar pill.")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    DankToggle {
+                                        id: t9
+                                        hideText: true
+                                        checked: win.widgetRoot ? win.widgetRoot.pillOpensWindow : false
+                                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "pillOpensWindow", checked)
+                                    }
+                                }
+                            }
+
+                            // 10. Automatic updates (Last - Stacked layout)
+                            Rectangle {
+                                width: prefColumn.width
+                                height: autoCol.implicitHeight + Theme.spacingM * 2
+                                readonly property bool isFirst: false
+                                readonly property bool isLast: true
+                                readonly property real outerR: Theme.cornerRadius
+                                readonly property real innerR: 4
+
+                                topLeftRadius: isFirst ? outerR : innerR
+                                topRightRadius: isFirst ? outerR : innerR
+                                bottomLeftRadius: isLast ? outerR : innerR
+                                bottomRightRadius: isLast ? outerR : innerR
+
+                                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                                border.width: 0
+
+                                ColumnLayout {
+                                    id: autoCol
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: Theme.spacingM
+                                    anchors.rightMargin: Theme.spacingM
+                                    spacing: Theme.spacingS
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: Theme.spacingM
+
+                                        DankIcon {
+                                            name: "sync"
+                                            size: 20
+                                            color: Theme.primary
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 2
+
+                                            StyledText {
+                                                text: Tr.t("Automatic updates")
+                                                font.pixelSize: Theme.fontSizeMedium
+                                                font.weight: Font.Medium
+                                                color: Theme.surfaceText
+                                            }
+
+                                            StyledText {
+                                                Layout.fillWidth: true
+                                                text: Tr.t("Notify when updates are found, and optionally install Flatpak updates automatically. System packages always ask first.")
+                                                font.pixelSize: Theme.fontSizeSmall
+                                                color: Theme.surfaceVariantText
+                                                wrapMode: Text.WordWrap
+                                            }
+                                        }
+                                    }
+
+                                    DankDropdown {
+                                        id: t10
+                                        readonly property var autoMap: ({
+                                                "Off": "off",
+                                                "Notify only": "notify",
+                                                "Auto-install Flatpaks": "auto"
+                                            })
+
+                                        Layout.fillWidth: true
+                                        compactMode: true
+                                        dropdownWidth: parent.width
+                                        options: Object.keys(autoMap).map(k => Tr.t(k))
+                                        currentValue: {
+                                            const mode = win.widgetRoot ? win.widgetRoot.autoUpdateMode : "notify";
+                                            for (const label in autoMap) {
+                                                if (autoMap[label] === mode)
+                                                    return Tr.t(label);
+                                            }
+                                            return Tr.t("Off");
+                                        }
+                                        onValueChanged: value => {
+                                            for (const label in autoMap) {
+                                                if (Tr.t(label) === value) {
+                                                    PluginService.savePluginData("dankSoftwareDepot", "autoUpdateMode", autoMap[label]);
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // ── Developer: record a run, play it back ───────────────
+                            // Only on a working copy (the plugin directory is a
+                            // symlink), which is also the only place it means
+                            // anything. Deliberately untranslated: sixteen catalogs
+                            // carrying strings that appear on one machine in the
+                            // world is a cost with no reader.
+                            // prefColumn is a plain Column, so this one is
+                            // sized rather than Layout.fillWidth'd; its own
+                            // children are laid out by it as before.
+                            ColumnLayout {
+                                width: prefColumn.width
+                                spacing: Theme.spacingS
+                                visible: Backend.developmentInstall
+
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    text: "Developer"
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    font.weight: Font.Bold
+                                    color: Theme.surfaceVariantText
+                                }
+
+                                Column {
+                                    Layout.fillWidth: true
+
+                                    DankToggle {
+                                        width: parent.width
+                                        text: "Record the next update run"
+                                        description: "Wraps every helper the run starts and writes what it says to recordings/, alongside the list of packages the window was showing. The run itself is untouched."
+                                        checked: Backend.simMode === "record"
+                                        onToggled: checked => PluginService.savePluginData("dankSoftwareDepot", "simMode", checked ? "record" : "")
+                                    }
+                                }
+
+                                // A replay is a run in every respect the interface can
+                                // see, so it needs to be unmistakable from the outside.
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    visible: Backend.replaying
+                                    implicitHeight: simulatingRow.implicitHeight + Theme.spacingM * 2
+                                    radius: Theme.cornerRadius
+                                    color: Theme.withAlpha(Theme.secondary, 0.12)
+                                    border.width: 1
+                                    border.color: Theme.withAlpha(Theme.secondary, 0.3)
+
+                                    RowLayout {
+                                        id: simulatingRow
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        anchors.leftMargin: Theme.spacingM
+                                        anchors.rightMargin: Theme.spacingM
+                                        spacing: Theme.spacingM
+
+                                        DankIcon {
+                                            name: "science"
+                                            size: 20
+                                            color: Theme.secondary
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: "Simulating " + Backend.simRecording + " — nothing is being installed, and nothing reaches the log"
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceText
+                                            wrapMode: Text.WordWrap
+                                        }
+
+                                        DankButton {
+                                            buttonHeight: 28
+                                            horizontalPadding: Theme.spacingM
+                                            text: "Stop"
+                                            backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                                            textColor: Theme.buttonText
+                                            onClicked: PluginService.savePluginData("dankSoftwareDepot", "simMode", "")
+                                        }
+                                    }
+                                }
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.spacingS
+
+                                    StyledText {
+                                        text: "Speed"
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: Theme.surfaceVariantText
+                                    }
+
+                                    Repeater {
+                                        model: [1, 2, 4, 10]
+
+                                        delegate: DankButton {
+                                            required property var modelData
+
+                                            buttonHeight: 26
+                                            horizontalPadding: Theme.spacingS
+                                            text: modelData + "×"
+                                            backgroundColor: Backend.simSpeed === modelData ? Theme.primary : Theme.withAlpha(Theme.buttonBg, 0.9)
+                                            textColor: Backend.simSpeed === modelData ? Theme.primaryText : Theme.buttonText
+                                            onClicked: PluginService.savePluginData("dankSoftwareDepot", "simSpeed", modelData)
+                                        }
+                                    }
+
+                                    Item {
+                                        Layout.fillWidth: true
+                                    }
+
+                                    DankButton {
+                                        buttonHeight: 26
+                                        horizontalPadding: Theme.spacingS
+                                        iconName: "refresh"
+                                        iconSize: 14
+                                        text: "Rescan"
+                                        backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                                        textColor: Theme.buttonText
+                                        onClicked: Backend.refreshRecordings()
+                                    }
                                 }
 
                                 StyledText {
                                     Layout.fillWidth: true
-                                    text: "Simulating " + Backend.simRecording + " — nothing is being installed, and nothing reaches the log"
+                                    visible: Backend.recordings.length === 0
+                                    text: Backend.simMode === "record" ? "Nothing recorded yet — the next Update All will be." : "Nothing recorded yet."
                                     font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.surfaceText
+                                    color: Theme.surfaceVariantText
                                     wrapMode: Text.WordWrap
                                 }
 
-                                DankButton {
-                                    buttonHeight: 28
-                                    horizontalPadding: Theme.spacingM
-                                    text: "Stop"
-                                    backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
-                                    textColor: Theme.buttonText
-                                    onClicked: PluginService.savePluginData("dankSoftwareDepot", "simMode", "")
-                                }
-                            }
-                        }
+                                Repeater {
+                                    model: Backend.recordings
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Theme.spacingS
+                                    delegate: RowLayout {
+                                        required property var modelData
 
-                            StyledText {
-                                text: "Speed"
-                                font.pixelSize: Theme.fontSizeSmall
-                                color: Theme.surfaceVariantText
-                            }
+                                        Layout.fillWidth: true
+                                        spacing: Theme.spacingM
 
-                            Repeater {
-                                model: [1, 2, 4, 10]
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            text: modelData.name + " · " + modelData.packages + " packages · "
+                                                + modelData.seconds + "s · " + (modelData.tags || []).join(", ")
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Backend.simRecording === modelData.name ? Theme.primary : Theme.surfaceText
+                                            elide: Text.ElideRight
+                                        }
 
-                                delegate: DankButton {
-                                    required property var modelData
-
-                                    buttonHeight: 26
-                                    horizontalPadding: Theme.spacingS
-                                    text: modelData + "×"
-                                    backgroundColor: Backend.simSpeed === modelData ? Theme.primary : Theme.withAlpha(Theme.buttonBg, 0.9)
-                                    textColor: Backend.simSpeed === modelData ? Theme.primaryText : Theme.buttonText
-                                    onClicked: PluginService.savePluginData("dankSoftwareDepot", "simSpeed", modelData)
-                                }
-                            }
-
-                            Item {
-                                Layout.fillWidth: true
-                            }
-
-                            DankButton {
-                                buttonHeight: 26
-                                horizontalPadding: Theme.spacingS
-                                iconName: "refresh"
-                                iconSize: 14
-                                text: "Rescan"
-                                backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
-                                textColor: Theme.buttonText
-                                onClicked: Backend.refreshRecordings()
-                            }
-                        }
-
-                        StyledText {
-                            Layout.fillWidth: true
-                            visible: Backend.recordings.length === 0
-                            text: Backend.simMode === "record" ? "Nothing recorded yet — the next Update All will be." : "Nothing recorded yet."
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceVariantText
-                            wrapMode: Text.WordWrap
-                        }
-
-                        Repeater {
-                            model: Backend.recordings
-
-                            delegate: RowLayout {
-                                required property var modelData
-
-                                Layout.fillWidth: true
-                                spacing: Theme.spacingM
-
-                                StyledText {
-                                    Layout.fillWidth: true
-                                    text: modelData.name + " · " + modelData.packages + " packages · "
-                                        + modelData.seconds + "s · " + (modelData.tags || []).join(", ")
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Backend.simRecording === modelData.name ? Theme.primary : Theme.surfaceText
-                                    elide: Text.ElideRight
-                                }
-
-                                DankButton {
-                                    buttonHeight: 26
-                                    horizontalPadding: Theme.spacingM
-                                    iconName: "play_arrow"
-                                    iconSize: 14
-                                    text: "Play"
-                                    enabled: !win.engine.running
-                                    backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
-                                    textColor: Theme.buttonText
-                                    onClicked: {
-                                        PluginService.savePluginData("dankSoftwareDepot", "simRecording", modelData.name);
-                                        PluginService.savePluginData("dankSoftwareDepot", "simMode", "replay");
-                                        win.settingsOpen = false;
-                                        // The list the run is about arrives
-                                        // with the recording, and it arrives
-                                        // asynchronously — start when it is
-                                        // there, not before.
-                                        simulationStart.begin();
+                                        DankButton {
+                                            buttonHeight: 26
+                                            horizontalPadding: Theme.spacingM
+                                            iconName: "play_arrow"
+                                            iconSize: 14
+                                            text: "Play"
+                                            enabled: !win.engine.running
+                                            backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                                            textColor: Theme.buttonText
+                                            onClicked: {
+                                                PluginService.savePluginData("dankSoftwareDepot", "simRecording", modelData.name);
+                                                PluginService.savePluginData("dankSoftwareDepot", "simMode", "replay");
+                                                win.settingsOpen = false;
+                                                // The list the run is about arrives
+                                                // with the recording, and it arrives
+                                                // asynchronously — start when it is
+                                                // there, not before.
+                                                simulationStart.begin();
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+
+                    // ═════════════════════════════════════════════════════
+                    // 2. ABOUT / INFO VIEW (Animated Slide In)
+                    // ═════════════════════════════════════════════════════
+                    Flickable {
+                        id: aboutFlickable
+                        anchors.fill: parent
+                        contentWidth: width
+                        contentHeight: aboutScrollColumn.implicitHeight
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        opacity: win.settingsTab === "about" ? 1.0 : 0.0
+                        transform: Translate {
+                            x: win.settingsTab === "about" ? 0 : 24
+                            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+                        }
+                        Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
+                        visible: opacity > 0.0
+
+                        ColumnLayout {
+                            id: aboutScrollColumn
+                            width: aboutFlickable.width
+                            spacing: Theme.spacingM
+
+                            // ── About & Plugin Info Card ───────────────────────────
+                            StyledRect {
+                                Layout.fillWidth: true
+                                radius: Theme.cornerRadius
+                                // Holds chips and buttons, each already a container
+                                color: "transparent"
+                                border.width: 0
+                                implicitHeight: aboutCardCol.implicitHeight + Theme.spacingM * 2
+
+                                ColumnLayout {
+                                    id: aboutCardCol
+                                    anchors.fill: parent
+                                    anchors.margins: Theme.spacingM
+                                    spacing: Theme.spacingM
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: Theme.spacingM
+
+                                        Rectangle {
+                                            Layout.preferredWidth: 46
+                                            Layout.preferredHeight: 46
+                                            radius: Theme.cornerRadius
+                                            color: Theme.withAlpha(Theme.primary, 0.10)
+                                            border.width: 0
+
+                                            Image {
+                                                anchors.fill: parent
+                                                anchors.margins: 4
+                                                source: win.appIconSource
+                                                sourceSize.width: 80
+                                                sourceSize.height: 80
+                                                fillMode: Image.PreserveAspectFit
+                                                asynchronous: true
+                                            }
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 2
+
+                                            StyledText {
+                                                text: "Dank Software Depot"
+                                                font.pixelSize: Theme.fontSizeMedium
+                                                font.weight: Font.DemiBold
+                                                color: Theme.surfaceText
+                                            }
+
+                                            StyledText {
+                                                text: Tr.t("Version %1 (beta)").arg(win.pluginManifest.version || "?")
+                                                font.pixelSize: Theme.fontSizeSmall - 1
+                                                color: Theme.surfaceVariantText
+                                            }
+                                        }
+                                    }
+
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        text: win.pluginManifest.description ? Tr.t(win.pluginManifest.description) : Tr.t("Visual updater and software hub for DankMaterialShell.")
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: Theme.surfaceText
+                                        wrapMode: Text.WordWrap
+                                    }
+
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        text: Tr.t("Supports %1 packages, Flatpak and AppImage.").arg(Backend.systemRepoLabel)
+                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                        color: Theme.surfaceVariantText
+                                        wrapMode: Text.WordWrap
+                                    }
+
+                                    // Update notice inside settings with Fully Expanding Changelog Container
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        visible: win.selfUpdateVersion !== ""
+                                        implicitHeight: aboutUpdateBox.implicitHeight + Theme.spacingM * 2
+                                        radius: Theme.cornerRadius
+                                        color: Theme.withAlpha(Theme.primary, 0.10)
+                                        border.width: 1
+                                        border.color: Theme.withAlpha(Theme.primary, 0.30)
+
+                                        ColumnLayout {
+                                            id: aboutUpdateBox
+                                            anchors.fill: parent
+                                            anchors.margins: Theme.spacingM
+                                            spacing: Theme.spacingS
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: Theme.spacingS
+
+                                                DankIcon {
+                                                    name: "update"
+                                                    size: 16
+                                                    color: Theme.primary
+                                                }
+
+                                                StyledText {
+                                                    Layout.fillWidth: true
+                                                    text: Tr.t("Update to %1 available").arg(win.selfUpdateVersion)
+                                                    font.pixelSize: Theme.fontSizeSmall
+                                                    font.weight: Font.Medium
+                                                    color: Theme.primary
+                                                }
+                                            }
+
+                                            // Action buttons row: 1. Changelog button, 2. Update button
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 4
+
+                                                // 1. Show/Hide Changelog button (Pill morph on hover/expanded)
+                                                Rectangle {
+                                                    Layout.fillWidth: true
+                                                    Layout.preferredHeight: 34
+                                                    property bool isHov: logBtnMa.containsMouse
+                                                    readonly property bool isFirst: true
+                                                    readonly property bool isLast: false
+                                                    readonly property real outerR: Theme.cornerRadius
+                                                    readonly property real innerR: 4
+                                                    readonly property bool isPill: isHov || win.showUpdateChangelog
+
+                                                    topLeftRadius: isPill ? (height / 2) : (isFirst ? outerR : innerR)
+                                                    bottomLeftRadius: isPill ? (height / 2) : (isFirst ? outerR : innerR)
+                                                    topRightRadius: isPill ? (height / 2) : (isLast ? outerR : innerR)
+                                                    bottomRightRadius: isPill ? (height / 2) : (isLast ? outerR : innerR)
+
+                                                    Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+                                                    color: win.showUpdateChangelog
+                                                        ? Theme.withAlpha(Theme.primary, 0.30)
+                                                        : (isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Ui.chipSurfaceNested, 0.5))
+                                                    Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                                    border.width: 1
+                                                    border.color: (win.showUpdateChangelog || isHov) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
+                                                    Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                                                    scale: logBtnMa.pressed ? 0.94 : (isHov ? 1.02 : 1.0)
+                                                    Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                                                    RowLayout {
+                                                        anchors.centerIn: parent
+                                                        spacing: 6
+
+                                                        DankIcon {
+                                                            name: win.showUpdateChangelog ? "expand_less" : "article"
+                                                            size: 16
+                                                            color: (win.showUpdateChangelog || parent.parent.isHov) ? Theme.primary : Theme.surfaceText
+                                                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                                        }
+
+                                                        StyledText {
+                                                            text: win.showUpdateChangelog ? Tr.t("Hide Changelog") : Tr.t("View Changelog")
+                                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                                            font.weight: Font.Medium
+                                                            color: (win.showUpdateChangelog || parent.parent.isHov) ? Theme.primary : Theme.surfaceText
+                                                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                                        }
+                                                    }
+
+                                                    MouseArea {
+                                                        id: logBtnMa
+                                                        anchors.fill: parent
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        onClicked: win.showUpdateChangelog = !win.showUpdateChangelog
+                                                    }
+                                                }
+
+                                                // 2. Update and reload button (Last)
+                                                Rectangle {
+                                                    Layout.fillWidth: true
+                                                    Layout.preferredHeight: 34
+                                                    property bool isHov: updBtnMa.containsMouse
+                                                    readonly property bool isFirst: false
+                                                    readonly property bool isLast: true
+                                                    readonly property real outerR: Theme.cornerRadius
+                                                    readonly property real innerR: 4
+
+                                                    topLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                                    bottomLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                                    topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+                                                    bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+
+                                                    Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+                                                    color: isHov ? Theme.withAlpha(Theme.primary, 0.3) : Theme.withAlpha(Theme.primary, 0.18)
+                                                    Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                                    border.width: 1
+                                                    border.color: Theme.primary
+
+                                                    scale: updBtnMa.pressed ? 0.94 : (isHov ? 1.02 : 1.0)
+                                                    Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                                                    RowLayout {
+                                                        anchors.centerIn: parent
+                                                        spacing: 6
+
+                                                        DankIcon {
+                                                            name: "download"
+                                                            size: 14
+                                                            color: Theme.primary
+                                                        }
+
+                                                        StyledText {
+                                                            text: win.selfUpdateBusy ? Tr.t("Updating…") : Tr.t("Update & Reload")
+                                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                                            font.weight: Font.Medium
+                                                            color: Theme.primary
+                                                        }
+                                                    }
+
+                                                    MouseArea {
+                                                        id: updBtnMa
+                                                        anchors.fill: parent
+                                                        hoverEnabled: !win.selfUpdateBusy
+                                                        cursorShape: !win.selfUpdateBusy ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                                        onClicked: {
+                                                            win.settingsOpen = false;
+                                                            win.applySelfUpdate();
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            // Full expanding changelog box (No nested inner scroll, expands parent naturally)
+                                            Rectangle {
+                                                id: changelogBox
+                                                Layout.fillWidth: true
+                                                clip: true
+                                                implicitHeight: win.showUpdateChangelog ? (notesText.implicitHeight + 20) : 0
+                                                opacity: win.showUpdateChangelog ? 1.0 : 0.0
+                                                radius: 8
+                                                color: Theme.withAlpha(Theme.surfaceContainerLowest, 0.55)
+                                                border.width: win.showUpdateChangelog ? 1 : 0
+
+                                                Behavior on implicitHeight { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                Behavior on opacity { NumberAnimation { duration: Theme.longDuration } }
+
+                                                Item {
+                                                    anchors.fill: parent
+                                                    anchors.margins: 10
+
+                                                    StyledText {
+                                                        id: notesText
+                                                        anchors.left: parent.left
+                                                        anchors.right: parent.right
+                                                        anchors.top: parent.top
+                                                        text: win.selfUpdateNotes
+                                                        textFormat: Text.RichText
+                                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                                        color: Theme.surfaceText
+                                                        wrapMode: Text.WordWrap
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Support & Community Chips (Upvote, Star, Vito)
+                                    // Stacked, not in a row: three of these
+                                    // side by side need about 500 pixels and
+                                    // this card does not have them, so the
+                                    // third hung over the edge. Left, because
+                                    // every other thing in the card starts at
+                                    // the left margin.
+                                    SupportChips {
+                                        Layout.fillWidth: true
+                                        Layout.topMargin: Theme.spacingXS
+                                        Layout.bottomMargin: Theme.spacingXS
+                                        columns: 1
+                                        chipAlignment: Qt.AlignLeft
+                                        repoUrl: win.githubUrl
+                                    }
+
+                                    // Action buttons for GitHub & Issue Tracker (2 items: First & Last Segmented)
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 4
+
+                                        // 1. GitHub (First)
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 34
+                                            property bool isHov: ghMa.containsMouse
+                                            readonly property bool isFirst: true
+                                            readonly property bool isLast: false
+                                            readonly property real outerR: Theme.cornerRadius
+                                            readonly property real innerR: 4
+
+                                            topLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                            bottomLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                            topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+                                            bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+
+                                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Ui.chipSurfaceNested, 0.5)
+                                            border.width: 1
+                                            border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
+
+                                            RowLayout {
+                                                anchors.centerIn: parent
+                                                spacing: 6
+
+                                                DankIcon {
+                                                    name: "code"
+                                                    size: 16
+                                                    color: parent.parent.isHov ? Theme.primary : Theme.surfaceText
+                                                }
+
+                                                StyledText {
+                                                    text: Tr.t("GitHub Repository")
+                                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                                    color: parent.parent.isHov ? Theme.primary : Theme.surfaceText
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                id: ghMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: Qt.openUrlExternally(win.githubUrl)
+                                            }
+                                        }
+
+                                        // 2. Report Bug (Last)
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 34
+                                            property bool isHov: issueMa.containsMouse
+                                            readonly property bool isFirst: false
+                                            readonly property bool isLast: true
+                                            readonly property real outerR: Theme.cornerRadius
+                                            readonly property real innerR: 4
+
+                                            topLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                            bottomLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                            topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+                                            bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+
+                                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Ui.chipSurfaceNested, 0.5)
+                                            border.width: 1
+                                            border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
+
+                                            RowLayout {
+                                                anchors.centerIn: parent
+                                                spacing: 6
+
+                                                DankIcon {
+                                                    name: "bug_report"
+                                                    size: 16
+                                                    color: parent.parent.isHov ? Theme.primary : Theme.surfaceText
+                                                }
+
+                                                StyledText {
+                                                    text: Tr.t("Report an Issue")
+                                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                                    color: parent.parent.isHov ? Theme.primary : Theme.surfaceText
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                id: issueMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: Qt.openUrlExternally(win.githubUrl + "/issues")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // ── System Links Container Card ────────────────────────
+                            StyledRect {
+                                Layout.fillWidth: true
+                                radius: Theme.cornerRadius
+                                // Holds two buttons, each already a container
+                                color: "transparent"
+                                border.width: 0
+                                implicitHeight: sysCardCol.implicitHeight + Theme.spacingM * 2
+
+                                ColumnLayout {
+                                    id: sysCardCol
+                                    anchors.fill: parent
+                                    anchors.margins: Theme.spacingM
+                                    spacing: Theme.spacingS
+
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        text: Tr.t("DMS Integration")
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        font.weight: Font.DemiBold
+                                        color: Theme.surfaceText
+                                    }
+
+                                    StyledText {
+                                        Layout.fillWidth: true
+                                        text: Tr.t("Check interval and ignored packages are managed in DMS Settings → System Updater.")
+                                        font.pixelSize: Theme.fontSizeSmall - 1
+                                        color: Theme.surfaceVariantText
+                                        wrapMode: Text.WordWrap
+                                    }
+
+                                    // 2 items: First & Last Segmented
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 4
+
+                                        // 1. System Updater (First)
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 34
+                                            property bool isHov: dmsSetMa.containsMouse
+                                            readonly property bool isFirst: true
+                                            readonly property bool isLast: false
+                                            readonly property real outerR: Theme.cornerRadius
+                                            readonly property real innerR: 4
+
+                                            topLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                            bottomLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                            topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+                                            bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+
+                                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Ui.chipSurfaceNested, 0.5)
+                                            border.width: 1
+                                            border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
+
+                                            RowLayout {
+                                                anchors.centerIn: parent
+                                                spacing: 6
+
+                                                DankIcon {
+                                                    name: "open_in_new"
+                                                    size: 14
+                                                    color: parent.parent.isHov ? Theme.primary : Theme.surfaceText
+                                                }
+
+                                                StyledText {
+                                                    text: Tr.t("System Updater Settings")
+                                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                                    color: parent.parent.isHov ? Theme.primary : Theme.surfaceText
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                id: dmsSetMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    win.settingsOpen = false;
+                                                    PopoutService.openSettingsWithTab("updater");
+                                                }
+                                            }
+                                        }
+
+                                        // 2. Manage Plugins (Last)
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 34
+                                            property bool isHov: dmsPlugMa.containsMouse
+                                            readonly property bool isFirst: false
+                                            readonly property bool isLast: true
+                                            readonly property real outerR: Theme.cornerRadius
+                                            readonly property real innerR: 4
+
+                                            topLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                            bottomLeftRadius: isHov ? (height / 2) : (isFirst ? outerR : innerR)
+                                            topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+                                            bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
+
+                                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+
+                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Ui.chipSurfaceNested, 0.5)
+                                            border.width: 1
+                                            border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
+
+                                            RowLayout {
+                                                anchors.centerIn: parent
+                                                spacing: 6
+
+                                                DankIcon {
+                                                    name: "open_in_new"
+                                                    size: 14
+                                                    color: parent.parent.isHov ? Theme.primary : Theme.surfaceText
+                                                }
+
+                                                StyledText {
+                                                    text: Tr.t("Manage Plugins")
+                                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                                    color: parent.parent.isHov ? Theme.primary : Theme.surfaceText
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                id: dmsPlugMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    win.settingsOpen = false;
+                                                    PopoutService.openSettingsWithTab("plugins");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
-
     function startSimulation() {
         simulationStart.begin();
     }
@@ -1415,7 +2347,7 @@ FloatingWindow {
     // exist does not degrade — it fails to load, taking the whole plugin with
     // it. The same release added the colour, so that is asked for defensively
     // too and falls back to the tone it is derived from.
-    color: Theme.floatingWindowSurface !== undefined ? Theme.floatingWindowSurface : Theme.surfaceContainer
+    color: Theme.floatingWindowSurface !== undefined ? Theme.floatingWindowSurface : Ui.cardSurface
     visible: false
 
     // A compositor-side close (Super+Q) kills the toplevel without updating
@@ -1541,6 +2473,8 @@ FloatingWindow {
     readonly property bool firmwareEnabled: firmware !== null
     readonly property var tabIds: firmwareEnabled ? [0, 1, 2, 3, 4] : [0, 1, 2, 4]
     readonly property int currentTab: tabIds[Math.min(tabs.currentIndex, tabIds.length - 1)]
+    property int prevTabIndex: 0
+    property bool isSwipeRight: true
 
     // Switching firmware off while looking at it would silently land you on
     // whatever slid into that position — go somewhere deliberate instead
@@ -1848,6 +2782,38 @@ FloatingWindow {
     // thing the heading no longer says.
     readonly property var sourceNamedCategories: ["2 · System packages", "4 · Firmware", "5 · Homebrew", "5 · DMS plugins"]
 
+    readonly property var categorySections: {
+        const counts = {};
+        const sectionRepo = {};
+        for (const row of visibleRows) {
+            const repo = (row.pkg && row.pkg.repo) || "system";
+            sectionRepo[row.category] = sectionRepo[row.category] === undefined ? repo : (sectionRepo[row.category] === repo ? repo : "*");
+        }
+        for (const row of visibleRows)
+            counts[row.category] = (counts[row.category] || 0) + 1;
+        const collapsible = ["6 · Held packages", "4 · Completed"];
+        const groups = [];
+        const groupMap = {};
+        for (const row of visibleRows) {
+            const cat = row.category || "";
+            if (!groupMap[cat]) {
+                const grp = {
+                    category: cat,
+                    title: Tr.t(cat.substring(4)),
+                    count: counts[cat] || 0,
+                    collapsible: collapsible.indexOf(cat) !== -1,
+                    collapsed: collapsible.indexOf(cat) !== -1 && collapsedCats[cat] === true,
+                    repeatsHeading: sourceNamedCategories.indexOf(cat) !== -1 && sectionRepo[cat] !== "*",
+                    items: []
+                };
+                groupMap[cat] = grp;
+                groups.push(grp);
+            }
+            groupMap[cat].items.push(row);
+        }
+        return groups;
+    }
+
     readonly property var listModel: {
         const counts = {};
         // And only where the section really does hold one kind. The heading
@@ -1865,9 +2831,11 @@ FloatingWindow {
         const collapsible = ["6 · Held packages", "4 · Completed"];
         const out = [];
         let current = "";
+        let catIndex = 0;
         for (const row of visibleRows) {
             if (row.category !== current) {
                 current = row.category;
+                catIndex = 0;
                 out.push({
                     type: "header",
                     category: current,
@@ -1879,10 +2847,16 @@ FloatingWindow {
             }
             if (collapsible.indexOf(row.category) !== -1 && collapsedCats[row.category] === true)
                 continue;
+            const totalInCat = counts[row.category] || 1;
             out.push(Object.assign({
                 type: "card",
-                repeatsHeading: sourceNamedCategories.indexOf(row.category) !== -1 && sectionRepo[row.category] !== "*"
+                repeatsHeading: sourceNamedCategories.indexOf(row.category) !== -1 && sectionRepo[row.category] !== "*",
+                sectionIndex: catIndex,
+                sectionTotal: totalInCat,
+                isSectionFirst: catIndex === 0,
+                isSectionLast: catIndex === totalInCat - 1
             }, row));
+            catIndex++;
         }
         return out;
     }
@@ -2210,137 +3184,384 @@ FloatingWindow {
     }
 
     ColumnLayout {
+        id: windowContent
         anchors.fill: parent
         anchors.margins: Theme.spacingL
         spacing: Theme.spacingM
+        opacity: win.anyPopupShowing ? 0.35 : 1.0
+        Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
-        // ── Header (anchors: buttons pinned to the right edge) ──────────────
-        Item {
+        // ── Header Container Card (Matches modern UI theme) ─────────────────
+        StyledRect {
             Layout.fillWidth: true
-            Layout.preferredHeight: 44
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Ui.chipSurface, 0.45)
+            border.width: 0
+            implicitHeight: headerRow.implicitHeight + Theme.spacingM * 2
 
-            Image {
-                id: headerLogo
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                width: 40
-                height: 40
-                source: win.appIconSource
-                sourceSize.width: 80
-                sourceSize.height: 80
-                fillMode: Image.PreserveAspectFit
-                asynchronous: true
-            }
+            RowLayout {
+                id: headerRow
+                anchors.fill: parent
+                anchors.margins: Theme.spacingM
+                spacing: Theme.spacingM
 
-            Column {
-                anchors.left: headerLogo.right
-                anchors.leftMargin: Theme.spacingM
-                anchors.right: headerButtons.left
-                anchors.rightMargin: Theme.spacingM
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 0
+                // Framed App Icon
+                Rectangle {
+                    Layout.preferredWidth: 44
+                    Layout.preferredHeight: 44
+                    radius: Theme.cornerRadius
+                    color: Theme.withAlpha(Theme.primary, 0.08)
+                    border.width: 0
 
-                StyledText {
-                    width: parent.width
-                    text: "Dank Software Depot"
-                    font.pixelSize: Theme.fontSizeXLarge
-                    font.weight: Font.Medium
-                    color: Theme.surfaceText
-                    elide: Text.ElideRight
-                }
-
-                StyledText {
-                    width: parent.width
-                    text: {
-                        let countText;
-                        if (win.engine.running)
-                            countText = Tr.t("updating…");
-                        else if (SystemUpdateService.isChecking)
-                            countText = Tr.t("checking…");
-                        else if (win.effectiveCount === 0)
-                            countText = Tr.t("up to date");
-                        else
-                            countText = (win.effectiveCount === 1 ? Tr.t("%1 update") : Tr.t("%1 updates")).arg(win.effectiveCount);
-                        const checked = win.lastCheckedText();
-                        return countText + (checked ? " · " + checked : "");
+                    Image {
+                        id: headerLogo
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        source: win.appIconSource
+                        sourceSize.width: 80
+                        sourceSize.height: 80
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
                     }
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                    elide: Text.ElideRight
-                }
-            }
-
-            Row {
-                id: headerButtons
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: Theme.spacingXS
-
-                // The palette's only permanent affordance: discoverable by
-                // looking, with the shortcut in its tooltip for the next time
-                DankActionButton {
-                    buttonSize: 36
-                    iconName: "search"
-                    iconSize: 20
-                    iconColor: Theme.surfaceText
-                    tooltipText: Tr.t("Search everything") + " · Ctrl+K"
-                    onClicked: palette.open()
                 }
 
-                DankActionButton {
-                    id: windowRefreshButton
-                    buttonSize: 36
-                    iconName: "refresh"
-                    iconSize: 20
-                    iconColor: Theme.surfaceText
-                    enabled: !SystemUpdateService.isChecking && !win.engine.running
-                    opacity: enabled ? 1 : 0.4
-                    tooltipText: Tr.t("Check for updates")
-                    onClicked: {
-                        SystemUpdateService.checkForUpdates();
-                        if (win.firmware)
-                            win.firmware.check();
-                    }
+                // Title and Status
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
 
-                    RotationAnimator on rotation {
-                        from: 0
-                        to: 360
-                        duration: 1000
-                        loops: Animation.Infinite
-                        running: SystemUpdateService.isChecking
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.spacingS
 
-                        onRunningChanged: {
-                            if (!running)
-                                windowRefreshButton.rotation = 0;
+                        StyledText {
+                            text: "Dank Software Depot"
+                            font.pixelSize: Theme.fontSizeXLarge
+                            font.weight: Font.Medium
+                            color: Theme.surfaceText
+                            elide: Text.ElideRight
+                        }
+
+                        Rectangle {
+                            visible: win.engine.running || SystemUpdateService.isChecking || win.effectiveCount > 0
+                            Layout.preferredHeight: 20
+                            Layout.preferredWidth: statusBadgeText.implicitWidth + 16
+                            radius: 10
+                            color: win.engine.running
+                                ? Theme.withAlpha(Theme.primary, 0.2)
+                                : (SystemUpdateService.isChecking
+                                    ? Theme.withAlpha(Theme.secondary, 0.2)
+                                    : Theme.withAlpha(Theme.primary, 0.15))
+                            border.width: 1
+                            border.color: win.engine.running
+                                ? Theme.primary
+                                : (SystemUpdateService.isChecking
+                                    ? Theme.withAlpha(Theme.secondary, 0.4)
+                                    : Theme.primarySelected)
+
+                            StyledText {
+                                id: statusBadgeText
+                                anchors.centerIn: parent
+                                text: win.engine.running ? Tr.t("Updating") : (SystemUpdateService.isChecking ? Tr.t("Checking") : (win.effectiveCount + " " + Tr.t("new")))
+                                font.pixelSize: Theme.fontSizeSmall - 2
+                                font.weight: Font.Medium
+                                color: win.engine.running ? Theme.primary : (SystemUpdateService.isChecking ? Theme.secondary : Theme.primary)
+                            }
                         }
                     }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: {
+                            let countText;
+                            if (win.engine.running)
+                                countText = Tr.t("updating…");
+                            else if (SystemUpdateService.isChecking)
+                                countText = Tr.t("checking…");
+                            else if (win.effectiveCount === 0)
+                                countText = Tr.t("up to date");
+                            else
+                                countText = (win.effectiveCount === 1 ? Tr.t("%1 update available") : Tr.t("%1 updates available")).arg(win.effectiveCount);
+                            const checked = win.lastCheckedText();
+                            return countText + (checked ? " · " + checked : "");
+                        }
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.surfaceVariantText
+                        elide: Text.ElideRight
+                    }
                 }
 
-                DankActionButton {
-                    buttonSize: 36
-                    iconName: "info"
-                    iconSize: 20
-                    iconColor: Theme.surfaceText
-                    tooltipText: Tr.t("About")
-                    onClicked: win.aboutOpen = true
-                }
+                // Header Action Buttons (Dynamic segmented capsule: Search, Refresh, Settings, Close)
+                RowLayout {
+                    id: headerButtons
+                    spacing: 4
 
-                DankActionButton {
-                    buttonSize: 36
-                    iconName: "settings"
-                    iconSize: 20
-                    iconColor: Theme.surfaceText
-                    tooltipText: Tr.t("Plugin settings")
-                    onClicked: win.settingsOpen = true
-                }
+                    DankTooltipV2 {
+                        id: headerTooltip
+                    }
 
-                DankActionButton {
-                    buttonSize: 36
-                    iconName: "close"
-                    iconSize: 20
-                    iconColor: Theme.surfaceText
-                    tooltipText: Tr.t("Close")
-                    onClicked: win.visible = false
+                    // 1. Search Button (First in segment)
+                    Rectangle {
+                        id: headerSearchBtn
+                        width: 36
+                        height: 36
+                        readonly property bool isActive: palette.showing
+                        property bool isHovered: searchMa.containsMouse
+                        z: (isActive || isHovered) ? 3 : 1
+
+                        topLeftRadius: (isHovered || isActive) ? (height / 2) : Theme.cornerRadius
+                        bottomLeftRadius: (isHovered || isActive) ? (height / 2) : Theme.cornerRadius
+                        topRightRadius: (isHovered || isActive) ? (height / 2) : 4
+                        bottomRightRadius: (isHovered || isActive) ? (height / 2) : 4
+
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+
+                        color: isActive
+                            ? Theme.withAlpha(Theme.primary, 0.30)
+                            : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Ui.chipSurfaceNested, 0.45))
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                        border.width: 1
+                        border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                        scale: searchMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                        DankRipple {
+                            id: searchRip
+                            anchors.fill: parent
+                            cornerRadius: parent.topLeftRadius
+                            rippleColor: Theme.primary
+                        }
+
+                        DankIcon {
+                            anchors.centerIn: parent
+                            name: "search"
+                            size: 20
+                            color: (headerSearchBtn.isActive || headerSearchBtn.isHovered) ? Theme.primary : Theme.surfaceText
+                        }
+
+                        MouseArea {
+                            id: searchMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onEntered: headerTooltip.show(Tr.t("Search everything") + " · Ctrl+K", parent, 0, 4, "bottom")
+                            onExited: headerTooltip.hide()
+                            onPressed: (m) => searchRip.trigger(m.x, m.y)
+                            onClicked: {
+                                headerTooltip.hide();
+                                if (palette.showing)
+                                    palette.close();
+                                else
+                                    palette.open();
+                            }
+                        }
+                    }
+
+                    // 2. Refresh Button (Middle in segment)
+                    Rectangle {
+                        id: windowRefreshButton
+                        readonly property bool isActive: SystemUpdateService.isChecking
+                        readonly property bool btnEnabled: !SystemUpdateService.isChecking && !win.engine.running
+                        width: 36
+                        height: 36
+                        property bool isHovered: refreshMa.containsMouse && btnEnabled
+                        z: (isActive || isHovered) ? 3 : 1
+
+                        topLeftRadius: (isHovered || isActive) ? (height / 2) : 4
+                        bottomLeftRadius: (isHovered || isActive) ? (height / 2) : 4
+                        topRightRadius: (isHovered || isActive) ? (height / 2) : 4
+                        bottomRightRadius: (isHovered || isActive) ? (height / 2) : 4
+
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+
+                        color: isActive
+                            ? Theme.withAlpha(Theme.primary, 0.30)
+                            : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Ui.chipSurfaceNested, 0.45))
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                        border.width: 1
+                        border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                        scale: refreshMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        opacity: btnEnabled || isActive ? 1.0 : 0.4
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                        DankRipple {
+                            id: refreshRip
+                            anchors.fill: parent
+                            cornerRadius: parent.topLeftRadius
+                            rippleColor: Theme.primary
+                        }
+
+                        DankIcon {
+                            id: refreshIcon
+                            anchors.centerIn: parent
+                            name: "refresh"
+                            size: 20
+                            color: (windowRefreshButton.isActive || windowRefreshButton.isHovered) ? Theme.primary : Theme.surfaceText
+
+                            RotationAnimator on rotation {
+                                from: 0
+                                to: 360
+                                duration: Theme.extraLongDuration
+                                loops: Animation.Infinite
+                                running: SystemUpdateService.isChecking
+
+                                onRunningChanged: {
+                                    if (!running)
+                                        refreshIcon.rotation = 0;
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            id: refreshMa
+                            anchors.fill: parent
+                            hoverEnabled: windowRefreshButton.btnEnabled
+                            cursorShape: windowRefreshButton.btnEnabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onEntered: {
+                                if (windowRefreshButton.btnEnabled)
+                                    headerTooltip.show(Tr.t("Check for updates"), parent, 0, 4, "bottom");
+                            }
+                            onExited: headerTooltip.hide()
+                            onPressed: (m) => {
+                                if (windowRefreshButton.btnEnabled)
+                                    refreshRip.trigger(m.x, m.y);
+                            }
+                            onClicked: {
+                                if (windowRefreshButton.btnEnabled) {
+                                    headerTooltip.hide();
+                                    SystemUpdateService.checkForUpdates();
+                                    if (win.firmware)
+                                        win.firmware.check();
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. Settings Button (Middle in segment)
+                    Rectangle {
+                        id: headerSettingsBtn
+                        width: 36
+                        height: 36
+                        readonly property bool isActive: win.settingsOpen
+                        property bool isHovered: settingsMa.containsMouse
+                        z: (isActive || isHovered) ? 3 : 1
+
+                        topLeftRadius: (isHovered || isActive) ? (height / 2) : 4
+                        bottomLeftRadius: (isHovered || isActive) ? (height / 2) : 4
+                        topRightRadius: (isHovered || isActive) ? (height / 2) : 4
+                        bottomRightRadius: (isHovered || isActive) ? (height / 2) : 4
+
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+
+                        color: isActive
+                            ? Theme.withAlpha(Theme.primary, 0.30)
+                            : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Ui.chipSurfaceNested, 0.45))
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                        border.width: 1
+                        border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                        scale: settingsMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                        DankRipple {
+                            id: settingsRip
+                            anchors.fill: parent
+                            cornerRadius: parent.topLeftRadius
+                            rippleColor: Theme.primary
+                        }
+
+                        DankIcon {
+                            anchors.centerIn: parent
+                            name: "settings"
+                            size: 20
+                            color: (headerSettingsBtn.isActive || headerSettingsBtn.isHovered) ? Theme.primary : Theme.surfaceText
+                        }
+
+                        MouseArea {
+                            id: settingsMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onEntered: headerTooltip.show(Tr.t("Settings & Info"), parent, 0, 4, "bottom")
+                            onExited: headerTooltip.hide()
+                            onPressed: (m) => settingsRip.trigger(m.x, m.y)
+                            onClicked: {
+                                headerTooltip.hide();
+                                win.settingsOpen = !win.settingsOpen;
+                            }
+                        }
+                    }
+
+                    // 4. Close Button (Last in segment)
+                    Rectangle {
+                        id: headerCloseBtn
+                        width: 36
+                        height: 36
+                        readonly property bool isActive: false
+                        property bool isHovered: closeMa.containsMouse
+                        z: isHovered ? 3 : 1
+
+                        topLeftRadius: isHovered ? (height / 2) : 4
+                        bottomLeftRadius: isHovered ? (height / 2) : 4
+                        topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+
+                        color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Ui.chipSurfaceNested, 0.45)
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                        border.width: 1
+                        border.color: isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.15)
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                        scale: closeMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                        DankRipple {
+                            id: closeRip
+                            anchors.fill: parent
+                            cornerRadius: parent.topRightRadius
+                            rippleColor: Theme.error
+                        }
+
+                        DankIcon {
+                            anchors.centerIn: parent
+                            name: "close"
+                            size: 20
+                            color: headerCloseBtn.isHovered ? Theme.error : Theme.surfaceText
+                        }
+
+                        MouseArea {
+                            id: closeMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onEntered: headerTooltip.show(Tr.t("Close"), parent, 0, 4, "bottom")
+                            onExited: headerTooltip.hide()
+                            onPressed: (m) => closeRip.trigger(m.x, m.y)
+                            onClicked: {
+                                headerTooltip.hide();
+                                win.visible = false;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -2934,6 +4155,10 @@ FloatingWindow {
             }
 
             onCurrentIndexChanged: {
+                if (currentIndex !== win.prevTabIndex) {
+                    win.isSwipeRight = currentIndex > win.prevTabIndex;
+                    win.prevTabIndex = currentIndex;
+                }
                 // Derived from currentIndex right here, not read off
                 // win.currentTab: that is a binding on this very property and
                 // is not guaranteed to have caught up while this handler runs.
@@ -3243,6 +4468,10 @@ FloatingWindow {
             Layout.fillHeight: true
             visible: win.currentTab === 1
             active: false
+            opacity: visible ? 1.0 : 0.0
+            x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
             sourceComponent: InstalledView {
                 store: win.store
@@ -3278,6 +4507,10 @@ FloatingWindow {
             Layout.fillHeight: true
             visible: win.currentTab === 2
             active: false
+            opacity: visible ? 1.0 : 0.0
+            x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
             sourceComponent: InstallView {
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
@@ -3300,6 +4533,10 @@ FloatingWindow {
             Layout.fillHeight: true
             visible: win.currentTab === 3
             active: false
+            opacity: visible ? 1.0 : 0.0
+            x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
             sourceComponent: FirmwareView {
                 firmware: win.firmware
@@ -3313,6 +4550,10 @@ FloatingWindow {
             Layout.fillHeight: true
             visible: win.currentTab === 4
             active: false
+            opacity: visible ? 1.0 : 0.0
+            x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
             sourceComponent: LogView {
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
@@ -3333,7 +4574,7 @@ FloatingWindow {
             visible: win.currentTab === 0 && (win.engine.running || win.engine.phase === "verifying" || (win.engine.phase !== "idle" && win.engine.failedCount > 0) || win.engine.phase === "done")
             implicitHeight: progressColumn.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
-            color: Theme.surfaceContainer
+            color: Ui.cardSurface
             border.width: 1
             border.color: Theme.withAlpha(Theme.outline, 0.1)
             clip: true
@@ -3460,22 +4701,21 @@ FloatingWindow {
             }
         }
 
-        // ── Update list ─────────────────────────────────────────────────────
+        // ── Update list (Separate Category Containers) ─────────────────────────
         DankListView {
             id: cardsList
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            spacing: Theme.spacingM
+            visible: win.currentTab === 0 && (win.categorySections.length > 0 || win.dashboardMode)
+            opacity: visible ? 1.0 : 0.0
+            x: visible ? 0 : (win.isSwipeRight ? -40 : 40)
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
             Component.onCompleted: Ui.softenScrollbar(cardsList)
             header: win.dashboardMode ? dashboardHeaderComponent : null
 
-            // A starting run regroups the list with the in-progress work on
-            // top — jump there, or a user who had scrolled down watches
-            // nothing happen.
-            //
-            // Twice, and the second one matters. At the moment `running` turns
-            // over, two other things are also changing: the dashboard header
-            // is going away and the rows are being replaced by the run's own.
-            // Both move the content under the viewport after the jump, which
-            // is why a single synchronous call landed somewhere in the middle
-            // of the new list. The deferred one runs once that has settled.
             Connections {
                 target: win.engine
 
@@ -3487,205 +4727,165 @@ FloatingWindow {
                 }
             }
 
-            // The dashboard header makes originY negative, and DankListView's
-            // wheel handler floors its scroll limit at 0 instead of the true
-            // bottom edge — letting the dashboard be wheeled into empty space
-            // and snap back. Clamp to the real end of the content.
             onContentYChanged: {
                 const maxY = Math.max(originY, originY + contentHeight - height);
                 if (contentY > maxY)
                     contentY = maxY;
             }
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            spacing: Theme.spacingS
-            model: win.listModel
-            visible: win.currentTab === 0 && (win.listModel.length > 0 || win.dashboardMode)
 
-            // The heading of the section you are in, held at the top — worth
-            // more now that the rows under it no longer each repeat their
-            // source. The header rows are rows of their own here, so the
-            // heading a row belongs to is simply the nearest one above it.
-            StickyHeader {
-                id: updatesSticky
+            model: win.categorySections
 
-                view: cardsList
-                rows: win.listModel
-                headingOf: row => (row && row.type === "header") ? row : ""
-                barHeight: 36
-
-                content: Component {
-                    Loader {
-                        sourceComponent: headerRowComponent
-                        onLoaded: item.rowData = Qt.binding(() => updatesSticky.heading || ({}))
-                    }
-                }
-            }
-
-            delegate: Loader {
+            delegate: StyledRect {
+                id: catContainer
                 required property var modelData
 
                 width: cardsList.width
-                sourceComponent: modelData.type === "header" ? headerRowComponent : cardRowComponent
+                implicitHeight: catCol.implicitHeight + Theme.spacingM * 2
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                border.width: 0
+                clip: true
 
-                onLoaded: item.rowData = modelData
-            }
-        }
+                readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions", "4 · Firmware"].includes(modelData.category || "")
 
-        Component {
-            id: headerRowComponent
-
-            Item {
-                property var rowData: ({})
-
-                readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions", "4 · Firmware"].includes(rowData.category || "")
-
-                width: cardsList.width
-                height: 36
-
-                HoverHandler {
-                    id: headerHover
-                }
-
-                // Collapsible sections toggle on click anywhere in the header
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: rowData.collapsible === true
-                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: win.toggleCategory(rowData.category)
-                }
-
-                Row {
+                ColumnLayout {
+                    id: catCol
                     anchors.left: parent.left
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 4
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: Theme.spacingM
                     spacing: Theme.spacingS
 
-                    DankIcon {
-                        name: win.categoryIcon(rowData.category || "")
-                        size: 18
-                        color: win.categoryColor(rowData.category || "")
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
+                    // Container Title Header
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: 32
 
-                    StyledText {
-                        text: rowData.title || ""
-                        font.pixelSize: Theme.fontSizeMedium
-                        font.weight: Font.Bold
-                        color: Theme.surfaceText
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
+                        HoverHandler {
+                            id: catHeaderHover
+                        }
 
-                    // How many rows the group holds — the answer to "how much
-                    // is still waiting", readable without counting rows and
-                    // without opening a collapsed group
-                    Rectangle {
-                        width: headerCount.implicitWidth + 14
-                        height: 18
-                        radius: 9
-                        color: Theme.withAlpha(win.categoryColor(rowData.category || ""), 0.15)
-                        anchors.verticalCenter: parent.verticalCenter
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: catContainer.modelData.collapsible === true
+                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: win.toggleCategory(catContainer.modelData.category)
+                        }
 
-                        StyledText {
-                            id: headerCount
-                            anchors.centerIn: parent
-                            text: String(rowData.count || 0)
-                            font.pixelSize: Theme.fontSizeSmall - 2
-                            font.weight: Font.Medium
-                            color: win.categoryColor(rowData.category || "")
+                        RowLayout {
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: Theme.spacingS
+
+                            DankIcon {
+                                name: win.categoryIcon(catContainer.modelData.category || "")
+                                size: 20
+                                color: win.categoryColor(catContainer.modelData.category || "")
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            StyledText {
+                                text: catContainer.modelData.title || ""
+                                font.pixelSize: Theme.fontSizeMedium
+                                font.weight: Font.Bold
+                                color: Theme.surfaceText
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Rectangle {
+                                implicitWidth: headerCount.implicitWidth + 14
+                                implicitHeight: 20
+                                radius: 10
+                                color: Theme.withAlpha(win.categoryColor(catContainer.modelData.category || ""), 0.15)
+                                Layout.alignment: Qt.AlignVCenter
+
+                                StyledText {
+                                    id: headerCount
+                                    anchors.centerIn: parent
+                                    text: String(catContainer.modelData.count || 0)
+                                    font.pixelSize: Theme.fontSizeSmall - 2
+                                    font.weight: Font.Medium
+                                    color: win.categoryColor(catContainer.modelData.category || "")
+                                }
+                            }
+
+                            DankIcon {
+                                visible: catContainer.modelData.collapsible === true
+                                name: catContainer.modelData.collapsed === true ? "expand_more" : "expand_less"
+                                size: 16
+                                color: Theme.surfaceVariantText
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                        }
+
+                        DankButton {
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: catContainer.updatable && catHeaderHover.hovered
+                            buttonHeight: 26
+                            iconName: "download"
+                            iconSize: 14
+                            horizontalPadding: Theme.spacingM
+                            text: Tr.t("Update these")
+                            backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                            textColor: Theme.buttonText
+                            onClicked: win.sectionUpdate(catContainer.modelData.category)
                         }
                     }
 
-                    DankIcon {
-                        visible: rowData.collapsible === true
-                        name: rowData.collapsed === true ? "expand_more" : "expand_less"
-                        size: 16
-                        color: Theme.surfaceVariantText
-                        anchors.verticalCenter: parent.verticalCenter
+                    // Items enclosed in this container card
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        visible: !catContainer.modelData.collapsed
+                        spacing: 2
+
+                        Repeater {
+                            model: catContainer.modelData.items || []
+
+                            delegate: UpdateCard {
+                                id: cardItem
+                                required property var modelData
+                                required property int index
+
+                                Layout.fillWidth: true
+                                active: (updatesDialog.showing && updatesDialog.rowData && updatesDialog.rowData.pkg && modelData.pkg && updatesDialog.rowData.pkg.name === modelData.pkg.name && updatesDialog.rowData.pkg.repo === modelData.pkg.repo)
+                                isSectionFirst: index === 0
+                                isSectionLast: index === (catContainer.modelData.items.length - 1)
+                                showSource: catContainer.modelData.repeatsHeading !== true
+                                shellIconPath: (modelData.pkg && win._isShellPkg(modelData.pkg) && win.widgetRoot) ? win.widgetRoot.dankLogoPath : ""
+                                pkg: modelData.pkg || ({ name: "", repo: "system" })
+                                info: {
+                                    if (modelData.aiInfo)
+                                        return { name: modelData.aiInfo.name, summary: "AppImage", homepage: modelData.aiInfo.url || "", icon: "", releases: [] };
+                                    if (modelData.fwInfo)
+                                        return { name: modelData.fwInfo.name, summary: modelData.fwInfo.summary, homepage: modelData.fwInfo.homepage, icon: "", releases: [{ version: modelData.fwInfo.next, date: 0, notesHtml: modelData.fwInfo.notesHtml, newer: true }] };
+                                    return win.store.infoFor(modelData.pkg);
+                                }
+                                itemState: win.engine.stateFor(modelData.pkg)
+                                errorDetail: win.engine.runErrorDetails && modelData.pkg ? win.engine.errorDetailFor(modelData.pkg) : ""
+                                advisory: (win.widgetRoot && modelData.pkg) ? (win.widgetRoot.advisories[win.store.stripArch(modelData.pkg.name)] || null) : null
+                                store: win.store
+                                engineBusy: win.engine.running
+                                held: modelData.ignored === true || win.store.isHeld(modelData.pkg)
+                                holdReason: modelData.ignored === true ? Tr.t("held by you") : win.store.holdReason(modelData.pkg)
+                                isIgnored: modelData.ignored === true
+                                canHold: {
+                                    if (modelData.ignored === true) return true;
+                                    if (!modelData.pkg || modelData.pkg.repo === "firmware") return false;
+                                    if (win.store.isHeld(modelData.pkg)) return false;
+                                    return SystemUpdateService.canIgnorePackage(modelData.pkg);
+                                }
+                                showUpdateButton: modelData.pkg && modelData.pkg.repo !== "firmware" && win.singleBusyKey === "" && !win.engine.running && (modelData.ignored !== true)
+                                onUpdateRequested: win.runSingleUpdate(modelData)
+                                onHoldToggleRequested: win.setHold(modelData.pkg, modelData.ignored !== true)
+                                onDetailsRequested: win.openUpdateDetails(modelData, info)
+                            }
+                        }
                     }
                 }
-
-                // Anchored separately so its appearance never moves the title
-                DankButton {
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: updatable && headerHover.hovered
-                    buttonHeight: 26
-                    iconName: "download"
-                    iconSize: 14
-                    horizontalPadding: Theme.spacingM
-                    text: Tr.t("Update these")
-                    backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
-                    textColor: Theme.buttonText
-                    onClicked: win.sectionUpdate(rowData.category)
-                }
             }
         }
 
-        Component {
-            id: cardRowComponent
-
-            UpdateCard {
-                property var rowData: ({})
-
-                width: cardsList.width
-                showSource: rowData.repeatsHeading !== true
-                shellIconPath: (rowData.pkg && win._isShellPkg(rowData.pkg) && win.widgetRoot) ? win.widgetRoot.dankLogoPath : ""
-                pkg: rowData.pkg || ({
-                        name: "",
-                        repo: "system"
-                    })
-                info: {
-                    if (rowData.aiInfo)
-                        return {
-                            name: rowData.aiInfo.name,
-                            summary: "AppImage",
-                            homepage: rowData.aiInfo.url || "",
-                            icon: "",
-                            releases: []
-                        };
-                    if (rowData.fwInfo)
-                        return {
-                            name: rowData.fwInfo.name,
-                            summary: rowData.fwInfo.summary,
-                            homepage: rowData.fwInfo.homepage,
-                            icon: "",
-                            releases: [{
-                                    version: rowData.fwInfo.next,
-                                    date: 0,
-                                    notesHtml: rowData.fwInfo.notesHtml,
-                                    newer: true
-                                }]
-                        };
-                    return win.store.infoFor(rowData.pkg);
-                }
-                itemState: win.engine.stateFor(rowData.pkg)
-                errorDetail: win.engine.runErrorDetails && rowData.pkg ? win.engine.errorDetailFor(rowData.pkg) : ""
-                advisory: (win.widgetRoot && rowData.pkg) ? (win.widgetRoot.advisories[win.store.stripArch(rowData.pkg.name)] || null) : null
-                store: win.store
-                engineBusy: win.engine.running
-                held: rowData.ignored === true || win.store.isHeld(rowData.pkg)
-                holdReason: rowData.ignored === true ? Tr.t("held by you") : win.store.holdReason(rowData.pkg)
-                isIgnored: rowData.ignored === true
-                canHold: {
-                    if (rowData.ignored === true)
-                        return true;
-                    if (!rowData.pkg || rowData.pkg.repo === "firmware")
-                        return false;
-                    if (win.store.isHeld(rowData.pkg))
-                        return false;
-                    return SystemUpdateService.canIgnorePackage(rowData.pkg);
-                }
-                showUpdateButton: rowData.pkg && (rowData.pkg.repo === "flatpak" || rowData.pkg.repo === "appimage") && win.singleBusyKey === ""
-                onUpdateRequested: win.runSingleUpdate(rowData)
-                onHoldToggleRequested: win.setHold(rowData.pkg, rowData.ignored !== true)
-                onDetailsRequested: win.openUpdateDetails(rowData, info)
-            }
-        }
-
-        // ── Up-to-date dashboard: rendered as the list header so collapsed
-        // Held section scrolls along underneath it ─────────────────────────
         Component {
             id: dashboardHeaderComponent
 
@@ -3699,11 +4899,30 @@ FloatingWindow {
                     anchors.right: parent.right
                     spacing: Theme.spacingL
 
-                    // Hero: Dank logo, status, check-on-hover
-                    Item {
+                    // Hero Card: Dank logo, status, check-on-hover
+                    StyledRect {
+                        id: heroCard
+
+                        // Pressing this starts a check, and the cursor said so
+                        // while the card itself did not: a pointing hand over
+                        // a surface that never acknowledged it. It answers in
+                        // the same language every row in the app uses — the
+                        // primary tint and its border — and only while the
+                        // press would actually do something, so it stays
+                        // quiet through a check that is already running.
+                        readonly property bool actionable: !SystemUpdateService.isChecking && !win.engine.running
+                        readonly property bool lit: actionable && windowEmptyArea.containsMouse
+
                         Layout.fillWidth: true
-                        Layout.topMargin: Theme.spacingL
-                        implicitHeight: heroRow.implicitHeight + Theme.spacingM
+                        Layout.topMargin: Theme.spacingM
+                        implicitHeight: heroRow.implicitHeight + Theme.spacingL * 2
+                        radius: Theme.cornerRadius
+                        color: lit ? Theme.primaryHover
+                                   : Theme.withAlpha(Ui.chipSurface, 0.45)
+                        border.width: lit ? 1 : 0
+                        border.color: Theme.withAlpha(Theme.primary, 0.4)
+
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         MouseArea {
                             id: windowEmptyArea
@@ -3735,7 +4954,7 @@ FloatingWindow {
                                     anchors.centerIn: parent
                                     width: 72
                                     height: 72
-                                    radius: 36
+                                    radius: width / 2
                                     // Light mode: solid primary disc so the white penguin stays visible
                                     color: {
                                         if (Theme.isLightMode)
@@ -3887,12 +5106,13 @@ FloatingWindow {
                         rowSpacing: Theme.spacingM
 
                         // System info
-                        Rectangle {
+                        StyledRect {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             implicitHeight: systemCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                            color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                            border.width: 0
 
                             ColumnLayout {
                                 id: systemCardCol
@@ -3963,12 +5183,13 @@ FloatingWindow {
                         }
 
                         // Status
-                        Rectangle {
+                        StyledRect {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             implicitHeight: statusCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                            color: Theme.withAlpha(Ui.chipSurface, 0.45)
+                            border.width: 0
 
                             ColumnLayout {
                                 id: statusCardCol
@@ -4045,7 +5266,7 @@ FloatingWindow {
                             Layout.fillHeight: true
                             implicitHeight: installedCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                            color: Theme.withAlpha(Ui.chipSurface, 0.45)
 
                             ColumnLayout {
                                 id: installedCardCol
@@ -4175,7 +5396,7 @@ FloatingWindow {
                             Layout.fillHeight: true
                             implicitHeight: recentCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                            color: Theme.withAlpha(Ui.chipSurface, 0.45)
 
                             ColumnLayout {
                                 id: recentCardCol
@@ -4332,7 +5553,7 @@ FloatingWindow {
                         visible: total > 50 * 1024 * 1024 || (engaged && (total > 0 || cleanedKinds.length > 0))
                         implicitHeight: cleanupColumn.implicitHeight + Theme.spacingM * 2
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        color: Theme.withAlpha(Ui.chipSurface, 0.45)
 
                         ColumnLayout {
                             id: cleanupColumn
@@ -4544,14 +5765,7 @@ FloatingWindow {
             color: Theme.surfaceVariantText
         }
 
-        // ── Footer buttons (standard DMS button styling) ────────────────────
-        // The whole row goes when it has nothing to offer, not just the
-        // button inside it: a layout skips invisible items, but a visible
-        // wrapper around a hidden button keeps reserving its height — which
-        // made the dashboard start scrolling a button's worth too early.
-        // The condition lives on the window because a child's `visible`
-        // follows its parent's, so a row that hid itself by reading the
-        // button could never come back.
+        // ── Footer buttons (Dynamic rounded corner styling) ─────────────────
         RowLayout {
             Layout.fillWidth: true
             visible: win.currentTab === 0 && win.showUpdateAll
@@ -4561,21 +5775,72 @@ FloatingWindow {
                 Layout.fillWidth: true
             }
 
-            Item {
-                Layout.preferredWidth: windowUpdateAllButton.width
-                Layout.preferredHeight: windowUpdateAllButton.height
+            Rectangle {
+                id: windowUpdateAllButton
+                readonly property bool busyRun: win.updateAllBusy
+                readonly property bool isHovered: updateAllMa.containsMouse
 
-                DankButton {
-                    id: windowUpdateAllButton
+                Layout.preferredHeight: 36
+                Layout.preferredWidth: updateAllRow.implicitWidth + 32
 
-                    readonly property bool busyRun: win.updateAllBusy
+                topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
 
-                    text: busyRun ? Tr.t("Cancel") : (Tr.t("Update All") + ((win.widgetRoot && win.widgetRoot.updateSizeText !== "") ? " · " + win.widgetRoot.updateSizeText : ""))
-                    iconName: busyRun ? "close" : "download"
-                    backgroundColor: busyRun ? Theme.errorPressed : Theme.buttonBg
-                    textColor: busyRun ? Theme.surfaceText : Theme.buttonText
+                Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+
+                color: busyRun
+                    ? (isHovered ? Theme.withAlpha(Theme.error, 0.3) : Theme.withAlpha(Theme.error, 0.18))
+                    : (isHovered ? Theme.withAlpha(Theme.primary, 0.28) : Theme.withAlpha(Theme.primary, 0.16))
+                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                border.width: 1
+                border.color: busyRun
+                    ? (isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.4))
+                    : (isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.35))
+                Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
+
+                scale: updateAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+
+                DankRipple {
+                    id: updateAllRip
+                    anchors.fill: parent
+                    cornerRadius: parent.topLeftRadius
+                    rippleColor: busyRun ? Theme.error : Theme.primary
+                }
+
+                RowLayout {
+                    id: updateAllRow
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    DankIcon {
+                        name: windowUpdateAllButton.busyRun ? "close" : "download"
+                        size: 16
+                        color: windowUpdateAllButton.busyRun ? Theme.error : Theme.primary
+                    }
+
+                    StyledText {
+                        text: windowUpdateAllButton.busyRun ? Tr.t("Cancel") : (Tr.t("Update All") + ((win.widgetRoot && win.widgetRoot.updateSizeText !== "") ? " · " + win.widgetRoot.updateSizeText : ""))
+                        font.pixelSize: Theme.fontSizeMedium
+                        font.weight: Font.Medium
+                        color: windowUpdateAllButton.busyRun ? Theme.error : Theme.primary
+                    }
+                }
+
+                MouseArea {
+                    id: updateAllMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onPressed: (m) => updateAllRip.trigger(m.x, m.y)
                     onClicked: {
-                        if (busyRun) {
+                        if (windowUpdateAllButton.busyRun) {
                             win.engine.cancel();
                         } else {
                             win.engine.start({});
