@@ -1739,8 +1739,7 @@ PluginComponent {
                     height: 68
                     radius: Theme.cornerRadius
                     color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                    border.width: 0
 
                     RowLayout {
                         anchors.fill: parent
@@ -1997,8 +1996,7 @@ PluginComponent {
                     height: visible ? progressContent.implicitHeight + Theme.spacingM * 2 : 0
                     radius: Theme.cornerRadius
                     color: Theme.surfaceContainer
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                    border.width: 0
 
                     Column {
                         id: progressContent
@@ -2051,8 +2049,7 @@ PluginComponent {
                     height: Math.min(300, 34 + (root.popoutModel.length * 44) + Theme.spacingM * 2)
                     radius: Theme.cornerRadius
                     color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                    border.width: 0
 
                     Column {
                         id: compactContentCol
@@ -2265,8 +2262,7 @@ PluginComponent {
                     visible: root.popoutModel.length === 0
                     radius: Theme.cornerRadius
                     color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                    border.width: 0
 
                     MouseArea {
                         id: emptyStateArea

@@ -303,8 +303,7 @@ Item {
         height: Math.min(parent.height - Theme.spacingXL * 2, 640)
         radius: Theme.cornerRadius + 4
         color: Theme.surfaceContainer
-        border.width: 1
-        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
+        border.width: 0
         scale: dialog.animActive ? 1.0 : 0.94
         opacity: dialog.animActive ? 1.0 : 0.0
         Behavior on scale { NumberAnimation { duration: dialog.animActive ? 320 : 200; easing.type: dialog.animActive ? Easing.OutBack : Easing.InQuad } }
@@ -402,8 +401,7 @@ Item {
                         visible: dialog.suggestions.length > 0
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 0
                         implicitHeight: suggCol.implicitHeight + Theme.spacingM * 2
 
                         ColumnLayout {
@@ -551,8 +549,7 @@ Item {
                         visible: dialog.remotes.length > 0
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 0
                         implicitHeight: remotesCol.implicitHeight + Theme.spacingM * 2
 
                         ColumnLayout {
@@ -714,8 +711,7 @@ Item {
                         visible: dialog.flatpakCatalog.length > 0
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 0
                         implicitHeight: catalogCol.implicitHeight + Theme.spacingM * 2
 
                         ColumnLayout {
@@ -880,8 +876,7 @@ Item {
                         Layout.fillWidth: true
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 0
                         implicitHeight: addRemoteCol.implicitHeight + Theme.spacingM * 2
 
                         ColumnLayout {
@@ -963,8 +958,7 @@ Item {
                         Layout.fillWidth: true
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 0
                         implicitHeight: reposCol.implicitHeight + Theme.spacingM * 2
 
                         ColumnLayout {
@@ -1151,8 +1145,7 @@ Item {
                         visible: dialog.writable
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 0
                         implicitHeight: addCoprCol.implicitHeight + Theme.spacingM * 2
 
                         ColumnLayout {

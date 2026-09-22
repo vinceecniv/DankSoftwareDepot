@@ -23,8 +23,7 @@ PluginSettings {
         width: parent.width
         radius: Theme.cornerRadius
         color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.65)
-        border.width: 1
-        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+        border.width: 0
         implicitHeight: aboutCol.implicitHeight + Theme.spacingM * 2
 
         ColumnLayout {
@@ -42,8 +41,7 @@ PluginSettings {
                     Layout.preferredHeight: 44
                     radius: Theme.cornerRadius
                     color: Theme.withAlpha(Theme.primary, 0.10)
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.18)
+                    border.width: 0
 
                     Image {
                         anchors.fill: parent
@@ -159,8 +157,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     RowLayout {
                                         id: row1
@@ -221,8 +218,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     RowLayout {
                                         id: row2
@@ -283,8 +279,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     RowLayout {
                                         id: row3
@@ -345,8 +340,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     RowLayout {
                                         id: row4
@@ -407,8 +401,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     RowLayout {
                                         id: row5
@@ -469,8 +462,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     RowLayout {
                                         id: row6
@@ -531,8 +523,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     RowLayout {
                                         id: row7
@@ -600,8 +591,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     RowLayout {
                                         id: row8
@@ -668,8 +658,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     RowLayout {
                                         id: row9
@@ -730,8 +719,7 @@ PluginSettings {
                                     bottomRightRadius: isLast ? outerR : innerR
     
                                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                    border.width: 1
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                    border.width: 0
     
                                     ColumnLayout {
                                         id: autoCol

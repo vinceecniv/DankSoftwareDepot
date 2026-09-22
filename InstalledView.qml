@@ -1470,8 +1470,7 @@ Item {
                         anchors.fill: parent
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.96)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.22)
+                        border.width: 0
 
                         property var rowData: installedSticky.heading || ({})
 
@@ -1527,9 +1526,11 @@ Item {
                 width: installedList.width
                 implicitHeight: instCol.implicitHeight + Theme.spacingM * 2
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-                border.width: 1
-                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                // Transparent for the same reason as the storefront's
+                // category card: the rows it holds are the containers, and
+                // wrapping them in another one only adds a tonal step.
+                color: "transparent"
+                border.width: 0
                 clip: true
 
                 ColumnLayout {

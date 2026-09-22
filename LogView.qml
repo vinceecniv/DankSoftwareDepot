@@ -446,8 +446,7 @@ Item {
             Layout.fillHeight: true
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-            border.width: 1
-            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+            border.width: 0
             clip: true
             visible: view.visibleEntries.length > 0
 
@@ -472,8 +471,7 @@ Item {
                         anchors.fill: parent
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.96)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.22)
+                        border.width: 0
 
                         RowLayout {
                             anchors.fill: parent

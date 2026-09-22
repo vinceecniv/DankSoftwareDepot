@@ -96,8 +96,7 @@ Item {
         height: field.height + resultColumn.height + emptyLabel.height + Theme.spacingM * 2 + (resultColumn.children.length > 0 && palette.results.length > 0 ? Theme.spacingS : 0)
         radius: Theme.cornerRadius + 4
         color: Theme.surfaceContainer
-        border.width: 1
-        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.22)
+        border.width: 0
 
         scale: palette.visible ? 1.0 : 0.94
         opacity: palette.visible ? 1.0 : 0.0

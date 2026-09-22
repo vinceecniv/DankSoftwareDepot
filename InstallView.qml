@@ -1814,8 +1814,7 @@ Item {
                         anchors.fill: parent
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.96)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.22)
+                        border.width: 0
 
                         property var rowData: installSticky.heading || ({})
                         readonly property bool opens: (rowData.category || "") !== ""
@@ -1921,9 +1920,12 @@ Item {
                 width: resultsList.width
                 implicitHeight: cardCol.implicitHeight + Theme.spacingM * 2
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-                border.width: 1
-                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                // No fill of its own: the rows inside are already containers,
+                // and a tinted box around a stack of tinted boxes is a third
+                // tonal level that says nothing the heading does not. The
+                // heading carries the grouping, the spacing separates it.
+                color: "transparent"
+                border.width: 0
                 clip: true
 
                 ColumnLayout {

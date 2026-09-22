@@ -175,7 +175,6 @@ Item {
         height: sheetColumn.implicitHeight + Theme.spacingL * 2
         radius: Theme.cornerRadius + 4
         color: Theme.surfaceContainer
-        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
         border.width: 1
 
         scale: dialog.animActive ? 1.0 : 0.94

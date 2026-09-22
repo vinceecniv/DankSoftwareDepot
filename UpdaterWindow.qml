@@ -657,8 +657,7 @@ FloatingWindow {
             height: Math.min(620, parent.height - Theme.spacingL * 2)
             radius: Theme.cornerRadius + 4
             color: Theme.surfaceContainer
-            border.width: 1
-            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.22)
+            border.width: 0
 
             scale: win.settingsOpen ? 1.0 : 0.94
             opacity: win.settingsOpen ? 1.0 : 0.0
@@ -686,8 +685,7 @@ FloatingWindow {
                         Layout.preferredHeight: 36
                         radius: 8
                         color: Theme.withAlpha(Theme.primary, 0.10)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
+                        border.width: 0
 
                         DankIcon {
                             anchors.centerIn: parent
@@ -755,8 +753,7 @@ FloatingWindow {
                     height: 38
                     radius: Theme.cornerRadius
                     color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                    border.width: 0
 
                     RowLayout {
                         anchors.fill: parent
@@ -904,8 +901,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 RowLayout {
                                     id: row1
@@ -966,8 +962,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 RowLayout {
                                     id: row2
@@ -1028,8 +1023,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 RowLayout {
                                     id: row3
@@ -1090,8 +1084,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 RowLayout {
                                     id: row4
@@ -1152,8 +1145,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 RowLayout {
                                     id: row5
@@ -1214,8 +1206,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 RowLayout {
                                     id: row6
@@ -1276,8 +1267,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 RowLayout {
                                     id: row7
@@ -1345,8 +1335,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 RowLayout {
                                     id: row8
@@ -1413,8 +1402,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 RowLayout {
                                     id: row9
@@ -1475,8 +1463,7 @@ FloatingWindow {
                                 bottomRightRadius: isLast ? outerR : innerR
 
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.10)
+                                border.width: 0
 
                                 ColumnLayout {
                                     id: autoCol
@@ -1752,8 +1739,7 @@ FloatingWindow {
                                 Layout.fillWidth: true
                                 radius: Theme.cornerRadius
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.65)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                                border.width: 0
                                 implicitHeight: aboutCardCol.implicitHeight + Theme.spacingM * 2
 
                                 ColumnLayout {
@@ -1771,8 +1757,7 @@ FloatingWindow {
                                             Layout.preferredHeight: 46
                                             radius: Theme.cornerRadius
                                             color: Theme.withAlpha(Theme.primary, 0.10)
-                                            border.width: 1
-                                            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.18)
+                                            border.width: 0
 
                                             Image {
                                                 anchors.fill: parent
@@ -1990,7 +1975,6 @@ FloatingWindow {
                                                 radius: 8
                                                 color: Theme.withAlpha(Theme.surfaceContainerLowest, 0.55)
                                                 border.width: win.showUpdateChangelog ? 1 : 0
-                                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
 
                                                 Behavior on implicitHeight { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
                                                 Behavior on opacity { NumberAnimation { duration: 250 } }
@@ -2144,8 +2128,7 @@ FloatingWindow {
                                 Layout.fillWidth: true
                                 radius: Theme.cornerRadius
                                 color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.65)
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                                border.width: 0
                                 implicitHeight: sysCardCol.implicitHeight + Theme.spacingM * 2
 
                                 ColumnLayout {
@@ -3211,8 +3194,7 @@ FloatingWindow {
             Layout.fillWidth: true
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-            border.width: 1
-            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
+            border.width: 0
             implicitHeight: headerRow.implicitHeight + Theme.spacingM * 2
 
             RowLayout {
@@ -3227,8 +3209,7 @@ FloatingWindow {
                     Layout.preferredHeight: 44
                     radius: Theme.cornerRadius
                     color: Theme.withAlpha(Theme.primary, 0.08)
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                    border.width: 0
 
                     Image {
                         id: headerLogo
@@ -4760,8 +4741,7 @@ FloatingWindow {
                 implicitHeight: catCol.implicitHeight + Theme.spacingM * 2
                 radius: Theme.cornerRadius
                 color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                border.width: 1
-                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                border.width: 0
                 clip: true
 
                 readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions", "4 · Firmware"].includes(modelData.category || "")
@@ -4924,8 +4904,7 @@ FloatingWindow {
                         implicitHeight: heroRow.implicitHeight + Theme.spacingL * 2
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 0
 
                         MouseArea {
                             id: windowEmptyArea
@@ -5115,8 +5094,7 @@ FloatingWindow {
                             implicitHeight: systemCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
                             color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-                            border.width: 1
-                            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                            border.width: 0
 
                             ColumnLayout {
                                 id: systemCardCol
@@ -5193,8 +5171,7 @@ FloatingWindow {
                             implicitHeight: statusCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
                             color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-                            border.width: 1
-                            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                            border.width: 0
 
                             ColumnLayout {
                                 id: statusCardCol

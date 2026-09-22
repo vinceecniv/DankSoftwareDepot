@@ -267,8 +267,7 @@ Item {
             Layout.fillHeight: true
             radius: Theme.cornerRadius
             color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
-            border.width: 1
-            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+            border.width: 0
             clip: true
             visible: !view.loading
 

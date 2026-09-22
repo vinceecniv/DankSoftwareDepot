@@ -507,8 +507,7 @@ Item {
         height: Math.min(dialog.height - Theme.spacingL * 2, 660)
         radius: Theme.cornerRadius + 4
         color: Theme.surfaceContainer
-        border.width: 1
-        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
+        border.width: 0
         scale: dialog.animActive ? 1.0 : 0.92
         opacity: dialog.animActive ? 1.0 : 0.0
         Behavior on scale { NumberAnimation { duration: dialog.animActive ? 320 : 200; easing.type: dialog.animActive ? Easing.OutBack : Easing.InQuad } }
@@ -528,8 +527,7 @@ Item {
                 Layout.fillWidth: true
                 radius: Theme.cornerRadius
                 color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                border.width: 1
-                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
+                border.width: 0
                 implicitHeight: headerContentCol.implicitHeight + Theme.spacingM * 2
 
                 ColumnLayout {
@@ -547,8 +545,7 @@ Item {
                     Layout.preferredHeight: 48
                     radius: Theme.cornerRadius
                     color: Theme.withAlpha(Theme.primary, 0.08)
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                    border.width: 0
 
                     Image {
                         id: dialogLogo
@@ -872,7 +869,6 @@ Item {
                         visible: (dialog.info.screenshots || []).length > 0
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
                         border.width: 1
 
                         ColumnLayout {
@@ -1140,9 +1136,13 @@ Item {
                         implicitHeight: descCardCol.implicitHeight + Theme.spacingM * 2
                         visible: bodyColumn.effectiveDescription !== "" || (!dialog.loading && (dialog.appData.summary || "") !== "") || (dialog.appData.holdReason || "") !== ""
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
-                        border.width: 1
+                        // A section heading with a rule of space under
+                        // it groups this as well as a tinted box did,
+                        // without a second tonal level over the dialog
+                        // surface. Cards that are the leaf — a single
+                        // origin, a row you can press — keep theirs.
+                        color: "transparent"
+                        border.width: 0
 
                         ColumnLayout {
                             id: descCardCol
@@ -1370,9 +1370,13 @@ Item {
                         implicitHeight: originsCardCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.origins.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
-                        border.width: 1
+                        // A section heading with a rule of space under
+                        // it groups this as well as a tinted box did,
+                        // without a second tonal level over the dialog
+                        // surface. Cards that are the leaf — a single
+                        // origin, a row you can press — keep theirs.
+                        color: "transparent"
+                        border.width: 0
 
                         ColumnLayout {
                             id: originsCardCol
@@ -1501,7 +1505,6 @@ Item {
                         visible: dialog.permissionTokens.length > 0
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
                         border.width: 1
 
                         ColumnLayout {
@@ -1733,7 +1736,6 @@ Item {
                         visible: dialog.releases.length > 0
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
                         border.width: 1
 
                         ColumnLayout {
@@ -1816,7 +1818,6 @@ Item {
                         visible: dialog.gitNotesLoading || dialog.gitReleases.length > 0
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
                         border.width: 1
 
                         ColumnLayout {
@@ -1944,9 +1945,13 @@ Item {
                         height: clCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.changelogLoading || dialog.changelog !== ""
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        // A section heading with a rule of space under
+                        // it groups this as well as a tinted box did,
+                        // without a second tonal level over the dialog
+                        // surface. Cards that are the leaf — a single
+                        // origin, a row you can press — keep theirs.
+                        color: "transparent"
+                        border.width: 0
 
                         ColumnLayout {
                             id: clCol
@@ -1993,8 +1998,7 @@ Item {
                         visible: dialog.versionsLoading || dialog.previousVersions.length > 0 || dialog.noOlderVersions
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 0
 
                         ColumnLayout {
                             id: prevVerCol
@@ -2072,8 +2076,7 @@ Item {
                         visible: dialog.reviewable && ((dialog.info.reviews || []).length > 0 || dialog.installedChipVisible || dialog.showOpenButton)
                         radius: Theme.cornerRadius
                         color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
-                        border.width: 1
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                        border.width: 0
 
                         ColumnLayout {
                             id: mainReviewsCol
@@ -2167,7 +2170,6 @@ Item {
                                     implicitHeight: reviewForm.implicitHeight + Theme.spacingM * 2
                                     radius: Theme.cornerRadius
                                     color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
-                                    border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
                                     border.width: 1
 
                                     ColumnLayout {
@@ -2300,8 +2302,7 @@ Item {
                                             implicitHeight: revCardInner.implicitHeight + Theme.spacingM * 2
                                             radius: Theme.cornerRadius
                                             color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.4)
-                                            border.width: 1
-                                            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08)
+                                            border.width: 0
 
                                             opacity: 1.0
                                             Component.onCompleted: {
@@ -2526,7 +2527,6 @@ Item {
                 Layout.fillWidth: true
                 radius: Theme.cornerRadius
                 color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
                 border.width: 1
                 implicitHeight: footerLayout.implicitHeight + Theme.spacingM * 2
 
@@ -3062,7 +3062,6 @@ Item {
                 visible: dialog.provenance !== null && !dialog.busy
                 radius: Theme.cornerRadius
                 color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
-                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
                 border.width: 1
                 implicitHeight: provInfoCol.implicitHeight + Theme.spacingS * 2
 
