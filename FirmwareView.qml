@@ -319,19 +319,24 @@ Item {
                         property real outerRadius: 12
                         property bool hovered: devMa.containsMouse || deviceRow.expanded
 
-                        property real tlr: hovered ? (height <= 44 ? (height / 2) : 16) : (deviceRow.isFirst ? outerRadius : innerRadius)
-                        property real trr: hovered ? (height <= 44 ? (height / 2) : 16) : (deviceRow.isFirst ? outerRadius : innerRadius)
-                        property real blr: hovered ? (height <= 44 ? (height / 2) : 16) : (deviceRow.isLast ? outerRadius : innerRadius)
-                        property real brr: hovered ? (height <= 44 ? (height / 2) : 16) : (deviceRow.isLast ? outerRadius : innerRadius)
+                        property real tlr: hovered ? Math.min(height / 2, 28) : (deviceRow.isFirst ? outerRadius : innerRadius)
+                        property real trr: hovered ? Math.min(height / 2, 28) : (deviceRow.isFirst ? outerRadius : innerRadius)
+                        property real blr: hovered ? Math.min(height / 2, 28) : (deviceRow.isLast ? outerRadius : innerRadius)
+                        property real brr: hovered ? Math.min(height / 2, 28) : (deviceRow.isLast ? outerRadius : innerRadius)
 
                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
                         property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
                         property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
 
+                        // The same resting fill as every other list. This
+                        // row used to shade itself by whether the device was
+                        // updatable, which left three different appearances
+                        // on one page and made the hover barely a change at
+                        // all. The green chip already says which are.
                         property color paintColor: hovered
                             ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
-                            : (deviceRow.modelData.updatable ? Theme.withAlpha(Theme.surfaceContainerHigh, 0.45) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04))
+                            : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
 
                         property color paintBorder: hovered
                             ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)

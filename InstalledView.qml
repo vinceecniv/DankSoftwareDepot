@@ -1628,10 +1628,10 @@ Item {
                         property real outerRadius: 12
                         property bool hovered: rowMa.containsMouse || row.isActive
 
-                        property real tlr: hovered ? (height / 2) : (row.isFirst ? outerRadius : innerRadius)
-                        property real trr: hovered ? (height / 2) : (row.isFirst ? outerRadius : innerRadius)
-                        property real blr: hovered ? (height / 2) : (row.isLast ? outerRadius : innerRadius)
-                        property real brr: hovered ? (height / 2) : (row.isLast ? outerRadius : innerRadius)
+                        property real tlr: hovered ? Math.min(height / 2, 28) : (row.isFirst ? outerRadius : innerRadius)
+                        property real trr: hovered ? Math.min(height / 2, 28) : (row.isFirst ? outerRadius : innerRadius)
+                        property real blr: hovered ? Math.min(height / 2, 28) : (row.isLast ? outerRadius : innerRadius)
+                        property real brr: hovered ? Math.min(height / 2, 28) : (row.isLast ? outerRadius : innerRadius)
 
                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
