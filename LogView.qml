@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Quickshell.Io
 import qs.Common
 import qs.Widgets
@@ -133,8 +134,7 @@ Item {
     readonly property var visibleEntries: {
         const all = (logger ? logger.entries : []) || [];
         const needle = searchText.trim().toLowerCase();
-        const result = [];
-        let lastDay = "";
+        const filtered = [];
         for (let i = all.length - 1; i >= 0; i--) {
             const entry = all[i];
             if (needle !== "") {
@@ -142,13 +142,29 @@ Item {
                 if (!Ui.matchesWords(haystack, needle))
                     continue;
             }
-            // The first entry of each day carries its heading, so the list
-            // reads as days rather than as a stack of rows
-            const day = _dayKey(entry.ts || 0);
-            const row = Object.assign({}, entry);
-            row.dayLabel = day !== lastDay ? _dayLabel(entry.ts || 0) : "";
-            lastDay = day;
-            result.push(row);
+            filtered.push(Object.assign({}, entry));
+        }
+
+        // Compute day positions for dynamic rounded corners within each day group
+        const result = [];
+        let i = 0;
+        while (i < filtered.length) {
+            const currentDayKey = _dayKey(filtered[i].ts || 0);
+            const label = _dayLabel(filtered[i].ts || 0);
+            let j = i;
+            while (j < filtered.length && _dayKey(filtered[j].ts || 0) === currentDayKey) {
+                j++;
+            }
+            const groupLen = j - i;
+            for (let k = i; k < j; k++) {
+                const row = filtered[k];
+                row.dayLabel = label;
+                row.isFirstInDay = (k === i);
+                row.isLastInDay = (k === j - 1);
+                row.dayGroupSize = groupLen;
+                result.push(row);
+            }
+            i = j;
         }
         return result;
     }
@@ -258,11 +274,24 @@ Item {
                 anchors.rightMargin: Theme.spacingM
                 spacing: Theme.spacingL
 
-                StyledText {
-                    text: Tr.t("Last 7 days")
-                    font.pixelSize: Theme.fontSizeSmall
-                    font.weight: Font.DemiBold
-                    color: Theme.surfaceVariantText
+                Row {
+                    spacing: Theme.spacingXS
+                    Layout.alignment: Qt.AlignVCenter
+
+                    DankIcon {
+                        name: "date_range"
+                        size: 16
+                        color: Theme.primary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    StyledText {
+                        text: Tr.t("Last 7 days")
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.DemiBold
+                        color: Theme.surfaceVariantText
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                 }
 
                 Repeater {
@@ -412,37 +441,63 @@ Item {
             }
         }
 
-        DankListView {
-            id: logList
+        StyledRect {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+            border.width: 1
+            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
             clip: true
-            spacing: Theme.spacingXS
-            model: view.visibleEntries
             visible: view.visibleEntries.length > 0
 
-            // Which day you are looking at, held at the top. The log is the
-            // list where this is worth the most: every entry says a time and
-            // none of them says a date, so scrolling into last month is the
-            // one place the heading is the whole context.
+            DankListView {
+                id: logList
+                anchors.fill: parent
+                anchors.margins: Theme.spacingM
+                clip: true
+                spacing: 2
+                model: view.visibleEntries
+
             StickyHeader {
                 id: logSticky
 
                 view: logList
                 rows: view.visibleEntries
                 headingOf: row => (row && row.dayLabel) || ""
-                barHeight: 26
+                barHeight: 48
 
                 content: Component {
-                    StyledText {
-                        anchors.left: parent.left
-                        anchors.bottom: parent.bottom
-                        anchors.bottomMargin: 2
-                        anchors.leftMargin: Theme.spacingXS
-                        text: logSticky.heading || ""
-                        font.pixelSize: Theme.fontSizeSmall
-                        font.weight: Font.DemiBold
-                        color: Theme.surfaceVariantText
+                    StyledRect {
+                        anchors.fill: parent
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.96)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.22)
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: Theme.spacingM
+                            anchors.rightMargin: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            DankIcon {
+                                name: "calendar_today"
+                                size: 20
+                                color: Theme.primary
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            StyledText {
+                                text: logSticky.heading || ""
+                                font.pixelSize: Theme.fontSizeMedium
+                                font.weight: Font.Bold
+                                color: Theme.surfaceText
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Item { Layout.fillWidth: true }
+                        }
                     }
                 }
             }
@@ -459,18 +514,30 @@ Item {
 
                 Item {
                     width: parent.width
-                    visible: (entryWrap.modelData.dayLabel || "") !== ""
+                    visible: entryWrap.modelData.isFirstInDay === true && (entryWrap.modelData.dayLabel || "") !== ""
                     height: visible ? dayHeading.implicitHeight + Theme.spacingS : 0
 
-                    StyledText {
+                    Row {
                         id: dayHeading
                         anchors.left: parent.left
                         anchors.bottom: parent.bottom
                         anchors.leftMargin: Theme.spacingXS
-                        text: entryWrap.modelData.dayLabel || ""
-                        font.pixelSize: Theme.fontSizeSmall
-                        font.weight: Font.DemiBold
-                        color: Theme.surfaceVariantText
+                        spacing: Theme.spacingXS
+
+                        DankIcon {
+                            name: "calendar_today"
+                            size: 14
+                            color: Theme.surfaceVariantText
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        StyledText {
+                            text: entryWrap.modelData.dayLabel || ""
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.weight: Font.DemiBold
+                            color: Theme.surfaceVariantText
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
                     }
                 }
 
@@ -497,7 +564,7 @@ Item {
                         color: view.colorFor(entryWrap.modelData.type || "")
                     }
 
-                Rectangle {
+                Item {
                     id: entryRow
 
                     readonly property var modelData: entryWrap.modelData
@@ -508,23 +575,76 @@ Item {
                     x: 18
                     width: parent.width - 18
                     implicitHeight: entryColumn.implicitHeight + Theme.spacingS * 2
-                radius: Theme.cornerRadius
-                color: entryHover.hovered ? Theme.surfaceContainerHigh : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                    height: implicitHeight
+                    Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+                    Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
 
-                HoverHandler {
-                    id: entryHover
-                }
+                    Shape {
+                        id: entryBg
+                        anchors.fill: parent
 
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: entryRow.entryItems.length > 0
-                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: {
-                        const updated = Object.assign({}, view.expandedKeys);
-                        updated[entryRow.entryKey] = !entryRow.expanded;
-                        view.expandedKeys = updated;
+                        property real innerRadius: 6
+                        property real outerRadius: 12
+                        property bool hovered: entryMa.containsMouse
+                        property bool isFirst: entryWrap.modelData.isFirstInDay === true
+                        property bool isLast: entryWrap.modelData.isLastInDay === true
+                        property bool isSingle: isFirst && isLast
+
+                        property real tlr: hovered ? 18 : (isFirst ? outerRadius : innerRadius)
+                        property real trr: hovered ? 18 : (isFirst ? outerRadius : innerRadius)
+                        property real blr: hovered ? 18 : (isLast ? outerRadius : innerRadius)
+                        property real brr: hovered ? 18 : (isLast ? outerRadius : innerRadius)
+
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+
+                        property color paintColor: hovered
+                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
+                            : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+
+                        property color paintBorder: hovered
+                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
+                            : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+
+                        ShapePath {
+                            fillColor: entryBg.paintColor
+                            strokeColor: entryBg.paintBorder
+                            strokeWidth: 1
+
+                            startX: entryBg.tlrAnim; startY: 0
+                            PathLine { x: entryBg.width - entryBg.trrAnim; y: 0 }
+                            PathArc { x: entryBg.width; y: entryBg.trrAnim; radiusX: entryBg.trrAnim; radiusY: entryBg.trrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: entryBg.width; y: entryBg.height - entryBg.brrAnim }
+                            PathArc { x: entryBg.width - entryBg.brrAnim; y: entryBg.height; radiusX: entryBg.brrAnim; radiusY: entryBg.brrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: entryBg.blrAnim; y: entryBg.height }
+                            PathArc { x: 0; y: entryBg.height - entryBg.blrAnim; radiusX: entryBg.blrAnim; radiusY: entryBg.blrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: 0; y: entryBg.tlrAnim }
+                            PathArc { x: entryBg.tlrAnim; y: 0; radiusX: entryBg.tlrAnim; radiusY: entryBg.tlrAnim; direction: PathArc.Clockwise }
+                        }
                     }
-                }
+
+                    DankRipple {
+                        id: entryRip
+                        anchors.fill: parent
+                        cornerRadius: entryBg.tlrAnim
+                        rippleColor: Theme.primary
+                    }
+
+                    MouseArea {
+                        id: entryMa
+                        anchors.fill: parent
+                        enabled: entryRow.entryItems.length > 0
+                        hoverEnabled: true
+                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onPressed: (m) => entryRip.trigger(m.x, m.y)
+                        onClicked: {
+                            const updated = Object.assign({}, view.expandedKeys);
+                            updated[entryRow.entryKey] = !entryRow.expanded;
+                            view.expandedKeys = updated;
+                        }
+                    }
 
                 ColumnLayout {
                     id: entryColumn
@@ -742,6 +862,7 @@ Item {
                 }
                 }
             }
+        }
         }
 
         // Empty state

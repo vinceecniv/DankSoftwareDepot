@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Quickshell.Io
 import qs.Common
 import qs.Services
@@ -261,48 +262,119 @@ Item {
             color: Theme.surfaceVariantText
         }
 
-        DankListView {
-            id: deviceList
+        StyledRect {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            radius: Theme.cornerRadius
+            color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+            border.width: 1
+            border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
             clip: true
-            spacing: Theme.spacingXS
-            model: view.filteredDevices
             visible: !view.loading
 
-            delegate: Rectangle {
-                id: deviceRow
-
-                required property var modelData
-
-                readonly property var releases: view.releasesByDevice[modelData.deviceId]
-                property bool expanded: false
-
-                width: deviceList.width
-                implicitHeight: deviceContent.implicitHeight + Theme.spacingS * 2
-                radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, modelData.updatable ? 0.8 : 0.35)
-                opacity: modelData.updatable ? 1 : 0.75
+            DankListView {
+                id: deviceList
+                anchors.fill: parent
+                anchors.margins: Theme.spacingM
                 clip: true
-
-                Behavior on implicitHeight {
-                    NumberAnimation {
-                        duration: Theme.shortDuration
-                        easing.type: Theme.standardEasing
-                    }
+                populate: Transition {
+                    NumberAnimation { properties: "opacity,y"; from: 0; duration: 250; easing.type: Easing.OutCubic }
                 }
-
-                // Free row space toggles the release list (updatable devices)
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: deviceRow.modelData.updatable
-                    cursorShape: deviceRow.modelData.updatable ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: {
-                        deviceRow.expanded = !deviceRow.expanded;
-                        if (deviceRow.expanded)
-                            view.loadReleases(deviceRow.modelData.deviceId);
-                    }
+                add: Transition {
+                    NumberAnimation { properties: "opacity,scale"; from: 0; to: 1; duration: 200; easing.type: Easing.OutBack }
                 }
+                spacing: 2
+                model: view.filteredDevices
+
+                delegate: Item {
+                    id: deviceRow
+
+                    required property var modelData
+                    required property int index
+
+                    readonly property var releases: view.releasesByDevice[modelData.deviceId]
+                    property bool expanded: false
+                    readonly property int totalCount: view.filteredDevices.length
+                    readonly property bool isFirst: index === 0
+                    readonly property bool isLast: index === totalCount - 1
+
+                    width: deviceList.width
+                    implicitHeight: deviceContent.implicitHeight + (Theme.spacingS + 2) * 2
+                    height: implicitHeight
+                    opacity: modelData.updatable ? 1 : 0.75
+                    clip: true
+
+                    Behavior on implicitHeight {
+                        NumberAnimation {
+                            duration: Theme.shortDuration
+                            easing.type: Theme.standardEasing
+                        }
+                    }
+
+                    Shape {
+                        id: devBg
+                        anchors.fill: parent
+
+                        property real innerRadius: 6
+                        property real outerRadius: 12
+                        property bool hovered: devMa.containsMouse || deviceRow.expanded
+
+                        property real tlr: hovered ? (height <= 44 ? (height / 2) : 16) : (deviceRow.isFirst ? outerRadius : innerRadius)
+                        property real trr: hovered ? (height <= 44 ? (height / 2) : 16) : (deviceRow.isFirst ? outerRadius : innerRadius)
+                        property real blr: hovered ? (height <= 44 ? (height / 2) : 16) : (deviceRow.isLast ? outerRadius : innerRadius)
+                        property real brr: hovered ? (height <= 44 ? (height / 2) : 16) : (deviceRow.isLast ? outerRadius : innerRadius)
+
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+
+                        property color paintColor: hovered
+                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
+                            : (deviceRow.modelData.updatable ? Theme.withAlpha(Theme.surfaceContainerHigh, 0.5) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04))
+
+                        property color paintBorder: hovered
+                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
+                            : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+
+                        ShapePath {
+                            fillColor: devBg.paintColor
+                            strokeColor: devBg.paintBorder
+                            strokeWidth: 1
+
+                            startX: devBg.tlrAnim; startY: 0
+                            PathLine { x: devBg.width - devBg.trrAnim; y: 0 }
+                            PathArc { x: devBg.width; y: devBg.trrAnim; radiusX: devBg.trrAnim; radiusY: devBg.trrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: devBg.width; y: devBg.height - devBg.brrAnim }
+                            PathArc { x: devBg.width - devBg.brrAnim; y: devBg.height; radiusX: devBg.brrAnim; radiusY: devBg.brrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: devBg.blrAnim; y: devBg.height }
+                            PathArc { x: 0; y: devBg.height - devBg.blrAnim; radiusX: devBg.blrAnim; radiusY: devBg.blrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: 0; y: devBg.tlrAnim }
+                            PathArc { x: devBg.tlrAnim; y: 0; radiusX: devBg.tlrAnim; radiusY: devBg.tlrAnim; direction: PathArc.Clockwise }
+                        }
+                    }
+
+                    DankRipple {
+                        id: devRip
+                        anchors.fill: parent
+                        cornerRadius: devBg.tlrAnim
+                        rippleColor: Theme.primary
+                    }
+
+                    // Free row space toggles the release list (updatable devices)
+                    MouseArea {
+                        id: devMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        enabled: deviceRow.modelData.updatable
+                        cursorShape: deviceRow.modelData.updatable ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onPressed: (m) => devRip.trigger(m.x, m.y)
+                        onClicked: {
+                            deviceRow.expanded = !deviceRow.expanded;
+                            if (deviceRow.expanded)
+                                view.loadReleases(deviceRow.modelData.deviceId);
+                        }
+                    }
 
                 ColumnLayout {
                     id: deviceContent
@@ -472,6 +544,7 @@ Item {
                     }
                 }
             }
+        }
         }
 
         Item {

@@ -1,3 +1,4 @@
+import QtQuick.Shapes
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -695,6 +696,7 @@ Item {
         // makes it the section to open when what you want is to browse the lot
         const groups = [{
                 category: "Most popular",
+                label: "Most popular",
                 items: searchIndex.slice().sort(byDownloads)
             }];
         for (const label of sectionOrder) {
@@ -702,6 +704,7 @@ Item {
                 continue;
             groups.push({
                 category: label,
+                label: label,
                 items: buckets[label].sort(byDownloads)
             });
         }
@@ -750,10 +753,53 @@ Item {
             sectionRevealed += sectionPage;
     }
 
+    // Category drill-down animation direction: true = going into a category, false = going back
+    property bool categoryDrillIn: true
+
     function openSection(category) {
+        categoryDrillIn = (category || "") !== "";
         activeCategory = category || "";
         sectionRevealed = sectionPage;
         resultsList.positionViewAtBeginning();
+    }
+
+    function categoryIcon(category) {
+        const cat = (category || "").toLowerCase().trim();
+        if (cat === "" || cat === "search results")
+            return "search";
+        if (cat.indexOf("popular") !== -1)
+            return "trending_up";
+        if (cat.indexOf("audio") !== -1 || cat.indexOf("sound") !== -1 || cat.indexOf("music") !== -1)
+            return "music_note";
+        if (cat.indexOf("video") !== -1 || cat.indexOf("media") !== -1 || cat.indexOf("tv") !== -1)
+            return "movie";
+        if (cat.indexOf("game") !== -1)
+            return "sports_esports";
+        if (cat.indexOf("graphic") !== -1 || cat.indexOf("photo") !== -1 || cat.indexOf("image") !== -1 || cat.indexOf("art") !== -1)
+            return "brush";
+        if (cat.indexOf("dev") !== -1 || cat.indexOf("code") !== -1 || cat.indexOf("programming") !== -1)
+            return "code";
+        if (cat.indexOf("productiv") !== -1 || cat.indexOf("office") !== -1 || cat.indexOf("document") !== -1)
+            return "business_center";
+        if (cat.indexOf("util") !== -1 || cat.indexOf("tool") !== -1)
+            return "build";
+        if (cat.indexOf("system") !== -1 || cat.indexOf("hardware") !== -1 || cat.indexOf("setting") !== -1)
+            return "settings_suggest";
+        if (cat.indexOf("add-on") !== -1 || cat.indexOf("addon") !== -1 || cat.indexOf("plugin") !== -1 || cat.indexOf("extension") !== -1)
+            return "extension";
+        if (cat.indexOf("network") !== -1 || cat.indexOf("internet") !== -1 || cat.indexOf("browser") !== -1 || cat.indexOf("web") !== -1)
+            return "hub";
+        if (cat.indexOf("science") !== -1 || cat.indexOf("educat") !== -1)
+            return "school";
+        if (cat.indexOf("communicat") !== -1 || cat.indexOf("chat") !== -1)
+            return "chat";
+        if (cat.indexOf("health") !== -1 || cat.indexOf("fit") !== -1)
+            return "fitness_center";
+        if (cat.indexOf("copr") !== -1)
+            return "deployed_code";
+        if (cat.indexOf("brew") !== -1 || cat.indexOf("homebrew") !== -1)
+            return "local_drink";
+        return "category";
     }
     // What the list has to show, which decides whether the list is shown at
     // all. Copr answers arrive as ordinary rows and were counted from the
@@ -762,12 +808,23 @@ Item {
     // over an empty screen — the list holding them was hidden for being
     // empty.
     readonly property int resultCount: {
-        let count = 0;
-        for (const row of listModel) {
-            if (row.type === "app" || row.type === "brew")
-                count++;
+        if (searchMode) {
+            let count = 0;
+            for (const row of listModel) {
+                if (row.type === "category_card")
+                    count += (row.items || []).length;
+                else if (row.type === "app" || row.type === "brew")
+                    count++;
+            }
+            return count;
         }
-        return count;
+        if (sectionMode)
+            return sectionMatches.length;
+        let total = 0;
+        for (const sec of listModel) {
+            total += (sec.items || []).length;
+        }
+        return total;
     }
 
     // Sort order for search results
@@ -801,27 +858,30 @@ Item {
         return sorted;
     }
 
-    // Flat model shared by search results and the featured storefront:
-    // {type: "header", label} | {type: "app", data} | {type: "coprPrompt"}
+    // Model representing sections as structured cards in storefront mode,
+    // or flat list in section / search mode.
     readonly property var listModel: {
         const rows = [];
-        // A section named but no longer delivered falls through to the
-        // storefront rather than to an empty list — the sections are cut from
-        // the catalogs, and those change under an update
+        // Single section drilldown mode (Extended Category Container)
         if (activeCategory !== "" && sections.some(group => group.category === activeCategory)) {
-            // Already in download order, and filtering keeps an order rather
-            // than making one, so there is nothing left to sort here
-            for (const item of sectionMatches.slice(0, sectionRevealed))
-                rows.push({
-                    type: "app",
-                    data: item
-                });
+            const currentSec = sections.find(g => g.category === activeCategory);
+            const total = sectionMatches.length;
+            const shownItems = sectionMatches.slice(0, sectionRevealed);
+            rows.push({
+                type: "category_card",
+                category: activeCategory,
+                label: currentSec ? currentSec.label : activeCategory,
+                total: total,
+                items: shownItems,
+                isDrilldown: true,
+                remaining: total - shownItems.length
+            });
             return rows;
         }
+        // Search results mode
         if (searchMode) {
             const query = searchText.trim();
             let items = localResults(query);
-            // Async dnf extras trickle in once repoquery finishes
             if (dnfExtrasQuery === query && dnfExtras.length > 0) {
                 const covered = new Set();
                 for (const item of items) {
@@ -839,82 +899,71 @@ Item {
                 items.sort((a, b) => (a.score !== undefined ? a.score : 9) - (b.score !== undefined ? b.score : 9));
             else
                 items = sortResults(items);
+            
+            const searchItems = [];
             for (const item of items) {
                 if (matchesSourceFilter(item))
-                    rows.push({
-                        type: "app",
-                        data: item
-                    });
+                    searchItems.push(item);
             }
-            // Copr, offered where the results run out rather than above them.
-            // It is the one search that leaves the machine, so it stays a
-            // thing to ask for — and the place to ask is after everything the
-            // machine could answer by itself, which is also where "not here?"
-            // is a question the reader has just arrived at. Anything Copr
-            // returns is listed under this row, so the row can say so.
+            if (searchItems.length > 0) {
+                rows.push({
+                    type: "category_card",
+                    category: "",
+                    label: Tr.t("Search Results"),
+                    total: searchItems.length,
+                    items: searchItems,
+                    isSearch: true
+                });
+            }
             if (Backend.hasCopr && view.coprFilterWanted)
                 rows.push({
                     type: "coprPrompt"
                 });
-            // The same offer for Homebrew, on a machine that has it. Brew keeps
-            // a catalogue of its own that this storefront does not index, and
-            // asking it is local and quick — but it is still a second place to
-            // look, and worth being asked for rather than assumed.
             if (view.hasBrew && view.brewFilterWanted)
                 rows.push({
                     type: "brewPrompt"
                 });
-            // Copr answers are kept apart rather than mixed in: they come from
-            // a person rather than from the distribution, and that is the
-            // first thing worth knowing about them
             if (brewQuery === query && brewResults.length > 0 && view.brewFilterWanted) {
                 rows.push({
-                    type: "header",
-                    label: "Homebrew"
+                    type: "category_card",
+                    category: "brew",
+                    label: "Homebrew",
+                    total: brewResults.length,
+                    items: brewResults,
+                    isBrew: true
                 });
-                for (const item of brewResults)
-                    rows.push({
-                        type: "brew",
-                        data: item
-                    });
             }
             if (coprQuery === query && coprResults.length > 0) {
                 const coprRows = coprResults.filter(item => matchesSourceFilter(item));
                 if (coprRows.length > 0) {
                     rows.push({
-                        type: "header",
-                        label: "Copr · built by individuals"
+                        type: "category_card",
+                        category: "copr",
+                        label: Tr.t("Copr Packages"),
+                        total: coprRows.length,
+                        items: coprRows,
+                        isCopr: true
                     });
-                    for (const item of coprRows)
-                        rows.push({
-                            type: "app",
-                            data: item
-                        });
                 }
             }
             return rows;
         }
-        for (const [index, group] of sections.entries()) {
-            // What is already on the machine is not on offer: that is what
-            // the Installed tab is, and a storefront listing it is a
-            // storefront of things you cannot do anything with here
-            const items = group.items.filter(item => !isInstalled(item) && matchesSourceFilter(item));
-            if (items.length === 0)
+
+        // Storefront mode: Top categories in cards
+        for (const cat of sectionOrder) {
+            const group = sections.find(g => g.category === cat);
+            if (!group)
                 continue;
-            // A heading with a section behind it, so it can be opened. The
-            // storefront shows the head of each; the rest is what opening one
-            // is for. The chart keeps the eight it always had.
-            rows.push({
-                type: "header",
-                label: group.category,
-                category: group.category,
-                total: items.length
-            });
-            for (const item of items.slice(0, index === 0 ? 8 : 6))
+            const items = group.items.filter(item => matchesSourceFilter(item));
+            if (items.length > 0) {
                 rows.push({
-                    type: "app",
-                    data: item
+                    type: "category_card",
+                    category: group.category,
+                    label: group.label,
+                    total: items.length,
+                    items: items.slice(0, 5)
                 });
+            }
         }
         return rows;
     }
@@ -1440,13 +1489,67 @@ Item {
             }
         }
 
-        // Second toolbar row: source filter + sorting (wraps cleanly at
-        // narrow window widths)
-        RowLayout {
+        // Second toolbar row: back button + centered source filter + sorting
+        Item {
             Layout.fillWidth: true
-            spacing: Theme.spacingM
+            implicitHeight: 34
+
+            Rectangle {
+                id: allSectionsBtn
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                visible: view.sectionMode
+                width: allSecRow.implicitWidth + 24
+                height: 32
+                property bool isHovered: allSecMa.containsMouse
+                radius: isHovered ? (height / 2) : 8
+                Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                color: isHovered ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.95) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.65)
+                Behavior on color { ColorAnimation { duration: 150 } }
+                border.width: 1
+                border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                Behavior on border.color { ColorAnimation { duration: 150 } }
+                scale: allSecMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                DankRipple {
+                    id: allSecRip
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    rippleColor: Theme.primary
+                }
+
+                RowLayout {
+                    id: allSecRow
+                    anchors.centerIn: parent
+                    spacing: 6
+
+                    DankIcon {
+                        name: "arrow_back"
+                        size: 16
+                        color: Theme.surfaceText
+                    }
+
+                    StyledText {
+                        text: Tr.t("All sections")
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.weight: Font.Medium
+                        color: Theme.surfaceText
+                    }
+                }
+
+                MouseArea {
+                    id: allSecMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onPressed: (m) => allSecRip.trigger(m.x, m.y)
+                    onClicked: view.openSection("")
+                }
+            }
 
             DankButtonGroup {
+                anchors.centerIn: parent
                 model: view.filterChips.labels
                 currentIndex: view.sourceFilter
                 onSelectionChanged: (index, selected) => {
@@ -1455,12 +1558,9 @@ Item {
                 }
             }
 
-            Item {
-                Layout.fillWidth: true
-            }
-
             DankDropdown {
-                // A section has one order and it is not up for discussion
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
                 visible: view.searchMode && !view.sectionMode
                 dropdownWidth: 170
                 alignPopupRight: true
@@ -1472,114 +1572,6 @@ Item {
                             view.sortMode = option;
                             return;
                         }
-                    }
-                }
-            }
-        }
-
-        // Which section this is. The heading that was clicked scrolled away
-        // with the storefront, and the chips below say where else to go
-        // rather than where you are.
-        RowLayout {
-            Layout.fillWidth: true
-            visible: view.sectionMode
-            spacing: Theme.spacingXS
-
-            StyledText {
-                text: Tr.t(view.activeCategory)
-                font.pixelSize: Theme.fontSizeMedium
-                font.weight: Font.DemiBold
-                color: Theme.surfaceText
-            }
-
-            // The whole section, not the part of it that has been scrolled to
-            StyledText {
-                text: (view.sectionMatches.length === 1 ? Tr.t("%1 result") : Tr.t("%1 results")).arg(view.sectionMatches.length)
-                font.pixelSize: Theme.fontSizeSmall - 1
-                color: Theme.surfaceVariantText
-            }
-
-            StyledText {
-                Layout.fillWidth: true
-                text: Tr.t("Most downloaded first")
-                font.pixelSize: Theme.fontSizeSmall - 1
-                color: Theme.withAlpha(Theme.surfaceVariantText, 0.8)
-                horizontalAlignment: Text.AlignRight
-                elide: Text.ElideRight
-            }
-        }
-
-        // ── Where else to go from here ───────────────────────────────────────
-        // Only inside a section: on the storefront every section is already on
-        // screen with its own heading, and a row of chips saying the same
-        // things again would be furniture. A Flow rather than a Row because
-        // nine translated category names do not fit a narrow window on one
-        // line, and a chip pushed off the edge is a section you cannot reach.
-        Flow {
-            Layout.fillWidth: true
-            visible: view.sectionMode
-            spacing: Theme.spacingXS
-
-            Rectangle {
-                height: 28
-                width: backChipRow.implicitWidth + Theme.spacingM * 2
-                radius: 14
-                color: backChipArea.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.surfaceContainerHigh, 0.6)
-
-                Row {
-                    id: backChipRow
-                    anchors.centerIn: parent
-                    spacing: Theme.spacingXS
-
-                    DankIcon {
-                        name: "arrow_back"
-                        size: 14
-                        color: Theme.surfaceText
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    StyledText {
-                        text: Tr.t("All sections")
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceText
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-
-                MouseArea {
-                    id: backChipArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: view.openSection("")
-                }
-            }
-
-            Repeater {
-                model: view.sectionNames.filter(name => name !== view.activeCategory)
-
-                delegate: Rectangle {
-                    required property string modelData
-
-                    height: 28
-                    width: sectionChipLabel.implicitWidth + Theme.spacingM * 2
-                    radius: 14
-                    color: sectionChipArea.containsMouse ? Theme.withAlpha(Theme.primary, 0.18) : Theme.withAlpha(Theme.surfaceVariant, 0.5)
-
-                    StyledText {
-                        id: sectionChipLabel
-                        anchors.centerIn: parent
-                        text: Tr.t(modelData)
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: Theme.surfaceVariantText
-                    }
-
-                    MouseArea {
-                        id: sectionChipArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: view.openSection(modelData)
                     }
                 }
             }
@@ -1701,49 +1693,202 @@ Item {
             color: view.lastInstallResult.indexOf("✓") !== -1 ? Theme.success : Theme.error
         }
 
-        DankListView {
-            id: resultsList
+        Item {
+            id: listOuterContainer
             Layout.fillWidth: true
             Layout.fillHeight: true
-            clip: true
-            spacing: Theme.spacingXS
-            model: view.listModel
-            // Counted in results, not in rows: the Copr prompt is a row too,
-            // and a list holding nothing but the offer to search elsewhere is
-            // still a search that found nothing
             visible: view.resultCount > 0 && !view.searching
+            clip: true
 
-            // The rest of a section, handed over on the way down rather than
-            // all at once. Far enough from the bottom that the next batch is
-            // built before it is reached, so scrolling never stops at a seam.
-            onContentYChanged: {
-                if (view.sectionMode && contentHeight - (contentY + height) < 600)
-                    view.revealMoreOfSection();
+            Connections {
+                target: view
+                function onActiveCategoryChanged() {
+                    slideAnim.stop();
+                    listWrapper.targetX = view.categoryDrillIn ? 50 : -50;
+                    listWrapper.opacity = 0.0;
+                    slideAnim.start();
+                }
             }
 
-            // The storefront section you are inside. Games is nearly 900
-            // rows here, which is a long way from the heading that said so.
+            ParallelAnimation {
+                id: slideAnim
+                NumberAnimation {
+                    target: listWrapper
+                    property: "targetX"
+                    to: 0
+                    duration: 340
+                    easing.type: Easing.OutCubic
+                }
+                NumberAnimation {
+                    target: listWrapper
+                    property: "opacity"
+                    to: 1.0
+                    duration: 280
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Item {
+                id: listWrapper
+                property real targetX: 0
+                x: targetX
+                y: 0
+                width: parent.width
+                height: parent.height
+
+                DankListView {
+                    id: resultsList
+                    anchors.fill: parent
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    spacing: Theme.spacingM
+                    model: view.listModel
+
+                    Component.onCompleted: {
+                        Ui.softenScrollbar(resultsList);
+                        Ui.disableDefaultWheelHandler(resultsList);
+                    }
+
+                    WheelHandler {
+                        id: listSmoothWheel
+                        acceptedDevices: PointerDevice.Mouse
+                        onWheel: (event) => {
+                            if (resultsList.contentHeight <= resultsList.height) return;
+                            const delta = event.angleDelta.y;
+                            if (delta === 0) return;
+                            const lines = Math.round(Math.abs(delta) / 120) || 1;
+                            const scrollDelta = (delta > 0 ? -lines : lines) * 120;
+                            const currentTarget = listScrollAnim.running ? listScrollAnim.to : resultsList.contentY;
+                            const maxScroll = Math.max(0, resultsList.contentHeight - resultsList.height + resultsList.originY);
+                            const newTarget = Math.max(resultsList.originY, Math.min(maxScroll, currentTarget + scrollDelta));
+                            listScrollAnim.stop();
+                            listScrollAnim.from = resultsList.contentY;
+                            listScrollAnim.to = newTarget;
+                            listScrollAnim.start();
+                            event.accepted = true;
+                        }
+                    }
+
+                    NumberAnimation {
+                        id: listScrollAnim
+                        target: resultsList
+                        property: "contentY"
+                        duration: 260
+                        easing.type: Easing.OutCubic
+                    }
+
+            add: Transition {
+                NumberAnimation { property: "y"; from: 24; duration: 300; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 250; easing.type: Easing.OutCubic }
+            }
+            remove: Transition {
+                NumberAnimation { property: "opacity"; to: 0; duration: 180 }
+            }
+            displaced: Transition {
+                NumberAnimation { properties: "y"; duration: 320; easing.type: Easing.OutCubic }
+            }
+            move: Transition {
+                NumberAnimation { properties: "y"; duration: 320; easing.type: Easing.OutCubic }
+            }
+            moveDisplaced: Transition {
+                NumberAnimation { properties: "y"; duration: 320; easing.type: Easing.OutCubic }
+            }
+
+            onContentYChanged: {
+                if (view.sectionMode && contentHeight > 0 && (contentHeight - (contentY + height)) < 400 && view.sectionRevealed < 300) {
+                    view.revealMoreOfSection();
+                }
+            }
+
+            // Sticky Header pinning active category
             StickyHeader {
                 id: installSticky
 
                 view: resultsList
                 rows: view.listModel
-                headingOf: row => (row && row.type === "header") ? row : ""
-                barHeight: 30
+                headingOf: row => (row && (row.type === "category_card" || row.type === "header")) ? row : ""
+                barHeight: 48
 
                 content: Component {
-                    Loader {
-                        sourceComponent: categoryHeaderComponent
-                        onLoaded: item.rowData = Qt.binding(() => installSticky.heading || ({}))
+                    StyledRect {
+                        anchors.fill: parent
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.96)
+                        border.width: 1
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.22)
+
+                        property var rowData: installSticky.heading || ({})
+                        readonly property bool opens: (rowData.category || "") !== ""
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: Theme.spacingM
+                            anchors.rightMargin: Theme.spacingM
+                            spacing: Theme.spacingS
+
+                            DankIcon {
+                                name: view.categoryIcon(rowData.category || rowData.label || "")
+                                size: 20
+                                color: Theme.primary
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            StyledText {
+                                text: Tr.t(rowData.label || "")
+                                font.pixelSize: Theme.fontSizeMedium
+                                font.weight: Font.Bold
+                                color: Theme.primary
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Rectangle {
+                                visible: opens && (rowData.total || 0) > 0
+                                implicitWidth: stickyCatCount.implicitWidth + 14
+                                implicitHeight: 20
+                                radius: 10
+                                color: Theme.withAlpha(Theme.primary, 0.15)
+                                Layout.alignment: Qt.AlignVCenter
+
+                                StyledText {
+                                    id: stickyCatCount
+                                    anchors.centerIn: parent
+                                    text: String(rowData.total || "")
+                                    font.pixelSize: Theme.fontSizeSmall - 2
+                                    font.weight: Font.Medium
+                                    color: Theme.primary
+                                }
+                            }
+
+                            DankIcon {
+                                visible: opens
+                                name: "chevron_right"
+                                size: 16
+                                color: Theme.primary
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Item { Layout.fillWidth: true }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: opens
+                            cursorShape: opens ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: view.openSection(rowData.category)
+                        }
                     }
                 }
             }
 
             delegate: Loader {
+                id: installDelegateLoader
                 required property var modelData
+                property var rowData: modelData
 
                 width: resultsList.width
                 sourceComponent: {
+                    if (modelData.type === "category_card")
+                        return categoryCardComponent;
                     if (modelData.type === "header")
                         return categoryHeaderComponent;
                     if (modelData.type === "coprPrompt")
@@ -1755,7 +1900,216 @@ Item {
                     return appRowComponent;
                 }
 
-                onLoaded: item.rowData = modelData
+                Binding {
+                    target: installDelegateLoader.item
+                    property: "rowData"
+                    value: installDelegateLoader.modelData
+                }
+            }
+        }
+        } // end listWrapper
+        } // end Item { Layout.fillWidth } wrapper
+
+        // Component for a complete Storefront Category Card Container
+        Component {
+            id: categoryCardComponent
+
+            StyledRect {
+                id: cardContainer
+                property var rowData: ({})
+
+                width: resultsList.width
+                implicitHeight: cardCol.implicitHeight + Theme.spacingM * 2
+                radius: Theme.cornerRadius
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                border.width: 1
+                border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                clip: true
+
+                ColumnLayout {
+                    id: cardCol
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: Theme.spacingM
+                    spacing: Theme.spacingS
+
+                    // Category Title & Action Header
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: 32
+
+                        RowLayout {
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: Theme.spacingS
+
+                            DankIcon {
+                                name: view.categoryIcon(cardContainer.rowData.category || cardContainer.rowData.label || "")
+                                size: 20
+                                color: Theme.primary
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            StyledText {
+                                text: Tr.t(cardContainer.rowData.label || cardContainer.rowData.category || "")
+                                font.pixelSize: Theme.fontSizeMedium
+                                font.weight: Font.Bold
+                                color: Theme.surfaceText
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Rectangle {
+                                visible: (cardContainer.rowData.total || 0) > 0
+                                implicitWidth: storeCountText.implicitWidth + 14
+                                implicitHeight: 20
+                                radius: 10
+                                color: Theme.withAlpha(Theme.primary, 0.15)
+                                Layout.alignment: Qt.AlignVCenter
+
+                                StyledText {
+                                    id: storeCountText
+                                    anchors.centerIn: parent
+                                    text: String(cardContainer.rowData.total || "")
+                                    font.pixelSize: Theme.fontSizeSmall - 2
+                                    font.weight: Font.Medium
+                                    color: Theme.primary
+                                }
+                            }
+                        }
+
+                        // View All Custom Action Button (Storefront mode)
+                        Rectangle {
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: !cardContainer.rowData.isDrilldown && (cardContainer.rowData.category || "") !== ""
+                            width: viewAllRow.implicitWidth + 22
+                            height: 28
+                            property bool isHovered: viewAllMa.containsMouse
+                            radius: isHovered ? (height / 2) : 8
+                            Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                            color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            border.width: 1
+                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            scale: viewAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                            DankRipple {
+                                id: viewAllRip
+                                anchors.fill: parent
+                                cornerRadius: parent.radius
+                                rippleColor: Theme.primary
+                            }
+
+                            RowLayout {
+                                id: viewAllRow
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                StyledText {
+                                    text: Tr.t("View all")
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    font.weight: Font.Medium
+                                    color: Theme.primary
+                                }
+
+                                DankIcon {
+                                    name: "chevron_right"
+                                    size: 14
+                                    color: Theme.primary
+                                }
+                            }
+
+                            MouseArea {
+                                id: viewAllMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onPressed: (m) => viewAllRip.trigger(m.x, m.y)
+                                onClicked: view.openSection(cardContainer.rowData.category)
+                            }
+                        }
+
+
+                    }
+
+                    // Category items list repeater
+                    Repeater {
+                        id: catItemRepeater
+                        model: cardContainer.rowData.items || []
+
+                        delegate: Loader {
+                            id: catItemLoader
+                            required property var modelData
+                            required property int index
+
+                            Layout.fillWidth: true
+                            sourceComponent: appRowComponent
+                            onLoaded: {
+                                item.rowData = { type: "app", data: catItemLoader.modelData };
+                                item.rowIndex = catItemLoader.index;
+                                item.totalCount = Qt.binding(() => (cardContainer.rowData.items || []).length);
+                            }
+                        }
+                    }
+
+                    // Show more custom button in drilldown mode
+                    Rectangle {
+                        readonly property int remainingCount: cardContainer.rowData.remaining || 0
+                        visible: cardContainer.rowData.isDrilldown === true && remainingCount > 0
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.topMargin: Theme.spacingS
+                        width: showMoreRow.implicitWidth + 28
+                        height: 32
+                        property bool isHovered: showMoreMa.containsMouse
+                        radius: isHovered ? (height / 2) : 8
+                        Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                        color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                        border.width: 1
+                        border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        scale: showMoreMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                        DankRipple {
+                            id: showMoreRip
+                            anchors.fill: parent
+                            cornerRadius: parent.radius
+                            rippleColor: Theme.primary
+                        }
+
+                        RowLayout {
+                            id: showMoreRow
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            DankIcon {
+                                name: "expand_more"
+                                size: 16
+                                color: Theme.primary
+                            }
+
+                            StyledText {
+                                text: Tr.t("Show %1 more (%2 remaining)").arg(Math.min(100, remainingCount)).arg(remainingCount)
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.weight: Font.Medium
+                                color: Theme.primary
+                            }
+                        }
+
+                        MouseArea {
+                            id: showMoreMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: (m) => showMoreRip.trigger(m.x, m.y)
+                            onClicked: view.revealMoreOfSection()
+                        }
+                    }
+                }
             }
         }
 
@@ -1822,16 +2176,55 @@ Item {
                         Layout.preferredHeight: coprSearchButton.height
                         visible: !view.coprSearching && view.coprQuery !== view.searchText.trim()
 
-                        DankButton {
+                        Rectangle {
                             id: coprSearchButton
-                            buttonHeight: 26
-                            horizontalPadding: Theme.spacingM
-                            iconName: "search"
-                            iconSize: 13
-                            text: Tr.t("Search Copr")
-                            backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
-                            textColor: Theme.surfaceText
-                            onClicked: view.searchCopr()
+                            width: coprSearchRow.implicitWidth + 24
+                            height: 28
+                            property bool isHovered: coprSearchMa.containsMouse
+                            radius: isHovered ? (height / 2) : 8
+                            Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                            color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            border.width: 1
+                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            scale: coprSearchMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                            DankRipple {
+                                id: coprSearchRip
+                                anchors.fill: parent
+                                cornerRadius: parent.radius
+                                rippleColor: Theme.primary
+                            }
+
+                            RowLayout {
+                                id: coprSearchRow
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                DankIcon {
+                                    name: "search"
+                                    size: 14
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Search Copr")
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    font.weight: Font.Medium
+                                    color: Theme.primary
+                                }
+                            }
+
+                            MouseArea {
+                                id: coprSearchMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onPressed: (m) => coprSearchRip.trigger(m.x, m.y)
+                                onClicked: view.searchCopr()
+                            }
                         }
                     }
                 }
@@ -1929,21 +2322,55 @@ Item {
                         onClicked: view.openBrewDetails(brewRowRoot.formula)
                     }
 
-                    Item {
-                        Layout.preferredWidth: brewInstallButton.width
-                        Layout.preferredHeight: brewInstallButton.height
+                    Rectangle {
+                        id: brewInstallButton
                         visible: brewRowRoot.usable && brewRowRoot.formula.installed !== true
+                        width: brewInstRow.implicitWidth + 20
+                        height: 26
+                        enabled: view.busyAction === ""
+                        property bool isHovered: brewInstMa.containsMouse
+                        radius: isHovered ? (height / 2) : 8
+                        Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                        color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                        border.width: 1
+                        border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        scale: brewInstMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
 
-                        DankButton {
-                            id: brewInstallButton
-                            buttonHeight: 26
-                            horizontalPadding: Theme.spacingM
-                            iconName: "download"
-                            iconSize: 13
-                            text: Tr.t("Install")
-                            backgroundColor: Theme.buttonBg
-                            textColor: Theme.buttonText
-                            enabled: view.busyAction === ""
+                        DankRipple {
+                            id: brewInstRip
+                            anchors.fill: parent
+                            cornerRadius: parent.radius
+                            rippleColor: Theme.primary
+                        }
+
+                        RowLayout {
+                            id: brewInstRow
+                            anchors.centerIn: parent
+                            spacing: 4
+
+                            DankIcon {
+                                name: "download"
+                                size: 13
+                                color: Theme.primary
+                            }
+
+                            StyledText {
+                                text: Tr.t("Install")
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                font.weight: Font.Medium
+                                color: Theme.primary
+                            }
+                        }
+
+                        MouseArea {
+                            id: brewInstMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: (m) => brewInstRip.trigger(m.x, m.y)
                             onClicked: view.installBrew(brewRowRoot.formula.name)
                         }
                     }
@@ -2013,16 +2440,55 @@ Item {
                         Layout.preferredHeight: brewSearchButton.height
                         visible: !view.brewSearching && view.brewQuery !== view.searchText.trim()
 
-                        DankButton {
+                        Rectangle {
                             id: brewSearchButton
-                            buttonHeight: 26
-                            horizontalPadding: Theme.spacingM
-                            iconName: "search"
-                            iconSize: 13
-                            text: Tr.t("Search Homebrew")
-                            backgroundColor: Theme.withAlpha(Theme.primary, 0.22)
-                            textColor: Theme.surfaceText
-                            onClicked: view.searchBrew()
+                            width: brewSearchRow.implicitWidth + 24
+                            height: 28
+                            property bool isHovered: brewSearchMa.containsMouse
+                            radius: isHovered ? (height / 2) : 8
+                            Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                            color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            border.width: 1
+                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            scale: brewSearchMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                            DankRipple {
+                                id: brewSearchRip
+                                anchors.fill: parent
+                                cornerRadius: parent.radius
+                                rippleColor: Theme.primary
+                            }
+
+                            RowLayout {
+                                id: brewSearchRow
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                DankIcon {
+                                    name: "search"
+                                    size: 14
+                                    color: Theme.primary
+                                }
+
+                                StyledText {
+                                    text: Tr.t("Search Homebrew")
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    font.weight: Font.Medium
+                                    color: Theme.primary
+                                }
+                            }
+
+                            MouseArea {
+                                id: brewSearchMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onPressed: (m) => brewSearchRip.trigger(m.x, m.y)
+                                onClicked: view.searchBrew()
+                            }
                         }
                     }
                 }
@@ -2036,9 +2502,6 @@ Item {
                 id: headerRoot
 
                 property var rowData: ({})
-                // Only a storefront category opens: the Copr heading in a
-                // search result labels where rows came from, and there is no
-                // section behind it to go to
                 readonly property bool opens: (rowData.category || "") !== ""
 
                 implicitHeight: headerLabel.implicitHeight + Theme.spacingM
@@ -2049,7 +2512,14 @@ Item {
                     anchors.left: parent.left
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 2
-                    spacing: Theme.spacingXS
+                    spacing: Theme.spacingS
+
+                    DankIcon {
+                        name: view.categoryIcon(headerRoot.rowData.category || headerRoot.rowData.label || "")
+                        size: 18
+                        color: Theme.primary
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
 
                     StyledText {
                         id: headerLabel
@@ -2061,9 +2531,6 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
-                    // The count is the invitation: a heading that says 60 is a
-                    // heading worth clicking, where one that says 6 is the
-                    // whole story already
                     StyledText {
                         visible: headerRoot.opens && (headerRoot.rowData.total || 0) > 0
                         text: headerRoot.rowData.total || ""
@@ -2100,27 +2567,77 @@ Item {
         Component {
             id: appRowComponent
 
-            Rectangle {
+            Item {
                 id: resultRow
-
                 property var rowData: ({})
+                property int rowIndex: 0
+                property int totalCount: 1
 
                 readonly property var app: rowData.data || ({})
                 readonly property bool installed: app.sources ? view.isInstalled(app) : false
                 readonly property bool busy: app.sources ? app.sources.some(s => s.ref !== "" && (view.sourceKey(s) === view.busyAction || (view.appimageBusy !== "" && s.kind === "appimage" && view.appimageBusy === app.name))) : false
+                readonly property bool isFirst: rowIndex === 0
+                readonly property bool isLast: rowIndex === totalCount - 1
 
-                implicitHeight: resultContent.implicitHeight + Theme.spacingS * 2
-                radius: Theme.cornerRadius
-                color: resultHover.hovered ? Theme.surfaceContainerHigh : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                implicitHeight: resultContent.implicitHeight + (Theme.spacingS + 2) * 2
+                height: implicitHeight
 
-                HoverHandler {
-                    id: resultHover
+                Shape {
+                    id: resultBg
+                    anchors.fill: parent
+
+                    property real innerRadius: 6
+                    property real outerRadius: 12
+                    property bool hovered: resultMa.containsMouse
+
+                    property real tlr: hovered ? (height / 2) : (resultRow.isFirst ? outerRadius : innerRadius)
+                    property real trr: hovered ? (height / 2) : (resultRow.isFirst ? outerRadius : innerRadius)
+                    property real blr: hovered ? (height / 2) : (resultRow.isLast ? outerRadius : innerRadius)
+                    property real brr: hovered ? (height / 2) : (resultRow.isLast ? outerRadius : innerRadius)
+
+                    property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                    property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                    property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                    property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+
+                    property color paintColor: hovered
+                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
+                        : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+
+                    property color paintBorder: hovered
+                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
+                        : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+
+                    ShapePath {
+                        fillColor: resultBg.paintColor
+                        strokeColor: resultBg.paintBorder
+                        strokeWidth: 1
+
+                        startX: resultBg.tlrAnim; startY: 0
+                        PathLine { x: resultBg.width - resultBg.trrAnim; y: 0 }
+                        PathArc { x: resultBg.width; y: resultBg.trrAnim; radiusX: resultBg.trrAnim; radiusY: resultBg.trrAnim; direction: PathArc.Clockwise }
+                        PathLine { x: resultBg.width; y: resultBg.height - resultBg.brrAnim }
+                        PathArc { x: resultBg.width - resultBg.brrAnim; y: resultBg.height; radiusX: resultBg.brrAnim; radiusY: resultBg.brrAnim; direction: PathArc.Clockwise }
+                        PathLine { x: resultBg.blrAnim; y: resultBg.height }
+                        PathArc { x: 0; y: resultBg.height - resultBg.blrAnim; radiusX: resultBg.blrAnim; radiusY: resultBg.blrAnim; direction: PathArc.Clockwise }
+                        PathLine { x: 0; y: resultBg.tlrAnim }
+                        PathArc { x: resultBg.tlrAnim; y: 0; radiusX: resultBg.tlrAnim; radiusY: resultBg.tlrAnim; direction: PathArc.Clockwise }
+                    }
                 }
 
-                // Free-space click opens the details popup (buttons stay on top)
+                DankRipple {
+                    id: resultRip
+                    anchors.fill: parent
+                    cornerRadius: resultBg.tlrAnim
+                    rippleColor: Theme.primary
+                }
+
                 MouseArea {
+                    id: resultMa
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
+                    hoverEnabled: true
+                    onPressed: (m) => resultRip.trigger(m.x, m.y)
                     onClicked: view.openDetails(resultRow.app)
                 }
 
@@ -2133,15 +2650,17 @@ Item {
                     anchors.rightMargin: Theme.spacingS
                     spacing: Theme.spacingM
 
-                    Item {
-                        Layout.preferredWidth: 36
-                        Layout.preferredHeight: 36
+                    Rectangle {
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
+                        radius: Theme.cornerRadius
+                        color: Theme.withAlpha(Theme.primary, 0.08)
 
                         Image {
                             id: resultLogo
                             anchors.fill: parent
+                            anchors.margins: 4
                             source: resultRow.app.icon ? (resultRow.app.icon.indexOf("http") === 0 ? resultRow.app.icon : "file://" + resultRow.app.icon) : ""
-                            // Themed icons, tuned in TintedIconEffect
                             layer.enabled: Ui.tintAppIcons
                             layer.effect: TintedIconEffect {}
                         }
@@ -2150,12 +2669,8 @@ Item {
                             anchors.centerIn: parent
                             visible: resultLogo.status !== Image.Ready
                             name: "apps"
-                            size: 22
-                            // A package with no icon of its own falls back to this glyph, and a
-                            // list of them is most of what an installed-software list is. Left
-                            // grey it made the setting look half-applied — the apps with
-                            // artwork turned, the ones without stayed as they were.
-                            color: Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText
+                            size: 20
+                            color: Theme.primary
                         }
                     }
 
@@ -2268,24 +2783,71 @@ Item {
                             return sources.length > 1 ? [null] : sources;
                         }
 
-                        delegate: DankButton {
+                        delegate: Rectangle {
+                            id: instActionBtn
                             required property var modelData
 
                             readonly property bool picks: modelData === null
+                            property bool isHovered: instActionMa.containsMouse
 
-                            buttonHeight: 28
-                            horizontalPadding: Theme.spacingM
-                            iconName: picks ? "download" : (modelData.kind === "appimage" && !modelData.repo ? "open_in_new" : "download")
-                            iconSize: 13
-                            text: picks ? Tr.t("Install") : (modelData.kind === "flatpak" ? "Flathub" : (modelData.kind === "appimage" ? "AppImage" : (modelData.kind === "copr" ? "Copr" : Backend.systemRepoLabel)))
-                            backgroundColor: picks ? Theme.buttonBg : (modelData.kind === "flatpak" ? Theme.buttonBg : (modelData.kind === "appimage" ? Theme.withAlpha(Theme.tertiary, 0.25) : (modelData.kind === "copr" ? Theme.withAlpha(Theme.primary, 0.22) : Theme.secondaryContainer)))
-                            textColor: (picks || modelData.kind === "flatpak") ? Theme.buttonText : Theme.surfaceText
-                            enabled: !resultRow.busy && view.busyAction === "" && view.appimageBusy === ""
-                            onClicked: {
-                                if (picks)
-                                    view.openSourcePicker(resultRow.app);
-                                else
-                                    view.install(modelData, resultRow.app.name, resultRow.app.icon || "");
+                            Layout.preferredWidth: instActionRow.implicitWidth + 22
+                            Layout.preferredHeight: 28
+                            radius: isHovered ? (height / 2) : 8
+                            Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+
+                            readonly property bool isPrimary: picks || modelData.kind === "flatpak"
+                            color: isPrimary
+                                ? (isHovered ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.primary, 0.15))
+                                : (isHovered ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.9) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6))
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            border.width: 1
+                            border.color: isPrimary
+                                ? (isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3))
+                                : (isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12))
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                            scale: instActionMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                            DankRipple {
+                                id: instActionRip
+                                anchors.fill: parent
+                                cornerRadius: parent.radius
+                                rippleColor: isPrimary ? Theme.primary : Theme.surfaceText
+                            }
+
+                            RowLayout {
+                                id: instActionRow
+                                anchors.centerIn: parent
+                                spacing: 4
+
+                                DankIcon {
+                                    name: instActionBtn.picks ? "download" : (modelData.kind === "appimage" && !modelData.repo ? "open_in_new" : "download")
+                                    size: 13
+                                    color: instActionBtn.isPrimary ? Theme.primary : Theme.surfaceText
+                                }
+
+                                StyledText {
+                                    text: instActionBtn.picks ? Tr.t("Install") : (modelData.kind === "flatpak" ? "Flathub" : (modelData.kind === "appimage" ? "AppImage" : (modelData.kind === "copr" ? "Copr" : Backend.systemRepoLabel)))
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    font.weight: Font.Medium
+                                    color: instActionBtn.isPrimary ? Theme.primary : Theme.surfaceText
+                                }
+                            }
+
+                            MouseArea {
+                                id: instActionMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                enabled: !resultRow.busy && view.busyAction === "" && view.appimageBusy === ""
+                                onPressed: (m) => instActionRip.trigger(m.x, m.y)
+                                onClicked: {
+                                    if (instActionBtn.picks)
+                                        view.openSourcePicker(resultRow.app);
+                                    else
+                                        view.install(modelData, resultRow.app.name, resultRow.app.icon || "");
+                                }
                             }
                         }
                     }
