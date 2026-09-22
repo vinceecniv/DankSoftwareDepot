@@ -5,6 +5,17 @@ in-app when the plugin offers its own update.
 
 ## Unreleased
 
+- **"Restart recommended" appears again after a kernel update.** It had
+  not since 11 August, and the reason is dated 22 August: that is when the
+  action log learned to wait for the post-run verification before writing
+  itself, because a row still being confirmed is not a row that failed.
+  The reboot notice reads the same per-package states and was left on the
+  eager path, so it ran while every row still said "verifying" and none
+  said "done" — nothing matched the kernel pattern, and no notice was ever
+  raised. It waits for the same answer now. The stale flag a machine may
+  still be carrying from before then is ignored, as it always was: the
+  notice is tied to the boot it was raised in.
+
 - **A helper that was killed says it crashed, rather than that it could
   not start.** The two arrive down different channels — an exit code and
   an exit status — and only the first was being read, so a helper that ran

@@ -1221,7 +1221,15 @@ PluginComponent {
             root._warmSearchIndex();
             if (engine.completedCount > 0) {
                 PluginService.savePluginData("dankSoftwareDepot", "lastUpdateUnix", Math.floor(Date.now() / 1000));
-                root._evaluateReboot();
+                // The reboot notice reads the per-package states, and a run
+                // that ends in verification has not settled them yet: every
+                // row still says "verifying" and none says "done", so nothing
+                // ever matched the kernel pattern and the notice was never
+                // raised. The log already waits for that answer; this has to
+                // wait for the same one. Left eager, it silently stopped
+                // working the day the log learned to wait.
+                if (!root._logAwaitingVerification)
+                    root._evaluateReboot();
             }
         }
 
@@ -1240,6 +1248,11 @@ PluginComponent {
                 return;
             root._logAwaitingVerification = false;
             root._logRun();
+            // Now the rows say what they are, so the kernel in them can be
+            // seen. This is the same moment the log is written, for the same
+            // reason.
+            if (engine.completedCount > 0)
+                root._evaluateReboot();
         }
     }
 
