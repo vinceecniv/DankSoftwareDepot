@@ -142,6 +142,8 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Qt.rgba(0, 0, 0, 0.45)
+        opacity: picker.showing ? 1.0 : 0.0
+        Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -157,7 +159,7 @@ Item {
         width: Math.min(560, picker.width - Theme.spacingL * 2)
         implicitHeight: cardColumn.implicitHeight + Theme.spacingL * 2
         radius: Theme.cornerRadius
-        color: Theme.surfaceContainer
+        color: Ui.cardSurface
         border.width: 1
         border.color: Theme.withAlpha(Theme.surfaceVariantText, 0.25)
 

@@ -3,6 +3,58 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.2.0 — 2026-09-23
+
+Thanks to @JDKamalakar for #21, the visual overhaul this release is built
+on. It is taken in part rather than whole — the look, the motion and the
+iconography are theirs; the list architecture underneath is back to what
+it was, and the surface layering sits at two levels rather than four.
+See that pull request for what was and was not taken, and why.
+
+- **A new look, following DMS.** Rounded corners, press and hover
+  feedback, per-category icons and animation throughout. Every container
+  fill is one value now instead of five, and a box is drawn only where it
+  holds something that is not already a box — so a heading groups a list
+  rather than a tinted panel inside another tinted panel. The accent
+  outline that #21 put on all 71 containers is gone; the ones that change
+  under the pointer stayed, because those mean something.
+
+- **The plugin follows the shell's own settings.** Animation timings come
+  from DMS's duration scale rather than 366 numbers written here, so the
+  plugin speeds up, slows down and stops with everything else — including
+  for anyone who has set animation to none. Hover and selection colours
+  are DMS's named states, not values that happened to look close. Card
+  and chip surfaces follow the colours set in DMS settings where the
+  shell offers them, and fall back to what they always drew where it does
+  not.
+
+- **Long lists stay fast.** The installed list and the storefront's
+  categories and search results build the rows on screen instead of all
+  of them, which is how they worked before and how they work again: 1971
+  system packages with no "show 60 more" in the way. The row you hover
+  rounds the same way on every page, and its outline runs all the way
+  round on the first and last row too.
+
+- **"Restart recommended" appears again after a kernel update.** It had
+  not since 11 August, and the reason is dated 22 August: that is when the
+  action log learned to wait for the post-run verification before writing
+  itself, because a row still being confirmed is not a row that failed.
+  The reboot notice reads the same per-package states and was left on the
+  eager path, so it ran while every row still said "verifying" and none
+  said "done" — nothing matched the kernel pattern, and no notice was ever
+  raised. It waits for the same answer now. The stale flag a machine may
+  still be carrying from before then is ignored, as it always was: the
+  notice is tied to the boot it was raised in.
+
+- **A helper that was killed says it crashed, rather than that it could
+  not start.** The two arrive down different channels — an exit code and
+  an exit status — and only the first was being read, so a helper that ran
+  perfectly well until the signal that ended it reported the one thing it
+  had not done. That sentence sends a reader to their bindings, which is
+  where the first report of this spent a week on a machine whose bindings
+  were fine (#18, still open: the crash itself is upstream of the plugin,
+  and this is about naming it correctly).
+
 ## 1.1.10 — 2026-09-20
 
 - **A package dnf skipped because of a dependency conflict now says so,

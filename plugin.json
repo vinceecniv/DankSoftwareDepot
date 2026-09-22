@@ -3,7 +3,7 @@
     "id": "dankSoftwareDepot",
     "name": "Dank Software Depot",
     "description": "Software center for DMS: updates with progress, release notes, app store with reviews, installed-software management, firmware and an action log.",
-    "version": "1.1.10",
+    "version": "1.2.0",
     "author": "Vincent Blok",
     "license": "MIT",
     "icon": "deployed_code_update",
@@ -13,7 +13,7 @@
     ],
     "component": "./UpdaterWidget.qml",
     "settings": "./UpdaterSettings.qml",
-    "requires_dms": ">=1.5.0",
+    "requires_dms": ">=1.6.0",
     "permissions": [
         "settings_read",
         "settings_write",

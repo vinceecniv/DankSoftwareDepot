@@ -7,16 +7,9 @@ import qs.Widgets
 // already knows — pending updates, installed software, the action log and the
 // app's own commands — and hands off to the Install tab for anything that
 // would need a repository search.
-//
-// The results are a fixed pool of hand-placed slots rather than a list with a
-// delegate. Generated rows in this window never receive mouse events, proven
-// by bisection against an identical hand-placed row; a palette shows a
-// bounded number of results anyway, so the pool costs nothing.
 Item {
     id: palette
 
-    // [{group, icon, title, subtitle, colour}] — order decides grouping,
-    // entries of the same group must be adjacent
     property var results: []
     property string query: ""
     property int current: 0
@@ -29,9 +22,6 @@ Item {
 
     function open() {
         visible = true;
-        // Repeated after the assignment as well as in onVisibleChanged: the
-        // handler runs in the middle of the property write, and a focus
-        // request that lands too early is dropped without complaint.
         field.forceActiveFocus();
     }
 
@@ -40,10 +30,6 @@ Item {
         dismissed();
     }
 
-    // State follows visibility rather than the open() call, because the
-    // palette can also appear without one — the window reopening while it
-    // was left open would otherwise return it with the previous query still
-    // in the field and nothing holding focus, so the arrows went nowhere.
     onVisibleChanged: {
         field.text = "";
         query = "";
@@ -68,10 +54,6 @@ Item {
             current = Math.max(0, _shown() - 1);
     }
 
-    // Navigation goes through the text field's own hooks. A TextInput claims
-    // Up, Down and Return — via ShortcutOverride, precisely so shortcuts
-    // cannot hijack typing — so neither an ancestor's Keys handler nor a
-    // Shortcut ever sees them.
     Item {
         id: keyRelay
 
@@ -95,7 +77,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: Qt.rgba(0, 0, 0, 0.45)
+        color: Qt.rgba(0, 0, 0, 0.55)
 
         MouseArea {
             anchors.fill: parent
@@ -111,15 +93,16 @@ Item {
         anchors.top: parent.top
         anchors.topMargin: Math.round(parent.height * 0.12)
         width: Math.min(parent.width - Theme.spacingXL * 2, 620)
-        height: field.height + resultColumn.height + emptyLabel.height + Theme.spacingM * 2 + Theme.spacingS
-        radius: Theme.cornerRadius
-        color: Theme.surfaceContainerHigh
-        border.width: 1
-        border.color: Theme.withAlpha(Theme.outline, 0.2)
+        height: field.height + resultColumn.height + emptyLabel.height + Theme.spacingM * 2 + (resultColumn.children.length > 0 && palette.results.length > 0 ? Theme.spacingS : 0)
+        radius: Theme.cornerRadius + 4
+        color: Ui.cardSurface
+        border.width: 0
 
-        // A tap handler rather than a filling MouseArea: it keeps a click on
-        // the sheet's own background from reaching the dismiss scrim without
-        // standing between the rows and the mouse.
+        scale: palette.visible ? 1.0 : 0.94
+        opacity: palette.visible ? 1.0 : 0.0
+        Behavior on scale { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutBack } }
+        Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
+
         TapHandler {
             gesturePolicy: TapHandler.ReleaseWithinBounds
         }
@@ -137,15 +120,12 @@ Item {
             leftIconName: "search"
             ignoreUpDownKeys: true
             keyForwardTargets: [keyRelay]
-            // The palette's field is the only thing on a large empty sheet;
-            // the default tones are pitched for a field among other content
-            // and read as barely there here
             placeholderColor: Theme.surfaceVariantText
-            normalBorderColor: Theme.withAlpha(Theme.outline, 0.45)
+            normalBorderColor: Theme.withAlpha(Theme.primary, 0.20)
+            focusedBorderColor: Theme.primary
+            backgroundColor: Theme.withAlpha(Ui.chipSurface, 0.8)
             onTextChanged: {
                 palette.query = text;
-                // A fresh query preselects its first result, so Enter always
-                // means "the obvious one"
                 palette.current = 0;
             }
             onAccepted: {
@@ -161,127 +141,151 @@ Item {
             width: sheet.width - Theme.spacingM * 2
             anchors.top: field.bottom
             anchors.topMargin: Theme.spacingS
-            spacing: 1
+            spacing: 2
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 0
-                    entry: 0 < palette.results.length ? palette.results[0] : null
-                    selected: palette.current === 0
-                    showGroup: entry !== null && (0 === 0 || palette.results[0 - 1].group !== entry.group)
-                    onHovered: palette.current = 0
-                    onActivated: palette.accepted(0)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 0
+                entry: 0 < palette.results.length ? palette.results[0] : null
+                selected: palette.current === 0
+                isFirst: 0 === 0 || (entry !== null && palette.results[0 - 1] && palette.results[0 - 1].group !== entry.group)
+                isLast: 0 === palette._shown() - 1 || (entry !== null && 0 + 1 < palette._shown() && palette.results[0 + 1] && palette.results[0 + 1].group !== entry.group)
+                showGroup: entry !== null && (0 === 0 || (palette.results[0 - 1] && palette.results[0 - 1].group !== entry.group))
+                onHovered: palette.current = 0
+                onActivated: palette.accepted(0)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 1
-                    entry: 1 < palette.results.length ? palette.results[1] : null
-                    selected: palette.current === 1
-                    showGroup: entry !== null && (1 === 0 || palette.results[1 - 1].group !== entry.group)
-                    onHovered: palette.current = 1
-                    onActivated: palette.accepted(1)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 1
+                entry: 1 < palette.results.length ? palette.results[1] : null
+                selected: palette.current === 1
+                isFirst: 1 === 0 || (entry !== null && palette.results[1 - 1] && palette.results[1 - 1].group !== entry.group)
+                isLast: 1 === palette._shown() - 1 || (entry !== null && 1 + 1 < palette._shown() && palette.results[1 + 1] && palette.results[1 + 1].group !== entry.group)
+                showGroup: entry !== null && (1 === 0 || (palette.results[1 - 1] && palette.results[1 - 1].group !== entry.group))
+                onHovered: palette.current = 1
+                onActivated: palette.accepted(1)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 2
-                    entry: 2 < palette.results.length ? palette.results[2] : null
-                    selected: palette.current === 2
-                    showGroup: entry !== null && (2 === 0 || palette.results[2 - 1].group !== entry.group)
-                    onHovered: palette.current = 2
-                    onActivated: palette.accepted(2)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 2
+                entry: 2 < palette.results.length ? palette.results[2] : null
+                selected: palette.current === 2
+                isFirst: 2 === 0 || (entry !== null && palette.results[2 - 1] && palette.results[2 - 1].group !== entry.group)
+                isLast: 2 === palette._shown() - 1 || (entry !== null && 2 + 1 < palette._shown() && palette.results[2 + 1] && palette.results[2 + 1].group !== entry.group)
+                showGroup: entry !== null && (2 === 0 || (palette.results[2 - 1] && palette.results[2 - 1].group !== entry.group))
+                onHovered: palette.current = 2
+                onActivated: palette.accepted(2)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 3
-                    entry: 3 < palette.results.length ? palette.results[3] : null
-                    selected: palette.current === 3
-                    showGroup: entry !== null && (3 === 0 || palette.results[3 - 1].group !== entry.group)
-                    onHovered: palette.current = 3
-                    onActivated: palette.accepted(3)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 3
+                entry: 3 < palette.results.length ? palette.results[3] : null
+                selected: palette.current === 3
+                isFirst: 3 === 0 || (entry !== null && palette.results[3 - 1] && palette.results[3 - 1].group !== entry.group)
+                isLast: 3 === palette._shown() - 1 || (entry !== null && 3 + 1 < palette._shown() && palette.results[3 + 1] && palette.results[3 + 1].group !== entry.group)
+                showGroup: entry !== null && (3 === 0 || (palette.results[3 - 1] && palette.results[3 - 1].group !== entry.group))
+                onHovered: palette.current = 3
+                onActivated: palette.accepted(3)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 4
-                    entry: 4 < palette.results.length ? palette.results[4] : null
-                    selected: palette.current === 4
-                    showGroup: entry !== null && (4 === 0 || palette.results[4 - 1].group !== entry.group)
-                    onHovered: palette.current = 4
-                    onActivated: palette.accepted(4)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 4
+                entry: 4 < palette.results.length ? palette.results[4] : null
+                selected: palette.current === 4
+                isFirst: 4 === 0 || (entry !== null && palette.results[4 - 1] && palette.results[4 - 1].group !== entry.group)
+                isLast: 4 === palette._shown() - 1 || (entry !== null && 4 + 1 < palette._shown() && palette.results[4 + 1] && palette.results[4 + 1].group !== entry.group)
+                showGroup: entry !== null && (4 === 0 || (palette.results[4 - 1] && palette.results[4 - 1].group !== entry.group))
+                onHovered: palette.current = 4
+                onActivated: palette.accepted(4)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 5
-                    entry: 5 < palette.results.length ? palette.results[5] : null
-                    selected: palette.current === 5
-                    showGroup: entry !== null && (5 === 0 || palette.results[5 - 1].group !== entry.group)
-                    onHovered: palette.current = 5
-                    onActivated: palette.accepted(5)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 5
+                entry: 5 < palette.results.length ? palette.results[5] : null
+                selected: palette.current === 5
+                isFirst: 5 === 0 || (entry !== null && palette.results[5 - 1] && palette.results[5 - 1].group !== entry.group)
+                isLast: 5 === palette._shown() - 1 || (entry !== null && 5 + 1 < palette._shown() && palette.results[5 + 1] && palette.results[5 + 1].group !== entry.group)
+                showGroup: entry !== null && (5 === 0 || (palette.results[5 - 1] && palette.results[5 - 1].group !== entry.group))
+                onHovered: palette.current = 5
+                onActivated: palette.accepted(5)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 6
-                    entry: 6 < palette.results.length ? palette.results[6] : null
-                    selected: palette.current === 6
-                    showGroup: entry !== null && (6 === 0 || palette.results[6 - 1].group !== entry.group)
-                    onHovered: palette.current = 6
-                    onActivated: palette.accepted(6)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 6
+                entry: 6 < palette.results.length ? palette.results[6] : null
+                selected: palette.current === 6
+                isFirst: 6 === 0 || (entry !== null && palette.results[6 - 1] && palette.results[6 - 1].group !== entry.group)
+                isLast: 6 === palette._shown() - 1 || (entry !== null && 6 + 1 < palette._shown() && palette.results[6 + 1] && palette.results[6 + 1].group !== entry.group)
+                showGroup: entry !== null && (6 === 0 || (palette.results[6 - 1] && palette.results[6 - 1].group !== entry.group))
+                onHovered: palette.current = 6
+                onActivated: palette.accepted(6)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 7
-                    entry: 7 < palette.results.length ? palette.results[7] : null
-                    selected: palette.current === 7
-                    showGroup: entry !== null && (7 === 0 || palette.results[7 - 1].group !== entry.group)
-                    onHovered: palette.current = 7
-                    onActivated: palette.accepted(7)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 7
+                entry: 7 < palette.results.length ? palette.results[7] : null
+                selected: palette.current === 7
+                isFirst: 7 === 0 || (entry !== null && palette.results[7 - 1] && palette.results[7 - 1].group !== entry.group)
+                isLast: 7 === palette._shown() - 1 || (entry !== null && 7 + 1 < palette._shown() && palette.results[7 + 1] && palette.results[7 + 1].group !== entry.group)
+                showGroup: entry !== null && (7 === 0 || (palette.results[7 - 1] && palette.results[7 - 1].group !== entry.group))
+                onHovered: palette.current = 7
+                onActivated: palette.accepted(7)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 8
-                    entry: 8 < palette.results.length ? palette.results[8] : null
-                    selected: palette.current === 8
-                    showGroup: entry !== null && (8 === 0 || palette.results[8 - 1].group !== entry.group)
-                    onHovered: palette.current = 8
-                    onActivated: palette.accepted(8)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 8
+                entry: 8 < palette.results.length ? palette.results[8] : null
+                selected: palette.current === 8
+                isFirst: 8 === 0 || (entry !== null && palette.results[8 - 1] && palette.results[8 - 1].group !== entry.group)
+                isLast: 8 === palette._shown() - 1 || (entry !== null && 8 + 1 < palette._shown() && palette.results[8 + 1] && palette.results[8 + 1].group !== entry.group)
+                showGroup: entry !== null && (8 === 0 || (palette.results[8 - 1] && palette.results[8 - 1].group !== entry.group))
+                onHovered: palette.current = 8
+                onActivated: palette.accepted(8)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 9
-                    entry: 9 < palette.results.length ? palette.results[9] : null
-                    selected: palette.current === 9
-                    showGroup: entry !== null && (9 === 0 || palette.results[9 - 1].group !== entry.group)
-                    onHovered: palette.current = 9
-                    onActivated: palette.accepted(9)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 9
+                entry: 9 < palette.results.length ? palette.results[9] : null
+                selected: palette.current === 9
+                isFirst: 9 === 0 || (entry !== null && palette.results[9 - 1] && palette.results[9 - 1].group !== entry.group)
+                isLast: 9 === palette._shown() - 1 || (entry !== null && 9 + 1 < palette._shown() && palette.results[9 + 1] && palette.results[9 + 1].group !== entry.group)
+                showGroup: entry !== null && (9 === 0 || (palette.results[9 - 1] && palette.results[9 - 1].group !== entry.group))
+                onHovered: palette.current = 9
+                onActivated: palette.accepted(9)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 10
-                    entry: 10 < palette.results.length ? palette.results[10] : null
-                    selected: palette.current === 10
-                    showGroup: entry !== null && (10 === 0 || palette.results[10 - 1].group !== entry.group)
-                    onHovered: palette.current = 10
-                    onActivated: palette.accepted(10)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 10
+                entry: 10 < palette.results.length ? palette.results[10] : null
+                selected: palette.current === 10
+                isFirst: 10 === 0 || (entry !== null && palette.results[10 - 1] && palette.results[10 - 1].group !== entry.group)
+                isLast: 10 === palette._shown() - 1 || (entry !== null && 10 + 1 < palette._shown() && palette.results[10 + 1] && palette.results[10 + 1].group !== entry.group)
+                showGroup: entry !== null && (10 === 0 || (palette.results[10 - 1] && palette.results[10 - 1].group !== entry.group))
+                onHovered: palette.current = 10
+                onActivated: palette.accepted(10)
+            }
 
-                PaletteRow {
-                    width: resultColumn.width
-                    index: 11
-                    entry: 11 < palette.results.length ? palette.results[11] : null
-                    selected: palette.current === 11
-                    showGroup: entry !== null && (11 === 0 || palette.results[11 - 1].group !== entry.group)
-                    onHovered: palette.current = 11
-                    onActivated: palette.accepted(11)
-                }
+            PaletteRow {
+                width: resultColumn.width
+                index: 11
+                entry: 11 < palette.results.length ? palette.results[11] : null
+                selected: palette.current === 11
+                isFirst: 11 === 0 || (entry !== null && palette.results[11 - 1] && palette.results[11 - 1].group !== entry.group)
+                isLast: 11 === palette._shown() - 1 || (entry !== null && 11 + 1 < palette._shown() && palette.results[11 + 1] && palette.results[11 + 1].group !== entry.group)
+                showGroup: entry !== null && (11 === 0 || (palette.results[11 - 1] && palette.results[11 - 1].group !== entry.group))
+                onHovered: palette.current = 11
+                onActivated: palette.accepted(11)
+            }
         }
 
         StyledText {

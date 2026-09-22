@@ -253,9 +253,32 @@ def expire_repos(base):
     saw all of them.
 
     Expiring each repository is the only thing that overrides all of that, and
-    it is exactly what --refresh does. Revalidating everything costs a second
-    or two when nothing has changed. That is the price of the transaction being
-    about the same packages the list is.
+    it is exactly what --refresh does. That is the price of the transaction
+    being about the same packages the list is.
+
+    The price is not "a second or two", which this said until someone went
+    looking: on 22 September a run of eleven packages spent about 150 of its
+    346 seconds here, over fifteen enabled repositories. That looks like
+    paying for the same refresh twice, since the daemon ran one minutes
+    earlier — and it is not, which is the thing to know before trying to
+    skip this.
+
+    The daemon is a user service. Its `dnf5 check-upgrade --refresh` runs as
+    the user and writes ~/.cache/libdnf5. This helper runs as root under
+    pkexec and resolves against /var/cache/libdnf5. Two caches, and only one
+    of them is the one the transaction reads. Measured on that machine, the
+    daemon's copy of `fedora` and `updates` had been rewritten minutes
+    earlier; root's `updates` was an hour old and root's `fedora` was two
+    months old, because nothing but a run like this one ever refreshes it.
+    (dnf5-makecache.timer does keep root's copy warm, but it honours the
+    same per-repository metadata_expire described above, so it is no answer
+    either.)
+
+    So the refresh is not duplicated work. Skipping it when the daemon has
+    "just refreshed" would resolve the transaction against months-old
+    metadata while the window shows a list built seconds ago — the failure
+    of 26 August, with a wider gap. If this is ever to get cheaper, the
+    place to fix it is the two caches, not this call.
     """
     try:
         for repo in libdnf5.repo.RepoQuery(base):

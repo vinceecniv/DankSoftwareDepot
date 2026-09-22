@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Quickshell.Io
 import qs.Common
 import qs.Services
@@ -261,48 +262,133 @@ Item {
             color: Theme.surfaceVariantText
         }
 
-        DankListView {
-            id: deviceList
+        StyledRect {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            radius: Theme.cornerRadius
+            // The device rows carry their own surface
+            color: "transparent"
+            border.width: 0
             clip: true
-            spacing: Theme.spacingXS
-            model: view.filteredDevices
             visible: !view.loading
 
-            delegate: Rectangle {
-                id: deviceRow
-
-                required property var modelData
-
-                readonly property var releases: view.releasesByDevice[modelData.deviceId]
-                property bool expanded: false
-
-                width: deviceList.width
-                implicitHeight: deviceContent.implicitHeight + Theme.spacingS * 2
-                radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, modelData.updatable ? 0.8 : 0.35)
-                opacity: modelData.updatable ? 1 : 0.75
+            DankListView {
+                id: deviceList
+                anchors.fill: parent
+                anchors.margins: 0
                 clip: true
-
-                Behavior on implicitHeight {
-                    NumberAnimation {
-                        duration: Theme.shortDuration
-                        easing.type: Theme.standardEasing
-                    }
+                // A row's hover outline is a 1px stroke centred on its own edge, so
+                // the first and last row need a pixel of content margin or the clip
+                // takes the outer half of it and the ring stops short.
+                topMargin: 1
+                bottomMargin: 1
+                populate: Transition {
+                    NumberAnimation { properties: "opacity,y"; from: 0; duration: Theme.longDuration; easing.type: Easing.OutCubic }
                 }
-
-                // Free row space toggles the release list (updatable devices)
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: deviceRow.modelData.updatable
-                    cursorShape: deviceRow.modelData.updatable ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: {
-                        deviceRow.expanded = !deviceRow.expanded;
-                        if (deviceRow.expanded)
-                            view.loadReleases(deviceRow.modelData.deviceId);
-                    }
+                add: Transition {
+                    NumberAnimation { properties: "opacity,scale"; from: 0; to: 1; duration: Theme.mediumDuration; easing.type: Easing.OutBack }
                 }
+                spacing: 2
+                model: view.filteredDevices
+
+                delegate: Item {
+                    id: deviceRow
+
+                    required property var modelData
+                    required property int index
+
+                    readonly property var releases: view.releasesByDevice[modelData.deviceId]
+                    property bool expanded: false
+                    readonly property int totalCount: view.filteredDevices.length
+                    readonly property bool isFirst: index === 0
+                    readonly property bool isLast: index === totalCount - 1
+
+                    width: deviceList.width
+                    implicitHeight: deviceContent.implicitHeight + (Theme.spacingS + 2) * 2
+                    height: implicitHeight
+                    opacity: modelData.updatable ? 1 : 0.75
+                    // No clip on the row itself. The hover outline is a 1px stroke
+                    // centred on the row's edge, so clipping cut away its outer half
+                    // and the highlight stopped short of running round. The list and
+                    // its container clip, which is where the log does it too, and the
+                    // log's rows expand just as these do.
+
+                    Behavior on implicitHeight {
+                        NumberAnimation {
+                            duration: Theme.shortDuration
+                            easing.type: Theme.standardEasing
+                        }
+                    }
+
+                    Shape {
+                        id: devBg
+                        anchors.fill: parent
+
+                        property real innerRadius: 6
+                        property real outerRadius: 12
+                        property bool hovered: devMa.containsMouse || deviceRow.expanded
+
+                        property real tlr: hovered ? Math.min(height / 2, 28) : (deviceRow.isFirst ? outerRadius : innerRadius)
+                        property real trr: hovered ? Math.min(height / 2, 28) : (deviceRow.isFirst ? outerRadius : innerRadius)
+                        property real blr: hovered ? Math.min(height / 2, 28) : (deviceRow.isLast ? outerRadius : innerRadius)
+                        property real brr: hovered ? Math.min(height / 2, 28) : (deviceRow.isLast ? outerRadius : innerRadius)
+
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+
+                        // The same resting fill as every other list. This
+                        // row used to shade itself by whether the device was
+                        // updatable, which left three different appearances
+                        // on one page and made the hover barely a change at
+                        // all. The green chip already says which are.
+                        property color paintColor: hovered
+                            ? Theme.primaryHover
+                            : Theme.withAlpha(Theme.secondary, 0.04)
+
+                        property color paintBorder: hovered
+                            ? Theme.withAlpha(Theme.primary, 0.4)
+                            : Theme.withAlpha(Theme.secondary, 0.15)
+
+                        ShapePath {
+                            fillColor: devBg.paintColor
+                            strokeColor: devBg.paintBorder
+                            strokeWidth: 1
+
+                            startX: devBg.tlrAnim; startY: 0
+                            PathLine { x: devBg.width - devBg.trrAnim; y: 0 }
+                            PathArc { x: devBg.width; y: devBg.trrAnim; radiusX: devBg.trrAnim; radiusY: devBg.trrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: devBg.width; y: devBg.height - devBg.brrAnim }
+                            PathArc { x: devBg.width - devBg.brrAnim; y: devBg.height; radiusX: devBg.brrAnim; radiusY: devBg.brrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: devBg.blrAnim; y: devBg.height }
+                            PathArc { x: 0; y: devBg.height - devBg.blrAnim; radiusX: devBg.blrAnim; radiusY: devBg.blrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: 0; y: devBg.tlrAnim }
+                            PathArc { x: devBg.tlrAnim; y: 0; radiusX: devBg.tlrAnim; radiusY: devBg.tlrAnim; direction: PathArc.Clockwise }
+                        }
+                    }
+
+                    DankRipple {
+                        id: devRip
+                        anchors.fill: parent
+                        cornerRadius: devBg.tlrAnim
+                        rippleColor: Theme.primary
+                    }
+
+                    // Free row space toggles the release list (updatable devices)
+                    MouseArea {
+                        id: devMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        enabled: deviceRow.modelData.updatable
+                        cursorShape: deviceRow.modelData.updatable ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onPressed: (m) => devRip.trigger(m.x, m.y)
+                        onClicked: {
+                            deviceRow.expanded = !deviceRow.expanded;
+                            if (deviceRow.expanded)
+                                view.loadReleases(deviceRow.modelData.deviceId);
+                        }
+                    }
 
                 ColumnLayout {
                     id: deviceContent
@@ -472,6 +558,7 @@ Item {
                     }
                 }
             }
+        }
         }
 
         Item {

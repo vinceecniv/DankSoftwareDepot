@@ -498,7 +498,8 @@ Item {
             // the reporter cannot add anything to (#18).
             backend.packageHelperStatus = exitCode === 0 ? "ok"
                 : (_reason || _stderr
-                   || Tr.t("the package helper could not start") + " — exit " + exitCode + "/" + exitStatus);
+                   || (exitStatus === 1 ? Tr.t("the package helper crashed") : Tr.t("the package helper could not start"))
+                      + " — exit " + exitCode + "/" + exitStatus);
         }
     }
 

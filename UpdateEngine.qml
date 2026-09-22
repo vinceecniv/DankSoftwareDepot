@@ -1011,7 +1011,14 @@ Item {
             // prompt, a crash. Carry that reason to the rows instead of
             // letting them report a mystery per package.
             if (!engine._helperSawPlan && engine._helperError === "") {
-                engine._helperError = exitCode === 126 || exitCode === 127 ? Tr.t("the authorisation was refused") : Tr.t("the package helper could not start");
+                // A helper that was killed did start, and telling someone it
+                // could not sends them looking at their bindings — which is
+                // where #18 spent a week, on a machine whose helper ran fine
+                // right up to the signal that ended it. QProcess reports that
+                // separately from the exit code, so say the true one.
+                engine._helperError = exitStatus === 1 ? Tr.t("the package helper crashed")
+                    : (exitCode === 126 || exitCode === 127 ? Tr.t("the authorisation was refused")
+                       : Tr.t("the package helper could not start"));
                 engine._helperExitNote = "helper exited before its plan — exit code " + exitCode + ", exit status " + exitStatus;
             }
             // Success or failure, the rpm database is the arbiter: rows
