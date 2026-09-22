@@ -400,7 +400,8 @@ Item {
                         Layout.fillWidth: true
                         visible: dialog.suggestions.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        // The rows inside carry their own surface
+                        color: "transparent"
                         border.width: 0
                         implicitHeight: suggCol.implicitHeight + Theme.spacingM * 2
 
@@ -548,7 +549,8 @@ Item {
                         Layout.fillWidth: true
                         visible: dialog.remotes.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        // The rows inside carry their own surface
+                        color: "transparent"
                         border.width: 0
                         implicitHeight: remotesCol.implicitHeight + Theme.spacingM * 2
 
@@ -710,7 +712,8 @@ Item {
                         Layout.fillWidth: true
                         visible: dialog.flatpakCatalog.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        // The rows inside carry their own surface
+                        color: "transparent"
                         border.width: 0
                         implicitHeight: catalogCol.implicitHeight + Theme.spacingM * 2
 
@@ -957,7 +960,8 @@ Item {
                     StyledRect {
                         Layout.fillWidth: true
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        // The rows inside carry their own surface
+                        color: "transparent"
                         border.width: 0
                         implicitHeight: reposCol.implicitHeight + Theme.spacingM * 2
 

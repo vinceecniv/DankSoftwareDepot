@@ -266,7 +266,8 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+            // The device rows carry their own surface
+            color: "transparent"
             border.width: 0
             clip: true
             visible: !view.loading

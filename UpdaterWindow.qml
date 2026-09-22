@@ -2128,7 +2128,8 @@ FloatingWindow {
                             StyledRect {
                                 Layout.fillWidth: true
                                 radius: Theme.cornerRadius
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                // Holds two buttons, each already a container
+                                color: "transparent"
                                 border.width: 0
                                 implicitHeight: sysCardCol.implicitHeight + Theme.spacingM * 2
 
