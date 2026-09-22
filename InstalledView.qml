@@ -771,7 +771,13 @@ Item {
             if (rpmRows.length > 0) {
                 const isSystemFilter = sourceFilter === 2;
                 const total = rpmRows.length;
-                const shownLimit = isSystemFilter ? systemRevealed : (needle ? 100 : Math.min(systemRevealed, 30));
+                // Outside the system-only filter the section opens short, so
+                // it does not bury the Flatpaks and AppImages under two
+                // thousand rpms. It still has to grow when asked: capping it
+                // at thirty for good made the button below reveal nothing,
+                // however often it was pressed.
+                const mixedLimit = 30 + Math.max(0, (systemRevealed - systemPage) / systemPage) * systemPage;
+                const shownLimit = isSystemFilter ? systemRevealed : (needle ? 100 : mixedLimit);
                 const shownItems = rpmRows.slice(0, shownLimit);
                 groups.push({
                     sectionLabel: Tr.t("System packages"),
@@ -1762,6 +1768,13 @@ Item {
 
                         // Show more custom button for system packages
                         Rectangle {
+                            // The id is load-bearing: a property on an
+                            // intermediate object is not in scope for a
+                            // grandchild, so the label below read an
+                            // undefined remainingCount, .arg() threw, and the
+                            // button rendered as a bare chevron.
+                            id: showMoreBtn
+
                             readonly property int remainingCount: instCatContainer.modelData.remaining || 0
                             visible: remainingCount > 0
                             Layout.alignment: Qt.AlignHCenter
@@ -1798,7 +1811,7 @@ Item {
                                 }
 
                                 StyledText {
-                                    text: Tr.t("Show %1 more (%2 remaining)").arg(Math.min(60, remainingCount)).arg(remainingCount)
+                                    text: Tr.t("Show %1 more (%2 remaining)").arg(Math.min(view.systemPage, showMoreBtn.remainingCount)).arg(showMoreBtn.remainingCount)
                                     font.pixelSize: Theme.fontSizeSmall
                                     font.weight: Font.Medium
                                     color: Theme.primary

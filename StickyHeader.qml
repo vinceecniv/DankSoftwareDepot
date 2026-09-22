@@ -62,7 +62,15 @@ Loader {
 
     sourceComponent: Component {
         Item {
-            anchors.fill: parent
+            // The rows scroll underneath it, so it needs the window's own
+            // surface behind it — which a heading sitting in the list can do
+            // without. Dropped, it stopped being a lid and became a window:
+            // content was visible travelling past through the strip the
+            // heading's own card does not cover.
+            Rectangle {
+                anchors.fill: parent
+                color: Theme.floatingWindowSurface !== undefined ? Theme.floatingWindowSurface : Theme.surfaceContainer
+            }
 
             Loader {
                 anchors.fill: parent

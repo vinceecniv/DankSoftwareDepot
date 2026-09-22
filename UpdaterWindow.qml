@@ -2016,10 +2016,18 @@ FloatingWindow {
                                     }
 
                                     // Support & Community Chips (Upvote, Star, Vito)
+                                    // Stacked, not in a row: three of these
+                                    // side by side need about 500 pixels and
+                                    // this card does not have them, so the
+                                    // third hung over the edge. Left, because
+                                    // every other thing in the card starts at
+                                    // the left margin.
                                     SupportChips {
-                                        Layout.alignment: Qt.AlignHCenter
+                                        Layout.fillWidth: true
                                         Layout.topMargin: Theme.spacingXS
                                         Layout.bottomMargin: Theme.spacingXS
+                                        columns: 1
+                                        chipAlignment: Qt.AlignLeft
                                         repoUrl: win.githubUrl
                                     }
 
