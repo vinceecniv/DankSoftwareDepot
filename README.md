@@ -4,7 +4,7 @@
 [![Checks](https://github.com/vinceecniv/DankSoftwareDepot/actions/workflows/checks.yml/badge.svg)](https://github.com/vinceecniv/DankSoftwareDepot/actions/workflows/checks.yml)
 [![License](https://img.shields.io/badge/license-MIT-informational)](LICENSE)
 ![Status](https://img.shields.io/badge/status-beta-orange)
-![DMS](https://img.shields.io/badge/DMS-%E2%89%A5%201.5-6750A4)
+![DMS](https://img.shields.io/badge/DMS-%E2%89%A5%201.6-6750A4)
 [![Languages](https://img.shields.io/badge/languages-16-6750A4)](#languages)
 
 **Manages** ![System packages](https://img.shields.io/badge/system%20packages-dnf%20%C2%B7%20apt%20%C2%B7%20pacman%20%C2%B7%20rpm--ostree-4A4458)
@@ -34,7 +34,8 @@ and polkit prompts appear through the DMS agent.
   AppStream metadata
 - **Debian/Ubuntu, Arch, atomic Fedora** — implemented, experimental, and said
   so in a banner. Atomic runs through `rpm-ostree`, so everything lands in the
-  *next* boot; AUR is out of scope
+  *next* boot. On Arch, AUR updates are detected and installed through the DMS
+  daemon's own paru/yay pass; the plugin builds no AUR packages itself
 - **Flatpak, AppImage and firmware** work the same everywhere
 
 [PROTOCOL.md](PROTOCOL.md) has the table of differences per backend.
@@ -209,7 +210,7 @@ English. Add a language by dropping a file next to the others.
 
 - A Fedora-based distribution — or an atomic Fedora, Debian/Ubuntu or Arch
   (all three experimental)
-- DMS ≥ 1.5 with the `sysupdate` daemon capability
+- DMS ≥ 1.6 with the `sysupdate` daemon capability
 - `python3` and `flatpak`, optionally `fwupd`, optionally Homebrew
 - Package-manager bindings for your distro:
   - Fedora: `python3-libdnf5` (**not** part of a default install)
