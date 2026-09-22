@@ -588,10 +588,13 @@ Item {
                         property bool isLast: entryWrap.modelData.isLastInDay === true
                         property bool isSingle: isFirst && isLast
 
-                        property real tlr: hovered ? 18 : (isFirst ? outerRadius : innerRadius)
-                        property real trr: hovered ? 18 : (isFirst ? outerRadius : innerRadius)
-                        property real blr: hovered ? 18 : (isLast ? outerRadius : innerRadius)
-                        property real brr: hovered ? 18 : (isLast ? outerRadius : innerRadius)
+                        // The same rounding as every other list: a pill while the row is
+                        // short enough to read as one, and a fixed radius once an entry has
+                        // expanded, where half the height would be a semicircle.
+                        property real tlr: hovered ? (height <= 44 ? (height / 2) : 16) : (isFirst ? outerRadius : innerRadius)
+                        property real trr: hovered ? (height <= 44 ? (height / 2) : 16) : (isFirst ? outerRadius : innerRadius)
+                        property real blr: hovered ? (height <= 44 ? (height / 2) : 16) : (isLast ? outerRadius : innerRadius)
+                        property real brr: hovered ? (height <= 44 ? (height / 2) : 16) : (isLast ? outerRadius : innerRadius)
 
                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
