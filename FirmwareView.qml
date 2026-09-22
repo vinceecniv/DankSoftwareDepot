@@ -275,7 +275,7 @@ Item {
             DankListView {
                 id: deviceList
                 anchors.fill: parent
-                anchors.margins: Theme.spacingM
+                anchors.margins: 0
                 clip: true
                 populate: Transition {
                     NumberAnimation { properties: "opacity,y"; from: 0; duration: 250; easing.type: Easing.OutCubic }

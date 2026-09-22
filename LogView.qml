@@ -454,7 +454,7 @@ Item {
             DankListView {
                 id: logList
                 anchors.fill: parent
-                anchors.margins: Theme.spacingM
+                anchors.margins: 0
                 clip: true
                 spacing: 2
                 model: view.visibleEntries
