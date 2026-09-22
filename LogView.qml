@@ -445,7 +445,7 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
             border.width: 0
             clip: true
             visible: view.visibleEntries.length > 0

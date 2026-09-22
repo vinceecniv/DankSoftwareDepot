@@ -752,7 +752,7 @@ FloatingWindow {
                     Layout.fillWidth: true
                     height: 38
                     radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                     border.width: 0
 
                     RowLayout {
@@ -900,7 +900,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -961,7 +961,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1022,7 +1022,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1083,7 +1083,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1144,7 +1144,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1205,7 +1205,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1266,7 +1266,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1334,7 +1334,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1401,7 +1401,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1462,7 +1462,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
 
                                 ColumnLayout {
@@ -1738,7 +1738,7 @@ FloatingWindow {
                             StyledRect {
                                 Layout.fillWidth: true
                                 radius: Theme.cornerRadius
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.65)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
                                 implicitHeight: aboutCardCol.implicitHeight + Theme.spacingM * 2
 
@@ -2127,7 +2127,7 @@ FloatingWindow {
                             StyledRect {
                                 Layout.fillWidth: true
                                 radius: Theme.cornerRadius
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.65)
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                                 border.width: 0
                                 implicitHeight: sysCardCol.implicitHeight + Theme.spacingM * 2
 
@@ -3193,7 +3193,7 @@ FloatingWindow {
         StyledRect {
             Layout.fillWidth: true
             radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
             border.width: 0
             implicitHeight: headerRow.implicitHeight + Theme.spacingM * 2
 
@@ -4740,7 +4740,7 @@ FloatingWindow {
                 width: cardsList.width
                 implicitHeight: catCol.implicitHeight + Theme.spacingM * 2
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                 border.width: 0
                 clip: true
 
@@ -4903,7 +4903,7 @@ FloatingWindow {
                         Layout.topMargin: Theme.spacingM
                         implicitHeight: heroRow.implicitHeight + Theme.spacingL * 2
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                         border.width: 0
 
                         MouseArea {
@@ -5093,7 +5093,7 @@ FloatingWindow {
                             Layout.fillHeight: true
                             implicitHeight: systemCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                             border.width: 0
 
                             ColumnLayout {
@@ -5170,7 +5170,7 @@ FloatingWindow {
                             Layout.fillHeight: true
                             implicitHeight: statusCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                             border.width: 0
 
                             ColumnLayout {

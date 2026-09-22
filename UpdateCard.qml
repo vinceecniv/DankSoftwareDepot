@@ -134,7 +134,7 @@ Rectangle {
 
         color: isHighlighted
             ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
-            : Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+            : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
 
         border.width: 1
         border.color: card.status === "error"

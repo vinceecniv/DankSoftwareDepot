@@ -776,7 +776,7 @@ Item {
                 // thousand rpms. It still has to grow when asked: capping it
                 // at thirty for good made the button below reveal nothing,
                 // however often it was pressed.
-                const mixedLimit = 30 + Math.max(0, (systemRevealed - systemPage) / systemPage) * systemPage;
+                const mixedLimit = systemRevealed > systemPage ? systemRevealed : 30;
                 const shownLimit = isSystemFilter ? systemRevealed : (needle ? 100 : mixedLimit);
                 const shownItems = rpmRows.slice(0, shownLimit);
                 groups.push({
@@ -1812,7 +1812,7 @@ Item {
                                 }
 
                                 StyledText {
-                                    text: Tr.t("Show %1 more (%2 remaining)").arg(Math.min(view.systemPage, showMoreBtn.remainingCount)).arg(showMoreBtn.remainingCount)
+                                    text: Tr.t("Show all (%1)").arg(instCatContainer.modelData.totalCount || 0)
                                     font.pixelSize: Theme.fontSizeSmall
                                     font.weight: Font.Medium
                                     color: Theme.primary
@@ -1825,7 +1825,11 @@ Item {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onPressed: (m) => showMoreRip.trigger(m.x, m.y)
-                                onClicked: view.systemRevealed += view.systemPage
+                                // All of them, in one press. Paging a list
+                                // you are scanning is an interruption, and
+                                // "another sixty" is not a number anyone is
+                                // counting in.
+                                onClicked: view.systemRevealed = instCatContainer.modelData.totalCount || 0
                             }
                         }
                     }

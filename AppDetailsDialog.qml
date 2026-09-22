@@ -526,7 +526,7 @@ Item {
             StyledRect {
                 Layout.fillWidth: true
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                 border.width: 0
                 implicitHeight: headerContentCol.implicitHeight + Theme.spacingM * 2
 
@@ -868,7 +868,7 @@ Item {
                         implicitHeight: screenshotsInner.implicitHeight + Theme.spacingM * 2
                         visible: (dialog.info.screenshots || []).length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                         border.width: 1
 
                         ColumnLayout {
@@ -1504,7 +1504,7 @@ Item {
                         implicitHeight: permsCardCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.permissionTokens.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                         border.width: 1
 
                         ColumnLayout {
@@ -1735,7 +1735,7 @@ Item {
                         height: relCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.releases.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                         border.width: 1
 
                         ColumnLayout {
@@ -1817,7 +1817,7 @@ Item {
                         height: gitNotesCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.gitNotesLoading || dialog.gitReleases.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                         border.width: 1
 
                         ColumnLayout {
@@ -1997,7 +1997,7 @@ Item {
                         height: prevVerCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.versionsLoading || dialog.previousVersions.length > 0 || dialog.noOlderVersions
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                         border.width: 0
 
                         ColumnLayout {
@@ -2075,7 +2075,7 @@ Item {
                         implicitHeight: mainReviewsCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.reviewable && ((dialog.info.reviews || []).length > 0 || dialog.installedChipVisible || dialog.showOpenButton)
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.5)
+                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                         border.width: 0
 
                         ColumnLayout {
@@ -2526,7 +2526,7 @@ Item {
             StyledRect {
                 Layout.fillWidth: true
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                 border.width: 1
                 implicitHeight: footerLayout.implicitHeight + Theme.spacingM * 2
 
@@ -3061,7 +3061,7 @@ Item {
                 Layout.fillWidth: true
                 visible: dialog.provenance !== null && !dialog.busy
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency || 0.8)
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                 border.width: 1
                 implicitHeight: provInfoCol.implicitHeight + Theme.spacingS * 2
 

@@ -1738,7 +1738,7 @@ PluginComponent {
                     width: parent.width
                     height: 68
                     radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                     border.width: 0
 
                     RowLayout {
@@ -2048,7 +2048,10 @@ PluginComponent {
                     visible: root.popoutModel.length > 0
                     height: Math.min(300, 34 + (root.popoutModel.length * 44) + Theme.spacingM * 2)
                     radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                    // The rows it holds are containers already; a box around
+                    // them is a tonal level the popout cannot afford at this
+                    // size. The header card above it still has one.
+                    color: "transparent"
                     border.width: 0
 
                     Column {
@@ -2261,7 +2264,7 @@ PluginComponent {
                     height: 240
                     visible: root.popoutModel.length === 0
                     radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                     border.width: 0
 
                     MouseArea {

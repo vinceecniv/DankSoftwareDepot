@@ -266,7 +266,7 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.surfaceContainerHigh, Theme.popupTransparency)
+            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
             border.width: 0
             clip: true
             visible: !view.loading
@@ -330,7 +330,7 @@ Item {
 
                         property color paintColor: hovered
                             ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
-                            : (deviceRow.modelData.updatable ? Theme.withAlpha(Theme.surfaceContainerHigh, 0.5) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04))
+                            : (deviceRow.modelData.updatable ? Theme.withAlpha(Theme.surfaceContainerHigh, 0.45) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04))
 
                         property color paintBorder: hovered
                             ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
