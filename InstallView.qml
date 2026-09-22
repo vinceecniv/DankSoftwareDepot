@@ -864,18 +864,19 @@ Item {
         const rows = [];
         // Single section drilldown mode (Extended Category Container)
         if (activeCategory !== "" && sections.some(group => group.category === activeCategory)) {
-            const currentSec = sections.find(g => g.category === activeCategory);
-            const total = sectionMatches.length;
+            // One row per app, not one card holding all of them. A card is
+            // a single delegate, so a Repeater inside it builds every row it
+            // is given and the view has nothing left to virtualise — on a
+            // section that runs to nine hundred apps that is the whole
+            // section alive at once. Flat, the view keeps a dozen.
             const shownItems = sectionMatches.slice(0, sectionRevealed);
-            rows.push({
-                type: "category_card",
-                category: activeCategory,
-                label: currentSec ? currentSec.label : activeCategory,
-                total: total,
-                items: shownItems,
-                isDrilldown: true,
-                remaining: total - shownItems.length
-            });
+            for (let i = 0; i < shownItems.length; i++)
+                rows.push({
+                    type: "app",
+                    data: shownItems[i],
+                    rowIndex: i,
+                    totalCount: shownItems.length
+                });
             return rows;
         }
         // Search results mode
@@ -905,16 +906,13 @@ Item {
                 if (matchesSourceFilter(item))
                     searchItems.push(item);
             }
-            if (searchItems.length > 0) {
+            for (let i = 0; i < searchItems.length; i++)
                 rows.push({
-                    type: "category_card",
-                    category: "",
-                    label: Tr.t("Search Results"),
-                    total: searchItems.length,
-                    items: searchItems,
-                    isSearch: true
+                    type: "app",
+                    data: searchItems[i],
+                    rowIndex: i,
+                    totalCount: searchItems.length
                 });
-            }
             if (Backend.hasCopr && view.coprFilterWanted)
                 rows.push({
                     type: "coprPrompt"
@@ -1909,6 +1907,23 @@ Item {
                     property: "rowData"
                     value: installDelegateLoader.modelData
                 }
+
+                // A flat app row has to know where it sits to round its
+                // corners: the card used to tell it from the Repeater's
+                // index, and there is no card any more.
+                Binding {
+                    target: installDelegateLoader.item
+                    property: "rowIndex"
+                    value: installDelegateLoader.modelData.rowIndex || 0
+                    when: installDelegateLoader.modelData.rowIndex !== undefined
+                }
+
+                Binding {
+                    target: installDelegateLoader.item
+                    property: "totalCount"
+                    value: installDelegateLoader.modelData.totalCount || 1
+                    when: installDelegateLoader.modelData.totalCount !== undefined
+                }
             }
         }
         } // end listWrapper
@@ -1989,7 +2004,7 @@ Item {
                         Rectangle {
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
-                            visible: !cardContainer.rowData.isDrilldown && (cardContainer.rowData.category || "") !== ""
+                            visible: (cardContainer.rowData.category || "") !== ""
                             width: viewAllRow.implicitWidth + 22
                             height: 28
                             property bool isHovered: viewAllMa.containsMouse
@@ -2059,61 +2074,6 @@ Item {
                                 item.rowIndex = catItemLoader.index;
                                 item.totalCount = Qt.binding(() => (cardContainer.rowData.items || []).length);
                             }
-                        }
-                    }
-
-                    // Show more custom button in drilldown mode
-                    Rectangle {
-                        readonly property int remainingCount: cardContainer.rowData.remaining || 0
-                        visible: cardContainer.rowData.isDrilldown === true && remainingCount > 0
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.topMargin: Theme.spacingS
-                        width: showMoreRow.implicitWidth + 28
-                        height: 32
-                        property bool isHovered: showMoreMa.containsMouse
-                        radius: isHovered ? (height / 2) : 8
-                        Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                        color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        border.width: 1
-                        border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
-                        scale: showMoreMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
-
-                        DankRipple {
-                            id: showMoreRip
-                            anchors.fill: parent
-                            cornerRadius: parent.radius
-                            rippleColor: Theme.primary
-                        }
-
-                        RowLayout {
-                            id: showMoreRow
-                            anchors.centerIn: parent
-                            spacing: 6
-
-                            DankIcon {
-                                name: "expand_more"
-                                size: 16
-                                color: Theme.primary
-                            }
-
-                            StyledText {
-                                text: Tr.t("Show %1 more (%2 remaining)").arg(Math.min(100, remainingCount)).arg(remainingCount)
-                                font.pixelSize: Theme.fontSizeSmall
-                                font.weight: Font.Medium
-                                color: Theme.primary
-                            }
-                        }
-
-                        MouseArea {
-                            id: showMoreMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onPressed: (m) => showMoreRip.trigger(m.x, m.y)
-                            onClicked: view.revealMoreOfSection()
                         }
                     }
                 }
