@@ -182,10 +182,6 @@ Item {
     property bool loading: true
     property string searchText: ""
     property int sourceFilter: 0     // 0 all, 1 flatpak, 2 system, 3 appimage, 4 plugins, 5 brew
-    property int systemRevealed: 60
-    readonly property int systemPage: 60
-    onSearchTextChanged: systemRevealed = systemPage
-    onSourceFilterChanged: systemRevealed = systemPage
     property string busyAction: ""   // "<action>:<id>" while a mutation runs
     property string mutationProgress: ""  // live phase/percent line while mutationProcess runs
     property real mutationFraction: 0     // 0..1 overall progress estimate
@@ -593,7 +589,39 @@ Item {
         return rows;
     }
 
+    // The list is flat, and each row carries the heading of the group it
+    // starts. That is what lets a ListView virtualise it: nesting the rows of
+    // a section inside a Repeater builds every one of them up front, which is
+    // why this list had to be paged at sixty at a time, and why asking for all
+    // 1971 system packages meant instantiating 1971 delegates in one go.
+    // Flat, the view builds the dozen that are on screen.
+    readonly property var flatRows: {
+        const out = [];
+        for (const group of groupedSections) {
+            const items = group.items || [];
+            for (let i = 0; i < items.length; i++) {
+                const row = items[i];
+                row.posInSection = i;
+                row.sectionSize = items.length;
+                // Which group the row is in, on every row. sectionLabel marks
+                // only where a heading is drawn; the fallback icon needs to
+                // know the group whether or not this row starts it.
+                row.sectionOf = group.sectionLabel || "";
+                if (i === 0) {
+                    row.sectionLabel = group.sectionLabel || "";
+                    row.sectionCount = group.sectionCount || items.length;
+                    row.sectionAction = group.sectionAction || "";
+                } else {
+                    row.sectionLabel = "";
+                }
+                out.push(row);
+            }
+        }
+        return out;
+    }
+
     // Sort order for the list
+
         readonly property var groupedSections: {
         const needle = searchText.toLowerCase();
         const groups = [];
@@ -769,24 +797,16 @@ Item {
                 });
             }
             if (rpmRows.length > 0) {
-                const isSystemFilter = sourceFilter === 2;
                 const total = rpmRows.length;
-                // Outside the system-only filter the section opens short, so
-                // it does not bury the Flatpaks and AppImages under two
-                // thousand rpms. It still has to grow when asked: capping it
-                // at thirty for good made the button below reveal nothing,
-                // however often it was pressed.
-                const mixedLimit = systemRevealed > systemPage ? systemRevealed : 30;
-                const shownLimit = isSystemFilter ? systemRevealed : (needle ? 100 : mixedLimit);
-                const shownItems = rpmRows.slice(0, shownLimit);
+                // No limit: the list virtualises, so the cost of two thousand
+                // rows is the dozen that are on screen.
                 groups.push({
                     sectionLabel: Tr.t("System packages"),
                     sectionCount: total,
                     sectionAction: "",
                     isSystem: true,
-                    items: shownItems,
-                    totalCount: total,
-                    remaining: total - shownItems.length
+                    items: rpmRows,
+                    totalCount: total
                 });
             }
         }
@@ -1397,8 +1417,10 @@ Item {
             Layout.fillHeight: true
             clip: true
             visible: !view.loading
-            spacing: Theme.spacingM
-            model: view.groupedSections
+            // Row spacing, not section spacing: the list holds rows now. A
+            // group is set apart by the height of its heading instead.
+            spacing: 2
+            model: view.flatRows
 
             Component.onCompleted: {
                 Ui.softenScrollbar(installedList);
@@ -1450,18 +1472,12 @@ Item {
                 NumberAnimation { properties: "y"; duration: 350; easing.type: Easing.OutCubic }
             }
 
-            onContentYChanged: {
-                if (contentHeight > 0 && (contentHeight - (contentY + height)) < 400 && view.sourceFilter === 2) {
-                    view.systemRevealed += view.systemPage;
-                }
-            }
-
             // Sticky Category Header
             StickyHeader {
                 id: installedSticky
 
                 view: installedList
-                rows: view.groupedSections
+                rows: view.flatRows
                 headingOf: row => (row && row.sectionLabel) ? row : ""
                 barHeight: 48
 
@@ -1519,317 +1535,229 @@ Item {
             }
 
 
-            delegate: StyledRect {
-                id: instCatContainer
+            delegate: Column {
+                id: rowWrap
                 required property var modelData
 
                 width: installedList.width
-                implicitHeight: instCol.implicitHeight + Theme.spacingM * 2
-                radius: Theme.cornerRadius
-                // Transparent for the same reason as the storefront's
-                // category card: the rows it holds are the containers, and
-                // wrapping them in another one only adds a tonal step.
-                color: "transparent"
-                border.width: 0
-                clip: true
+                spacing: Theme.spacingS
 
-                ColumnLayout {
-                    id: instCol
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: Theme.spacingM
-                    spacing: Theme.spacingS
+                // Container Title Header
+                Item {
+                    // Only the row that starts a group draws one
+                    visible: (rowWrap.modelData.sectionLabel || "") !== ""
+                    width: rowWrap.width
+                    // The same height as the sticky bar that replaces it on
+                    // scroll, so the heading does not jump when it pins
+                    height: 48
 
-                    // Container Title Header
-                    Item {
-                        Layout.fillWidth: true
-                        implicitHeight: 32
+                    RowLayout {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: Theme.spacingS
 
-                        RowLayout {
-                            anchors.left: parent.left
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: Theme.spacingS
-
-                            DankIcon {
-                                name: view.sectionIcon(instCatContainer.modelData.sectionLabel)
-                                size: 20
-                                color: Theme.primary
-                                Layout.alignment: Qt.AlignVCenter
-                            }
-
-                            StyledText {
-                                text: instCatContainer.modelData.sectionLabel || ""
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.weight: Font.Bold
-                                color: Theme.surfaceText
-                                Layout.alignment: Qt.AlignVCenter
-                            }
-
-                            Rectangle {
-                                implicitWidth: secCountText.implicitWidth + 14
-                                implicitHeight: 20
-                                radius: 10
-                                color: Theme.withAlpha(Theme.primary, 0.15)
-                                Layout.alignment: Qt.AlignVCenter
-
-                                StyledText {
-                                    id: secCountText
-                                    anchors.centerIn: parent
-                                    text: String(instCatContainer.modelData.sectionCount || 0)
-                                    font.pixelSize: Theme.fontSizeSmall - 2
-                                    font.weight: Font.Medium
-                                    color: Theme.primary
-                                }
-                            }
+                        DankIcon {
+                            name: view.sectionIcon(rowWrap.modelData.sectionLabel)
+                            size: 20
+                            color: Theme.primary
+                            Layout.alignment: Qt.AlignVCenter
                         }
 
-                        DankButton {
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: (instCatContainer.modelData.sectionAction || "") === "plugins"
-                            buttonHeight: 26
-                            horizontalPadding: Theme.spacingM
-                            iconName: "open_in_new"
-                            iconSize: 13
-                            text: Tr.t("Manage plugins")
-                            backgroundColor: Theme.buttonBg
-                            textColor: Theme.buttonText
-                            onClicked: PopoutService.openSettingsWithTab("plugins")
+                        StyledText {
+                            text: rowWrap.modelData.sectionLabel || ""
+                            font.pixelSize: Theme.fontSizeMedium
+                            font.weight: Font.Bold
+                            color: Theme.surfaceText
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Rectangle {
+                            implicitWidth: secCountText.implicitWidth + 14
+                            implicitHeight: 20
+                            radius: 10
+                            color: Theme.withAlpha(Theme.primary, 0.15)
+                            Layout.alignment: Qt.AlignVCenter
+
+                            StyledText {
+                                id: secCountText
+                                anchors.centerIn: parent
+                                text: String(rowWrap.modelData.sectionCount || 0)
+                                font.pixelSize: Theme.fontSizeSmall - 2
+                                font.weight: Font.Medium
+                                color: Theme.primary
+                            }
                         }
                     }
 
-                    // Items inside this container card
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 2
+                    DankButton {
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: (rowWrap.modelData.sectionAction || "") === "plugins"
+                        buttonHeight: 26
+                        horizontalPadding: Theme.spacingM
+                        iconName: "open_in_new"
+                        iconSize: 13
+                        text: Tr.t("Manage plugins")
+                        backgroundColor: Theme.buttonBg
+                        textColor: Theme.buttonText
+                        onClicked: PopoutService.openSettingsWithTab("plugins")
+                    }
+                }
 
-                        Repeater {
-                            model: instCatContainer.modelData.items || []
+                Item {
+                    id: row
+                    readonly property var modelData: rowWrap.modelData
+                    readonly property int index: rowWrap.modelData.posInSection || 0
 
-                            delegate: Item {
-                                id: row
-                                required property var modelData
-                                required property int index
+                    readonly property bool isFlatpak: modelData.kind === "flatpak"
+                    readonly property bool held: view.isHeldName(modelData.id)
+                    readonly property bool busy: view.busyAction.endsWith(":" + modelData.id)
+                    readonly property int totalCount: rowWrap.modelData.sectionSize || 1
+                    readonly property bool isFirst: index === 0
+                    readonly property bool isLast: index === (totalCount - 1)
+                    readonly property bool isActive: detailsDialog.showing && detailsDialog.entry && detailsDialog.entry.id === row.modelData.id
 
-                                readonly property bool isFlatpak: modelData.kind === "flatpak"
-                                readonly property bool held: view.isHeldName(modelData.id)
-                                readonly property bool busy: view.busyAction.endsWith(":" + modelData.id)
-                                readonly property int totalCount: instCatContainer.modelData.items.length
-                                readonly property bool isFirst: index === 0
-                                readonly property bool isLast: index === (totalCount - 1)
-                                readonly property bool isActive: detailsDialog.showing && detailsDialog.entry && detailsDialog.entry.id === row.modelData.id
+                    width: rowWrap.width
+                    height: 56  // icon(32) + 2x text ≈ 50, padded
 
-                                Layout.fillWidth: true
-                                height: 56  // icon(32) + 2x text ≈ 50, padded
+                    Shape {
+                        id: rowBg
+                        anchors.fill: parent
 
-                                Shape {
-                                    id: rowBg
-                                    anchors.fill: parent
+                        property real innerRadius: 6
+                        property real outerRadius: 12
+                        property bool hovered: rowMa.containsMouse || row.isActive
 
-                                    property real innerRadius: 6
-                                    property real outerRadius: 12
-                                    property bool hovered: rowMa.containsMouse || row.isActive
+                        property real tlr: hovered ? (height / 2) : (row.isFirst ? outerRadius : innerRadius)
+                        property real trr: hovered ? (height / 2) : (row.isFirst ? outerRadius : innerRadius)
+                        property real blr: hovered ? (height / 2) : (row.isLast ? outerRadius : innerRadius)
+                        property real brr: hovered ? (height / 2) : (row.isLast ? outerRadius : innerRadius)
 
-                                    property real tlr: hovered ? (height / 2) : (row.isFirst ? outerRadius : innerRadius)
-                                    property real trr: hovered ? (height / 2) : (row.isFirst ? outerRadius : innerRadius)
-                                    property real blr: hovered ? (height / 2) : (row.isLast ? outerRadius : innerRadius)
-                                    property real brr: hovered ? (height / 2) : (row.isLast ? outerRadius : innerRadius)
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
 
-                                    property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                                    property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                                    property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                                    property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property color paintColor: hovered
+                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
+                            : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
 
-                                    property color paintColor: hovered
-                                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
-                                        : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+                        property color paintBorder: hovered
+                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
+                            : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
 
-                                    property color paintBorder: hovered
-                                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
-                                        : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                        ShapePath {
+                            fillColor: rowBg.paintColor
+                            strokeColor: rowBg.paintBorder
+                            strokeWidth: 1
 
-                                    ShapePath {
-                                        fillColor: rowBg.paintColor
-                                        strokeColor: rowBg.paintBorder
-                                        strokeWidth: 1
+                            startX: rowBg.tlrAnim; startY: 0
+                            PathLine { x: rowBg.width - rowBg.trrAnim; y: 0 }
+                            PathArc { x: rowBg.width; y: rowBg.trrAnim; radiusX: rowBg.trrAnim; radiusY: rowBg.trrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: rowBg.width; y: rowBg.height - rowBg.brrAnim }
+                            PathArc { x: rowBg.width - rowBg.brrAnim; y: rowBg.height; radiusX: rowBg.brrAnim; radiusY: rowBg.brrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: rowBg.blrAnim; y: rowBg.height }
+                            PathArc { x: 0; y: rowBg.height - rowBg.blrAnim; radiusX: rowBg.blrAnim; radiusY: rowBg.blrAnim; direction: PathArc.Clockwise }
+                            PathLine { x: 0; y: rowBg.tlrAnim }
+                            PathArc { x: rowBg.tlrAnim; y: 0; radiusX: rowBg.tlrAnim; radiusY: rowBg.tlrAnim; direction: PathArc.Clockwise }
+                        }
+                    }
 
-                                        startX: rowBg.tlrAnim; startY: 0
-                                        PathLine { x: rowBg.width - rowBg.trrAnim; y: 0 }
-                                        PathArc { x: rowBg.width; y: rowBg.trrAnim; radiusX: rowBg.trrAnim; radiusY: rowBg.trrAnim; direction: PathArc.Clockwise }
-                                        PathLine { x: rowBg.width; y: rowBg.height - rowBg.brrAnim }
-                                        PathArc { x: rowBg.width - rowBg.brrAnim; y: rowBg.height; radiusX: rowBg.brrAnim; radiusY: rowBg.brrAnim; direction: PathArc.Clockwise }
-                                        PathLine { x: rowBg.blrAnim; y: rowBg.height }
-                                        PathArc { x: 0; y: rowBg.height - rowBg.blrAnim; radiusX: rowBg.blrAnim; radiusY: rowBg.blrAnim; direction: PathArc.Clockwise }
-                                        PathLine { x: 0; y: rowBg.tlrAnim }
-                                        PathArc { x: rowBg.tlrAnim; y: 0; radiusX: rowBg.tlrAnim; radiusY: rowBg.tlrAnim; direction: PathArc.Clockwise }
-                                    }
+                    DankRipple {
+                        id: rowRip
+                        anchors.fill: parent
+                        cornerRadius: rowBg.tlrAnim
+                        rippleColor: Theme.primary
+                    }
+
+                    MouseArea {
+                        id: rowMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onPressed: (m) => rowRip.trigger(m.x, m.y)
+                        onClicked: view.openDetails(row.modelData)
+                    }
+
+                    RowLayout {
+                        id: rowContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.leftMargin: Theme.spacingS
+                        anchors.rightMargin: Theme.spacingS
+                        anchors.topMargin: Theme.spacingS + 2
+                        anchors.bottomMargin: Theme.spacingS + 2
+                        spacing: Theme.spacingM
+
+                        Item {
+                            Layout.preferredWidth: 32
+                            Layout.preferredHeight: 32
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 6
+                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.6)
+                                visible: rowLogo.status !== Image.Ready
+
+                                DankIcon {
+                                    anchors.centerIn: parent
+                                    name: view.sectionIcon(rowWrap.modelData.sectionOf || "")
+                                    size: 18
+                                    color: Theme.surfaceVariantText
                                 }
+                            }
 
-                                DankRipple {
-                                    id: rowRip
-                                    anchors.fill: parent
-                                    cornerRadius: rowBg.tlrAnim
-                                    rippleColor: Theme.primary
-                                }
-
-                                MouseArea {
-                                    id: rowMa
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onPressed: (m) => rowRip.trigger(m.x, m.y)
-                                    onClicked: view.openDetails(row.modelData)
-                                }
-
-                                RowLayout {
-                                    id: rowContent
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.top: parent.top
-                                    anchors.bottom: parent.bottom
-                                    anchors.leftMargin: Theme.spacingS
-                                    anchors.rightMargin: Theme.spacingS
-                                    anchors.topMargin: Theme.spacingS + 2
-                                    anchors.bottomMargin: Theme.spacingS + 2
-                                    spacing: Theme.spacingM
-
-                                    Item {
-                                        Layout.preferredWidth: 32
-                                        Layout.preferredHeight: 32
-
-                                        Rectangle {
-                                            anchors.fill: parent
-                                            radius: 6
-                                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.6)
-                                            visible: rowLogo.status !== Image.Ready
-
-                                            DankIcon {
-                                                anchors.centerIn: parent
-                                                name: view.sectionIcon(instCatContainer.modelData.sectionLabel)
-                                                size: 18
-                                                color: Theme.surfaceVariantText
-                                            }
-                                        }
-
-                                        Image {
-                                            id: rowLogo
-                                            anchors.fill: parent
-                                            source: (row.modelData.info && row.modelData.info.icon) ? (row.modelData.info.icon.indexOf("http") === 0 ? row.modelData.info.icon : "file://" + row.modelData.info.icon) : ""
-                                            layer.enabled: Ui.tintAppIcons
-                                            layer.effect: TintedIconEffect {}
-                                        }
-                                    }
-
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 2
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            spacing: Theme.spacingS
-
-                                            StyledText {
-                                                text: row.modelData.name || row.modelData.id || ""
-                                                font.pixelSize: Theme.fontSizeMedium
-                                                font.weight: Font.DemiBold
-                                                color: Theme.surfaceText
-                                                elide: Text.ElideRight
-                                            }
-
-                                            StyledText {
-                                                visible: (row.modelData.version || "") !== ""
-                                                text: row.modelData.version || ""
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                color: Theme.surfaceVariantText
-                                            }
-
-                                            Item { Layout.fillWidth: true }
-
-                                            StyledText {
-                                                visible: (row.modelData.sizeBytes || 0) > 0
-                                                text: view.formatSize(row.modelData.sizeBytes || 0)
-                                                font.pixelSize: Theme.fontSizeSmall - 1
-                                                color: Theme.surfaceVariantText
-                                            }
-                                        }
-
-                                        StyledText {
-                                            Layout.fillWidth: true
-                                            visible: (row.modelData.summary || "") !== ""
-                                            text: row.modelData.summary || ""
-                                            font.pixelSize: Theme.fontSizeSmall - 1
-                                            color: Theme.surfaceVariantText
-                                            elide: Text.ElideRight
-                                        }
-                                    }
-                                }
+                            Image {
+                                id: rowLogo
+                                anchors.fill: parent
+                                source: (row.modelData.info && row.modelData.info.icon) ? (row.modelData.info.icon.indexOf("http") === 0 ? row.modelData.info.icon : "file://" + row.modelData.info.icon) : ""
+                                layer.enabled: Ui.tintAppIcons
+                                layer.effect: TintedIconEffect {}
                             }
                         }
 
-                        // Show more custom button for system packages
-                        Rectangle {
-                            // The id is load-bearing: a property on an
-                            // intermediate object is not in scope for a
-                            // grandchild, so the label below read an
-                            // undefined remainingCount, .arg() threw, and the
-                            // button rendered as a bare chevron.
-                            id: showMoreBtn
-
-                            readonly property int remainingCount: instCatContainer.modelData.remaining || 0
-                            visible: remainingCount > 0
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.topMargin: Theme.spacingS
-                            width: showMoreRow.implicitWidth + 28
-                            height: 32
-                            property bool isHovered: showMoreMa.containsMouse
-                            radius: isHovered ? (height / 2) : 8
-                            Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                            color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            border.width: 1
-                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                            Behavior on border.color { ColorAnimation { duration: 150 } }
-                            scale: showMoreMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
-
-                            DankRipple {
-                                id: showMoreRip
-                                anchors.fill: parent
-                                cornerRadius: parent.radius
-                                rippleColor: Theme.primary
-                            }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
 
                             RowLayout {
-                                id: showMoreRow
-                                anchors.centerIn: parent
-                                spacing: 6
+                                Layout.fillWidth: true
+                                spacing: Theme.spacingS
 
-                                DankIcon {
-                                    name: "expand_more"
-                                    size: 16
-                                    color: Theme.primary
+                                StyledText {
+                                    text: row.modelData.name || row.modelData.id || ""
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.DemiBold
+                                    color: Theme.surfaceText
+                                    elide: Text.ElideRight
                                 }
 
                                 StyledText {
-                                    text: Tr.t("Show all (%1)").arg(instCatContainer.modelData.totalCount || 0)
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    font.weight: Font.Medium
-                                    color: Theme.primary
+                                    visible: (row.modelData.version || "") !== ""
+                                    text: row.modelData.version || ""
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    color: Theme.surfaceVariantText
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                StyledText {
+                                    visible: (row.modelData.sizeBytes || 0) > 0
+                                    text: view.formatSize(row.modelData.sizeBytes || 0)
+                                    font.pixelSize: Theme.fontSizeSmall - 1
+                                    color: Theme.surfaceVariantText
                                 }
                             }
 
-                            MouseArea {
-                                id: showMoreMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onPressed: (m) => showMoreRip.trigger(m.x, m.y)
-                                // All of them, in one press. Paging a list
-                                // you are scanning is an interruption, and
-                                // "another sixty" is not a number anyone is
-                                // counting in.
-                                onClicked: view.systemRevealed = instCatContainer.modelData.totalCount || 0
+                            StyledText {
+                                Layout.fillWidth: true
+                                visible: (row.modelData.summary || "") !== ""
+                                text: row.modelData.summary || ""
+                                font.pixelSize: Theme.fontSizeSmall - 1
+                                color: Theme.surfaceVariantText
+                                elide: Text.ElideRight
                             }
                         }
                     }
