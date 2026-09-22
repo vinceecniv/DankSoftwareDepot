@@ -89,13 +89,13 @@ Item {
                             NumberAnimation {
                                 from: 1
                                 to: 1.12
-                                duration: 700
+                                duration: Theme.extraLongDuration
                                 easing.type: Easing.InOutQuad
                             }
                             NumberAnimation {
                                 from: 1.12
                                 to: 1
-                                duration: 700
+                                duration: Theme.extraLongDuration
                                 easing.type: Easing.InOutQuad
                             }
                         }

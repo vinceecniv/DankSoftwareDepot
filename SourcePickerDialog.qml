@@ -143,7 +143,7 @@ Item {
         anchors.fill: parent
         color: Qt.rgba(0, 0, 0, 0.45)
         opacity: picker.showing ? 1.0 : 0.0
-        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutQuad } }
+        Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent

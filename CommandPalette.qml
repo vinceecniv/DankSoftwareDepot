@@ -100,8 +100,8 @@ Item {
 
         scale: palette.visible ? 1.0 : 0.94
         opacity: palette.visible ? 1.0 : 0.0
-        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-        Behavior on opacity { NumberAnimation { duration: 180 } }
+        Behavior on scale { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutBack } }
+        Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
 
         TapHandler {
             gesturePolicy: TapHandler.ReleaseWithinBounds

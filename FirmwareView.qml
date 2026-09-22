@@ -283,10 +283,10 @@ Item {
                 topMargin: 1
                 bottomMargin: 1
                 populate: Transition {
-                    NumberAnimation { properties: "opacity,y"; from: 0; duration: 250; easing.type: Easing.OutCubic }
+                    NumberAnimation { properties: "opacity,y"; from: 0; duration: Theme.longDuration; easing.type: Easing.OutCubic }
                 }
                 add: Transition {
-                    NumberAnimation { properties: "opacity,scale"; from: 0; to: 1; duration: 200; easing.type: Easing.OutBack }
+                    NumberAnimation { properties: "opacity,scale"; from: 0; to: 1; duration: Theme.mediumDuration; easing.type: Easing.OutBack }
                 }
                 spacing: 2
                 model: view.filteredDevices
@@ -333,10 +333,10 @@ Item {
                         property real blr: hovered ? Math.min(height / 2, 28) : (deviceRow.isLast ? outerRadius : innerRadius)
                         property real brr: hovered ? Math.min(height / 2, 28) : (deviceRow.isLast ? outerRadius : innerRadius)
 
-                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                         // The same resting fill as every other list. This
                         // row used to shade itself by whether the device was

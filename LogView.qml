@@ -580,7 +580,7 @@ Item {
                     width: parent.width - 18
                     implicitHeight: entryColumn.implicitHeight + Theme.spacingS * 2
                     height: implicitHeight
-                    Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+                    Behavior on height { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
                     Shape {
                         id: entryBg
@@ -601,10 +601,10 @@ Item {
                         property real blr: hovered ? Math.min(height / 2, 28) : (isLast ? outerRadius : innerRadius)
                         property real brr: hovered ? Math.min(height / 2, 28) : (isLast ? outerRadius : innerRadius)
 
-                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                         property color paintColor: hovered
                             ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)

@@ -1501,14 +1501,14 @@ Item {
                 height: 32
                 property bool isHovered: allSecMa.containsMouse
                 radius: isHovered ? (height / 2) : 8
-                Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                 color: isHovered ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.95) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.65)
-                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                 border.width: 1
                 border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                 scale: allSecMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                 DankRipple {
                     id: allSecRip
@@ -1714,14 +1714,14 @@ Item {
                     target: listWrapper
                     property: "targetX"
                     to: 0
-                    duration: 340
+                    duration: Theme.longDuration
                     easing.type: Easing.OutCubic
                 }
                 NumberAnimation {
                     target: listWrapper
                     property: "opacity"
                     to: 1.0
-                    duration: 280
+                    duration: Theme.longDuration
                     easing.type: Easing.OutCubic
                 }
             }
@@ -1776,25 +1776,25 @@ Item {
                         id: listScrollAnim
                         target: resultsList
                         property: "contentY"
-                        duration: 260
+                        duration: Theme.longDuration
                         easing.type: Easing.OutCubic
                     }
 
             add: Transition {
-                NumberAnimation { property: "y"; from: 24; duration: 300; easing.type: Easing.OutCubic }
-                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 250; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "y"; from: 24; duration: Theme.longDuration; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.longDuration; easing.type: Easing.OutCubic }
             }
             remove: Transition {
-                NumberAnimation { property: "opacity"; to: 0; duration: 180 }
+                NumberAnimation { property: "opacity"; to: 0; duration: Theme.mediumDuration }
             }
             displaced: Transition {
-                NumberAnimation { properties: "y"; duration: 320; easing.type: Easing.OutCubic }
+                NumberAnimation { properties: "y"; duration: Theme.longDuration; easing.type: Easing.OutCubic }
             }
             move: Transition {
-                NumberAnimation { properties: "y"; duration: 320; easing.type: Easing.OutCubic }
+                NumberAnimation { properties: "y"; duration: Theme.longDuration; easing.type: Easing.OutCubic }
             }
             moveDisplaced: Transition {
-                NumberAnimation { properties: "y"; duration: 320; easing.type: Easing.OutCubic }
+                NumberAnimation { properties: "y"; duration: Theme.longDuration; easing.type: Easing.OutCubic }
             }
 
             onContentYChanged: {
@@ -2009,14 +2009,14 @@ Item {
                             height: 28
                             property bool isHovered: viewAllMa.containsMouse
                             radius: isHovered ? (height / 2) : 8
-                            Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                            Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
                             border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                             scale: viewAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                            Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
                                 id: viewAllRip
@@ -2149,14 +2149,14 @@ Item {
                             height: 28
                             property bool isHovered: coprSearchMa.containsMouse
                             radius: isHovered ? (height / 2) : 8
-                            Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                            Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
                             border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                             scale: coprSearchMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                            Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
                                 id: coprSearchRip
@@ -2297,14 +2297,14 @@ Item {
                         enabled: view.busyAction === ""
                         property bool isHovered: brewInstMa.containsMouse
                         radius: isHovered ? (height / 2) : 8
-                        Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                        Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                         color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                         scale: brewInstMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
                             id: brewInstRip
@@ -2413,14 +2413,14 @@ Item {
                             height: 28
                             property bool isHovered: brewSearchMa.containsMouse
                             radius: isHovered ? (height / 2) : 8
-                            Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                            Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
                             border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
-                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                             scale: brewSearchMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                            Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
                                 id: brewSearchRip
@@ -2562,10 +2562,10 @@ Item {
                     property real blr: hovered ? Math.min(height / 2, 28) : (resultRow.isLast ? outerRadius : innerRadius)
                     property real brr: hovered ? Math.min(height / 2, 28) : (resultRow.isLast ? outerRadius : innerRadius)
 
-                    property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                    property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                    property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                    property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                    property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                    property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                    property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                    property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                     property color paintColor: hovered
                         ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
@@ -2760,21 +2760,21 @@ Item {
                             Layout.preferredWidth: instActionRow.implicitWidth + 22
                             Layout.preferredHeight: 28
                             radius: isHovered ? (height / 2) : 8
-                            Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                            Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                             readonly property bool isPrimary: picks || modelData.kind === "flatpak"
                             color: isPrimary
                                 ? (isHovered ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.primary, 0.15))
                                 : (isHovered ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.9) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6))
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
                             border.color: isPrimary
                                 ? (isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3))
                                 : (isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12))
-                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                             scale: instActionMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                            Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
                                 id: instActionRip

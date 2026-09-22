@@ -1456,25 +1456,25 @@ Item {
                 id: installedScrollAnim
                 target: installedList
                 property: "contentY"
-                duration: 260
+                duration: Theme.longDuration
                 easing.type: Easing.OutCubic
             }
 
             add: Transition {
-                NumberAnimation { property: "y"; from: 24; duration: 320; easing.type: Easing.OutCubic }
-                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 250; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "y"; from: 24; duration: Theme.longDuration; easing.type: Easing.OutCubic }
+                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.longDuration; easing.type: Easing.OutCubic }
             }
             remove: Transition {
-                NumberAnimation { property: "opacity"; to: 0; duration: 180 }
+                NumberAnimation { property: "opacity"; to: 0; duration: Theme.mediumDuration }
             }
             displaced: Transition {
-                NumberAnimation { properties: "y"; duration: 350; easing.type: Easing.OutCubic }
+                NumberAnimation { properties: "y"; duration: Theme.longDuration; easing.type: Easing.OutCubic }
             }
             move: Transition {
-                NumberAnimation { properties: "y"; duration: 350; easing.type: Easing.OutCubic }
+                NumberAnimation { properties: "y"; duration: Theme.longDuration; easing.type: Easing.OutCubic }
             }
             moveDisplaced: Transition {
-                NumberAnimation { properties: "y"; duration: 350; easing.type: Easing.OutCubic }
+                NumberAnimation { properties: "y"; duration: Theme.longDuration; easing.type: Easing.OutCubic }
             }
 
             // Sticky Category Header
@@ -1638,10 +1638,10 @@ Item {
                         property real blr: hovered ? Math.min(height / 2, 28) : (row.isLast ? outerRadius : innerRadius)
                         property real brr: hovered ? Math.min(height / 2, 28) : (row.isLast ? outerRadius : innerRadius)
 
-                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
+                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                         property color paintColor: hovered
                             ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)

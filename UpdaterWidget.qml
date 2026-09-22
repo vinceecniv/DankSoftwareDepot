@@ -1659,7 +1659,7 @@ PluginComponent {
                 RotationAnimator on rotation {
                     from: 0
                     to: 360
-                    duration: 1000
+                    duration: Theme.extraLongDuration
                     loops: Animation.Infinite
                     running: SystemUpdateService.isChecking
 
@@ -1697,7 +1697,7 @@ PluginComponent {
                 RotationAnimator on rotation {
                     from: 0
                     to: 360
-                    duration: 1000
+                    duration: Theme.extraLongDuration
                     loops: Animation.Infinite
                     running: SystemUpdateService.isChecking
 
@@ -1820,13 +1820,13 @@ PluginComponent {
                                         id: flipAnim
 
                                         ParallelAnimation {
-                                            NumberAnimation { target: popoutStatusText; property: "opacity"; to: 0; duration: 75 }
-                                            NumberAnimation { target: popoutStatusText; property: "y"; to: 8; duration: 75; easing.type: Easing.InQuad }
+                                            NumberAnimation { target: popoutStatusText; property: "opacity"; to: 0; duration: Theme.shortDuration }
+                                            NumberAnimation { target: popoutStatusText; property: "y"; to: 8; duration: Theme.shortDuration; easing.type: Easing.InQuad }
                                         }
                                         PropertyAction { target: popoutStatusText; property: "text"; value: popoutStatusText.targetText }
                                         ParallelAnimation {
-                                            NumberAnimation { target: popoutStatusText; property: "opacity"; to: 0.85; duration: 75 }
-                                            NumberAnimation { target: popoutStatusText; property: "y"; to: 0; duration: 75; easing.type: Easing.OutQuad }
+                                            NumberAnimation { target: popoutStatusText; property: "opacity"; to: 0.85; duration: Theme.shortDuration }
+                                            NumberAnimation { target: popoutStatusText; property: "y"; to: 0; duration: Theme.shortDuration; easing.type: Easing.OutQuad }
                                         }
                                     }
                                 }
@@ -1856,15 +1856,15 @@ PluginComponent {
                                 topRightRadius: isHovered || isBusy ? (height / 2) : 4
                                 bottomRightRadius: isHovered || isBusy ? (height / 2) : 4
 
-                                Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                                Behavior on border.color { ColorAnimation { duration: 150 } }
+                                Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                 scale: refreshMa.pressed ? 0.92 : (isHovered ? 1.05 : 1.0)
-                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                                 DankRipple { id: refreshRip; anchors.fill: parent; cornerRadius: parent.topLeftRadius; rippleColor: Theme.primary }
 
@@ -1882,7 +1882,7 @@ PluginComponent {
                                     }
 
                                     RotationAnimation on rotation {
-                                        from: 0; to: 360; duration: 1000; loops: Animation.Infinite
+                                        from: 0; to: 360; duration: Theme.extraLongDuration; loops: Animation.Infinite
                                         running: headerRefreshBtn.isBusy
                                     }
                                 }
@@ -1917,15 +1917,15 @@ PluginComponent {
                                 topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
                                 bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
 
-                                Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                                Behavior on border.color { ColorAnimation { duration: 150 } }
+                                Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                                Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                 scale: openMa.pressed ? 0.92 : (isHovered ? 1.05 : 1.0)
-                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                                 DankRipple { id: openRip; anchors.fill: parent; cornerRadius: parent.topRightRadius; rippleColor: Theme.secondary }
 
@@ -2121,10 +2121,10 @@ PluginComponent {
                                     bottomLeftRadius: blr
                                     bottomRightRadius: brr
 
-                                    Behavior on topLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
-                                    Behavior on topRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
-                                    Behavior on bottomLeftRadius { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
-                                    Behavior on bottomRightRadius { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+                                    Behavior on topLeftRadius { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
+                                    Behavior on topRightRadius { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
+                                    Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
+                                    Behavior on bottomRightRadius { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
 
                                     color: hovered
                                         ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
@@ -2190,7 +2190,7 @@ PluginComponent {
                                             name: compactRow.modelData.repo === "flatpak" ? "apps" : "memory"
                                             size: 16
                                             color: rowMa.containsMouse ? Theme.primary : (Ui.tintAppIcons ? Theme.primary : Theme.surfaceVariantText)
-                                            Behavior on color { ColorAnimation { duration: 150 } }
+                                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                         }
                                     }
 
@@ -2202,7 +2202,7 @@ PluginComponent {
                                         color: rowMa.containsMouse ? Theme.surfaceText : Theme.surfaceVariantText
                                         elide: Text.ElideRight
                                         maximumLineCount: 1
-                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                     }
 
                                     Item {
@@ -2398,15 +2398,15 @@ PluginComponent {
                         topRightRadius: isHovered ? (height / 2) : 4
                         bottomRightRadius: isHovered ? (height / 2) : 4
 
-                        Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: updateAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple { id: updateAllRip; anchors.fill: parent; cornerRadius: parent.topLeftRadius; rippleColor: updateAllBtn.btnBaseColor }
 
@@ -2465,15 +2465,15 @@ PluginComponent {
                         topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
                         bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
 
-                        Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: detailsMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple { id: detailsRip; anchors.fill: parent; cornerRadius: parent.topRightRadius; rippleColor: Theme.secondary }
 
@@ -2500,7 +2500,7 @@ PluginComponent {
                                 Layout.alignment: Qt.AlignVCenter
                                 rotation: detailsBtn.isHovered ? 45 : 0
                                 Behavior on rotation { NumberAnimation { duration: Theme.popoutAnimationDuration; easing.type: Easing.OutBack } }
-                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             }
 
                             StyledText {
@@ -2509,7 +2509,7 @@ PluginComponent {
                                 font.weight: Font.DemiBold
                                 color: detailsBtn.isHovered ? Theme.primary : Theme.surfaceText
                                 Layout.alignment: Qt.AlignVCenter
-                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             }
                         }
                     }

@@ -127,10 +127,10 @@ Rectangle {
         bottomLeftRadius: blr
         bottomRightRadius: brr
 
-        Behavior on topLeftRadius { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
-        Behavior on topRightRadius { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
-        Behavior on bottomLeftRadius { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
-        Behavior on bottomRightRadius { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
+        Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
+        Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
+        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
+        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
         color: isHighlighted
             ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
@@ -141,8 +141,8 @@ Rectangle {
             ? Theme.withAlpha(Theme.error, 0.5)
             : (isHighlighted ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.38) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.12))
 
-        Behavior on color { ColorAnimation { duration: 150 } }
-        Behavior on border.color { ColorAnimation { duration: 150 } }
+        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
+        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
     }
 
     DankRipple {
@@ -468,7 +468,7 @@ Rectangle {
                         enabled: progressFill._grown
 
                         NumberAnimation {
-                            duration: 300
+                            duration: Theme.longDuration
                             easing.type: Easing.OutCubic
                         }
                     }

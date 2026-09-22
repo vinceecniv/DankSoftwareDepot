@@ -99,7 +99,7 @@ Item {
         anchors.fill: parent
         color: Qt.rgba(0, 0, 0, 0.45)
         opacity: dialog.showing ? 1.0 : 0.0
-        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutQuad } }
+        Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -119,8 +119,8 @@ Item {
         border.color: Theme.withAlpha(Theme.outline, 0.2)
         scale: dialog.showing ? 1.0 : 0.94
         opacity: dialog.showing ? 1.0 : 0.0
-        Behavior on scale { NumberAnimation { duration: 320; easing.type: Easing.OutBack } }
-        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutQuad } }
+        Behavior on scale { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutBack } }
+        Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent

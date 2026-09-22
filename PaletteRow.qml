@@ -60,24 +60,24 @@ Item {
         bottomLeftRadius: blr
         bottomRightRadius: brr
 
-        Behavior on topLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-        Behavior on topRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-        Behavior on bottomLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-        Behavior on bottomRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
+        Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+        Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
         color: isHighlighted
             ? Theme.withAlpha(Theme.primary, slot.selected ? 0.24 : 0.14)
             : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
-        Behavior on color { ColorAnimation { duration: 150 } }
+        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
 
         border.width: 1
         border.color: isHighlighted
             ? (slot.selected ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.35))
             : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08)
-        Behavior on border.color { ColorAnimation { duration: 150 } }
+        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
         scale: rowArea.pressed ? 0.98 : (slot.selected ? 1.01 : 1.0)
-        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
+        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
 
         DankRipple {
             id: rowRip

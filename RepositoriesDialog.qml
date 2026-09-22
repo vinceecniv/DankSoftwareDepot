@@ -286,7 +286,7 @@ Item {
         anchors.fill: parent
         color: Qt.rgba(0, 0, 0, 0.45)
         opacity: dialog.animActive ? 1.0 : 0.0
-        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutQuad } }
+        Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -307,7 +307,7 @@ Item {
         scale: dialog.animActive ? 1.0 : 0.94
         opacity: dialog.animActive ? 1.0 : 0.0
         Behavior on scale { NumberAnimation { duration: dialog.animActive ? 320 : 200; easing.type: dialog.animActive ? Easing.OutBack : Easing.InQuad } }
-        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
+        Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -457,10 +457,10 @@ Item {
                                         property real blr: hovered ? (height / 2) : (suggestionCard.isLast ? outerRadius : innerRadius)
                                         property real brr: hovered ? (height / 2) : (suggestionCard.isLast ? outerRadius : innerRadius)
 
-                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                                         ShapePath {
                                             fillColor: suggBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
@@ -606,10 +606,10 @@ Item {
                                         property real blr: hovered ? (height / 2) : (remoteRow.isLast ? outerRadius : innerRadius)
                                         property real brr: hovered ? (height / 2) : (remoteRow.isLast ? outerRadius : innerRadius)
 
-                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                                         ShapePath {
                                             fillColor: remoteBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
@@ -769,10 +769,10 @@ Item {
                                         property real blr: hovered ? (height / 2) : (catalogRow.isLast ? outerRadius : innerRadius)
                                         property real brr: hovered ? (height / 2) : (catalogRow.isLast ? outerRadius : innerRadius)
 
-                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                                         ShapePath {
                                             fillColor: catBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
@@ -1038,10 +1038,10 @@ Item {
                                         property real blr: hovered ? (height / 2) : (repoRow.isLast ? outerRadius : innerRadius)
                                         property real brr: hovered ? (height / 2) : (repoRow.isLast ? outerRadius : innerRadius)
 
-                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                                        property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real blrAnim: blr; Behavior on blrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                                        property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                                         ShapePath {
                                             fillColor: repoBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)

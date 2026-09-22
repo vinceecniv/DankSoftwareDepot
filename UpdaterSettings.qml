@@ -88,16 +88,16 @@ PluginSettings {
                 property bool isHovered: openMa.containsMouse
 
                 radius: isHovered ? (height / 2) : Theme.cornerRadius
-                Behavior on radius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
+                Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                 color: isHovered ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.primary, 0.15)
-                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                 border.width: 1
                 border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                 scale: openMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                 DankRipple {
                     id: openRip

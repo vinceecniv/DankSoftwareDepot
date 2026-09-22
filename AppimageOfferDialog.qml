@@ -159,7 +159,7 @@ Item {
         color: Qt.rgba(0, 0, 0, 0.45)
         opacity: dialog.animActive ? 1.0 : 0.0
         Behavior on opacity {
-            NumberAnimation { duration: 220; easing.type: Easing.OutQuad }
+            NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad }
         }
 
         MouseArea {
@@ -187,7 +187,7 @@ Item {
             }
         }
         Behavior on opacity {
-            NumberAnimation { duration: 220; easing.type: Easing.OutQuad }
+            NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad }
         }
 
         MouseArea {
@@ -380,19 +380,19 @@ Item {
                     topRightRadius: isHovered ? (height / 2) : 4
                     bottomRightRadius: isHovered ? (height / 2) : 4
 
-                    Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                    Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                    Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                    Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                    Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                    Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                    Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                    Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                     color: isHovered ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.95) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
-                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                     border.width: 1
                     border.color: isHovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                    Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                     scale: cancelMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                    Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                     DankRipple {
                         id: cancelRip
@@ -442,21 +442,21 @@ Item {
                     topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
                     bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
 
-                    Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                    Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                    Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                    Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                    Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                    Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                    Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                    Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                     color: isHovered ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.primary, 0.15)
-                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                     border.width: 1
                     border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                    Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                     scale: acceptMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
                     opacity: btnEnabled ? 1.0 : 0.5
-                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
-                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                    Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
+                    Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
 
                     DankRipple {
                         id: acceptRip

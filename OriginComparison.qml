@@ -139,10 +139,10 @@ Column {
             property real blr: origMa.containsMouse ? 18 : (isLast ? outerRadius : innerRadius)
             property real brr: origMa.containsMouse ? 18 : (isLast ? outerRadius : innerRadius)
 
-            Behavior on tlr { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-            Behavior on trr { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-            Behavior on blr { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-            Behavior on brr { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            Behavior on tlr { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutCubic } }
+            Behavior on trr { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutCubic } }
+            Behavior on blr { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutCubic } }
+            Behavior on brr { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutCubic } }
 
             width: root.width
             implicitHeight: originColumn.implicitHeight + Theme.spacingS * 2

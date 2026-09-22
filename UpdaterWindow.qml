@@ -661,8 +661,8 @@ FloatingWindow {
 
             scale: win.settingsOpen ? 1.0 : 0.94
             opacity: win.settingsOpen ? 1.0 : 0.0
-            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-            Behavior on opacity { NumberAnimation { duration: 180 } }
+            Behavior on scale { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutBack } }
+            Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
 
             MouseArea {
                 anchors.fill: parent
@@ -710,16 +710,16 @@ FloatingWindow {
                         property bool isHovered: setCloseMa.containsMouse
 
                         radius: isHovered ? (height / 2) : (Theme.cornerRadius / 2)
-                        Behavior on radius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                        Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                         color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: isHovered ? Theme.error : Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.15)
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: setCloseMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
                             id: setCloseRip
@@ -772,13 +772,13 @@ FloatingWindow {
                             topRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
                             bottomRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
 
-                            Behavior on topLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                            Behavior on bottomLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                            Behavior on topRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                            Behavior on bottomRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
+                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                             color: isTabActive ? Theme.primary : (isTabHovered ? Theme.withAlpha(Theme.primary, 0.15) : "transparent")
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
 
                             RowLayout {
                                 anchors.centerIn: parent
@@ -819,13 +819,13 @@ FloatingWindow {
                             topRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
                             bottomRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
 
-                            Behavior on topLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                            Behavior on bottomLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                            Behavior on topRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                            Behavior on bottomRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
+                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                             color: isTabActive ? Theme.primary : (isTabHovered ? Theme.withAlpha(Theme.primary, 0.15) : "transparent")
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
 
                             RowLayout {
                                 anchors.centerIn: parent
@@ -876,9 +876,9 @@ FloatingWindow {
                         opacity: win.settingsTab === "settings" ? 1.0 : 0.0
                         transform: Translate {
                             x: win.settingsTab === "settings" ? 0 : -24
-                            Behavior on x { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+                            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
                         }
-                        Behavior on opacity { NumberAnimation { duration: 200 } }
+                        Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
                         visible: opacity > 0.0
 
                         Column {
@@ -1724,9 +1724,9 @@ FloatingWindow {
                         opacity: win.settingsTab === "about" ? 1.0 : 0.0
                         transform: Translate {
                             x: win.settingsTab === "about" ? 0 : 24
-                            Behavior on x { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+                            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
                         }
-                        Behavior on opacity { NumberAnimation { duration: 200 } }
+                        Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
                         visible: opacity > 0.0
 
                         ColumnLayout {
@@ -1862,21 +1862,21 @@ FloatingWindow {
                                                     topRightRadius: isPill ? (height / 2) : (isLast ? outerR : innerR)
                                                     bottomRightRadius: isPill ? (height / 2) : (isLast ? outerR : innerR)
 
-                                                    Behavior on topLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                                                    Behavior on bottomLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                                                    Behavior on topRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                                                    Behavior on bottomRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
+                                                    Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                                                     color: win.showUpdateChangelog
                                                         ? Theme.withAlpha(Theme.primary, 0.30)
                                                         : (isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5))
-                                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                                    Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                                     border.width: 1
                                                     border.color: (win.showUpdateChangelog || isHov) ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
-                                                    Behavior on border.color { ColorAnimation { duration: 200 } }
+                                                    Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                                     scale: logBtnMa.pressed ? 0.94 : (isHov ? 1.02 : 1.0)
-                                                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                                    Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                                                     RowLayout {
                                                         anchors.centerIn: parent
@@ -1886,7 +1886,7 @@ FloatingWindow {
                                                             name: win.showUpdateChangelog ? "expand_less" : "article"
                                                             size: 16
                                                             color: (win.showUpdateChangelog || parent.parent.isHov) ? Theme.primary : Theme.surfaceText
-                                                            Behavior on color { ColorAnimation { duration: 150 } }
+                                                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                                         }
 
                                                         StyledText {
@@ -1894,7 +1894,7 @@ FloatingWindow {
                                                             font.pixelSize: Theme.fontSizeSmall - 1
                                                             font.weight: Font.Medium
                                                             color: (win.showUpdateChangelog || parent.parent.isHov) ? Theme.primary : Theme.surfaceText
-                                                            Behavior on color { ColorAnimation { duration: 150 } }
+                                                            Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                                         }
                                                     }
 
@@ -1922,18 +1922,18 @@ FloatingWindow {
                                                     topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
                                                     bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
 
-                                                    Behavior on topLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                                                    Behavior on bottomLeftRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                                                    Behavior on topRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                                                    Behavior on bottomRightRadius { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
+                                                    Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                    Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                                                     color: isHov ? Theme.withAlpha(Theme.primary, 0.3) : Theme.withAlpha(Theme.primary, 0.18)
-                                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                                    Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                                     border.width: 1
                                                     border.color: Theme.primary
 
                                                     scale: updBtnMa.pressed ? 0.94 : (isHov ? 1.02 : 1.0)
-                                                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                                    Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                                                     RowLayout {
                                                         anchors.centerIn: parent
@@ -1977,8 +1977,8 @@ FloatingWindow {
                                                 color: Theme.withAlpha(Theme.surfaceContainerLowest, 0.55)
                                                 border.width: win.showUpdateChangelog ? 1 : 0
 
-                                                Behavior on implicitHeight { NumberAnimation { duration: 350; easing.type: Easing.OutExpo } }
-                                                Behavior on opacity { NumberAnimation { duration: 250 } }
+                                                Behavior on implicitHeight { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                                Behavior on opacity { NumberAnimation { duration: Theme.longDuration } }
 
                                                 Item {
                                                     anchors.fill: parent
@@ -2036,10 +2036,10 @@ FloatingWindow {
                                             topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
                                             bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
 
-                                            Behavior on topLeftRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on bottomLeftRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on topRightRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on bottomRightRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                                             color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
                                             border.width: 1
@@ -2086,10 +2086,10 @@ FloatingWindow {
                                             topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
                                             bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
 
-                                            Behavior on topLeftRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on bottomLeftRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on topRightRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on bottomRightRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                                             color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
                                             border.width: 1
@@ -2175,10 +2175,10 @@ FloatingWindow {
                                             topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
                                             bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
 
-                                            Behavior on topLeftRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on bottomLeftRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on topRightRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on bottomRightRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                                             color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
                                             border.width: 1
@@ -2228,10 +2228,10 @@ FloatingWindow {
                                             topRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
                                             bottomRightRadius: isHov ? (height / 2) : (isLast ? outerR : innerR)
 
-                                            Behavior on topLeftRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on bottomLeftRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on topRightRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
-                                            Behavior on bottomRightRadius { NumberAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                                            Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
+                                            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                                             color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
                                             border.width: 1
@@ -3189,7 +3189,7 @@ FloatingWindow {
         anchors.margins: Theme.spacingL
         spacing: Theme.spacingM
         opacity: win.anyPopupShowing ? 0.35 : 1.0
-        Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutQuad } }
+        Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
         // ── Header Container Card (Matches modern UI theme) ─────────────────
         StyledRect {
@@ -3314,21 +3314,21 @@ FloatingWindow {
                         topRightRadius: (isHovered || isActive) ? (height / 2) : 4
                         bottomRightRadius: (isHovered || isActive) ? (height / 2) : 4
 
-                        Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                         color: isActive
                             ? Theme.withAlpha(Theme.primary, 0.30)
                             : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: (isActive || isHovered) ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.14)
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: searchMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
                             id: searchRip
@@ -3377,22 +3377,22 @@ FloatingWindow {
                         topRightRadius: (isHovered || isActive) ? (height / 2) : 4
                         bottomRightRadius: (isHovered || isActive) ? (height / 2) : 4
 
-                        Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                         color: isActive
                             ? Theme.withAlpha(Theme.primary, 0.30)
                             : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: (isActive || isHovered) ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.14)
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: refreshMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
                         opacity: btnEnabled || isActive ? 1.0 : 0.4
-                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
                             id: refreshRip
@@ -3411,7 +3411,7 @@ FloatingWindow {
                             RotationAnimator on rotation {
                                 from: 0
                                 to: 360
-                                duration: 1000
+                                duration: Theme.extraLongDuration
                                 loops: Animation.Infinite
                                 running: SystemUpdateService.isChecking
 
@@ -3461,21 +3461,21 @@ FloatingWindow {
                         topRightRadius: (isHovered || isActive) ? (height / 2) : 4
                         bottomRightRadius: (isHovered || isActive) ? (height / 2) : 4
 
-                        Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                         color: isActive
                             ? Theme.withAlpha(Theme.primary, 0.30)
                             : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: (isActive || isHovered) ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.14)
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: settingsMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
                             id: settingsRip
@@ -3520,19 +3520,19 @@ FloatingWindow {
                         topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
                         bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
 
-                        Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                        Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                         color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45)
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: isHovered ? Theme.error : Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.15)
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: closeMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                        Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
                             id: closeRip
@@ -4470,8 +4470,8 @@ FloatingWindow {
             active: false
             opacity: visible ? 1.0 : 0.0
             x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
-            Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-            Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
             sourceComponent: InstalledView {
                 store: win.store
@@ -4509,8 +4509,8 @@ FloatingWindow {
             active: false
             opacity: visible ? 1.0 : 0.0
             x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
-            Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-            Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
             sourceComponent: InstallView {
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
@@ -4535,8 +4535,8 @@ FloatingWindow {
             active: false
             opacity: visible ? 1.0 : 0.0
             x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
-            Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-            Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
             sourceComponent: FirmwareView {
                 firmware: win.firmware
@@ -4552,8 +4552,8 @@ FloatingWindow {
             active: false
             opacity: visible ? 1.0 : 0.0
             x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
-            Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-            Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
             sourceComponent: LogView {
                 logger: win.widgetRoot ? win.widgetRoot.actionLogger : null
@@ -4711,8 +4711,8 @@ FloatingWindow {
             visible: win.currentTab === 0 && (win.categorySections.length > 0 || win.dashboardMode)
             opacity: visible ? 1.0 : 0.0
             x: visible ? 0 : (win.isSwipeRight ? -40 : 40)
-            Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-            Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
             Component.onCompleted: Ui.softenScrollbar(cardsList)
             header: win.dashboardMode ? dashboardHeaderComponent : null
 
@@ -4922,7 +4922,7 @@ FloatingWindow {
                         border.width: lit ? 1 : 0
                         border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
 
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         MouseArea {
                             id: windowEmptyArea
@@ -5788,24 +5788,24 @@ FloatingWindow {
                 topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
                 bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
 
-                Behavior on topLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                Behavior on bottomLeftRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                Behavior on topRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
-                Behavior on bottomRightRadius { NumberAnimation { duration: 500; easing.type: Easing.OutExpo } }
+                Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+                Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                 color: busyRun
                     ? (isHovered ? Theme.withAlpha(Theme.error, 0.3) : Theme.withAlpha(Theme.error, 0.18))
                     : (isHovered ? Theme.withAlpha(Theme.primary, 0.28) : Theme.withAlpha(Theme.primary, 0.16))
-                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
 
                 border.width: 1
                 border.color: busyRun
                     ? (isHovered ? Theme.error : Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.4))
                     : (isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.35))
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                 scale: updateAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
-                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                 DankRipple {
                     id: updateAllRip
