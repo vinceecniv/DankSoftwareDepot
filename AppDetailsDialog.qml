@@ -868,8 +868,9 @@ Item {
                         implicitHeight: screenshotsInner.implicitHeight + Theme.spacingM * 2
                         visible: (dialog.info.screenshots || []).length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
-                        border.width: 1
+                        // The thumbnails inside are the containers
+                        color: "transparent"
+                        border.width: 0
 
                         ColumnLayout {
                             id: screenshotsInner
@@ -2075,7 +2076,8 @@ Item {
                         implicitHeight: mainReviewsCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.reviewable && ((dialog.info.reviews || []).length > 0 || dialog.installedChipVisible || dialog.showOpenButton)
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        // The reviews inside are the containers
+                        color: "transparent"
                         border.width: 0
 
                         ColumnLayout {

@@ -445,7 +445,8 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+            // Holds a list of rows, each already a container
+            color: "transparent"
             border.width: 0
             clip: true
             visible: view.visibleEntries.length > 0

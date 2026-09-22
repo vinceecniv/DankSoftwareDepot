@@ -2252,7 +2252,7 @@ Item {
 
                 implicitHeight: brewInfoColumn.implicitHeight + Theme.spacingS * 2
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.35)
+                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                 opacity: usable ? 1 : 0.55
 
                 RowLayout {
