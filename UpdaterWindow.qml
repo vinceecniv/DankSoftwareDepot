@@ -4901,12 +4901,28 @@ FloatingWindow {
 
                     // Hero Card: Dank logo, status, check-on-hover
                     StyledRect {
+                        id: heroCard
+
+                        // Pressing this starts a check, and the cursor said so
+                        // while the card itself did not: a pointing hand over
+                        // a surface that never acknowledged it. It answers in
+                        // the same language every row in the app uses — the
+                        // primary tint and its border — and only while the
+                        // press would actually do something, so it stays
+                        // quiet through a check that is already running.
+                        readonly property bool actionable: !SystemUpdateService.isChecking && !win.engine.running
+                        readonly property bool lit: actionable && windowEmptyArea.containsMouse
+
                         Layout.fillWidth: true
                         Layout.topMargin: Theme.spacingM
                         implicitHeight: heroRow.implicitHeight + Theme.spacingL * 2
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
-                        border.width: 0
+                        color: lit ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
+                                   : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        border.width: lit ? 1 : 0
+                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
+
+                        Behavior on color { ColorAnimation { duration: 150 } }
 
                         MouseArea {
                             id: windowEmptyArea
