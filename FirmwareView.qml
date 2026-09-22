@@ -302,7 +302,11 @@ Item {
                     implicitHeight: deviceContent.implicitHeight + (Theme.spacingS + 2) * 2
                     height: implicitHeight
                     opacity: modelData.updatable ? 1 : 0.75
-                    clip: true
+                    // No clip on the row itself. The hover outline is a 1px stroke
+                    // centred on the row's edge, so clipping cut away its outer half
+                    // and the highlight stopped short of running round. The list and
+                    // its container clip, which is where the log does it too, and the
+                    // log's rows expand just as these do.
 
                     Behavior on implicitHeight {
                         NumberAnimation {
