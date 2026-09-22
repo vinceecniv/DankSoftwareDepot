@@ -22,7 +22,7 @@ PluginSettings {
     StyledRect {
         width: parent.width
         radius: Theme.cornerRadius
-        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+        color: Theme.withAlpha(Theme.chipSurface, 0.45)
         border.width: 0
         implicitHeight: aboutCol.implicitHeight + Theme.spacingM * 2
 
@@ -156,7 +156,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     RowLayout {
@@ -217,7 +217,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     RowLayout {
@@ -278,7 +278,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     RowLayout {
@@ -339,7 +339,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     RowLayout {
@@ -400,7 +400,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     RowLayout {
@@ -461,7 +461,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     RowLayout {
@@ -522,7 +522,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     RowLayout {
@@ -590,7 +590,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     RowLayout {
@@ -657,7 +657,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     RowLayout {
@@ -718,7 +718,7 @@ PluginSettings {
                                     bottomLeftRadius: isLast ? outerR : innerR
                                     bottomRightRadius: isLast ? outerR : innerR
     
-                                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                     border.width: 0
     
                                     ColumnLayout {

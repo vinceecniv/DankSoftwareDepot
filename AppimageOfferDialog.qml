@@ -174,7 +174,7 @@ Item {
         width: Math.min(parent.width - Theme.spacingXL * 2, 480)
         height: sheetColumn.implicitHeight + Theme.spacingL * 2
         radius: Theme.cornerRadius + 4
-        color: Theme.surfaceContainer
+        color: Theme.cardSurface
         border.width: 1
 
         scale: dialog.animActive ? 1.0 : 0.94
@@ -385,7 +385,7 @@ Item {
                     Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                     Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
-                    color: isHovered ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.95) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
+                    color: isHovered ? Theme.withAlpha(Theme.chipSurfaceNested, 0.95) : Theme.withAlpha(Theme.chipSurfaceNested, 0.6)
                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                     border.width: 1
                     border.color: isHovered ? Theme.primarySelected : Theme.primaryHover

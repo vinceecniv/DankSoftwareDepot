@@ -95,7 +95,7 @@ Item {
         width: Math.min(parent.width - Theme.spacingXL * 2, 620)
         height: field.height + resultColumn.height + emptyLabel.height + Theme.spacingM * 2 + (resultColumn.children.length > 0 && palette.results.length > 0 ? Theme.spacingS : 0)
         radius: Theme.cornerRadius + 4
-        color: Theme.surfaceContainer
+        color: Theme.cardSurface
         border.width: 0
 
         scale: palette.visible ? 1.0 : 0.94
@@ -123,7 +123,7 @@ Item {
             placeholderColor: Theme.surfaceVariantText
             normalBorderColor: Theme.withAlpha(Theme.primary, 0.20)
             focusedBorderColor: Theme.primary
-            backgroundColor: Theme.withAlpha(Theme.surfaceContainerHigh, 0.8)
+            backgroundColor: Theme.withAlpha(Theme.chipSurface, 0.8)
             onTextChanged: {
                 palette.query = text;
                 palette.current = 0;

@@ -1738,7 +1738,7 @@ PluginComponent {
                     width: parent.width
                     height: 68
                     radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                     border.width: 0
 
                     RowLayout {
@@ -1847,7 +1847,7 @@ PluginComponent {
                                 width: 38
                                 height: 38
 
-                                color: isHovered ? Theme.withAlpha(Theme.primary, 0.15) : Theme.withAlpha(Theme.surfaceContainer, 0.4)
+                                color: isHovered ? Theme.withAlpha(Theme.primary, 0.15) : Theme.withAlpha(Theme.cardSurface, 0.4)
                                 border.width: 1
                                 border.color: Theme.withAlpha(Theme.primary, isHovered ? 0.3 : 0.15)
 
@@ -1908,7 +1908,7 @@ PluginComponent {
                                 width: 38
                                 height: 38
 
-                                color: isHovered ? Theme.withAlpha(Theme.secondary, 0.2) : Theme.withAlpha(Theme.surfaceContainer, 0.4)
+                                color: isHovered ? Theme.withAlpha(Theme.secondary, 0.2) : Theme.withAlpha(Theme.cardSurface, 0.4)
                                 border.width: 1
                                 border.color: Theme.withAlpha(Theme.secondary, isHovered ? 0.4 : 0.15)
 
@@ -1995,7 +1995,7 @@ PluginComponent {
                     visible: engine.phase !== "idle"
                     height: visible ? progressContent.implicitHeight + Theme.spacingM * 2 : 0
                     radius: Theme.cornerRadius
-                    color: Theme.surfaceContainer
+                    color: Theme.cardSurface
                     border.width: 0
 
                     Column {
@@ -2172,7 +2172,7 @@ PluginComponent {
 
                                         Rectangle {
                                             anchors.fill: parent
-                                            color: Theme.surfaceContainer
+                                            color: Theme.cardSurface
                                             radius: height / 2
                                         }
 
@@ -2264,7 +2264,7 @@ PluginComponent {
                     height: 240
                     visible: root.popoutModel.length === 0
                     radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                     border.width: 0
 
                     MouseArea {
@@ -2456,7 +2456,7 @@ PluginComponent {
 
                         color: isHovered
                             ? Theme.withAlpha(Theme.secondary, 0.2)
-                            : Theme.withAlpha(Theme.surfaceContainerHigh, 0.6)
+                            : Theme.withAlpha(Theme.chipSurface, 0.6)
                         border.width: 1
                         border.color: Theme.withAlpha(Theme.secondary, isHovered ? 0.4 : 0.18)
 

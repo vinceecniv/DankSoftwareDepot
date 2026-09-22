@@ -302,7 +302,7 @@ Item {
         width: Math.min(parent.width - Theme.spacingXL * 2, 760)
         height: Math.min(parent.height - Theme.spacingXL * 2, 640)
         radius: Theme.cornerRadius + 4
-        color: Theme.surfaceContainer
+        color: Theme.cardSurface
         border.width: 0
         scale: dialog.animActive ? 1.0 : 0.94
         opacity: dialog.animActive ? 1.0 : 0.0
@@ -878,7 +878,7 @@ Item {
                     StyledRect {
                         Layout.fillWidth: true
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        color: Theme.withAlpha(Theme.chipSurface, 0.45)
                         border.width: 0
                         implicitHeight: addRemoteCol.implicitHeight + Theme.spacingM * 2
 
@@ -1000,7 +1000,7 @@ Item {
                                         iconName: dialog.showNoise ? "visibility_off" : "visibility"
                                         iconSize: 14
                                         text: dialog.showNoise ? Tr.t("Hide debug/source repos") : Tr.t("Show debug/source repos")
-                                        backgroundColor: Theme.surfaceContainerHighest
+                                        backgroundColor: Theme.chipSurfaceNested
                                         textColor: Theme.surfaceVariantText
                                         onClicked: dialog.showNoise = !dialog.showNoise
                                     }
@@ -1148,7 +1148,7 @@ Item {
                         Layout.fillWidth: true
                         visible: dialog.writable
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        color: Theme.withAlpha(Theme.chipSurface, 0.45)
                         border.width: 0
                         implicitHeight: addCoprCol.implicitHeight + Theme.spacingM * 2
 

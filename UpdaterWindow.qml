@@ -656,7 +656,7 @@ FloatingWindow {
             width: Math.min(560, parent.width - Theme.spacingL * 2)
             height: Math.min(620, parent.height - Theme.spacingL * 2)
             radius: Theme.cornerRadius + 4
-            color: Theme.surfaceContainer
+            color: Theme.cardSurface
             border.width: 0
 
             scale: win.settingsOpen ? 1.0 : 0.94
@@ -712,7 +712,7 @@ FloatingWindow {
                         radius: isHovered ? (height / 2) : (Theme.cornerRadius / 2)
                         Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
-                        color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
+                        color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Theme.chipSurfaceNested, 0.5)
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.15)
@@ -752,7 +752,7 @@ FloatingWindow {
                     Layout.fillWidth: true
                     height: 38
                     radius: Theme.cornerRadius
-                    color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                    color: Theme.withAlpha(Theme.chipSurface, 0.45)
                     border.width: 0
 
                     RowLayout {
@@ -900,7 +900,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -961,7 +961,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1022,7 +1022,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1083,7 +1083,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1144,7 +1144,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1205,7 +1205,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1266,7 +1266,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1334,7 +1334,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1401,7 +1401,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 RowLayout {
@@ -1462,7 +1462,7 @@ FloatingWindow {
                                 bottomLeftRadius: isLast ? outerR : innerR
                                 bottomRightRadius: isLast ? outerR : innerR
 
-                                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                                 border.width: 0
 
                                 ColumnLayout {
@@ -1869,7 +1869,7 @@ FloatingWindow {
 
                                                     color: win.showUpdateChangelog
                                                         ? Theme.withAlpha(Theme.primary, 0.30)
-                                                        : (isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5))
+                                                        : (isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.chipSurfaceNested, 0.5))
                                                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                                     border.width: 1
                                                     border.color: (win.showUpdateChangelog || isHov) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
@@ -2041,7 +2041,7 @@ FloatingWindow {
                                             Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                                             Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
-                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
+                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.chipSurfaceNested, 0.5)
                                             border.width: 1
                                             border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
 
@@ -2091,7 +2091,7 @@ FloatingWindow {
                                             Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                                             Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
-                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
+                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.chipSurfaceNested, 0.5)
                                             border.width: 1
                                             border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
 
@@ -2180,7 +2180,7 @@ FloatingWindow {
                                             Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                                             Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
-                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
+                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.chipSurfaceNested, 0.5)
                                             border.width: 1
                                             border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
 
@@ -2233,7 +2233,7 @@ FloatingWindow {
                                             Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                                             Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
-                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
+                                            color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.chipSurfaceNested, 0.5)
                                             border.width: 1
                                             border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
 
@@ -2347,7 +2347,7 @@ FloatingWindow {
     // exist does not degrade — it fails to load, taking the whole plugin with
     // it. The same release added the colour, so that is asked for defensively
     // too and falls back to the tone it is derived from.
-    color: Theme.floatingWindowSurface !== undefined ? Theme.floatingWindowSurface : Theme.surfaceContainer
+    color: Theme.floatingWindowSurface !== undefined ? Theme.floatingWindowSurface : Theme.cardSurface
     visible: false
 
     // A compositor-side close (Super+Q) kills the toplevel without updating
@@ -3195,7 +3195,7 @@ FloatingWindow {
         StyledRect {
             Layout.fillWidth: true
             radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+            color: Theme.withAlpha(Theme.chipSurface, 0.45)
             border.width: 0
             implicitHeight: headerRow.implicitHeight + Theme.spacingM * 2
 
@@ -3321,7 +3321,7 @@ FloatingWindow {
 
                         color: isActive
                             ? Theme.withAlpha(Theme.primary, 0.30)
-                            : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
+                            : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.chipSurfaceNested, 0.45))
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
@@ -3384,7 +3384,7 @@ FloatingWindow {
 
                         color: isActive
                             ? Theme.withAlpha(Theme.primary, 0.30)
-                            : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
+                            : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.chipSurfaceNested, 0.45))
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
@@ -3468,7 +3468,7 @@ FloatingWindow {
 
                         color: isActive
                             ? Theme.withAlpha(Theme.primary, 0.30)
-                            : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
+                            : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.chipSurfaceNested, 0.45))
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
@@ -3525,7 +3525,7 @@ FloatingWindow {
                         Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
-                        color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45)
+                        color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Theme.chipSurfaceNested, 0.45)
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
                         border.color: isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.15)
@@ -4574,7 +4574,7 @@ FloatingWindow {
             visible: win.currentTab === 0 && (win.engine.running || win.engine.phase === "verifying" || (win.engine.phase !== "idle" && win.engine.failedCount > 0) || win.engine.phase === "done")
             implicitHeight: progressColumn.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
-            color: Theme.surfaceContainer
+            color: Theme.cardSurface
             border.width: 1
             border.color: Theme.withAlpha(Theme.outline, 0.1)
             clip: true
@@ -4742,7 +4742,7 @@ FloatingWindow {
                 width: cardsList.width
                 implicitHeight: catCol.implicitHeight + Theme.spacingM * 2
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                color: Theme.withAlpha(Theme.chipSurface, 0.45)
                 border.width: 0
                 clip: true
 
@@ -4918,7 +4918,7 @@ FloatingWindow {
                         implicitHeight: heroRow.implicitHeight + Theme.spacingL * 2
                         radius: Theme.cornerRadius
                         color: lit ? Theme.primaryHover
-                                   : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                                   : Theme.withAlpha(Theme.chipSurface, 0.45)
                         border.width: lit ? 1 : 0
                         border.color: Theme.withAlpha(Theme.primary, 0.4)
 
@@ -5111,7 +5111,7 @@ FloatingWindow {
                             Layout.fillHeight: true
                             implicitHeight: systemCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                            color: Theme.withAlpha(Theme.chipSurface, 0.45)
                             border.width: 0
 
                             ColumnLayout {
@@ -5188,7 +5188,7 @@ FloatingWindow {
                             Layout.fillHeight: true
                             implicitHeight: statusCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                            color: Theme.withAlpha(Theme.chipSurface, 0.45)
                             border.width: 0
 
                             ColumnLayout {
@@ -5266,7 +5266,7 @@ FloatingWindow {
                             Layout.fillHeight: true
                             implicitHeight: installedCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                            color: Theme.withAlpha(Theme.chipSurface, 0.45)
 
                             ColumnLayout {
                                 id: installedCardCol
@@ -5396,7 +5396,7 @@ FloatingWindow {
                             Layout.fillHeight: true
                             implicitHeight: recentCardCol.implicitHeight + Theme.spacingM * 2
                             radius: Theme.cornerRadius
-                            color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                            color: Theme.withAlpha(Theme.chipSurface, 0.45)
 
                             ColumnLayout {
                                 id: recentCardCol
@@ -5553,7 +5553,7 @@ FloatingWindow {
                         visible: total > 50 * 1024 * 1024 || (engaged && (total > 0 || cleanedKinds.length > 0))
                         implicitHeight: cleanupColumn.implicitHeight + Theme.spacingM * 2
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+                        color: Theme.withAlpha(Theme.chipSurface, 0.45)
 
                         ColumnLayout {
                             id: cleanupColumn

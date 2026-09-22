@@ -114,7 +114,7 @@ Item {
         width: Math.min(parent.width - Theme.spacingXL * 2, 640)
         height: Math.min(parent.height - Theme.spacingXL * 2, sheetColumn.implicitHeight + Theme.spacingL * 2)
         radius: Theme.cornerRadius
-        color: Theme.surfaceContainerHigh
+        color: Theme.chipSurface
         border.width: 1
         border.color: Theme.withAlpha(Theme.outline, 0.2)
         scale: dialog.showing ? 1.0 : 0.94
@@ -198,7 +198,7 @@ Item {
                     width: ListView.view ? ListView.view.width : 0
                     implicitHeight: itemColumn.implicitHeight + Theme.spacingM * 2
                     radius: Theme.cornerRadius
-                    color: modelData.unread ? Theme.withAlpha(Theme.primary, 0.10) : Theme.surfaceContainer
+                    color: modelData.unread ? Theme.withAlpha(Theme.primary, 0.10) : Theme.cardSurface
 
                     MouseArea {
                         anchors.fill: parent

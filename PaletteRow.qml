@@ -67,7 +67,7 @@ Item {
 
         color: isHighlighted
             ? Theme.withAlpha(Theme.primary, slot.selected ? 0.24 : 0.14)
-            : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
+            : Theme.withAlpha(Theme.chipSurface, 0.45)
         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
 
         border.width: 1
