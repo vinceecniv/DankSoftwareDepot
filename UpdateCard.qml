@@ -133,13 +133,13 @@ Rectangle {
         Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
         color: isHighlighted
-            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+            ? Theme.primaryHover
             : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
 
         border.width: 1
         border.color: card.status === "error"
             ? Theme.withAlpha(Theme.error, 0.5)
-            : (isHighlighted ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.38) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.12))
+            : (isHighlighted ? Theme.withAlpha(Theme.primary, 0.38) : Theme.withAlpha(Theme.secondary, 0.12))
 
         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }

@@ -715,7 +715,7 @@ FloatingWindow {
                         color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
-                        border.color: isHovered ? Theme.error : Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.15)
+                        border.color: isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.15)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: setCloseMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
@@ -1872,7 +1872,7 @@ FloatingWindow {
                                                         : (isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5))
                                                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                                     border.width: 1
-                                                    border.color: (win.showUpdateChangelog || isHov) ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                                                    border.color: (win.showUpdateChangelog || isHov) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
                                                     Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                                     scale: logBtnMa.pressed ? 0.94 : (isHov ? 1.02 : 1.0)
@@ -2043,7 +2043,7 @@ FloatingWindow {
 
                                             color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
                                             border.width: 1
-                                            border.color: isHov ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                                            border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
 
                                             RowLayout {
                                                 anchors.centerIn: parent
@@ -2093,7 +2093,7 @@ FloatingWindow {
 
                                             color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
                                             border.width: 1
-                                            border.color: isHov ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                                            border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
 
                                             RowLayout {
                                                 anchors.centerIn: parent
@@ -2182,7 +2182,7 @@ FloatingWindow {
 
                                             color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
                                             border.width: 1
-                                            border.color: isHov ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                                            border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
 
                                             RowLayout {
                                                 anchors.centerIn: parent
@@ -2235,7 +2235,7 @@ FloatingWindow {
 
                                             color: isHov ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5)
                                             border.width: 1
-                                            border.color: isHov ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.15)
+                                            border.color: isHov ? Theme.primary : Theme.withAlpha(Theme.primary, 0.15)
 
                                             RowLayout {
                                                 anchors.centerIn: parent
@@ -3256,8 +3256,8 @@ FloatingWindow {
                             border.color: win.engine.running
                                 ? Theme.primary
                                 : (SystemUpdateService.isChecking
-                                    ? Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.4)
-                                    : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3))
+                                    ? Theme.withAlpha(Theme.secondary, 0.4)
+                                    : Theme.primarySelected)
 
                             StyledText {
                                 id: statusBadgeText
@@ -3324,7 +3324,7 @@ FloatingWindow {
                             : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
-                        border.color: (isActive || isHovered) ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.14)
+                        border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: searchMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
@@ -3387,7 +3387,7 @@ FloatingWindow {
                             : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
-                        border.color: (isActive || isHovered) ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.14)
+                        border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: refreshMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
@@ -3471,7 +3471,7 @@ FloatingWindow {
                             : (isHovered ? Theme.withAlpha(Theme.primary, 0.20) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
-                        border.color: (isActive || isHovered) ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.14)
+                        border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: settingsMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
@@ -3528,7 +3528,7 @@ FloatingWindow {
                         color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45)
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
-                        border.color: isHovered ? Theme.error : Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.15)
+                        border.color: isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.15)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: closeMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
@@ -4917,10 +4917,10 @@ FloatingWindow {
                         Layout.topMargin: Theme.spacingM
                         implicitHeight: heroRow.implicitHeight + Theme.spacingL * 2
                         radius: Theme.cornerRadius
-                        color: lit ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
+                        color: lit ? Theme.primaryHover
                                    : Theme.withAlpha(Theme.surfaceContainerHigh, 0.45)
                         border.width: lit ? 1 : 0
-                        border.color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
+                        border.color: Theme.withAlpha(Theme.primary, 0.4)
 
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
 
@@ -5800,8 +5800,8 @@ FloatingWindow {
 
                 border.width: 1
                 border.color: busyRun
-                    ? (isHovered ? Theme.error : Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.4))
-                    : (isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.35))
+                    ? (isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.4))
+                    : (isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.35))
                 Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                 scale: updateAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)

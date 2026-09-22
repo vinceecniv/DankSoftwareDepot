@@ -463,8 +463,8 @@ Item {
                                         property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                                         ShapePath {
-                                            fillColor: suggBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
-                                            strokeColor: suggBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                                            fillColor: suggBg.hovered ? Theme.primaryHover : Theme.withAlpha(Theme.secondary, 0.04)
+                                            strokeColor: suggBg.hovered ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15)
                                             strokeWidth: 1
 
                                             startX: suggBg.tlrAnim; startY: 0
@@ -612,8 +612,8 @@ Item {
                                         property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                                         ShapePath {
-                                            fillColor: remoteBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
-                                            strokeColor: remoteBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                                            fillColor: remoteBg.hovered ? Theme.primaryHover : Theme.withAlpha(Theme.secondary, 0.04)
+                                            strokeColor: remoteBg.hovered ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15)
                                             strokeWidth: 1
 
                                             startX: remoteBg.tlrAnim; startY: 0
@@ -775,8 +775,8 @@ Item {
                                         property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                                         ShapePath {
-                                            fillColor: catBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
-                                            strokeColor: catBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                                            fillColor: catBg.hovered ? Theme.primaryHover : Theme.withAlpha(Theme.secondary, 0.04)
+                                            strokeColor: catBg.hovered ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15)
                                             strokeWidth: 1
 
                                             startX: catBg.tlrAnim; startY: 0
@@ -1044,8 +1044,8 @@ Item {
                                         property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                                         ShapePath {
-                                            fillColor: repoBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
-                                            strokeColor: repoBg.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4) : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                                            fillColor: repoBg.hovered ? Theme.primaryHover : Theme.withAlpha(Theme.secondary, 0.04)
+                                            strokeColor: repoBg.hovered ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15)
                                             strokeWidth: 1
 
                                             startX: repoBg.tlrAnim; startY: 0

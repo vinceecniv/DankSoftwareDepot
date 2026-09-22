@@ -156,11 +156,11 @@ Column {
 
                 ShapePath {
                     fillColor: origMa.containsMouse
-                        ? (here ? Theme.withAlpha(Theme.success, 0.22) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.16))
+                        ? (here ? Theme.withAlpha(Theme.success, 0.22) : Theme.primaryPressed)
                         : (here ? Theme.withAlpha(Theme.success, 0.12) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.45))
                     strokeColor: origMa.containsMouse
-                        ? (here ? Theme.withAlpha(Theme.success, 0.7) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4))
-                        : (here ? Theme.withAlpha(Theme.success, 0.35) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1))
+                        ? (here ? Theme.withAlpha(Theme.success, 0.7) : Theme.withAlpha(Theme.primary, 0.4))
+                        : (here ? Theme.withAlpha(Theme.success, 0.35) : Theme.withAlpha(Theme.primary, 0.1))
                     strokeWidth: 1
                     joinStyle: ShapePath.RoundJoin
 

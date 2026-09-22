@@ -2072,7 +2072,7 @@ PluginComponent {
                                 Layout.preferredHeight: 18
                                 Layout.preferredWidth: updateBadgeText.implicitWidth + 12
                                 radius: 9
-                                color: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                                color: Theme.withAlpha(Theme.primary, 0.2)
                                 StyledText { id: updateBadgeText; anchors.centerIn: parent; text: String(root.effectiveCount); font.pixelSize: Theme.fontSizeSmall - 2; font.weight: Font.Bold; color: Theme.primary }
                             }
                         }
@@ -2127,13 +2127,13 @@ PluginComponent {
                                     Behavior on bottomRightRadius { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutQuad } }
 
                                     color: hovered
-                                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
-                                        : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+                                        ? Theme.primaryHover
+                                        : Theme.withAlpha(Theme.secondary, 0.04)
 
                                     border.width: 1
                                     border.color: hovered
-                                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.35)
-                                        : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.12)
+                                        ? Theme.withAlpha(Theme.primary, 0.35)
+                                        : Theme.withAlpha(Theme.secondary, 0.12)
 
                                     Behavior on color { ColorAnimation { duration: Theme.popoutAnimationDuration } }
                                     Behavior on border.color { ColorAnimation { duration: Theme.popoutAnimationDuration } }

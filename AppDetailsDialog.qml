@@ -781,7 +781,7 @@ Item {
                     color: closeBtnMa.containsMouse ? Theme.withAlpha(Theme.error, 0.15) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                     border.width: 1
-                    border.color: closeBtnMa.containsMouse ? Theme.error : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                    border.color: closeBtnMa.containsMouse ? Theme.error : Theme.primaryHover
                     Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                     DankIcon {
@@ -1010,7 +1010,7 @@ Item {
                                                     anchors.fill: parent
                                                     layer.enabled: true
                                                     layer.samples: 4
-                                                    property color borderColor: shotDelegate.hovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.7) : Qt.rgba(Theme.outline.r, Theme.outline.g, Theme.outline.b, 0.25)
+                                                    property color borderColor: shotDelegate.hovered ? Theme.withAlpha(Theme.primary, 0.7) : Theme.withAlpha(Theme.outline, 0.25)
                                                     Behavior on borderColor { ColorAnimation { duration: Theme.mediumDuration } }
 
                                                     ShapePath {
@@ -1055,7 +1055,7 @@ Item {
                                     visible: shotsFlickable.contentWidth > shotsFlickable.width && shotsFlickable.contentX > 5
                                     opacity: visible ? (leftShotMa.containsMouse ? 1.0 : 0.85) : 0.0
                                     color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.95)
-                                    border.color: leftShotMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
+                                    border.color: leftShotMa.containsMouse ? Theme.primary : Theme.primarySelected
                                     border.width: 1
 
                                     Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
@@ -1096,7 +1096,7 @@ Item {
                                     visible: shotsFlickable.contentWidth > shotsFlickable.width && (shotsFlickable.contentX < shotsFlickable.contentWidth - shotsFlickable.width - 5)
                                     opacity: visible ? (rightShotMa.containsMouse ? 1.0 : 0.85) : 0.0
                                     color: Theme.withAlpha(Theme.surfaceContainerHighest, 0.95)
-                                    border.color: rightShotMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
+                                    border.color: rightShotMa.containsMouse ? Theme.primary : Theme.primarySelected
                                     border.width: 1
 
                                     Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
@@ -1231,7 +1231,7 @@ Item {
                                     color: readMoreMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                     border.width: 1
-                                    border.color: readMoreMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                    border.color: readMoreMa.containsMouse ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                                     Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                     RowLayout {
@@ -1591,7 +1591,7 @@ Item {
                                             border.width: 1
                                             border.color: (modelData === "devices:all" || modelData === "fs:host" || modelData === "fs:host:ro")
                                                 ? Theme.withAlpha(Theme.warning, 0.35)
-                                                : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                                                : Theme.primaryHover
 
                                             RowLayout {
                                                 id: permChipRow
@@ -1631,7 +1631,7 @@ Item {
                                     color: permToggleMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                     border.width: 1
-                                    border.color: permToggleMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                    border.color: permToggleMa.containsMouse ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                                     Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                     RowLayout {
@@ -2123,7 +2123,7 @@ Item {
                                     radius: 14
                                     color: writeRevMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                                     border.width: 1
-                                    border.color: writeRevMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                    border.color: writeRevMa.containsMouse ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
 
                                     RowLayout {
                                         id: writeRevContent
@@ -2405,7 +2405,7 @@ Item {
                                         color: rev10MoreMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                         border.width: 1
-                                        border.color: rev10MoreMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                        border.color: rev10MoreMa.containsMouse ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                         RowLayout {
@@ -2445,7 +2445,7 @@ Item {
                                         color: revAllMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                         border.width: 1
-                                        border.color: revAllMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                        border.color: revAllMa.containsMouse ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                         RowLayout {
@@ -2485,7 +2485,7 @@ Item {
                                         color: revLessMa.containsMouse ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                         border.width: 1
-                                        border.color: revLessMa.containsMouse ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                                        border.color: revLessMa.containsMouse ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                         RowLayout {
@@ -2568,7 +2568,7 @@ Item {
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.18) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
-                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                            border.color: isHovered ? Theme.primary : Theme.primaryHover
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                             scale: webBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
@@ -2621,7 +2621,7 @@ Item {
                             color: isHovered ? (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.25) : Theme.withAlpha(Theme.primary, 0.18)) : (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.15) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6))
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
-                            border.color: isHovered ? (dialog.appData.held === true ? Theme.warning : Theme.primary) : (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.4) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12))
+                            border.color: isHovered ? (dialog.appData.held === true ? Theme.warning : Theme.primary) : (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.4) : Theme.primaryHover)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                             scale: holdBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
@@ -2677,7 +2677,7 @@ Item {
                         color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
-                        border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                        border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: pluginBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
@@ -2743,7 +2743,7 @@ Item {
                         color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
-                        border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                        border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                         scale: openBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
@@ -2858,7 +2858,7 @@ Item {
                             color: confirming ? Theme.error : (isHovered ? Theme.withAlpha(Theme.error, 0.18) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.5))
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
-                            border.color: confirming ? Theme.error : (isHovered ? Theme.error : Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.2))
+                            border.color: confirming ? Theme.error : (isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.2))
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                             scale: uninstBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
@@ -2934,7 +2934,7 @@ Item {
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
-                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.25)
+                            border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                             scale: updateBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
@@ -3011,7 +3011,7 @@ Item {
                                 color: isHovered ? (isFlathub ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.9)) : (isFlathub ? Theme.withAlpha(Theme.primary, 0.15) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6))
                                 Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                 border.width: 1
-                                border.color: isHovered ? (isFlathub ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)) : (isFlathub ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12))
+                                border.color: isHovered ? (isFlathub ? Theme.primary : Theme.primarySelected) : (isFlathub ? Theme.primarySelected : Theme.primaryHover)
                                 Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                                 scale: instBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)

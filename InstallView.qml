@@ -1505,7 +1505,7 @@ Item {
                 color: isHovered ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.95) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.65)
                 Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                 border.width: 1
-                border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                 Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                 scale: allSecMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
                 Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
@@ -2013,7 +2013,7 @@ Item {
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
-                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                            border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                             scale: viewAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
@@ -2153,7 +2153,7 @@ Item {
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
-                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                            border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                             scale: coprSearchMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
@@ -2301,7 +2301,7 @@ Item {
                         color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         border.width: 1
-                        border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                        border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                         scale: brewInstMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
@@ -2417,7 +2417,7 @@ Item {
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
-                            border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.2)
+                            border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
                             scale: brewSearchMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
@@ -2568,12 +2568,12 @@ Item {
                     property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                     property color paintColor: hovered
-                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
-                        : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+                        ? Theme.primaryHover
+                        : Theme.withAlpha(Theme.secondary, 0.04)
 
                     property color paintBorder: hovered
-                        ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
-                        : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                        ? Theme.withAlpha(Theme.primary, 0.4)
+                        : Theme.withAlpha(Theme.secondary, 0.15)
 
                     ShapePath {
                         fillColor: resultBg.paintColor
@@ -2769,8 +2769,8 @@ Item {
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
                             border.color: isPrimary
-                                ? (isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3))
-                                : (isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12))
+                                ? (isHovered ? Theme.primary : Theme.primarySelected)
+                                : (isHovered ? Theme.primary : Theme.primaryHover)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                             scale: instActionMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)

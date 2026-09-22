@@ -607,12 +607,12 @@ Item {
                         property real brrAnim: brr; Behavior on brrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
                         property color paintColor: hovered
-                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.1)
-                            : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.04)
+                            ? Theme.primaryHover
+                            : Theme.withAlpha(Theme.secondary, 0.04)
 
                         property color paintBorder: hovered
-                            ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.4)
-                            : Qt.rgba(Theme.secondary.r, Theme.secondary.g, Theme.secondary.b, 0.15)
+                            ? Theme.withAlpha(Theme.primary, 0.4)
+                            : Theme.withAlpha(Theme.secondary, 0.15)
 
                         ShapePath {
                             fillColor: entryBg.paintColor

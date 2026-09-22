@@ -72,8 +72,8 @@ Item {
 
         border.width: 1
         border.color: isHighlighted
-            ? (slot.selected ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.35))
-            : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.08)
+            ? (slot.selected ? Theme.primary : Theme.withAlpha(Theme.primary, 0.35))
+            : Theme.withAlpha(Theme.primary, 0.08)
         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
         scale: rowArea.pressed ? 0.98 : (slot.selected ? 1.01 : 1.0)

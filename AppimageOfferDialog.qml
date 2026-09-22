@@ -388,7 +388,7 @@ Item {
                     color: isHovered ? Theme.withAlpha(Theme.surfaceContainerHighest, 0.95) : Theme.withAlpha(Theme.surfaceContainerHighest, 0.6)
                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                     border.width: 1
-                    border.color: isHovered ? Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3) : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.12)
+                    border.color: isHovered ? Theme.primarySelected : Theme.primaryHover
                     Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                     scale: cancelMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
@@ -450,7 +450,7 @@ Item {
                     color: isHovered ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.primary, 0.15)
                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                     border.width: 1
-                    border.color: isHovered ? Theme.primary : Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.3)
+                    border.color: isHovered ? Theme.primary : Theme.primarySelected
                     Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
                     scale: acceptMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)

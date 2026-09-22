@@ -121,7 +121,7 @@ Item {
             ignoreUpDownKeys: true
             keyForwardTargets: [keyRelay]
             placeholderColor: Theme.surfaceVariantText
-            normalBorderColor: Qt.rgba(Theme.primary.r, Theme.primary.g, Theme.primary.b, 0.20)
+            normalBorderColor: Theme.withAlpha(Theme.primary, 0.20)
             focusedBorderColor: Theme.primary
             backgroundColor: Theme.withAlpha(Theme.surfaceContainerHigh, 0.8)
             onTextChanged: {
