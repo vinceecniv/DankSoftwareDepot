@@ -10,13 +10,13 @@ PluginSettings {
 
     pluginId: "dankSoftwareDepot"
 
-    ToggleSetting { id: s_hide; settingKey: "hideWhenUpToDate"; defaultValue: false; visible: false; height: 0 }
-    ToggleSetting { id: s_runtimes; settingKey: "showRuntimes"; defaultValue: true; visible: false; height: 0 }
-    ToggleSetting { id: s_firmware; settingKey: "includeFirmware"; defaultValue: true; visible: false; height: 0 }
-    ToggleSetting { id: s_confirm; settingKey: "confirmBeforeUpdate"; defaultValue: false; visible: false; height: 0 }
-    ToggleSetting { id: s_tint; settingKey: "tintAppIcons"; defaultValue: true; visible: false; height: 0 }
-    ToggleSetting { id: s_pill; settingKey: "pillOpensWindow"; defaultValue: false; visible: false; height: 0 }
-    SelectionSetting { id: s_auto; settingKey: "autoUpdateMode"; defaultValue: "notify"; visible: false; height: 0; options: [{label:"", value:""}] }
+    ToggleSetting { id: s_hide; settingKey: "hideWhenUpToDate"; label: Tr.t("Hide when up to date"); defaultValue: false; visible: false; height: 0 }
+    ToggleSetting { id: s_runtimes; settingKey: "showRuntimes"; label: Tr.t("Show runtimes and extensions"); defaultValue: true; visible: false; height: 0 }
+    ToggleSetting { id: s_firmware; settingKey: "includeFirmware"; label: Tr.t("Include firmware updates"); defaultValue: true; visible: false; height: 0 }
+    ToggleSetting { id: s_confirm; settingKey: "confirmBeforeUpdate"; label: Tr.t("Confirm before updating"); defaultValue: false; visible: false; height: 0 }
+    ToggleSetting { id: s_tint; settingKey: "tintAppIcons"; label: Tr.t("Tint app icons with the theme colour"); defaultValue: true; visible: false; height: 0 }
+    ToggleSetting { id: s_pill; settingKey: "pillOpensWindow"; label: Tr.t("Bar click opens window"); defaultValue: false; visible: false; height: 0 }
+    SelectionSetting { id: s_auto; settingKey: "autoUpdateMode"; label: Tr.t("Automatic updates"); defaultValue: "notify"; visible: false; height: 0; options: [{label:"", value:""}] }
 
     // ── About & Plugin Info Card ───────────────────────────
     StyledRect {

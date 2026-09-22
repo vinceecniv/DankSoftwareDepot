@@ -577,7 +577,6 @@ Item {
                     implicitHeight: entryColumn.implicitHeight + Theme.spacingS * 2
                     height: implicitHeight
                     Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
-                    Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
 
                     Shape {
                         id: entryBg
