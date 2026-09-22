@@ -3,7 +3,37 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 1.2.0 — 2026-09-23
+
+Thanks to @JDKamalakar for #21, the visual overhaul this release is built
+on. It is taken in part rather than whole — the look, the motion and the
+iconography are theirs; the list architecture underneath is back to what
+it was, and the surface layering sits at two levels rather than four.
+See that pull request for what was and was not taken, and why.
+
+- **A new look, following DMS.** Rounded corners, press and hover
+  feedback, per-category icons and animation throughout. Every container
+  fill is one value now instead of five, and a box is drawn only where it
+  holds something that is not already a box — so a heading groups a list
+  rather than a tinted panel inside another tinted panel. The accent
+  outline that #21 put on all 71 containers is gone; the ones that change
+  under the pointer stayed, because those mean something.
+
+- **The plugin follows the shell's own settings.** Animation timings come
+  from DMS's duration scale rather than 366 numbers written here, so the
+  plugin speeds up, slows down and stops with everything else — including
+  for anyone who has set animation to none. Hover and selection colours
+  are DMS's named states, not values that happened to look close. Card
+  and chip surfaces follow the colours set in DMS settings where the
+  shell offers them, and fall back to what they always drew where it does
+  not.
+
+- **Long lists stay fast.** The installed list and the storefront's
+  categories and search results build the rows on screen instead of all
+  of them, which is how they worked before and how they work again: 1971
+  system packages with no "show 60 more" in the way. The row you hover
+  rounds the same way on every page, and its outline runs all the way
+  round on the first and last row too.
 
 - **"Restart recommended" appears again after a kernel update.** It had
   not since 11 August, and the reason is dated 22 August: that is when the
