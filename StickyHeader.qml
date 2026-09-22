@@ -69,7 +69,7 @@ Loader {
             // heading's own card does not cover.
             Rectangle {
                 anchors.fill: parent
-                color: Theme.floatingWindowSurface !== undefined ? Theme.floatingWindowSurface : Theme.cardSurface
+                color: Theme.floatingWindowSurface !== undefined ? Theme.floatingWindowSurface : Ui.cardSurface
             }
 
             Loader {

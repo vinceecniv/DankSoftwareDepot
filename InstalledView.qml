@@ -1490,7 +1490,7 @@ Item {
                     StyledRect {
                         anchors.fill: parent
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.chipSurface, 0.96)
+                        color: Theme.withAlpha(Ui.chipSurface, 0.96)
                         border.width: 0
 
                         property var rowData: installedSticky.heading || ({})
@@ -1703,7 +1703,7 @@ Item {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 6
-                                color: Theme.withAlpha(Theme.chipSurface, 0.6)
+                                color: Theme.withAlpha(Ui.chipSurface, 0.6)
                                 visible: rowLogo.status !== Image.Ready
 
                                 DankIcon {

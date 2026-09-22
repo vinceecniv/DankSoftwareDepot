@@ -157,7 +157,7 @@ Column {
                 ShapePath {
                     fillColor: origMa.containsMouse
                         ? (here ? Theme.withAlpha(Theme.success, 0.22) : Theme.primaryPressed)
-                        : (here ? Theme.withAlpha(Theme.success, 0.12) : Theme.withAlpha(Theme.chipSurfaceNested, 0.45))
+                        : (here ? Theme.withAlpha(Theme.success, 0.12) : Theme.withAlpha(Ui.chipSurfaceNested, 0.45))
                     strokeColor: origMa.containsMouse
                         ? (here ? Theme.withAlpha(Theme.success, 0.7) : Theme.withAlpha(Theme.primary, 0.4))
                         : (here ? Theme.withAlpha(Theme.success, 0.35) : Theme.withAlpha(Theme.primary, 0.1))

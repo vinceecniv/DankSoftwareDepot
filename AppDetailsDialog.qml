@@ -506,7 +506,7 @@ Item {
         width: Math.min(720, dialog.width - Theme.spacingL * 2)
         height: Math.min(dialog.height - Theme.spacingL * 2, 660)
         radius: Theme.cornerRadius + 4
-        color: Theme.cardSurface
+        color: Ui.cardSurface
         border.width: 0
         scale: dialog.animActive ? 1.0 : 0.92
         opacity: dialog.animActive ? 1.0 : 0.0
@@ -526,7 +526,7 @@ Item {
             StyledRect {
                 Layout.fillWidth: true
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                color: Theme.withAlpha(Ui.chipSurface, 0.45)
                 border.width: 0
                 implicitHeight: headerContentCol.implicitHeight + Theme.spacingM * 2
 
@@ -778,7 +778,7 @@ Item {
                     Layout.preferredHeight: 32
                     radius: closeBtnMa.containsMouse ? (height / 2) : Theme.cornerRadius
                     Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
-                    color: closeBtnMa.containsMouse ? Theme.withAlpha(Theme.error, 0.15) : Theme.withAlpha(Theme.chipSurfaceNested, 0.6)
+                    color: closeBtnMa.containsMouse ? Theme.withAlpha(Theme.error, 0.15) : Theme.withAlpha(Ui.chipSurfaceNested, 0.6)
                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                     border.width: 1
                     border.color: closeBtnMa.containsMouse ? Theme.error : Theme.primaryHover
@@ -984,7 +984,7 @@ Item {
 
                                                         Rectangle {
                                                             anchors.fill: parent
-                                                            color: Theme.cardSurface
+                                                            color: Ui.cardSurface
                                                         }
 
                                                         Image {
@@ -1054,7 +1054,7 @@ Item {
                                     z: 10
                                     visible: shotsFlickable.contentWidth > shotsFlickable.width && shotsFlickable.contentX > 5
                                     opacity: visible ? (leftShotMa.containsMouse ? 1.0 : 0.85) : 0.0
-                                    color: Theme.withAlpha(Theme.chipSurfaceNested, 0.95)
+                                    color: Theme.withAlpha(Ui.chipSurfaceNested, 0.95)
                                     border.color: leftShotMa.containsMouse ? Theme.primary : Theme.primarySelected
                                     border.width: 1
 
@@ -1095,7 +1095,7 @@ Item {
                                     z: 10
                                     visible: shotsFlickable.contentWidth > shotsFlickable.width && (shotsFlickable.contentX < shotsFlickable.contentWidth - shotsFlickable.width - 5)
                                     opacity: visible ? (rightShotMa.containsMouse ? 1.0 : 0.85) : 0.0
-                                    color: Theme.withAlpha(Theme.chipSurfaceNested, 0.95)
+                                    color: Theme.withAlpha(Ui.chipSurfaceNested, 0.95)
                                     border.color: rightShotMa.containsMouse ? Theme.primary : Theme.primarySelected
                                     border.width: 1
 
@@ -1212,7 +1212,7 @@ Item {
                                     visible: descTextWrapper.needsTruncation && !dialog.descExpanded
                                     gradient: Gradient {
                                         GradientStop { position: 0.0; color: "transparent" }
-                                        GradientStop { position: 1.0; color: Theme.chipSurface }
+                                        GradientStop { position: 1.0; color: Ui.chipSurface }
                                     }
                                 }
                             }
@@ -1505,7 +1505,7 @@ Item {
                         implicitHeight: permsCardCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.permissionTokens.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                        color: Theme.withAlpha(Ui.chipSurface, 0.45)
                         border.width: 1
 
                         ColumnLayout {
@@ -1587,7 +1587,7 @@ Item {
                                             radius: 12
                                             color: (modelData === "devices:all" || modelData === "fs:host" || modelData === "fs:host:ro")
                                                 ? Theme.withAlpha(Theme.warning, 0.15)
-                                                : Theme.withAlpha(Theme.chipSurfaceNested, 0.8)
+                                                : Theme.withAlpha(Ui.chipSurfaceNested, 0.8)
                                             border.width: 1
                                             border.color: (modelData === "devices:all" || modelData === "fs:host" || modelData === "fs:host:ro")
                                                 ? Theme.withAlpha(Theme.warning, 0.35)
@@ -1736,7 +1736,7 @@ Item {
                         height: relCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.releases.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                        color: Theme.withAlpha(Ui.chipSurface, 0.45)
                         border.width: 1
 
                         ColumnLayout {
@@ -1818,7 +1818,7 @@ Item {
                         height: gitNotesCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.gitNotesLoading || dialog.gitReleases.length > 0
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                        color: Theme.withAlpha(Ui.chipSurface, 0.45)
                         border.width: 1
 
                         ColumnLayout {
@@ -1998,7 +1998,7 @@ Item {
                         height: prevVerCol.implicitHeight + Theme.spacingM * 2
                         visible: dialog.versionsLoading || dialog.previousVersions.length > 0 || dialog.noOlderVersions
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                        color: Theme.withAlpha(Ui.chipSurface, 0.45)
                         border.width: 0
 
                         ColumnLayout {
@@ -2059,7 +2059,7 @@ Item {
                                         iconName: "history"
                                         iconSize: 13
                                         text: Tr.t("Restore %1").arg(modelData.label)
-                                        backgroundColor: Theme.chipSurfaceNested
+                                        backgroundColor: Ui.chipSurfaceNested
                                         textColor: Theme.surfaceText
                                         enabled: !dialog.busy
                                         onClicked: dialog.restoreRequested(modelData.payload)
@@ -2171,7 +2171,7 @@ Item {
                                     anchors.top: parent.top
                                     implicitHeight: reviewForm.implicitHeight + Theme.spacingM * 2
                                     radius: Theme.cornerRadius
-                                    color: Theme.withAlpha(Theme.chipSurfaceNested, 0.6)
+                                    color: Theme.withAlpha(Ui.chipSurfaceNested, 0.6)
                                     border.width: 1
 
                                     ColumnLayout {
@@ -2303,7 +2303,7 @@ Item {
                                             Layout.fillWidth: true
                                             implicitHeight: revCardInner.implicitHeight + Theme.spacingM * 2
                                             radius: Theme.cornerRadius
-                                            color: Theme.withAlpha(Theme.chipSurfaceNested, 0.4)
+                                            color: Theme.withAlpha(Ui.chipSurfaceNested, 0.4)
                                             border.width: 0
 
                                             opacity: 1.0
@@ -2528,7 +2528,7 @@ Item {
             StyledRect {
                 Layout.fillWidth: true
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                color: Theme.withAlpha(Ui.chipSurface, 0.45)
                 border.width: 1
                 implicitHeight: footerLayout.implicitHeight + Theme.spacingM * 2
 
@@ -2565,7 +2565,7 @@ Item {
                             Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                             Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
-                            color: isHovered ? Theme.withAlpha(Theme.primary, 0.18) : Theme.withAlpha(Theme.chipSurfaceNested, 0.6)
+                            color: isHovered ? Theme.withAlpha(Theme.primary, 0.18) : Theme.withAlpha(Ui.chipSurfaceNested, 0.6)
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
                             border.color: isHovered ? Theme.primary : Theme.primaryHover
@@ -2618,7 +2618,7 @@ Item {
                             Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                             Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
-                            color: isHovered ? (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.25) : Theme.withAlpha(Theme.primary, 0.18)) : (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.15) : Theme.withAlpha(Theme.chipSurfaceNested, 0.6))
+                            color: isHovered ? (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.25) : Theme.withAlpha(Theme.primary, 0.18)) : (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.15) : Theme.withAlpha(Ui.chipSurfaceNested, 0.6))
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
                             border.color: isHovered ? (dialog.appData.held === true ? Theme.warning : Theme.primary) : (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.4) : Theme.primaryHover)
@@ -2855,7 +2855,7 @@ Item {
                             Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                             Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
-                            color: confirming ? Theme.error : (isHovered ? Theme.withAlpha(Theme.error, 0.18) : Theme.withAlpha(Theme.chipSurfaceNested, 0.5))
+                            color: confirming ? Theme.error : (isHovered ? Theme.withAlpha(Theme.error, 0.18) : Theme.withAlpha(Ui.chipSurfaceNested, 0.5))
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
                             border.color: confirming ? Theme.error : (isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.2))
@@ -3008,7 +3008,7 @@ Item {
                                 Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                                 Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
-                                color: isHovered ? (isFlathub ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.chipSurfaceNested, 0.9)) : (isFlathub ? Theme.withAlpha(Theme.primary, 0.15) : Theme.withAlpha(Theme.chipSurfaceNested, 0.6))
+                                color: isHovered ? (isFlathub ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Ui.chipSurfaceNested, 0.9)) : (isFlathub ? Theme.withAlpha(Theme.primary, 0.15) : Theme.withAlpha(Ui.chipSurfaceNested, 0.6))
                                 Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                 border.width: 1
                                 border.color: isHovered ? (isFlathub ? Theme.primary : Theme.primarySelected) : (isFlathub ? Theme.primarySelected : Theme.primaryHover)
@@ -3063,7 +3063,7 @@ Item {
                 Layout.fillWidth: true
                 visible: dialog.provenance !== null && !dialog.busy
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                color: Theme.withAlpha(Ui.chipSurface, 0.45)
                 border.width: 1
                 implicitHeight: provInfoCol.implicitHeight + Theme.spacingS * 2
 

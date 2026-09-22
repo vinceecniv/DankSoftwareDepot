@@ -263,7 +263,7 @@ Item {
             visible: view.searchText === "" && (view.activity.updated + view.activity.installed + view.activity.removed) > 0
             implicitHeight: activityRow.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
-            color: Theme.withAlpha(Theme.chipSurface, 0.45)
+            color: Theme.withAlpha(Ui.chipSurface, 0.45)
 
             RowLayout {
                 id: activityRow
@@ -476,7 +476,7 @@ Item {
                     StyledRect {
                         anchors.fill: parent
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.chipSurface, 0.96)
+                        color: Theme.withAlpha(Ui.chipSurface, 0.96)
                         border.width: 0
 
                         RowLayout {

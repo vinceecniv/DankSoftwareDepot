@@ -159,7 +159,7 @@ Item {
         width: Math.min(560, picker.width - Theme.spacingL * 2)
         implicitHeight: cardColumn.implicitHeight + Theme.spacingL * 2
         radius: Theme.cornerRadius
-        color: Theme.cardSurface
+        color: Ui.cardSurface
         border.width: 1
         border.color: Theme.withAlpha(Theme.surfaceVariantText, 0.25)
 

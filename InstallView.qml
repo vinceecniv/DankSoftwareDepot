@@ -1502,7 +1502,7 @@ Item {
                 property bool isHovered: allSecMa.containsMouse
                 radius: isHovered ? (height / 2) : 8
                 Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
-                color: isHovered ? Theme.withAlpha(Theme.chipSurfaceNested, 0.95) : Theme.withAlpha(Theme.chipSurfaceNested, 0.65)
+                color: isHovered ? Theme.withAlpha(Ui.chipSurfaceNested, 0.95) : Theme.withAlpha(Ui.chipSurfaceNested, 0.65)
                 Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                 border.width: 1
                 border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
@@ -1611,7 +1611,7 @@ Item {
             visible: view.busyAction !== ""
             implicitHeight: installProgressColumn.implicitHeight + Theme.spacingM * 2
             radius: Theme.cornerRadius
-            color: Theme.cardSurface
+            color: Ui.cardSurface
             border.width: 1
             border.color: Theme.withAlpha(Theme.outline, 0.1)
 
@@ -1816,7 +1816,7 @@ Item {
                     StyledRect {
                         anchors.fill: parent
                         radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.chipSurface, 0.96)
+                        color: Theme.withAlpha(Ui.chipSurface, 0.96)
                         border.width: 0
 
                         property var rowData: installSticky.heading || ({})
@@ -2092,7 +2092,7 @@ Item {
 
                 implicitHeight: coprRow.implicitHeight + Theme.spacingS * 2
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                color: Theme.withAlpha(Ui.chipSurface, 0.45)
 
                 RowLayout {
                     id: coprRow
@@ -2217,7 +2217,7 @@ Item {
 
                 implicitHeight: brewInfoColumn.implicitHeight + Theme.spacingS * 2
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                color: Theme.withAlpha(Ui.chipSurface, 0.45)
                 opacity: usable ? 1 : 0.55
 
                 RowLayout {
@@ -2363,7 +2363,7 @@ Item {
 
                 implicitHeight: brewRow.implicitHeight + Theme.spacingS * 2
                 radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.chipSurface, 0.45)
+                color: Theme.withAlpha(Ui.chipSurface, 0.45)
 
                 RowLayout {
                     id: brewRow
@@ -2765,7 +2765,7 @@ Item {
                             readonly property bool isPrimary: picks || modelData.kind === "flatpak"
                             color: isPrimary
                                 ? (isHovered ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.primary, 0.15))
-                                : (isHovered ? Theme.withAlpha(Theme.chipSurfaceNested, 0.9) : Theme.withAlpha(Theme.chipSurfaceNested, 0.6))
+                                : (isHovered ? Theme.withAlpha(Ui.chipSurfaceNested, 0.9) : Theme.withAlpha(Ui.chipSurfaceNested, 0.6))
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                             border.width: 1
                             border.color: isPrimary

@@ -134,7 +134,7 @@ Rectangle {
 
         color: isHighlighted
             ? Theme.primaryHover
-            : Theme.withAlpha(Theme.chipSurface, 0.45)
+            : Theme.withAlpha(Ui.chipSurface, 0.45)
 
         border.width: 1
         border.color: card.status === "error"
