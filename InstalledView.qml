@@ -1416,6 +1416,11 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
+            // A row's hover outline is a 1px stroke centred on its own edge, so
+            // the first and last row need a pixel of content margin or the clip
+            // takes the outer half of it and the ring stops short.
+            topMargin: 1
+            bottomMargin: 1
             visible: !view.loading
             // Row spacing, not section spacing: the list holds rows now. A
             // group is set apart by the height of its heading instead.
