@@ -2636,6 +2636,10 @@ Item {
                             anchors.fill: parent
                             anchors.margins: 4
                             source: resultRow.app.icon ? (resultRow.app.icon.indexOf("http") === 0 ? resultRow.app.icon : "file://" + resultRow.app.icon) : ""
+                            // Rendered at the size it is shown: left to its own, an SVG
+                            // logo is drawn at hundreds of pixels and shrunk unfiltered
+                            sourceSize.width: width
+                            sourceSize.height: height
                             layer.enabled: Ui.tintAppIcons
                             layer.effect: TintedIconEffect {}
                         }

@@ -1725,6 +1725,10 @@ Item {
                                 id: rowLogo
                                 anchors.fill: parent
                                 source: (row.modelData.info && row.modelData.info.icon) ? (row.modelData.info.icon.indexOf("http") === 0 ? row.modelData.info.icon : "file://" + row.modelData.info.icon) : ""
+                                // Rendered at the size it is shown: left to its own, an SVG
+                                // logo is drawn at hundreds of pixels and shrunk unfiltered
+                                sourceSize.width: width
+                                sourceSize.height: height
                                 layer.enabled: Ui.tintAppIcons
                                 layer.effect: TintedIconEffect {}
                             }

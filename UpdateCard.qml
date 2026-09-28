@@ -193,6 +193,10 @@ Rectangle {
                     anchors.fill: parent
                     anchors.margins: card.iconPath.endsWith(".svg") ? 6 : 4
                     source: card.iconPath ? "file://" + card.iconPath : ""
+                    // Rendered at the size it is shown: left to its own, an SVG
+                    // logo is drawn at hundreds of pixels and shrunk unfiltered
+                    sourceSize.width: width
+                    sourceSize.height: height
                     // Themed icons, tuned in TintedIconEffect
                     layer.enabled: Ui.tintAppIcons
                     layer.effect: TintedIconEffect {}

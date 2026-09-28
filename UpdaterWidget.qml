@@ -2180,6 +2180,10 @@ PluginComponent {
                                             id: rowLogo
                                             anchors.fill: parent
                                             source: (compactRow.info && compactRow.info.icon) ? "file://" + compactRow.info.icon : ""
+                                            // Rendered at the size it is shown: left to its own, an SVG
+                                            // logo is drawn at hundreds of pixels and shrunk unfiltered
+                                            sourceSize.width: width
+                                            sourceSize.height: height
                                             layer.enabled: Ui.tintAppIcons
                                             layer.effect: TintedIconEffect {}
                                         }

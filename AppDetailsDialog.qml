@@ -552,6 +552,10 @@ Item {
                         anchors.fill: parent
                         anchors.margins: 4
                         source: dialog.appData.iconPath ? (dialog.appData.iconPath.indexOf("http") === 0 ? dialog.appData.iconPath : "file://" + dialog.appData.iconPath) : ""
+                        // Rendered at the size it is shown: left to its own, an SVG
+                        // logo is drawn at hundreds of pixels and shrunk unfiltered
+                        sourceSize.width: width
+                        sourceSize.height: height
                         fillMode: Image.PreserveAspectFit
                         // Themed icons, tuned in TintedIconEffect
                         layer.enabled: Ui.tintAppIcons
