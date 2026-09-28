@@ -3,6 +3,44 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## 1.3.0 — 2026-09-28
+
+Thanks to @bernardopg for #25, which fixed the clipped list outlines, the
+filter running under the sort dropdown, the wrapping plugin summaries, the
+settings tab contrast and the square search bars; and to @apollo79 for
+reporting two of those in #23 and #24.
+
+- **Every tab's list is drawn the same way.** Updates had tinted boxes
+  around its categories, where Installed and Install have a plain heading
+  over rows. It has the heading now, and that heading stays pinned at the
+  top while you scroll through a long category, as it already did in the
+  other tabs. Headings and rows start at the same left edge in every tab,
+  the source filters sit on the left, and a row rounds to a pill when you
+  hover over it on every page.
+
+- **An update row shows the version change, not the summary.** The
+  summary is one click away in the details, and the list is about what
+  changes. This makes the rows about as tall as the rows in Installed.
+
+- **App icons are sharp and the same size everywhere.** Icons larger than
+  their slot, the DMS logo among them, were drawn full size and then
+  shrunk without smoothing, which made them jagged. They are now drawn at
+  the size shown, and that size is 32px in every list instead of three
+  different sizes across three tabs.
+
+- **A pinned heading looks like the heading it replaces** and no longer
+  shows up as a grey bar over a list that has not been scrolled.
+
+- **A tab slides in from the side it sits on.** Sometimes it came in from
+  the side of the previous switch, and on Updates always from the wrong
+  side.
+
+- **The search bars are fully rounded and light up only once you type.**
+  A tab still puts the keyboard in its search field when it opens, but the
+  field is no longer highlighted before you have touched it. Firmware has
+  no search field any more: it lists a handful of devices, with the ones
+  that can be updated at the top.
+
 ## 1.2.0 — 2026-09-23
 
 Thanks to @JDKamalakar for #21, the visual overhaul this release is built
