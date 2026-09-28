@@ -4739,6 +4739,99 @@ FloatingWindow {
 
             model: win.categorySections
 
+            // The heading of the category being scrolled through stays at the
+            // top, as in Installed and Install. Each item is a whole category,
+            // so every row is a heading.
+            StickyHeader {
+                id: updatesSticky
+
+                view: cardsList
+                rows: win.categorySections
+                headingOf: row => row || ""
+                barHeight: 48
+
+                content: Component {
+                    Item {
+                        id: stickyBar
+                        anchors.fill: parent
+
+                        property var rowData: updatesSticky.heading || ({})
+                        readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions", "4 · Firmware"].includes(rowData.category || "")
+
+                        HoverHandler {
+                            id: stickyHover
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: stickyBar.rowData.collapsible === true
+                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: win.toggleCategory(stickyBar.rowData.category)
+                        }
+
+                        RowLayout {
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: Theme.spacingS
+
+                            DankIcon {
+                                name: win.categoryIcon(stickyBar.rowData.category || "")
+                                size: 20
+                                color: win.categoryColor(stickyBar.rowData.category || "")
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            StyledText {
+                                text: stickyBar.rowData.title || ""
+                                font.pixelSize: Theme.fontSizeMedium
+                                font.weight: Font.Bold
+                                color: Theme.surfaceText
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Rectangle {
+                                implicitWidth: stickyCount.implicitWidth + 14
+                                implicitHeight: 20
+                                radius: 10
+                                color: Theme.withAlpha(win.categoryColor(stickyBar.rowData.category || ""), 0.15)
+                                Layout.alignment: Qt.AlignVCenter
+
+                                StyledText {
+                                    id: stickyCount
+                                    anchors.centerIn: parent
+                                    text: String(stickyBar.rowData.count || 0)
+                                    font.pixelSize: Theme.fontSizeSmall - 2
+                                    font.weight: Font.Medium
+                                    color: win.categoryColor(stickyBar.rowData.category || "")
+                                }
+                            }
+
+                            DankIcon {
+                                visible: stickyBar.rowData.collapsible === true
+                                name: stickyBar.rowData.collapsed === true ? "expand_more" : "expand_less"
+                                size: 16
+                                color: Theme.surfaceVariantText
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                        }
+
+                        DankButton {
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: stickyBar.updatable && stickyHover.hovered
+                            buttonHeight: 26
+                            iconName: "download"
+                            iconSize: 14
+                            horizontalPadding: Theme.spacingM
+                            text: Tr.t("Update these")
+                            backgroundColor: Theme.withAlpha(Theme.buttonBg, 0.9)
+                            textColor: Theme.buttonText
+                            onClicked: win.sectionUpdate(stickyBar.rowData.category)
+                        }
+                    }
+                }
+            }
+
             delegate: Item {
                 id: catContainer
                 required property var modelData
