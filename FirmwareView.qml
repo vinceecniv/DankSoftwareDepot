@@ -13,18 +13,18 @@ Item {
 
     property var firmware: null      // FirmwareService (optional)
 
-    function focusSearch() {
-        searchField.forceActiveFocus();
+    // A handful of devices fits on one screen: no search field, the list
+    // itself takes the keyboard.
+    function focusList() {
+        deviceList.forceActiveFocus();
     }
 
     property var devices: []         // {deviceId, name, vendor, version, updatable, plugin}
     property bool loading: true
-    property string searchText: ""
     property var releasesByDevice: ({})  // deviceId -> [{version, notesHtml}] | "loading"
 
     Component.onCompleted: {
         reload();
-        Ui.steadyCursorFor(searchField);
         Ui.softenScrollbar(deviceList);
     }
 
@@ -83,13 +83,8 @@ Item {
         return t.split("\n").map(line => line.trim()).filter(line => line.length > 0).join("<br>");
     }
 
-    readonly property var filteredDevices: {
-        const needle = searchText.toLowerCase();
-        const rows = devices.filter(dev => {
-            if (!needle)
-                return true;
-            return Ui.matchesWords((dev.name + " " + dev.vendor).toLowerCase(), needle);
-        });
+    readonly property var sortedDevices: {
+        const rows = devices.slice();
         rows.sort((a, b) => {
             if (a.updatable !== b.updatable)
                 return a.updatable ? -1 : 1;
@@ -229,31 +224,6 @@ Item {
             }
         }
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Theme.spacingM
-
-            SearchField {
-                id: searchField
-                Layout.fillWidth: true
-                placeholderText: Tr.t("Search devices…")
-                FieldPlaceholder {
-                    text: Tr.t("Search devices…")
-                }
-                leftIconName: "search"
-                showClearButton: true
-                onTextChanged: view.searchText = text
-                Keys.onEscapePressed: event => {
-                    if (text !== "") {
-                        clear();
-                    } else {
-                        event.accepted = false;
-                    }
-                }
-            }
-
-        }
-
         StyledText {
             Layout.fillWidth: true
             visible: !view.loading
@@ -284,7 +254,7 @@ Item {
                     NumberAnimation { properties: "opacity,scale"; from: 0; to: 1; duration: Theme.mediumDuration; easing.type: Easing.OutBack }
                 }
                 spacing: 2
-                model: view.filteredDevices
+                model: view.sortedDevices
 
                 delegate: Item {
                     id: deviceRow
@@ -294,7 +264,7 @@ Item {
 
                     readonly property var releases: view.releasesByDevice[modelData.deviceId]
                     property bool expanded: false
-                    readonly property int totalCount: view.filteredDevices.length
+                    readonly property int totalCount: view.sortedDevices.length
                     readonly property bool isFirst: index === 0
                     readonly property bool isLast: index === totalCount - 1
 

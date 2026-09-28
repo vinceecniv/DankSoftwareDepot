@@ -2595,7 +2595,7 @@ FloatingWindow {
                 break;
             case 3:
                 if (firmwareLoader.item)
-                    firmwareLoader.item.focusSearch();
+                    firmwareLoader.item.focusList();
                 break;
             case 4:
                 if (logLoader.item)
