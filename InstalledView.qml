@@ -1333,6 +1333,8 @@ Item {
                     text: Tr.t("Search installed software…")
                 }
                 leftIconName: "search"
+                // M3 Expressive search bar: fully rounded, not the input-field radius
+                cornerRadius: height / 2
                 showClearButton: true
                 onTextChanged: view.searchText = text
                 Keys.onEscapePressed: event => {
@@ -1355,14 +1357,18 @@ Item {
 
         }
 
-        // Second toolbar row: centered source filter + sorting
-        Item {
+        // Second toolbar row: source filter + sorting. The filter is centred
+        // in the space the dropdown leaves, not across the whole row, or its
+        // last button slides under the dropdown once the labels are long.
+        RowLayout {
             Layout.fillWidth: true
             implicitHeight: 34
+            spacing: Theme.spacingM
+
+            Item { Layout.fillWidth: true }
 
             DankButtonGroup {
                 id: filterGroup
-                anchors.centerIn: parent
                 model: {
                     const labels = [Tr.t("All"), "Flatpak", Tr.t("System"), "AppImage", Tr.t("Plugins")];
                     if ((view.brewFormulae || []).length > 0)
@@ -1376,9 +1382,11 @@ Item {
                 }
             }
 
+            Item { Layout.fillWidth: true }
+
             DankDropdown {
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
+                Layout.preferredWidth: 170
+                Layout.alignment: Qt.AlignVCenter
                 dropdownWidth: 170
                 alignPopupRight: true
                 options: view.sortOptions.map(o => Tr.t(o))
@@ -1416,11 +1424,6 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            // A row's hover outline is a 1px stroke centred on its own edge, so
-            // the first and last row need a pixel of content margin or the clip
-            // takes the outer half of it and the ring stops short.
-            topMargin: 1
-            bottomMargin: 1
             visible: !view.loading
             // Row spacing, not section spacing: the list holds rows now. A
             // group is set apart by the height of its heading instead.
@@ -1628,6 +1631,11 @@ Item {
                     Shape {
                         id: rowBg
                         anchors.fill: parent
+                        // Inset by half the stroke so the 1px outline lands on
+                        // whole pixels inside the row: centred on the row's edge,
+                        // the list's clip took its outer half and the left side
+                        // all but vanished.
+                        anchors.margins: 0.5
 
                         property real innerRadius: 6
                         property real outerRadius: 12
@@ -1762,6 +1770,9 @@ Item {
                                 text: row.modelData.summary || ""
                                 font.pixelSize: Theme.fontSizeSmall - 1
                                 color: Theme.surfaceVariantText
+                                // StyledText word-wraps, and the row has a fixed
+                                // height: a second line spilled into the next row
+                                maximumLineCount: 1
                                 elide: Text.ElideRight
                             }
                         }

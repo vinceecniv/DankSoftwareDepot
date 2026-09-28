@@ -751,7 +751,9 @@ FloatingWindow {
                     id: settingsTabsSegment
                     Layout.fillWidth: true
                     height: 38
-                    radius: Theme.cornerRadius
+                    // A pill, like the active tab inside it: with the dialog's
+                    // corner radius the two curves ran at different rates
+                    radius: height / 2
                     color: Theme.withAlpha(Ui.chipSurface, 0.45)
                     border.width: 0
 
@@ -767,8 +769,8 @@ FloatingWindow {
                             readonly property bool isTabActive: win.settingsTab === "settings"
                             property bool isTabHovered: setTabMa.containsMouse
 
-                            topLeftRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
-                            bottomLeftRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
+                            topLeftRadius: height / 2
+                            bottomLeftRadius: height / 2
                             topRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
                             bottomRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
 
@@ -787,14 +789,14 @@ FloatingWindow {
                                 DankIcon {
                                     name: "settings"
                                     size: 16
-                                    color: parent.parent.isTabActive ? Theme.buttonText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
+                                    color: parent.parent.isTabActive ? Theme.primaryText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
                                 }
 
                                 StyledText {
                                     text: Tr.t("Preferences")
                                     font.pixelSize: Theme.fontSizeSmall
                                     font.weight: parent.parent.isTabActive ? Font.DemiBold : Font.Normal
-                                    color: parent.parent.isTabActive ? Theme.buttonText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
+                                    color: parent.parent.isTabActive ? Theme.primaryText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
                                 }
                             }
 
@@ -816,8 +818,8 @@ FloatingWindow {
 
                             topLeftRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
                             bottomLeftRadius: (isTabActive || isTabHovered) ? ((height) / 2) : 4
-                            topRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
-                            bottomRightRadius: (isTabActive || isTabHovered) ? ((height) / 2) : Theme.cornerRadius - 2
+                            topRightRadius: height / 2
+                            bottomRightRadius: height / 2
 
                             Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                             Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
@@ -834,14 +836,14 @@ FloatingWindow {
                                 DankIcon {
                                     name: "info"
                                     size: 16
-                                    color: parent.parent.isTabActive ? Theme.buttonText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
+                                    color: parent.parent.isTabActive ? Theme.primaryText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
                                 }
 
                                 StyledText {
                                     text: Tr.t("About & Info")
                                     font.pixelSize: Theme.fontSizeSmall
                                     font.weight: parent.parent.isTabActive ? Font.DemiBold : Font.Normal
-                                    color: parent.parent.isTabActive ? Theme.buttonText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
+                                    color: parent.parent.isTabActive ? Theme.primaryText : (parent.parent.isTabHovered ? Theme.primary : Theme.surfaceVariantText)
                                 }
                             }
 
