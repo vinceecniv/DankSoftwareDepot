@@ -170,8 +170,8 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.leftMargin: Theme.spacingM
-        anchors.rightMargin: Theme.spacingM
+        anchors.leftMargin: Theme.spacingS
+        anchors.rightMargin: Theme.spacingS
         anchors.topMargin: Theme.spacingS + 2
         anchors.bottomMargin: Theme.spacingS + 2
         spacing: Theme.spacingXS

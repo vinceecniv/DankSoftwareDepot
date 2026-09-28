@@ -479,7 +479,7 @@ Item {
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: Theme.spacingXS
+                            anchors.leftMargin: 0
                             anchors.rightMargin: Theme.spacingM
                             spacing: Theme.spacingS
 
@@ -523,7 +523,6 @@ Item {
                         id: dayHeading
                         anchors.left: parent.left
                         anchors.bottom: parent.bottom
-                        anchors.leftMargin: Theme.spacingXS
                         spacing: Theme.spacingXS
 
                         DankIcon {

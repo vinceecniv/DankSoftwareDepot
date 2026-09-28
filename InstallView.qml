@@ -1825,7 +1825,7 @@ Item {
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: Theme.spacingM
+                            anchors.leftMargin: 0
                             anchors.rightMargin: Theme.spacingM
                             spacing: Theme.spacingS
 
@@ -1954,7 +1954,9 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.top: parent.top
-                    anchors.margins: Theme.spacingM
+                    // Space above and below, none at the sides: the heading
+                    // and rows line up with the list's edge, as in Installed
+                    anchors.topMargin: Theme.spacingM
                     spacing: Theme.spacingS
 
                     // Category Title & Action Header
