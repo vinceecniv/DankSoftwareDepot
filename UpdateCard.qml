@@ -181,17 +181,18 @@ Rectangle {
             spacing: Theme.spacingM
 
             // ── Logo ────────────────────────────────────────────────────────
+            // The icon slot of every list: 32px, and a tile behind it only
+            // when there is no icon to show
             Rectangle {
-                Layout.preferredWidth: 36
-                Layout.preferredHeight: 36
+                Layout.preferredWidth: 32
+                Layout.preferredHeight: 32
                 Layout.alignment: Qt.AlignVCenter
-                radius: Theme.cornerRadius
-                color: Theme.withAlpha(Theme.primary, 0.08)
+                radius: 6
+                color: logoImage.status === Image.Ready ? "transparent" : Theme.withAlpha(Ui.chipSurface, 0.6)
 
                 Image {
                     id: logoImage
                     anchors.fill: parent
-                    anchors.margins: card.iconPath.endsWith(".svg") ? 6 : 4
                     source: card.iconPath ? "file://" + card.iconPath : ""
                     // Rendered at the size it is shown: left to its own, an SVG
                     // logo is drawn at hundreds of pixels and shrunk unfiltered
@@ -209,8 +210,8 @@ Rectangle {
                     // glyph in its manifest, and the generic one stands in
                     // when it names nothing
                     name: card.pkg.repo === "dmsplugin" ? (card.pkg.icon || "extension") : Ui.sourceIcon(card.pkg.repo)
-                    size: 20
-                    color: Theme.primary
+                    size: 18
+                    color: Theme.surfaceVariantText
                 }
             }
 

@@ -2625,16 +2625,17 @@ Item {
                     anchors.rightMargin: Theme.spacingS
                     spacing: Theme.spacingM
 
+                    // The icon slot of every list: 32px, and a tile behind it
+                    // only when there is no icon to show
                     Rectangle {
-                        Layout.preferredWidth: 40
-                        Layout.preferredHeight: 40
-                        radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Theme.primary, 0.08)
+                        Layout.preferredWidth: 32
+                        Layout.preferredHeight: 32
+                        radius: 6
+                        color: resultLogo.status === Image.Ready ? "transparent" : Theme.withAlpha(Ui.chipSurface, 0.6)
 
                         Image {
                             id: resultLogo
                             anchors.fill: parent
-                            anchors.margins: 4
                             source: resultRow.app.icon ? (resultRow.app.icon.indexOf("http") === 0 ? resultRow.app.icon : "file://" + resultRow.app.icon) : ""
                             // Rendered at the size it is shown: left to its own, an SVG
                             // logo is drawn at hundreds of pixels and shrunk unfiltered
@@ -2648,8 +2649,8 @@ Item {
                             anchors.centerIn: parent
                             visible: resultLogo.status !== Image.Ready
                             name: "apps"
-                            size: 20
-                            color: Theme.primary
+                            size: 18
+                            color: Theme.surfaceVariantText
                         }
                     }
 
