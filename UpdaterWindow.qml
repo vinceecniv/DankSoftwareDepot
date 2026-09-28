@@ -2475,8 +2475,14 @@ FloatingWindow {
     readonly property bool firmwareEnabled: firmware !== null
     readonly property var tabIds: firmwareEnabled ? [0, 1, 2, 3, 4] : [0, 1, 2, 4]
     readonly property int currentTab: tabIds[Math.min(tabs.currentIndex, tabIds.length - 1)]
-    property int prevTabIndex: 0
-    property bool isSwipeRight: true
+    // Where a hidden tab waits to slide in from: the side it sits on in the
+    // tab bar, seen from the tab now showing. A pure binding on currentTab,
+    // so it is settled before the switch — a direction set in the tab bar's
+    // handler raced the visibility bindings on the same index, and a tab
+    // came in from whichever side the switch before it had gone.
+    function tabEntryOffset(id) {
+        return tabIds.indexOf(id) > tabIds.indexOf(currentTab) ? 40 : -40;
+    }
 
     // Switching firmware off while looking at it would silently land you on
     // whatever slid into that position — go somewhere deliberate instead
@@ -4157,10 +4163,6 @@ FloatingWindow {
             }
 
             onCurrentIndexChanged: {
-                if (currentIndex !== win.prevTabIndex) {
-                    win.isSwipeRight = currentIndex > win.prevTabIndex;
-                    win.prevTabIndex = currentIndex;
-                }
                 // Derived from currentIndex right here, not read off
                 // win.currentTab: that is a binding on this very property and
                 // is not guaranteed to have caught up while this handler runs.
@@ -4471,7 +4473,7 @@ FloatingWindow {
             visible: win.currentTab === 1
             active: false
             opacity: visible ? 1.0 : 0.0
-            x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
+            x: visible ? 0 : win.tabEntryOffset(1)
             Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
             Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
@@ -4510,7 +4512,7 @@ FloatingWindow {
             visible: win.currentTab === 2
             active: false
             opacity: visible ? 1.0 : 0.0
-            x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
+            x: visible ? 0 : win.tabEntryOffset(2)
             Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
             Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
@@ -4536,7 +4538,7 @@ FloatingWindow {
             visible: win.currentTab === 3
             active: false
             opacity: visible ? 1.0 : 0.0
-            x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
+            x: visible ? 0 : win.tabEntryOffset(3)
             Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
             Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
@@ -4553,7 +4555,7 @@ FloatingWindow {
             visible: win.currentTab === 4
             active: false
             opacity: visible ? 1.0 : 0.0
-            x: visible ? 0 : (win.isSwipeRight ? 40 : -40)
+            x: visible ? 0 : win.tabEntryOffset(4)
             Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
             Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
 
@@ -4714,7 +4716,7 @@ FloatingWindow {
             spacing: 2
             visible: win.currentTab === 0 && (win.categorySections.length > 0 || win.dashboardMode)
             opacity: visible ? 1.0 : 0.0
-            x: visible ? 0 : (win.isSwipeRight ? -40 : 40)
+            x: visible ? 0 : win.tabEntryOffset(0)
             Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
             Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
             Component.onCompleted: Ui.softenScrollbar(cardsList)
