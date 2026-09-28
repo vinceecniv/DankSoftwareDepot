@@ -114,7 +114,8 @@ Rectangle {
 
         property real innerRadius: 6
         property real outerRadius: Theme.cornerRadius || 12
-        property real pillRadius: 20
+        // The pill the rows in Installed and Install turn into on hover
+        property real pillRadius: Math.min(height / 2, 28)
         property bool isHighlighted: cardMa.containsMouse || card.active
 
         property real tlr: isHighlighted ? pillRadius : (isSectionFirst ? outerRadius : innerRadius)
@@ -127,10 +128,10 @@ Rectangle {
         bottomLeftRadius: blr
         bottomRightRadius: brr
 
-        Behavior on topLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
-        Behavior on topRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
-        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
-        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
+        Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+        Behavior on topRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+        Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
+        Behavior on bottomRightRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
 
         // The resting fill and outline of the rows in Installed and Install:
         // with no container behind them, the row carries its own edge
