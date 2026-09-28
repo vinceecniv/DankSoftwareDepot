@@ -1489,7 +1489,8 @@ Item {
             }
         }
 
-        // Second toolbar row: back button + centered source filter + sorting
+        // Second toolbar row: back button + source filter on the left, sorting
+        // on the right
         Item {
             Layout.fillWidth: true
             implicitHeight: 34
@@ -1549,7 +1550,9 @@ Item {
             }
 
             DankButtonGroup {
-                anchors.centerIn: parent
+                anchors.left: allSectionsBtn.visible ? allSectionsBtn.right : parent.left
+                anchors.leftMargin: allSectionsBtn.visible ? Theme.spacingM : 0
+                anchors.verticalCenter: parent.verticalCenter
                 model: view.filterChips.labels
                 currentIndex: view.sourceFilter
                 onSelectionChanged: (index, selected) => {

@@ -1357,15 +1357,13 @@ Item {
 
         }
 
-        // Second toolbar row: source filter + sorting. The filter is centred
-        // in the space the dropdown leaves, not across the whole row, or its
-        // last button slides under the dropdown once the labels are long.
+        // Second toolbar row: source filter on the left, sorting on the right.
+        // A layout rather than anchors, so a long filter pushes against the
+        // dropdown instead of sliding under it.
         RowLayout {
             Layout.fillWidth: true
             implicitHeight: 34
             spacing: Theme.spacingM
-
-            Item { Layout.fillWidth: true }
 
             DankButtonGroup {
                 id: filterGroup
