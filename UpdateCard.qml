@@ -4,8 +4,9 @@ import QtQuick.Shapes
 import qs.Common
 import qs.Widgets
 
-// Rich update entry: logo, name, summary, version transition and a live
-// progress bar during installation. Clicking the card asks the host to open
+// Rich update entry: logo, name, version transition and a live progress bar
+// during installation. The summary is left to the details popup: here the
+// versions are the point, and a line less keeps the row as low as Installed's. Clicking the card asks the host to open
 // the shared details popup (release notes, reviews, actions).
 Rectangle {
     id: card
@@ -70,7 +71,6 @@ Rectangle {
     // the list said dsd/test/dsd-demo while the popup one click away, which
     // asks the store for the same thing, said dsd-demo.
     readonly property string prettyName: (info && info.name) ? info.name : (pkg.displayName || baseName)
-    readonly property string summary: (info && info.summary) ? info.summary : ""
     readonly property string homepage: (info && info.homepage) ? info.homepage : ""
     // The packages the shell is made of have no AppStream entry and so no
     // icon of their own, and the generic chip glyph told you nothing about
@@ -182,9 +182,9 @@ Rectangle {
 
             // ── Logo ────────────────────────────────────────────────────────
             Rectangle {
-                Layout.preferredWidth: 44
-                Layout.preferredHeight: 44
-                Layout.alignment: Qt.AlignTop
+                Layout.preferredWidth: 36
+                Layout.preferredHeight: 36
+                Layout.alignment: Qt.AlignVCenter
                 radius: Theme.cornerRadius
                 color: Theme.withAlpha(Theme.primary, 0.08)
 
@@ -205,14 +205,15 @@ Rectangle {
                     // glyph in its manifest, and the generic one stands in
                     // when it names nothing
                     name: card.pkg.repo === "dmsplugin" ? (card.pkg.icon || "extension") : Ui.sourceIcon(card.pkg.repo)
-                    size: 24
+                    size: 20
                     color: Theme.primary
                 }
             }
 
-            // ── Name, summary, versions ─────────────────────────────────────
+            // ── Name, versions ──────────────────────────────────────────────
             ColumnLayout {
                 Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
                 spacing: 2
 
                 StyledText {
@@ -222,16 +223,6 @@ Rectangle {
                     font.weight: Font.Medium
                     color: Theme.surfaceText
                     elide: Text.ElideRight
-                }
-
-                StyledText {
-                    Layout.fillWidth: true
-                    visible: card.summary.length > 0
-                    text: card.summary
-                    font.pixelSize: Theme.fontSizeSmall
-                    color: Theme.surfaceVariantText
-                    elide: Text.ElideRight
-                    maximumLineCount: 1
                 }
 
                 RowLayout {
@@ -309,7 +300,7 @@ Rectangle {
             // action slot keeps a fixed width whenever the card can show
             // something there, so buttons line up down the list.
             RowLayout {
-                Layout.alignment: Qt.AlignTop
+                Layout.alignment: Qt.AlignVCenter
                 spacing: Theme.spacingXS
 
                 Rectangle {
