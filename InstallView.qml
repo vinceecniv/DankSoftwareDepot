@@ -1815,8 +1815,9 @@ Item {
                 content: Component {
                     StyledRect {
                         anchors.fill: parent
-                        radius: Theme.cornerRadius
-                        color: Theme.withAlpha(Ui.chipSurface, 0.96)
+                        // No fill: the bar is the list's own heading, pinned.
+                        // StickyHeader puts the window surface behind it.
+                        color: "transparent"
                         border.width: 0
 
                         property var rowData: installSticky.heading || ({})
