@@ -4703,13 +4703,15 @@ FloatingWindow {
             }
         }
 
-        // ── Update list (Separate Category Containers) ─────────────────────────
+        // ── Update list (a heading per category, like Installed) ──────────────
         DankListView {
             id: cardsList
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: Theme.spacingM
+            // A category is set apart by the height of its heading, not by a
+            // container around it
+            spacing: 2
             visible: win.currentTab === 0 && (win.categorySections.length > 0 || win.dashboardMode)
             opacity: visible ? 1.0 : 0.0
             x: visible ? 0 : (win.isSwipeRight ? -40 : 40)
@@ -4737,15 +4739,12 @@ FloatingWindow {
 
             model: win.categorySections
 
-            delegate: StyledRect {
+            delegate: Item {
                 id: catContainer
                 required property var modelData
 
                 width: cardsList.width
-                implicitHeight: catCol.implicitHeight + Theme.spacingM * 2
-                radius: Theme.cornerRadius
-                color: Theme.withAlpha(Ui.chipSurface, 0.45)
-                border.width: 0
+                implicitHeight: catCol.implicitHeight
                 clip: true
 
                 readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions", "4 · Firmware"].includes(modelData.category || "")
@@ -4755,13 +4754,12 @@ FloatingWindow {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.top: parent.top
-                    anchors.margins: Theme.spacingM
                     spacing: Theme.spacingS
 
-                    // Container Title Header
+                    // Category heading, the same height as Installed's
                     Item {
                         Layout.fillWidth: true
-                        implicitHeight: 32
+                        implicitHeight: 48
 
                         HoverHandler {
                             id: catHeaderHover
@@ -4835,7 +4833,7 @@ FloatingWindow {
                         }
                     }
 
-                    // Items enclosed in this container card
+                    // The category's rows
                     ColumnLayout {
                         Layout.fillWidth: true
                         visible: !catContainer.modelData.collapsed

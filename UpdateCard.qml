@@ -132,14 +132,16 @@ Rectangle {
         Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
         Behavior on bottomRightRadius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutQuad } }
 
+        // The resting fill and outline of the rows in Installed and Install:
+        // with no container behind them, the row carries its own edge
         color: isHighlighted
             ? Theme.primaryHover
-            : Theme.withAlpha(Ui.chipSurface, 0.45)
+            : Theme.withAlpha(Theme.secondary, 0.04)
 
         border.width: 1
         border.color: card.status === "error"
             ? Theme.withAlpha(Theme.error, 0.5)
-            : (isHighlighted ? Theme.withAlpha(Theme.primary, 0.38) : Theme.withAlpha(Theme.secondary, 0.12))
+            : (isHighlighted ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15))
 
         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
