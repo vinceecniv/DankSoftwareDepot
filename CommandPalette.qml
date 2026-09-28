@@ -118,6 +118,8 @@ Item {
                 text: Tr.t("Search everything…")
             }
             leftIconName: "search"
+            // M3 Expressive search bar: fully rounded, not the input-field radius
+            cornerRadius: height / 2
             ignoreUpDownKeys: true
             keyForwardTargets: [keyRelay]
             placeholderColor: Theme.surfaceVariantText

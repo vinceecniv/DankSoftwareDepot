@@ -241,6 +241,8 @@ Item {
                     text: Tr.t("Search devices…")
                 }
                 leftIconName: "search"
+                // M3 Expressive search bar: fully rounded, not the input-field radius
+                cornerRadius: height / 2
                 showClearButton: true
                 onTextChanged: view.searchText = text
                 Keys.onEscapePressed: event => {
@@ -277,11 +279,6 @@ Item {
                 anchors.fill: parent
                 anchors.margins: 0
                 clip: true
-                // A row's hover outline is a 1px stroke centred on its own edge, so
-                // the first and last row need a pixel of content margin or the clip
-                // takes the outer half of it and the ring stops short.
-                topMargin: 1
-                bottomMargin: 1
                 populate: Transition {
                     NumberAnimation { properties: "opacity,y"; from: 0; duration: Theme.longDuration; easing.type: Easing.OutCubic }
                 }
@@ -323,6 +320,11 @@ Item {
                     Shape {
                         id: devBg
                         anchors.fill: parent
+                        // Inset by half the stroke so the 1px outline lands on
+                        // whole pixels inside the row: centred on the row's edge,
+                        // the list's clip took its outer half and the left side
+                        // all but vanished.
+                        anchors.margins: 0.5
 
                         property real innerRadius: 6
                         property real outerRadius: 12
