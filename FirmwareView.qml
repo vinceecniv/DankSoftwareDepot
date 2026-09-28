@@ -233,7 +233,7 @@ Item {
             Layout.fillWidth: true
             spacing: Theme.spacingM
 
-            DankTextField {
+            SearchField {
                 id: searchField
                 Layout.fillWidth: true
                 placeholderText: Tr.t("Search devices…")
@@ -241,8 +241,6 @@ Item {
                     text: Tr.t("Search devices…")
                 }
                 leftIconName: "search"
-                // M3 Expressive search bar: fully rounded, not the input-field radius
-                cornerRadius: height / 2
                 showClearButton: true
                 onTextChanged: view.searchText = text
                 Keys.onEscapePressed: event => {

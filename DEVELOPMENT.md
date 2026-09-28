@@ -48,6 +48,7 @@ selectable would stop being a card you can click.
 | `TintedIconEffect.qml` | Themed app icons, in one place because six views draw icons |
 | `SelectableText.qml` | StyledText you can select and copy |
 | `FieldPlaceholder.qml` | A hint that stays while a field is empty |
+| `SearchField.qml` | The search bar of a tab: fully rounded, and highlighted only once something is typed |
 | `PhaseIndicator.qml` · `PulseRings.qml` | Material phase stepper; the shell's System Check pulse |
 | `Tr.qml` | Plugin-local translation singleton |
 

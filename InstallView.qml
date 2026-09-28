@@ -1424,7 +1424,7 @@ Item {
             Layout.fillWidth: true
             spacing: Theme.spacingM
 
-            DankTextField {
+            SearchField {
                 id: searchField
                 Layout.fillWidth: true
                 // The field says where it is pointing: inside a section it
@@ -1435,8 +1435,6 @@ Item {
                     text: view.sectionMode ? Tr.t("Search in %1…").arg(Tr.t(view.activeCategory)) : Tr.t("Search new software (%1 repos + Flathub)…").arg(Backend.systemRepoLabel)
                 }
                 leftIconName: "search"
-                // M3 Expressive search bar: fully rounded, not the input-field radius
-                cornerRadius: height / 2
                 showClearButton: true
                 onTextChanged: view.searchText = text
                 Keys.onEscapePressed: event => {
