@@ -4,7 +4,7 @@ import qs.Common
 Loader {
     id: sticky
 
-    property Item view: null
+    property ListView view: null
     property var rows: []
     property var headingOf: row => (row && row.sectionLabel) || ""
     property real barHeight: 48
@@ -13,6 +13,11 @@ Loader {
     readonly property int headingIndex: {
         if (view === null || rows.length === 0)
             return -1;
+        // indexAt() and itemAtIndex() notify nothing: without a property that
+        // moves when the delegates are made, this and `needed` are worked out
+        // once against a list that has no items yet — no own item, so the bar
+        // counts as needed and stays up until the first scroll.
+        void view.contentHeight;
         const top = view.indexAt(view.width / 2, view.contentY + 2);
         if (top < 0)
             return -1;
@@ -30,6 +35,7 @@ Loader {
     readonly property bool needed: {
         if (headingIndex < 0 || view === null)
             return false;
+        void view.contentHeight;
         const own = view.itemAtIndex(headingIndex);
         return !own || own.y < view.contentY - 0.5;
     }
