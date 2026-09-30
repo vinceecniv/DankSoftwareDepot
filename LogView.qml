@@ -772,9 +772,10 @@ Item {
                                     StyledText {
                                         visible: (itemRow.modelData.from || "") !== "" || (itemRow.modelData.to || "") !== ""
                                         text: {
-                                            if ((itemRow.modelData.from || "") !== "" && (itemRow.modelData.to || "") !== "")
-                                                return itemRow.modelData.from + " → " + itemRow.modelData.to;
-                                            return itemRow.modelData.to || itemRow.modelData.from || "";
+                                            const to = Ui.versionLabel(itemRow.modelData.to);
+                                            if ((itemRow.modelData.from || "") !== "" && to !== "")
+                                                return itemRow.modelData.from + " → " + to;
+                                            return to || itemRow.modelData.from || "";
                                         }
                                         font.pixelSize: Theme.fontSizeSmall
                                         color: Theme.surfaceVariantText

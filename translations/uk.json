@@ -169,6 +169,7 @@
     "Loading firmware releases…": "Завантаження випусків мікропрограм…",
     "No firmware releases published on LVFS for this device.": "Для цього пристрою на LVFS немає випусків мікропрограм.",
     "installed": "встановлено",
+    "latest commit": "останній коміт",
     "Reading device list…": "Читання списку пристроїв…",
     "Firmware releases": "Випуски мікропрограм",
     "No log entries match \"%1\"": "Немає записів журналу за запитом «%1»",

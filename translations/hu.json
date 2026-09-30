@@ -169,6 +169,7 @@
     "Loading firmware releases…": "Firmware-kiadások betöltése…",
     "No firmware releases published on LVFS for this device.": "Ehhez az eszközhöz nincs firmware-kiadás az LVFS-en.",
     "installed": "telepítve",
+    "latest commit": "legújabb commit",
     "Reading device list…": "Eszközlista beolvasása…",
     "Firmware releases": "Firmware-kiadások",
     "No log entries match \"%1\"": "Nincs naplóbejegyzés erre: „%1”",

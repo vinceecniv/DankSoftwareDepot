@@ -169,6 +169,7 @@
     "Loading firmware releases…": "Läser in utgåvor av fast programvara…",
     "No firmware releases published on LVFS for this device.": "Inga utgåvor av fast programvara publicerade på LVFS för den här enheten.",
     "installed": "installerad",
+    "latest commit": "senaste commit",
     "Reading device list…": "Läser enhetslista…",
     "Firmware releases": "Utgåvor av fast programvara",
     "No log entries match \"%1\"": "Inga loggposter matchar \"%1\"",

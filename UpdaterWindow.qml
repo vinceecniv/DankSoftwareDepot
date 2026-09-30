@@ -103,9 +103,9 @@ FloatingWindow {
             permissions: manifest.permissions || [],
             icon: manifest.icon || pkg.icon || ""
         } : null;
-        let versionLabel = pkg.toVersion || "";
+        let versionLabel = Ui.versionLabel(pkg.toVersion);
         if (pkg.fromVersion && pkg.toVersion)
-            versionLabel = pkg.fromVersion + " → " + pkg.toVersion;
+            versionLabel = pkg.fromVersion + " → " + Ui.versionLabel(pkg.toVersion);
         updatesDialog.open({
             id: isFlatpak ? pkg.name : base,
             name: win.store.displayName(pkg),
@@ -2990,7 +2990,7 @@ FloatingWindow {
                 if (!hit(label + " " + name))
                     continue;
                 shown++;
-                add(Tr.t("Updates"), "deployed_code_update", label, row.pkg.toVersion || "", Theme.primary, "update", row);
+                add(Tr.t("Updates"), "deployed_code_update", label, Ui.versionLabel(row.pkg.toVersion), Theme.primary, "update", row);
             }
 
             shown = 0;

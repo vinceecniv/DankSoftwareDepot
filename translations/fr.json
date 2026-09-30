@@ -169,6 +169,7 @@
     "Loading firmware releases…": "Chargement des versions du micrologiciel…",
     "No firmware releases published on LVFS for this device.": "Aucune version publiée sur LVFS pour ce périphérique.",
     "installed": "installé",
+    "latest commit": "dernier commit",
     "Reading device list…": "Lecture de la liste des périphériques…",
     "Firmware releases": "Versions du micrologiciel",
     "No log entries match \"%1\"": "Aucune entrée de journal pour « %1 »",

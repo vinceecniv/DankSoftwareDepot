@@ -169,6 +169,7 @@
     "Loading firmware releases…": "펌웨어 릴리스를 불러오는 중…",
     "No firmware releases published on LVFS for this device.": "이 장치에 대한 펌웨어 릴리스가 LVFS에 없습니다.",
     "installed": "설치됨",
+    "latest commit": "최신 커밋",
     "Reading device list…": "장치 목록을 읽는 중…",
     "Firmware releases": "펌웨어 릴리스",
     "No log entries match \"%1\"": "‘%1’과(와) 일치하는 기록이 없습니다",

@@ -169,6 +169,7 @@
     "Loading firmware releases…": "Đang tải các bản firmware…",
     "No firmware releases published on LVFS for this device.": "LVFS chưa có bản firmware nào cho thiết bị này.",
     "installed": "đã cài",
+    "latest commit": "commit mới nhất",
     "Reading device list…": "Đang đọc danh sách thiết bị…",
     "Firmware releases": "Các bản firmware",
     "No log entries match \"%1\"": "Không có mục nhật ký nào khớp “%1”",

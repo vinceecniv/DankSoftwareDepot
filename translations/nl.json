@@ -168,6 +168,7 @@
     "Loading firmware releases…": "Firmware-releases laden…",
     "No firmware releases published on LVFS for this device.": "Geen firmware-releases op LVFS gepubliceerd voor dit apparaat.",
     "installed": "geïnstalleerd",
+    "latest commit": "nieuwste commit",
     "Reading device list…": "Apparatenlijst lezen…",
     "Firmware releases": "Firmware-releases",
     "No log entries match \"%1\"": "Geen logboekvermeldingen voor \"%1\"",

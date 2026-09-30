@@ -169,6 +169,7 @@
     "Loading firmware releases…": "Загрузка выпусков прошивок…",
     "No firmware releases published on LVFS for this device.": "Для этого устройства на LVFS нет выпусков прошивок.",
     "installed": "установлено",
+    "latest commit": "последний коммит",
     "Reading device list…": "Чтение списка устройств…",
     "Firmware releases": "Выпуски прошивок",
     "No log entries match \"%1\"": "Нет записей журнала по запросу «%1»",

@@ -63,6 +63,15 @@ Item {
     // The names are identifiers as much as labels: the log stores this string
     // on disk and reads it back to work out what an old entry was about, so
     // they stay in English and stay stable. sourceLabel is the one to draw.
+    // yay and paru, with devel turned on, list a -git package whose upstream
+    // has moved on without knowing the version it will build to: they print
+    // this in the version's place (#26). The daemon passes it through as is.
+    readonly property string develTarget: "latest-commit"
+
+    function versionLabel(version) {
+        return version === develTarget ? Tr.t("latest commit") : (version || "");
+    }
+
     function sourceName(repo) {
         switch (repo) {
         case "flatpak":

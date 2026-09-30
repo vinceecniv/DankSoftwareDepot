@@ -169,6 +169,7 @@
     "Loading firmware releases…": "Firmware-Versionen werden geladen…",
     "No firmware releases published on LVFS for this device.": "Keine Firmware-Versionen auf LVFS für dieses Gerät veröffentlicht.",
     "installed": "installiert",
+    "latest commit": "neuester Commit",
     "Reading device list…": "Geräteliste wird gelesen…",
     "Firmware releases": "Firmware-Versionen",
     "No log entries match \"%1\"": "Keine Protokolleinträge für „%1“",

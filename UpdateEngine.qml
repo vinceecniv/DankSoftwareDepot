@@ -229,6 +229,8 @@ Item {
     property var _shellNameToKey: ({})
     // base name -> target EVR, for post-pass verification against rpm
     property var _daemonExpectedEvr: ({})
+    // base name -> installed EVR before the pass, for rows with no target
+    property var _daemonPreviousEvr: ({})
     property bool _wantAppimage: false
     property bool _wantPlugins: false
     property int _pluginsDone: 0
@@ -605,6 +607,7 @@ Item {
         const states = {};
         const nameMap = {};
         const expectedEvr = {};
+        const previousEvr = {};
         const items = [];
         const selectedFlatpak = new Set(_flatpakIds);
         plannedCount = 0;
@@ -620,6 +623,7 @@ Item {
                 };
                 nameMap[base] = "system/" + base;
                 expectedEvr[base] = pkg.toVersion || "";
+                previousEvr[base] = pkg.fromVersion || "";
                 items.push({
                     pkg: pkg,
                     key: "system/" + base
@@ -726,6 +730,7 @@ Item {
             };
             shellMap[base] = "system/" + base;
             expectedEvr[base] = pkg.toVersion || "";
+            previousEvr[base] = pkg.fromVersion || "";
             items.push({
                 pkg: pkg,
                 key: "system/" + base
@@ -735,6 +740,7 @@ Item {
         _shellNameToKey = shellMap;
         _dnfNameToKey = nameMap;
         _daemonExpectedEvr = expectedEvr;
+        _daemonPreviousEvr = previousEvr;
         itemStates = states;
         runItems = items;
         _flatpakRunError = "";
@@ -1702,15 +1708,27 @@ Item {
         let failCount = 0;
         for (const base in map) {
             const want = noEpoch(_daemonExpectedEvr[base] || "");
-            // Unknown target version: nothing to compare against, keep the
-            // daemon's success verdict for this row
-            const arrived = want === "" || (installed[base] || []).some(evr => noEpoch(evr) === want);
+            const have = installed[base] || [];
+            // A devel row names no version to arrive at, only that upstream
+            // has a newer commit. What can still be checked is that a new
+            // build replaced the old one: a version other than the one the
+            // pass started from. Unknown target otherwise: nothing to compare
+            // against, keep the daemon's success verdict for this row.
+            let arrived;
+            if (want === Ui.develTarget) {
+                const was = noEpoch(_daemonPreviousEvr[base] || "");
+                arrived = have.some(evr => noEpoch(evr) !== was);
+            } else {
+                arrived = want === "" || have.some(evr => noEpoch(evr) === want);
+            }
             if (arrived) {
                 okCount++;
                 _setItem(map[base], {
                     status: "done",
                     fraction: 1,
-                    detail: ""
+                    detail: "",
+                    // What a devel row turned out to be, for the log
+                    landed: want === Ui.develTarget ? noEpoch(have[0]) : ""
                 });
             } else {
                 failCount++;

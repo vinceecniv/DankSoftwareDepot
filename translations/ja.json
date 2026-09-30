@@ -169,6 +169,7 @@
     "Loading firmware releases…": "ファームウェアのリリースを読み込んでいます…",
     "No firmware releases published on LVFS for this device.": "このデバイス向けのファームウェアは LVFS に公開されていません。",
     "installed": "インストール済み",
+    "latest commit": "最新のコミット",
     "Reading device list…": "デバイス一覧を読み込んでいます…",
     "Firmware releases": "ファームウェアのリリース",
     "No log entries match \"%1\"": "「%1」に一致するログはありません",

@@ -85,7 +85,7 @@ Rectangle {
     }
     readonly property string toVersionDisplay: {
         if (pkg.toVersion)
-            return pkg.toVersion;
+            return Ui.versionLabel(pkg.toVersion);
         if (newReleases.length > 0 && newReleases[0].version)
             return newReleases[0].version;
         return "";

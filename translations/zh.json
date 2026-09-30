@@ -169,6 +169,7 @@
     "Loading firmware releases…": "正在加载固件版本…",
     "No firmware releases published on LVFS for this device.": "LVFS 上没有为此设备发布的固件版本。",
     "installed": "已安装",
+    "latest commit": "最新提交",
     "Reading device list…": "正在读取设备列表…",
     "Firmware releases": "固件版本",
     "No log entries match \"%1\"": "没有与“%1”匹配的日志条目",

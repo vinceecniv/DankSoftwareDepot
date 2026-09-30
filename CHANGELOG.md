@@ -3,6 +3,17 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **AUR development packages can update with everything else.** With
+  devel turned on in yay or paru (`yay -Y --devel --save`, or `Devel` in
+  `paru.conf`), a `-git` package whose upstream has new commits shows in
+  the list as going to "latest commit" and is rebuilt in the same pass.
+  Until now the check afterwards looked for a version literally called
+  `latest-commit`, and would have marked every one of them as not updated.
+  It now checks that a new build replaced the old one, and the log records
+  the version it became. Thanks to @qu33rz for asking (#26).
+
 ## 1.3.0 — 2026-09-28
 
 Thanks to @bernardopg for #25, which fixed the clipped list outlines, the

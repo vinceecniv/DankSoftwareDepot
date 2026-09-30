@@ -1108,7 +1108,9 @@ PluginComponent {
             // run is written down the manifest on disk has been re-read, and
             // it knows: ask it, and take the answer only when it really is a
             // different version from the one this started at.
-            let landedAt = ri.pkg.toVersion || "";
+            // A devel row went to "the latest commit"; the verification
+            // read which version that was.
+            let landedAt = st.landed || ri.pkg.toVersion || "";
             if (landedAt === "" && ri.pkg.repo === "dmsplugin" && st.status === "done") {
                 const manifest = (PluginService.availablePlugins || {})[ri.pkg.name] || {};
                 if ((manifest.version || "") !== "" && manifest.version !== ri.pkg.fromVersion)
@@ -2219,7 +2221,7 @@ PluginComponent {
                                             anchors.right: parent.right
                                             anchors.verticalCenter: parent.verticalCenter
                                             visible: !compactRow.itemState || compactRow.itemState.status === "pending"
-                                            text: compactRow.modelData.toVersion || (compactRow.info && compactRow.info.releases && compactRow.info.releases.length > 0 && compactRow.info.releases[0].newer ? compactRow.info.releases[0].version : "")
+                                            text: Ui.versionLabel(compactRow.modelData.toVersion) || (compactRow.info && compactRow.info.releases && compactRow.info.releases.length > 0 && compactRow.info.releases[0].newer ? compactRow.info.releases[0].version : "")
                                             font.pixelSize: Theme.fontSizeSmall - 1
                                             color: Theme.primary
                                             elide: Text.ElideMiddle
