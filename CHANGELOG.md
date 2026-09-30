@@ -3,7 +3,7 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 1.3.1 — 2026-09-30
 
 - **AUR development packages can update with everything else.** With
   devel turned on in yay or paru (`yay -Y --devel --save`, or `Devel` in
