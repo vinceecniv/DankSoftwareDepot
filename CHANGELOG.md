@@ -3,7 +3,7 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 1.4.0 — 2026-10-01
 
 - **An AppImage is read, never run, until you install it.** To show a
   file's name and icon the plugin used `--appimage-extract`, which executes
