@@ -10,8 +10,9 @@ in-app when the plugin offers its own update.
   into a pill under the pointer, and buttons grew a little. Material 3
   Expressive, and DMS itself, keep hover to a light shade and save shape
   changes for interaction. A row now changes shape when you press it, and
-  keeps that shape while it is selected: an expanded firmware or log entry,
-  or the app whose details are open. A button changes shape while pressed,
+  keeps that shape while its details are open. An expanded firmware or log
+  entry keeps its corners, as expanded cards in DMS do; its shade and
+  outline show it is open. A button changes shape while pressed,
   or while what it opens is showing. The coloured outline appears only for
   a selected row. Buttons still shrink slightly when pressed, but
   no longer grow under the pointer. Thanks to @apollo79 for pointing this

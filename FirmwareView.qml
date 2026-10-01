@@ -296,11 +296,13 @@ Item {
 
                         property real innerRadius: 6
                         property real outerRadius: 12
-                        // Hover is a state layer and nothing more; the shape answers a press, and
-                        // stays changed while the row is selected (M3 Expressive, as DMS does it, #22)
+                        // Hover is a state layer and nothing more, and the shape answers a press
+                        // (M3 Expressive, as DMS does it, #22). Expanding is not a reason to round:
+                        // DMS keeps an expanded card's corners as they are, and the open entry
+                        // already says it is open. Its fill and outline mark it as selected.
                         property bool hovered: devMa.containsMouse || deviceRow.expanded
                         property bool selected: deviceRow.expanded
-                        property bool morphed: devMa.pressed || selected
+                        property bool morphed: devMa.pressed
 
                         property real tlr: morphed ? Math.min(height / 2, 28) : (deviceRow.isFirst ? outerRadius : innerRadius)
                         property real trr: morphed ? Math.min(height / 2, 28) : (deviceRow.isFirst ? outerRadius : innerRadius)
