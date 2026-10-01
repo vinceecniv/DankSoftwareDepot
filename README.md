@@ -35,7 +35,9 @@ and polkit prompts appear through the DMS agent.
 - **Debian/Ubuntu, Arch, atomic Fedora** — implemented, experimental, and said
   so in a banner. Atomic runs through `rpm-ostree`, so everything lands in the
   *next* boot. On Arch, AUR updates are detected and installed through the DMS
-  daemon's own paru/yay pass; the plugin builds no AUR packages itself
+  daemon's own paru/yay pass; the plugin builds no AUR packages itself.
+  `-git` packages join that pass once devel is on in your helper:
+  `yay -Y --devel --save`, or `Devel` in `paru.conf`
 - **Flatpak, AppImage and firmware** work the same everywhere
 
 [PROTOCOL.md](PROTOCOL.md) has the table of differences per backend.
@@ -156,8 +158,11 @@ life of one is handled here.
   land in `~/AppImages` — Gearlever's folder, and its setting is honoured
 - **Double-click a `.appimage`** and this window offers to install it, or to
   replace the build you already have. A fresh download is never executable,
-  which is exactly when double-clicking otherwise does nothing at all
-- **It shows up like an app** — icon and desktop entry extracted from the image
+  which is exactly when double-clicking otherwise does nothing at all. This
+  is a switch in the plugin settings, off until you turn it on
+- **It shows up like an app** — icon and desktop entry read from the image.
+  They are read straight out of its filesystem, so nothing in the file runs
+  until you start the app yourself
 - **Existing AppImages are adopted**, including ones installed before this
   plugin existed
 - **Updates** come from a linked GitHub project and run in their own phase
@@ -228,6 +233,11 @@ Without the package-manager bindings no system package can be installed,
 updated or removed; without the Flatpak ones no Flatpak can. The plugin checks
 both at startup and offers to install what is missing, naming the packages for
 your distribution.
+
+Optional, for AppImage icons on Python older than 3.14: `python3-zstandard`
+(`python-zstandard` on Arch). Most AppImages are zstd-compressed, and the
+plugin reads their icon and name without running them; without a zstd module
+those show a generic icon. Python 3.14 has one built in.
 
 Optional, for richer app information: the AppStream catalog for your distro —
 `appstream-data` on Fedora, `appstream` on Debian/Ubuntu,

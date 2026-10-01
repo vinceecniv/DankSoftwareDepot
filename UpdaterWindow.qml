@@ -596,8 +596,19 @@ FloatingWindow {
         id: selfUpdateProcess
 
         // Exit 3 on a symlinked (development) install: never self-update a
-        // working copy.
-        command: ["sh", "-c", "dir=\"$HOME/.config/DankMaterialShell/plugins/dankSoftwareDepot\"; [ -L \"$dir\" ] && exit 3; curl -sf --max-time 15 " + win.githubUrl.replace("github.com", "raw.githubusercontent.com") + "/main/plugin.json; echo; echo ---NOTES---; curl -sf --max-time 15 " + win.githubUrl.replace("github.com", "raw.githubusercontent.com") + "/main/CHANGELOG.md"]
+        // working copy. Fetched with the Python the helpers already need
+        // rather than curl, which is not a dependency.
+        command: [Backend.python, "-c", [
+            "import os, sys, urllib.request",
+            "if os.path.islink(os.path.expanduser('~/.config/DankMaterialShell/plugins/dankSoftwareDepot')): sys.exit(3)",
+            "def get(url):",
+            "    try:",
+            "        with urllib.request.urlopen(url, timeout=15) as resp: return resp.read().decode('utf-8', 'replace')",
+            "    except Exception: return ''",
+            "print(get(sys.argv[1] + '/main/plugin.json'))",
+            "print('---NOTES---')",
+            "print(get(sys.argv[1] + '/main/CHANGELOG.md'))"
+        ].join("\n"), win.githubUrl.replace("github.com", "raw.githubusercontent.com")]
 
         stdout: StdioCollector {
             onStreamFinished: {

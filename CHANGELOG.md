@@ -3,6 +3,27 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **An AppImage is read, never run, until you install it.** To show a
+  file's name and icon the plugin used `--appimage-extract`, which executes
+  the runtime embedded in the file: code chosen by whoever built it. That
+  happened as soon as a downloaded AppImage was opened, before you pressed
+  Install, and for AppImages in `~/AppImages` without a cached icon a few
+  seconds after the shell started. The plugin now reads the desktop entry
+  and icon straight out of the image's filesystem. Nothing in it runs until
+  you start the app yourself. Found by the automated review in the DMS
+  plugin registry.
+
+- **Opening `.appimage` files is your choice.** On first run the plugin
+  made itself the default app for AppImages when no other app held that
+  file type. It no longer does: the switch is in the plugin settings, off
+  until you turn it on. If it was already set, it stays set, and the same
+  switch turns it off.
+
+- **The update check for the plugin itself no longer needs curl.** It
+  uses the Python the helpers already require.
+
 ## 1.3.1 — 2026-09-30
 
 - **AUR development packages can update with everything else.** With

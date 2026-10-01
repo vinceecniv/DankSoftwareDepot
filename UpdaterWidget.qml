@@ -26,33 +26,10 @@ PluginComponent {
     // decision, not something to be asked again on the next window open
     readonly property bool launcherPromptDone: pluginData.launcherPromptDone === true
 
-    // Opening a downloaded .appimage is what someone installing a software
-    // centre expects it to do, so the association is claimed once rather than
-    // waited for — but only once, and only when the type is going spare. If
-    // another app already holds it that was a choice, and if you switch ours
-    // off it stays off; the flag below is what makes both true.
-    readonly property bool appimageHandlerClaimed: pluginData.appimageHandlerClaimed === true
-
-    Timer {
-        // Nothing claims anything until the current association is known, so
-        // this keeps asking rather than acting on an unanswered question
-        interval: 8000
-        repeat: true
-        running: !root.appimageHandlerClaimed
-        onTriggered: {
-            if (!Backend.appimageHandlerChecked) {
-                Backend.checkAppimageHandler();
-                return;
-            }
-            PluginService.savePluginData("dankSoftwareDepot", "appimageHandlerClaimed", true);
-            if (Backend.appimageHandlerDefault || Backend.appimageHandlerOther !== "")
-                return;
-            Backend.setAppimageHandler();
-            // The association needs a desktop entry to point at, so one is
-            // written — which answers the launcher question by doing it
-            PluginService.savePluginData("dankSoftwareDepot", "launcherPromptDone", true);
-        }
-    }
+    // The .appimage association is never claimed on our own: it is the
+    // switch under Settings, off until someone turns it on. A plugin that made
+    // itself the handler for a file type on first run was deciding for the
+    // user what double-clicking a download does (dms-plugin-registry#720).
 
     property bool confirmArmed: false
 

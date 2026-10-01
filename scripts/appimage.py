@@ -29,9 +29,10 @@ import shutil
 import stat
 import subprocess
 import sys
-import tempfile
 import time
 import urllib.request
+
+import appimage_squashfs
 
 def _gearlever_dir():
     """Gearlever's folder, but only when it was pointed somewhere else.
@@ -345,19 +346,18 @@ def download(url, dest, total_hint=0):
 
 
 def extract_metadata(appimage_path, app_id):
-    """Best-effort icon + desktop info via --appimage-extract (runs the
-    AppImage runtime only, not the app)."""
+    """Best-effort icon + desktop info, read straight out of the image's
+    squashfs. Nothing in the file is run: --appimage-extract would execute
+    its embedded runtime, which is the file's own code, and this is called
+    for files that were only opened, or found lying in ~/AppImages."""
     info = {"icon": "", "desktopName": "", "categories": "", "version": ""}
-    tmp = tempfile.mkdtemp(prefix="dsd-appimage-")
     try:
-        subprocess.run([appimage_path, "--appimage-extract"], cwd=tmp,
-                       capture_output=True, timeout=60)
-        root = os.path.join(tmp, "squashfs-root")
-        desktops = glob.glob(os.path.join(root, "*.desktop"))
-        icon_name = ""
-        if desktops:
-            with open(desktops[0], errors="replace") as f:
-                for line in f:
+        with appimage_squashfs.Image(appimage_path) as image:
+            desktops = [n for n in image.listdir() if n.endswith(".desktop")]
+            icon_name = ""
+            if desktops:
+                text = (image.read(desktops[0]) or b"").decode("utf-8", "replace")
+                for line in text.splitlines():
                     if line.startswith("Name=") and not info["desktopName"]:
                         info["desktopName"] = line.strip()[5:]
                     elif line.startswith("Icon=") and not icon_name:
@@ -366,26 +366,27 @@ def extract_metadata(appimage_path, app_id):
                         info["categories"] = line.strip()[11:]
                     elif line.startswith("X-AppImage-Version=") and not info["version"]:
                         info["version"] = line.strip()[19:]
-        candidates = []
-        diricon = os.path.join(root, ".DirIcon")
-        if os.path.exists(diricon):
-            candidates.append(os.path.realpath(diricon))
-        if icon_name:
-            for ext in ("png", "svg"):
-                candidates += glob.glob(os.path.join(root, f"{icon_name}.{ext}"))
-                candidates += glob.glob(os.path.join(root, "usr/share/icons/**", f"{icon_name}.{ext}"), recursive=True)
-        for cand in candidates:
-            if os.path.isfile(cand) and os.path.getsize(cand) > 0:
-                ext = ".svg" if cand.endswith(".svg") else ".png"
+            candidates = [".DirIcon"]
+            if icon_name and "/" not in icon_name:
+                candidates += [f"{icon_name}.png", f"{icon_name}.svg"]
+                candidates += [p for p in image.walk("usr/share/icons")
+                               if os.path.basename(p) in (f"{icon_name}.png", f"{icon_name}.svg")]
+            for cand in candidates:
+                data = image.read(cand)
+                if not data:
+                    continue
+                # .DirIcon carries no extension; the bytes say which it is
+                is_svg = cand.endswith(".svg") or b"<svg" in data[:1024]
+                if not is_svg and not data.startswith(b"\x89PNG"):
+                    continue
                 os.makedirs(ICON_DIR, exist_ok=True)
-                dest = os.path.join(ICON_DIR, f"dsd-appimage-{app_id}{ext}")
-                shutil.copyfile(cand, dest)
+                dest = os.path.join(ICON_DIR, f"dsd-appimage-{app_id}{'.svg' if is_svg else '.png'}")
+                with open(dest, "wb") as f:
+                    f.write(data)
                 info["icon"] = dest
                 break
     except Exception:
         pass
-    finally:
-        shutil.rmtree(tmp, ignore_errors=True)
     return info
 
 
@@ -686,27 +687,10 @@ def run_inspect(path):
         json.dump({"ok": False, "error": "file not found: " + src}, sys.stdout)
         return
 
-    # --appimage-extract has to run the image, and a fresh download is not
-    # executable. Inspecting is not installing, so the user's own file is
-    # left exactly as it was found and a temporary copy is run instead.
-    probe, tmpdir = src, ""
-    if not os.access(src, os.X_OK):
-        tmpdir = tempfile.mkdtemp(prefix="dsd-inspect-")
-        probe = os.path.join(tmpdir, os.path.basename(src))
-        try:
-            shutil.copyfile(src, probe)
-            os.chmod(probe, os.stat(probe).st_mode | stat.S_IXUSR)
-        except OSError as exc:
-            shutil.rmtree(tmpdir, ignore_errors=True)
-            json.dump({"ok": False, "error": str(exc)}, sys.stdout)
-            return
-
+    # Read, not run: the file stays exactly as it was found, executable bit
+    # and all, and none of its code executes before someone presses Install
     stem = re.sub(r"\.appimage$", "", os.path.basename(src), flags=re.I)
-    try:
-        meta = extract_metadata(probe, slugify(stem) or "unknown")
-    finally:
-        if tmpdir:
-            shutil.rmtree(tmpdir, ignore_errors=True)
+    meta = extract_metadata(src, slugify(stem) or "unknown")
 
     display = meta.get("desktopName") or stem
     records = load_records()

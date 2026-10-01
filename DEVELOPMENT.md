@@ -63,6 +63,7 @@ selectable would stop being a card you can click.
 | `scripts/pkg_backend.py` | Per-distro metadata backend (search, sizes, inventory, holds, changelogs); also which packages own a launchable desktop entry |
 | `scripts/flatpak_helper.py` | libflatpak transactions with exact byte progress, and end-of-life detection |
 | `scripts/appimage.py` | AppImage catalog, install/replace/update/uninstall, GitHub update sources, folder scanning, the `.appimage` association |
+| `scripts/appimage_squashfs.py` | Reads the desktop entry and icon out of an AppImage's squashfs without running the image |
 | `scripts/repo_backend.py` | Software sources: repositories and Flatpak remotes, Copr, RPM Fusion, Flathub (dnf family only) |
 | `scripts/brew_helper.py` | Homebrew: installed, outdated, upgrade — per-formula events read out of brew's own prose |
 | `scripts/arch_news.py` | The Arch news feed: fetch, reduce, archive, track what has been read |
@@ -77,7 +78,8 @@ Everything in CI runs on any distribution, with the network and the package
 managers stubbed: `check_translations.py` (the 15 catalogs against the QML),
 `test_dep11.py`, `test_gitnotes.py`, `test_reconcile.py`, `test_ostree_helper.py`,
 `test_arch_news.py`, `test_brew_helper.py`, `test_pacman_helper.py`,
-`test_flatpak_helper.py`, `test_simulate.py`, and `test_shell_portability.py` —
+`test_flatpak_helper.py`, `test_simulate.py`, `test_appimage_squashfs.py`, and
+`test_shell_portability.py` —
 which reads every `sh -c` snippet in the QML for bash-only syntax, because
 `/bin/sh` is dash on Debian and Ubuntu and a bashism there produces no error,
 only wrong output.

@@ -57,6 +57,9 @@ jobs:
       - name: Recording a run and playing it back
         run: python3 scripts/test_simulate.py
 
+      - name: AppImages are read, never run
+        run: python3 scripts/test_appimage_squashfs.py
+
       - name: The shell snippets run under dash, not just bash
         run: python3 scripts/test_shell_portability.py
 
