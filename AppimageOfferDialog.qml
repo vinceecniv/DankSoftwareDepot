@@ -375,10 +375,10 @@ Item {
                     height: 32
                     property bool isHovered: cancelMa.containsMouse
 
-                    topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                    bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                    topRightRadius: isHovered ? (height / 2) : 4
-                    bottomRightRadius: isHovered ? (height / 2) : 4
+                    topLeftRadius: cancelMa.pressed ? (height / 2) : Theme.cornerRadius
+                    bottomLeftRadius: cancelMa.pressed ? (height / 2) : Theme.cornerRadius
+                    topRightRadius: cancelMa.pressed ? (height / 2) : 4
+                    bottomRightRadius: cancelMa.pressed ? (height / 2) : 4
 
                     Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                     Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -437,10 +437,10 @@ Item {
                     height: 32
                     property bool isHovered: acceptMa.containsMouse && btnEnabled
 
-                    topLeftRadius: isHovered ? (height / 2) : 4
-                    bottomLeftRadius: isHovered ? (height / 2) : 4
-                    topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                    bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                    topLeftRadius: acceptMa.pressed ? (height / 2) : 4
+                    bottomLeftRadius: acceptMa.pressed ? (height / 2) : 4
+                    topRightRadius: acceptMa.pressed ? (height / 2) : Theme.cornerRadius
+                    bottomRightRadius: acceptMa.pressed ? (height / 2) : Theme.cornerRadius
 
                     Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                     Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }

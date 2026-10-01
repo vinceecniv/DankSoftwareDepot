@@ -720,7 +720,7 @@ FloatingWindow {
                         height: 32
                         property bool isHovered: setCloseMa.containsMouse
 
-                        radius: isHovered ? (height / 2) : (Theme.cornerRadius / 2)
+                        radius: setCloseMa.pressed ? (height / 2) : (Theme.cornerRadius / 2)
                         Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                         color: isHovered ? Theme.withAlpha(Theme.error, 0.22) : Theme.withAlpha(Ui.chipSurfaceNested, 0.5)
@@ -3328,10 +3328,10 @@ FloatingWindow {
                         property bool isHovered: searchMa.containsMouse
                         z: (isActive || isHovered) ? 3 : 1
 
-                        topLeftRadius: (isHovered || isActive) ? (height / 2) : Theme.cornerRadius
-                        bottomLeftRadius: (isHovered || isActive) ? (height / 2) : Theme.cornerRadius
-                        topRightRadius: (isHovered || isActive) ? (height / 2) : 4
-                        bottomRightRadius: (isHovered || isActive) ? (height / 2) : 4
+                        topLeftRadius: (searchMa.pressed || isActive) ? (height / 2) : Theme.cornerRadius
+                        bottomLeftRadius: (searchMa.pressed || isActive) ? (height / 2) : Theme.cornerRadius
+                        topRightRadius: (searchMa.pressed || isActive) ? (height / 2) : 4
+                        bottomRightRadius: (searchMa.pressed || isActive) ? (height / 2) : 4
 
                         Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -3391,10 +3391,10 @@ FloatingWindow {
                         property bool isHovered: refreshMa.containsMouse && btnEnabled
                         z: (isActive || isHovered) ? 3 : 1
 
-                        topLeftRadius: (isHovered || isActive) ? (height / 2) : 4
-                        bottomLeftRadius: (isHovered || isActive) ? (height / 2) : 4
-                        topRightRadius: (isHovered || isActive) ? (height / 2) : 4
-                        bottomRightRadius: (isHovered || isActive) ? (height / 2) : 4
+                        topLeftRadius: (refreshMa.pressed || isActive) ? (height / 2) : 4
+                        bottomLeftRadius: (refreshMa.pressed || isActive) ? (height / 2) : 4
+                        topRightRadius: (refreshMa.pressed || isActive) ? (height / 2) : 4
+                        bottomRightRadius: (refreshMa.pressed || isActive) ? (height / 2) : 4
 
                         Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -3475,10 +3475,10 @@ FloatingWindow {
                         property bool isHovered: settingsMa.containsMouse
                         z: (isActive || isHovered) ? 3 : 1
 
-                        topLeftRadius: (isHovered || isActive) ? (height / 2) : 4
-                        bottomLeftRadius: (isHovered || isActive) ? (height / 2) : 4
-                        topRightRadius: (isHovered || isActive) ? (height / 2) : 4
-                        bottomRightRadius: (isHovered || isActive) ? (height / 2) : 4
+                        topLeftRadius: (settingsMa.pressed || isActive) ? (height / 2) : 4
+                        bottomLeftRadius: (settingsMa.pressed || isActive) ? (height / 2) : 4
+                        topRightRadius: (settingsMa.pressed || isActive) ? (height / 2) : 4
+                        bottomRightRadius: (settingsMa.pressed || isActive) ? (height / 2) : 4
 
                         Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -3534,10 +3534,10 @@ FloatingWindow {
                         property bool isHovered: closeMa.containsMouse
                         z: isHovered ? 3 : 1
 
-                        topLeftRadius: isHovered ? (height / 2) : 4
-                        bottomLeftRadius: isHovered ? (height / 2) : 4
-                        topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        topLeftRadius: closeMa.pressed ? (height / 2) : 4
+                        bottomLeftRadius: closeMa.pressed ? (height / 2) : 4
+                        topRightRadius: closeMa.pressed ? (height / 2) : Theme.cornerRadius
+                        bottomRightRadius: closeMa.pressed ? (height / 2) : Theme.cornerRadius
 
                         Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -5889,10 +5889,10 @@ FloatingWindow {
                 Layout.preferredHeight: 36
                 Layout.preferredWidth: updateAllRow.implicitWidth + 32
 
-                topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                topLeftRadius: updateAllMa.pressed ? (height / 2) : Theme.cornerRadius
+                bottomLeftRadius: updateAllMa.pressed ? (height / 2) : Theme.cornerRadius
+                topRightRadius: updateAllMa.pressed ? (height / 2) : Theme.cornerRadius
+                bottomRightRadius: updateAllMa.pressed ? (height / 2) : Theme.cornerRadius
 
                 Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                 Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }

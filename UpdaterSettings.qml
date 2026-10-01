@@ -87,7 +87,7 @@ PluginSettings {
                 Layout.preferredWidth: openRow.implicitWidth + 24
                 property bool isHovered: openMa.containsMouse
 
-                radius: isHovered ? (height / 2) : Theme.cornerRadius
+                radius: openMa.pressed ? (height / 2) : Theme.cornerRadius
                 Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                 color: isHovered ? Theme.withAlpha(Theme.primary, 0.25) : Theme.withAlpha(Theme.primary, 0.15)

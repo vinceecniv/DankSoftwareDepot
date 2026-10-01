@@ -1830,10 +1830,10 @@ PluginComponent {
                                 border.width: 1
                                 border.color: Theme.withAlpha(Theme.primary, isHovered ? 0.3 : 0.15)
 
-                                topLeftRadius: isHovered || isBusy ? (height / 2) : Theme.cornerRadius
-                                bottomLeftRadius: isHovered || isBusy ? (height / 2) : Theme.cornerRadius
-                                topRightRadius: isHovered || isBusy ? (height / 2) : 4
-                                bottomRightRadius: isHovered || isBusy ? (height / 2) : 4
+                                topLeftRadius: refreshMa.pressed || isBusy ? (height / 2) : Theme.cornerRadius
+                                bottomLeftRadius: refreshMa.pressed || isBusy ? (height / 2) : Theme.cornerRadius
+                                topRightRadius: refreshMa.pressed || isBusy ? (height / 2) : 4
+                                bottomRightRadius: refreshMa.pressed || isBusy ? (height / 2) : 4
 
                                 Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                                 Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -1891,10 +1891,10 @@ PluginComponent {
                                 border.width: 1
                                 border.color: Theme.withAlpha(Theme.secondary, isHovered ? 0.4 : 0.15)
 
-                                topLeftRadius: isHovered ? (height / 2) : 4
-                                bottomLeftRadius: isHovered ? (height / 2) : 4
-                                topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                                bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                                topLeftRadius: openMa.pressed ? (height / 2) : 4
+                                bottomLeftRadius: openMa.pressed ? (height / 2) : 4
+                                topRightRadius: openMa.pressed ? (height / 2) : Theme.cornerRadius
+                                bottomRightRadius: openMa.pressed ? (height / 2) : Theme.cornerRadius
 
                                 Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                                 Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -2379,10 +2379,10 @@ PluginComponent {
                         border.width: 1
                         border.color: Theme.withAlpha(btnBaseColor, isHovered ? 0.45 : 0.22)
 
-                        topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        topRightRadius: isHovered ? (height / 2) : 4
-                        bottomRightRadius: isHovered ? (height / 2) : 4
+                        topLeftRadius: updateAllMa.pressed ? (height / 2) : Theme.cornerRadius
+                        bottomLeftRadius: updateAllMa.pressed ? (height / 2) : Theme.cornerRadius
+                        topRightRadius: updateAllMa.pressed ? (height / 2) : 4
+                        bottomRightRadius: updateAllMa.pressed ? (height / 2) : 4
 
                         Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -2446,10 +2446,10 @@ PluginComponent {
                         border.width: 1
                         border.color: Theme.withAlpha(Theme.secondary, isHovered ? 0.4 : 0.18)
 
-                        topLeftRadius: isHovered ? (height / 2) : 4
-                        bottomLeftRadius: isHovered ? (height / 2) : 4
-                        topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        topLeftRadius: detailsMa.pressed ? (height / 2) : 4
+                        bottomLeftRadius: detailsMa.pressed ? (height / 2) : 4
+                        topRightRadius: detailsMa.pressed ? (height / 2) : Theme.cornerRadius
+                        bottomRightRadius: detailsMa.pressed ? (height / 2) : Theme.cornerRadius
 
                         Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }

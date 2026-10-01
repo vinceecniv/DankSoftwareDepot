@@ -1501,7 +1501,7 @@ Item {
                 width: allSecRow.implicitWidth + 24
                 height: 32
                 property bool isHovered: allSecMa.containsMouse
-                radius: isHovered ? (height / 2) : 8
+                radius: allSecMa.pressed ? (height / 2) : 8
                 Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                 color: isHovered ? Theme.withAlpha(Ui.chipSurfaceNested, 0.95) : Theme.withAlpha(Ui.chipSurfaceNested, 0.65)
                 Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
@@ -2009,7 +2009,7 @@ Item {
                             width: viewAllRow.implicitWidth + 22
                             height: 28
                             property bool isHovered: viewAllMa.containsMouse
-                            radius: isHovered ? (height / 2) : 8
+                            radius: viewAllMa.pressed ? (height / 2) : 8
                             Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
@@ -2149,7 +2149,7 @@ Item {
                             width: coprSearchRow.implicitWidth + 24
                             height: 28
                             property bool isHovered: coprSearchMa.containsMouse
-                            radius: isHovered ? (height / 2) : 8
+                            radius: coprSearchMa.pressed ? (height / 2) : 8
                             Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
@@ -2297,7 +2297,7 @@ Item {
                         height: 26
                         enabled: view.busyAction === ""
                         property bool isHovered: brewInstMa.containsMouse
-                        radius: isHovered ? (height / 2) : 8
+                        radius: brewInstMa.pressed ? (height / 2) : 8
                         Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                         color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
@@ -2413,7 +2413,7 @@ Item {
                             width: brewSearchRow.implicitWidth + 24
                             height: 28
                             property bool isHovered: brewSearchMa.containsMouse
-                            radius: isHovered ? (height / 2) : 8
+                            radius: brewSearchMa.pressed ? (height / 2) : 8
                             Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                             color: isHovered ? Theme.withAlpha(Theme.primary, 0.22) : Theme.withAlpha(Theme.primary, 0.12)
                             Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
@@ -2774,7 +2774,7 @@ Item {
 
                             Layout.preferredWidth: instActionRow.implicitWidth + 22
                             Layout.preferredHeight: 28
-                            radius: isHovered ? (height / 2) : 8
+                            radius: instActionMa.pressed ? (height / 2) : 8
                             Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
 
                             readonly property bool isPrimary: picks || modelData.kind === "flatpak"

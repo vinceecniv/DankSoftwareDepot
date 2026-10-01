@@ -780,7 +780,7 @@ Item {
                     Layout.alignment: Qt.AlignTop
                     Layout.preferredWidth: 32
                     Layout.preferredHeight: 32
-                    radius: closeBtnMa.containsMouse ? (height / 2) : Theme.cornerRadius
+                    radius: closeBtnMa.pressed ? (height / 2) : Theme.cornerRadius
                     Behavior on radius { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutExpo } }
                     color: closeBtnMa.containsMouse ? Theme.withAlpha(Theme.error, 0.15) : Theme.withAlpha(Ui.chipSurfaceNested, 0.6)
                     Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
@@ -2561,10 +2561,10 @@ Item {
                             property bool isHovered: webBtnMa.containsMouse
                             readonly property bool hasSibling: dialog.showHoldToggle
 
-                            topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                            bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                            topRightRadius: isHovered ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
-                            bottomRightRadius: isHovered ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
+                            topLeftRadius: webBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                            bottomLeftRadius: webBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                            topRightRadius: webBtnMa.pressed ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
+                            bottomRightRadius: webBtnMa.pressed ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
 
                             Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                             Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -2614,10 +2614,10 @@ Item {
                             property bool isHovered: holdBtnMa.containsMouse
                             readonly property bool hasSibling: (dialog.appData.homepage || "") !== ""
 
-                            topLeftRadius: isHovered ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
-                            bottomLeftRadius: isHovered ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
-                            topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                            bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                            topLeftRadius: holdBtnMa.pressed ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
+                            bottomLeftRadius: holdBtnMa.pressed ? (height / 2) : (hasSibling ? 4 : Theme.cornerRadius)
+                            topRightRadius: holdBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                            bottomRightRadius: holdBtnMa.pressed ? (height / 2) : Theme.cornerRadius
 
                             Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                             Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -2670,10 +2670,10 @@ Item {
                         Layout.preferredHeight: 32
                         property bool isHovered: pluginBtnMa.containsMouse
 
-                        topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        topLeftRadius: pluginBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                        bottomLeftRadius: pluginBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                        topRightRadius: pluginBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                        bottomRightRadius: pluginBtnMa.pressed ? (height / 2) : Theme.cornerRadius
 
                         Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -2736,10 +2736,10 @@ Item {
                         Layout.preferredHeight: 32
                         property bool isHovered: openBtnMa.containsMouse
 
-                        topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        topRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                        bottomRightRadius: isHovered ? (height / 2) : Theme.cornerRadius
+                        topLeftRadius: openBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                        bottomLeftRadius: openBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                        topRightRadius: openBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                        bottomRightRadius: openBtnMa.pressed ? (height / 2) : Theme.cornerRadius
 
                         Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -2851,10 +2851,10 @@ Item {
                             readonly property bool confirming: dialog._confirmUninstall === (dialog.appData.id || "")
                             readonly property bool hasRightSibling: dialog.showUpdateButton || (dialog.showInstallButtons && !dialog.installedChipVisible && (dialog.appData.sources || []).length > 0)
 
-                            topLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                            bottomLeftRadius: isHovered ? (height / 2) : Theme.cornerRadius
-                            topRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
-                            bottomRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+                            topLeftRadius: uninstBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                            bottomLeftRadius: uninstBtnMa.pressed ? (height / 2) : Theme.cornerRadius
+                            topRightRadius: uninstBtnMa.pressed ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+                            bottomRightRadius: uninstBtnMa.pressed ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
 
                             Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                             Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -2927,10 +2927,10 @@ Item {
                             readonly property bool hasLeftSibling: dialog.showUninstall
                             readonly property bool hasRightSibling: dialog.showInstallButtons && !dialog.installedChipVisible && (dialog.appData.sources || []).length > 0
 
-                            topLeftRadius: isHovered ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
-                            bottomLeftRadius: isHovered ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
-                            topRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
-                            bottomRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+                            topLeftRadius: updateBtnMa.pressed ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
+                            bottomLeftRadius: updateBtnMa.pressed ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
+                            topRightRadius: updateBtnMa.pressed ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+                            bottomRightRadius: updateBtnMa.pressed ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
 
                             Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                             Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -3004,10 +3004,10 @@ Item {
                                 width: instBtnRow.implicitWidth + 24
                                 height: 32
 
-                                topLeftRadius: isHovered ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
-                                bottomLeftRadius: isHovered ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
-                                topRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
-                                bottomRightRadius: isHovered ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+                                topLeftRadius: instBtnMa.pressed ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
+                                bottomLeftRadius: instBtnMa.pressed ? (height / 2) : (hasLeftSibling ? 4 : Theme.cornerRadius)
+                                topRightRadius: instBtnMa.pressed ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
+                                bottomRightRadius: instBtnMa.pressed ? (height / 2) : (hasRightSibling ? 4 : Theme.cornerRadius)
 
                                 Behavior on topLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                                 Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
