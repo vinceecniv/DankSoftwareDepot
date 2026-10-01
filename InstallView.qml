@@ -1508,7 +1508,7 @@ Item {
                 border.width: 1
                 border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                 Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
-                scale: allSecMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                scale: allSecMa.pressed ? 0.94 : 1.0
                 Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                 DankRipple {
@@ -2016,7 +2016,7 @@ Item {
                             border.width: 1
                             border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
-                            scale: viewAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            scale: viewAllMa.pressed ? 0.94 : 1.0
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
@@ -2156,7 +2156,7 @@ Item {
                             border.width: 1
                             border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
-                            scale: coprSearchMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            scale: coprSearchMa.pressed ? 0.94 : 1.0
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
@@ -2304,7 +2304,7 @@ Item {
                         border.width: 1
                         border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
-                        scale: brewInstMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        scale: brewInstMa.pressed ? 0.94 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
@@ -2420,7 +2420,7 @@ Item {
                             border.width: 1
                             border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.2)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
-                            scale: brewSearchMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            scale: brewSearchMa.pressed ? 0.94 : 1.0
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
@@ -2561,12 +2561,16 @@ Item {
 
                     property real innerRadius: 6
                     property real outerRadius: 12
+                    // Hover is a state layer and nothing more; the shape answers a press, and
+                    // stays changed while the row is selected (M3 Expressive, as DMS does it, #22)
                     property bool hovered: resultMa.containsMouse
+                    property bool selected: false
+                    property bool morphed: resultMa.pressed || selected
 
-                    property real tlr: hovered ? Math.min(height / 2, 28) : (resultRow.isFirst ? outerRadius : innerRadius)
-                    property real trr: hovered ? Math.min(height / 2, 28) : (resultRow.isFirst ? outerRadius : innerRadius)
-                    property real blr: hovered ? Math.min(height / 2, 28) : (resultRow.isLast ? outerRadius : innerRadius)
-                    property real brr: hovered ? Math.min(height / 2, 28) : (resultRow.isLast ? outerRadius : innerRadius)
+                    property real tlr: morphed ? Math.min(height / 2, 28) : (resultRow.isFirst ? outerRadius : innerRadius)
+                    property real trr: morphed ? Math.min(height / 2, 28) : (resultRow.isFirst ? outerRadius : innerRadius)
+                    property real blr: morphed ? Math.min(height / 2, 28) : (resultRow.isLast ? outerRadius : innerRadius)
+                    property real brr: morphed ? Math.min(height / 2, 28) : (resultRow.isLast ? outerRadius : innerRadius)
 
                     property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                     property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -2577,7 +2581,7 @@ Item {
                         ? Theme.primaryHover
                         : Theme.withAlpha(Theme.secondary, 0.04)
 
-                    property color paintBorder: hovered
+                    property color paintBorder: selected
                         ? Theme.withAlpha(Theme.primary, 0.4)
                         : Theme.withAlpha(Theme.secondary, 0.15)
 
@@ -2784,7 +2788,7 @@ Item {
                                 : (isHovered ? Theme.primary : Theme.primaryHover)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                            scale: instActionMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            scale: instActionMa.pressed ? 0.94 : 1.0
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {

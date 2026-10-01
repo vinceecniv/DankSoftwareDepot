@@ -1842,7 +1842,7 @@ PluginComponent {
                                 Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                 Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                                scale: refreshMa.pressed ? 0.92 : (isHovered ? 1.05 : 1.0)
+                                scale: refreshMa.pressed ? 0.92 : 1.0
                                 Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                                 DankRipple { id: refreshRip; anchors.fill: parent; cornerRadius: parent.topLeftRadius; rippleColor: Theme.primary }
@@ -1903,7 +1903,7 @@ PluginComponent {
                                 Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                                 Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                                scale: openMa.pressed ? 0.92 : (isHovered ? 1.05 : 1.0)
+                                scale: openMa.pressed ? 0.92 : 1.0
                                 Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                                 DankRipple { id: openRip; anchors.fill: parent; cornerRadius: parent.topRightRadius; rippleColor: Theme.secondary }
@@ -2088,12 +2088,15 @@ PluginComponent {
 
                                     property real innerRadius: 6
                                     property real outerRadius: 12
+                                    // Hover is a state layer and nothing more; the shape answers a press, and
+                                    // stays changed while the row is selected (M3 Expressive, as DMS does it, #22)
                                     property bool hovered: rowMa.containsMouse || compactRow.isActive
+                                    property bool morphed: rowMa.pressed || compactRow.isActive
 
-                                    property real tlr: hovered ? 21 : (isFirst ? outerRadius : innerRadius)
-                                    property real trr: hovered ? 21 : (isFirst ? outerRadius : innerRadius)
-                                    property real blr: hovered ? 21 : (isLast ? outerRadius : innerRadius)
-                                    property real brr: hovered ? 21 : (isLast ? outerRadius : innerRadius)
+                                    property real tlr: morphed ? 21 : (isFirst ? outerRadius : innerRadius)
+                                    property real trr: morphed ? 21 : (isFirst ? outerRadius : innerRadius)
+                                    property real blr: morphed ? 21 : (isLast ? outerRadius : innerRadius)
+                                    property real brr: morphed ? 21 : (isLast ? outerRadius : innerRadius)
 
                                     topLeftRadius: tlr
                                     topRightRadius: trr
@@ -2110,7 +2113,7 @@ PluginComponent {
                                         : Theme.withAlpha(Theme.secondary, 0.04)
 
                                     border.width: 1
-                                    border.color: hovered
+                                    border.color: compactRow.isActive
                                         ? Theme.withAlpha(Theme.primary, 0.35)
                                         : Theme.withAlpha(Theme.secondary, 0.12)
 
@@ -2388,7 +2391,7 @@ PluginComponent {
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                        scale: updateAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        scale: updateAllMa.pressed ? 0.94 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple { id: updateAllRip; anchors.fill: parent; cornerRadius: parent.topLeftRadius; rippleColor: updateAllBtn.btnBaseColor }
@@ -2455,7 +2458,7 @@ PluginComponent {
                         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                        scale: detailsMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        scale: detailsMa.pressed ? 0.94 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple { id: detailsRip; anchors.fill: parent; cornerRadius: parent.topRightRadius; rippleColor: Theme.secondary }

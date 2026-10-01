@@ -114,14 +114,16 @@ Rectangle {
 
         property real innerRadius: 6
         property real outerRadius: Theme.cornerRadius || 12
-        // The pill the rows in Installed and Install turn into on hover
+        // The pill the rows in every list turn into when pressed or selected.
+        // Hover only shades the row (M3 Expressive, as DMS does it, #22)
         property real pillRadius: Math.min(height / 2, 28)
         property bool isHighlighted: cardMa.containsMouse || card.active
+        property bool morphed: cardMa.pressed || card.active
 
-        property real tlr: isHighlighted ? pillRadius : (isSectionFirst ? outerRadius : innerRadius)
-        property real trr: isHighlighted ? pillRadius : (isSectionFirst ? outerRadius : innerRadius)
-        property real blr: isHighlighted ? pillRadius : (isSectionLast ? outerRadius : innerRadius)
-        property real brr: isHighlighted ? pillRadius : (isSectionLast ? outerRadius : innerRadius)
+        property real tlr: morphed ? pillRadius : (isSectionFirst ? outerRadius : innerRadius)
+        property real trr: morphed ? pillRadius : (isSectionFirst ? outerRadius : innerRadius)
+        property real blr: morphed ? pillRadius : (isSectionLast ? outerRadius : innerRadius)
+        property real brr: morphed ? pillRadius : (isSectionLast ? outerRadius : innerRadius)
 
         topLeftRadius: tlr
         topRightRadius: trr
@@ -142,7 +144,7 @@ Rectangle {
         border.width: 1
         border.color: card.status === "error"
             ? Theme.withAlpha(Theme.error, 0.5)
-            : (isHighlighted ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15))
+            : (card.active ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15))
 
         Behavior on color { ColorAnimation { duration: Theme.mediumDuration } }
         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }

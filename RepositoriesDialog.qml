@@ -451,11 +451,13 @@ Item {
                                         property real innerRadius: 6
                                         property real outerRadius: 12
                                         property bool hovered: suggMa.containsMouse
+                                        // The shape answers a press, not the pointer passing over (#22)
+                                        property bool morphed: suggMa.pressed
 
-                                        property real tlr: hovered ? (height / 2) : (suggestionCard.isFirst ? outerRadius : innerRadius)
-                                        property real trr: hovered ? (height / 2) : (suggestionCard.isFirst ? outerRadius : innerRadius)
-                                        property real blr: hovered ? (height / 2) : (suggestionCard.isLast ? outerRadius : innerRadius)
-                                        property real brr: hovered ? (height / 2) : (suggestionCard.isLast ? outerRadius : innerRadius)
+                                        property real tlr: morphed ? (height / 2) : (suggestionCard.isFirst ? outerRadius : innerRadius)
+                                        property real trr: morphed ? (height / 2) : (suggestionCard.isFirst ? outerRadius : innerRadius)
+                                        property real blr: morphed ? (height / 2) : (suggestionCard.isLast ? outerRadius : innerRadius)
+                                        property real brr: morphed ? (height / 2) : (suggestionCard.isLast ? outerRadius : innerRadius)
 
                                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -464,7 +466,7 @@ Item {
 
                                         ShapePath {
                                             fillColor: suggBg.hovered ? Theme.primaryHover : Theme.withAlpha(Theme.secondary, 0.04)
-                                            strokeColor: suggBg.hovered ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15)
+                                            strokeColor: Theme.withAlpha(Theme.secondary, 0.15)
                                             strokeWidth: 1
 
                                             startX: suggBg.tlrAnim; startY: 0
@@ -600,11 +602,13 @@ Item {
                                         property real innerRadius: 6
                                         property real outerRadius: 12
                                         property bool hovered: remoteMa.containsMouse
+                                        // The shape answers a press, not the pointer passing over (#22)
+                                        property bool morphed: remoteMa.pressed
 
-                                        property real tlr: hovered ? (height / 2) : (remoteRow.isFirst ? outerRadius : innerRadius)
-                                        property real trr: hovered ? (height / 2) : (remoteRow.isFirst ? outerRadius : innerRadius)
-                                        property real blr: hovered ? (height / 2) : (remoteRow.isLast ? outerRadius : innerRadius)
-                                        property real brr: hovered ? (height / 2) : (remoteRow.isLast ? outerRadius : innerRadius)
+                                        property real tlr: morphed ? (height / 2) : (remoteRow.isFirst ? outerRadius : innerRadius)
+                                        property real trr: morphed ? (height / 2) : (remoteRow.isFirst ? outerRadius : innerRadius)
+                                        property real blr: morphed ? (height / 2) : (remoteRow.isLast ? outerRadius : innerRadius)
+                                        property real brr: morphed ? (height / 2) : (remoteRow.isLast ? outerRadius : innerRadius)
 
                                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -613,7 +617,7 @@ Item {
 
                                         ShapePath {
                                             fillColor: remoteBg.hovered ? Theme.primaryHover : Theme.withAlpha(Theme.secondary, 0.04)
-                                            strokeColor: remoteBg.hovered ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15)
+                                            strokeColor: Theme.withAlpha(Theme.secondary, 0.15)
                                             strokeWidth: 1
 
                                             startX: remoteBg.tlrAnim; startY: 0
@@ -763,11 +767,13 @@ Item {
                                         property real innerRadius: 6
                                         property real outerRadius: 12
                                         property bool hovered: catMa.containsMouse
+                                        // The shape answers a press, not the pointer passing over (#22)
+                                        property bool morphed: catMa.pressed
 
-                                        property real tlr: hovered ? (height / 2) : (catalogRow.isFirst ? outerRadius : innerRadius)
-                                        property real trr: hovered ? (height / 2) : (catalogRow.isFirst ? outerRadius : innerRadius)
-                                        property real blr: hovered ? (height / 2) : (catalogRow.isLast ? outerRadius : innerRadius)
-                                        property real brr: hovered ? (height / 2) : (catalogRow.isLast ? outerRadius : innerRadius)
+                                        property real tlr: morphed ? (height / 2) : (catalogRow.isFirst ? outerRadius : innerRadius)
+                                        property real trr: morphed ? (height / 2) : (catalogRow.isFirst ? outerRadius : innerRadius)
+                                        property real blr: morphed ? (height / 2) : (catalogRow.isLast ? outerRadius : innerRadius)
+                                        property real brr: morphed ? (height / 2) : (catalogRow.isLast ? outerRadius : innerRadius)
 
                                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -776,7 +782,7 @@ Item {
 
                                         ShapePath {
                                             fillColor: catBg.hovered ? Theme.primaryHover : Theme.withAlpha(Theme.secondary, 0.04)
-                                            strokeColor: catBg.hovered ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15)
+                                            strokeColor: Theme.withAlpha(Theme.secondary, 0.15)
                                             strokeWidth: 1
 
                                             startX: catBg.tlrAnim; startY: 0
@@ -1032,11 +1038,13 @@ Item {
                                         property real innerRadius: 6
                                         property real outerRadius: 12
                                         property bool hovered: repoMa.containsMouse
+                                        // The shape answers a press, not the pointer passing over (#22)
+                                        property bool morphed: repoMa.pressed
 
-                                        property real tlr: hovered ? (height / 2) : (repoRow.isFirst ? outerRadius : innerRadius)
-                                        property real trr: hovered ? (height / 2) : (repoRow.isFirst ? outerRadius : innerRadius)
-                                        property real blr: hovered ? (height / 2) : (repoRow.isLast ? outerRadius : innerRadius)
-                                        property real brr: hovered ? (height / 2) : (repoRow.isLast ? outerRadius : innerRadius)
+                                        property real tlr: morphed ? (height / 2) : (repoRow.isFirst ? outerRadius : innerRadius)
+                                        property real trr: morphed ? (height / 2) : (repoRow.isFirst ? outerRadius : innerRadius)
+                                        property real blr: morphed ? (height / 2) : (repoRow.isLast ? outerRadius : innerRadius)
+                                        property real brr: morphed ? (height / 2) : (repoRow.isLast ? outerRadius : innerRadius)
 
                                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -1045,7 +1053,7 @@ Item {
 
                                         ShapePath {
                                             fillColor: repoBg.hovered ? Theme.primaryHover : Theme.withAlpha(Theme.secondary, 0.04)
-                                            strokeColor: repoBg.hovered ? Theme.withAlpha(Theme.primary, 0.4) : Theme.withAlpha(Theme.secondary, 0.15)
+                                            strokeColor: Theme.withAlpha(Theme.secondary, 0.15)
                                             strokeWidth: 1
 
                                             startX: repoBg.tlrAnim; startY: 0

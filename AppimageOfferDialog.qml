@@ -391,7 +391,7 @@ Item {
                     border.color: isHovered ? Theme.primarySelected : Theme.primaryHover
                     Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                    scale: cancelMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                    scale: cancelMa.pressed ? 0.94 : 1.0
                     Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                     DankRipple {
@@ -453,7 +453,7 @@ Item {
                     border.color: isHovered ? Theme.primary : Theme.primarySelected
                     Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                    scale: acceptMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                    scale: acceptMa.pressed ? 0.94 : 1.0
                     opacity: btnEnabled ? 1.0 : 0.5
                     Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
                     Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }

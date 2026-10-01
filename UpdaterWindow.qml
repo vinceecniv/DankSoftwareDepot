@@ -729,7 +729,7 @@ FloatingWindow {
                         border.color: isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.15)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                        scale: setCloseMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        scale: setCloseMa.pressed ? 0.92 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
@@ -3346,7 +3346,7 @@ FloatingWindow {
                         border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                        scale: searchMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        scale: searchMa.pressed ? 0.92 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
@@ -3409,7 +3409,7 @@ FloatingWindow {
                         border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                        scale: refreshMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        scale: refreshMa.pressed ? 0.92 : 1.0
                         opacity: btnEnabled || isActive ? 1.0 : 0.4
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
@@ -3493,7 +3493,7 @@ FloatingWindow {
                         border.color: (isActive || isHovered) ? Theme.primary : Theme.withAlpha(Theme.primary, 0.14)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                        scale: settingsMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        scale: settingsMa.pressed ? 0.92 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
@@ -3550,7 +3550,7 @@ FloatingWindow {
                         border.color: isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.15)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                        scale: closeMa.pressed ? 0.92 : (isHovered ? 1.06 : 1.0)
+                        scale: closeMa.pressed ? 0.92 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
@@ -5910,7 +5910,7 @@ FloatingWindow {
                     : (isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.35))
                 Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                scale: updateAllMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                scale: updateAllMa.pressed ? 0.94 : 1.0
                 Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                 DankRipple {

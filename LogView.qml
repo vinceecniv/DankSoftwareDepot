@@ -588,7 +588,11 @@ Item {
 
                         property real innerRadius: 6
                         property real outerRadius: 12
-                        property bool hovered: entryMa.containsMouse
+                        // Hover is a state layer and nothing more; the shape answers a press, and
+                        // stays changed while the row is selected (M3 Expressive, as DMS does it, #22)
+                        property bool hovered: entryMa.containsMouse || entryRow.expanded
+                        property bool selected: entryRow.expanded
+                        property bool morphed: entryMa.pressed || selected
                         property bool isFirst: entryWrap.modelData.isFirstInDay === true
                         property bool isLast: entryWrap.modelData.isLastInDay === true
                         property bool isSingle: isFirst && isLast
@@ -596,10 +600,10 @@ Item {
                         // The same rounding as every other list: a pill while the row is
                         // short enough to read as one, and a fixed radius once an entry has
                         // expanded, where half the height would be a semicircle.
-                        property real tlr: hovered ? Math.min(height / 2, 28) : (isFirst ? outerRadius : innerRadius)
-                        property real trr: hovered ? Math.min(height / 2, 28) : (isFirst ? outerRadius : innerRadius)
-                        property real blr: hovered ? Math.min(height / 2, 28) : (isLast ? outerRadius : innerRadius)
-                        property real brr: hovered ? Math.min(height / 2, 28) : (isLast ? outerRadius : innerRadius)
+                        property real tlr: morphed ? Math.min(height / 2, 28) : (isFirst ? outerRadius : innerRadius)
+                        property real trr: morphed ? Math.min(height / 2, 28) : (isFirst ? outerRadius : innerRadius)
+                        property real blr: morphed ? Math.min(height / 2, 28) : (isLast ? outerRadius : innerRadius)
+                        property real brr: morphed ? Math.min(height / 2, 28) : (isLast ? outerRadius : innerRadius)
 
                         property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                         property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -610,7 +614,7 @@ Item {
                             ? Theme.primaryHover
                             : Theme.withAlpha(Theme.secondary, 0.04)
 
-                        property color paintBorder: hovered
+                        property color paintBorder: selected
                             ? Theme.withAlpha(Theme.primary, 0.4)
                             : Theme.withAlpha(Theme.secondary, 0.15)
 

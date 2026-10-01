@@ -3,6 +3,18 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **Hovering no longer changes a row's shape.** Rows in every list rounded
+  into a pill under the pointer, and buttons grew a little. Material 3
+  Expressive, and DMS itself, keep hover to a light shade and save shape
+  changes for interaction. A row now changes shape when you press it, and
+  keeps that shape while it is selected: an expanded firmware or log entry,
+  or the app whose details are open. The coloured outline also appears
+  only for a selected row. Buttons still shrink slightly when pressed, but
+  no longer grow under the pointer. Thanks to @apollo79 for pointing this
+  out (#22).
+
 ## 1.4.1 — 2026-10-01
 
 - **RHEL, CentOS Stream, AlmaLinux and Rocky can install and update system

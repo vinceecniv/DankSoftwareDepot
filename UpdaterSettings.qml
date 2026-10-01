@@ -96,7 +96,7 @@ PluginSettings {
                 border.color: isHovered ? Theme.primary : Theme.primarySelected
                 Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                scale: openMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                scale: openMa.pressed ? 0.94 : 1.0
                 Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                 DankRipple {

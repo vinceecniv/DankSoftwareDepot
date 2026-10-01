@@ -943,11 +943,13 @@ Item {
                                                 readonly property real outerRadius: 14
 
                                                 property bool hovered: shotMa.containsMouse
+                                                // The shape answers a press, not the pointer passing over (#22)
+                                                property bool morphed: shotMa.pressed
 
-                                                property real tlr: hovered ? (height / 2) : (isFirst ? outerRadius : innerRadius)
-                                                property real trr: hovered ? (height / 2) : (isLast ? outerRadius : innerRadius)
-                                                property real blr: hovered ? (height / 2) : (isFirst ? outerRadius : innerRadius)
-                                                property real brr: hovered ? (height / 2) : (isLast ? outerRadius : innerRadius)
+                                                property real tlr: morphed ? (height / 2) : (isFirst ? outerRadius : innerRadius)
+                                                property real trr: morphed ? (height / 2) : (isLast ? outerRadius : innerRadius)
+                                                property real blr: morphed ? (height / 2) : (isFirst ? outerRadius : innerRadius)
+                                                property real brr: morphed ? (height / 2) : (isLast ? outerRadius : innerRadius)
 
                                                 property real tlrAnim: tlr; Behavior on tlrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
                                                 property real trrAnim: trr; Behavior on trrAnim { NumberAnimation { duration: Theme.extraLongDuration; easing.type: Easing.OutExpo } }
@@ -1014,7 +1016,7 @@ Item {
                                                     anchors.fill: parent
                                                     layer.enabled: true
                                                     layer.samples: 4
-                                                    property color borderColor: shotDelegate.hovered ? Theme.withAlpha(Theme.primary, 0.7) : Theme.withAlpha(Theme.outline, 0.25)
+                                                    property color borderColor: Theme.withAlpha(Theme.outline, 0.25)
                                                     Behavior on borderColor { ColorAnimation { duration: Theme.mediumDuration } }
 
                                                     ShapePath {
@@ -1064,7 +1066,7 @@ Item {
 
                                     Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
                                     Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutCubic } }
-                                    scale: leftShotMa.pressed ? 0.92 : (leftShotMa.containsMouse ? 1.08 : 1.0)
+                                    scale: leftShotMa.pressed ? 0.92 : 1.0
 
                                     DankIcon {
                                         anchors.centerIn: parent
@@ -1105,7 +1107,7 @@ Item {
 
                                     Behavior on opacity { NumberAnimation { duration: Theme.mediumDuration } }
                                     Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutCubic } }
-                                    scale: rightShotMa.pressed ? 0.92 : (rightShotMa.containsMouse ? 1.08 : 1.0)
+                                    scale: rightShotMa.pressed ? 0.92 : 1.0
 
                                     DankIcon {
                                         anchors.centerIn: parent
@@ -2575,7 +2577,7 @@ Item {
                             border.color: isHovered ? Theme.primary : Theme.primaryHover
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                            scale: webBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            scale: webBtnMa.pressed ? 0.94 : 1.0
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
@@ -2628,7 +2630,7 @@ Item {
                             border.color: isHovered ? (dialog.appData.held === true ? Theme.warning : Theme.primary) : (dialog.appData.held === true ? Theme.withAlpha(Theme.warning, 0.4) : Theme.primaryHover)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                            scale: holdBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            scale: holdBtnMa.pressed ? 0.94 : 1.0
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
@@ -2684,7 +2686,7 @@ Item {
                         border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                        scale: pluginBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        scale: pluginBtnMa.pressed ? 0.94 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
@@ -2750,7 +2752,7 @@ Item {
                         border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                         Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                        scale: openBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                        scale: openBtnMa.pressed ? 0.94 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                         DankRipple {
@@ -2865,7 +2867,7 @@ Item {
                             border.color: confirming ? Theme.error : (isHovered ? Theme.error : Theme.withAlpha(Theme.error, 0.2))
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                            scale: uninstBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            scale: uninstBtnMa.pressed ? 0.94 : 1.0
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
@@ -2941,7 +2943,7 @@ Item {
                             border.color: isHovered ? Theme.primary : Theme.withAlpha(Theme.primary, 0.25)
                             Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                            scale: updateBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                            scale: updateBtnMa.pressed ? 0.94 : 1.0
                             Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                             DankRipple {
@@ -3018,7 +3020,7 @@ Item {
                                 border.color: isHovered ? (isFlathub ? Theme.primary : Theme.primarySelected) : (isFlathub ? Theme.primarySelected : Theme.primaryHover)
                                 Behavior on border.color { ColorAnimation { duration: Theme.mediumDuration } }
 
-                                scale: instBtnMa.pressed ? 0.94 : (isHovered ? 1.02 : 1.0)
+                                scale: instBtnMa.pressed ? 0.94 : 1.0
                                 Behavior on scale { NumberAnimation { duration: Theme.mediumDuration; easing.type: Easing.OutBack } }
 
                                 DankRipple {
