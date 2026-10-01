@@ -3,7 +3,7 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 1.4.1 — 2026-10-01
 
 - **RHEL, CentOS Stream, AlmaLinux and Rocky can install and update system
   packages.** They ship dnf 4 and have no python3-libdnf5, in the
