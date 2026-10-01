@@ -3,7 +3,7 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 1.4.2 — 2026-10-01
 
 - **Hovering no longer changes a row's or a button's shape.** Rows in every
   list and most buttons, the four in the window's header among them, rounded
@@ -12,11 +12,15 @@ in-app when the plugin offers its own update.
   changes for interaction. A row now changes shape when you press it, and
   keeps that shape while its details are open. An expanded firmware or log
   entry keeps its corners, as expanded cards in DMS do; its shade and
-  outline show it is open. A button changes shape while pressed,
-  or while what it opens is showing. The coloured outline appears only for
-  a selected row. Buttons still shrink slightly when pressed, but
-  no longer grow under the pointer. Thanks to @apollo79 for pointing this
-  out (#22).
+  outline show it is open. A button changes shape while pressed, or while
+  what it opens is showing. The coloured outline appears only for a selected
+  row. Buttons still shrink slightly when pressed, but no longer grow under
+  the pointer. Thanks to @apollo79 for pointing this out (#22).
+
+- **An opening log or firmware entry stays inside its box.** While an
+  entry grew to its new height, its opened lines were already at full size,
+  and showed above and below the entry, over the ones around it. The entry
+  now opens downward, within its own outline.
 
 ## 1.4.1 — 2026-10-01
 
