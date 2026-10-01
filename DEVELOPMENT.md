@@ -58,6 +58,7 @@ selectable would stop being a card you can click.
 |---|---|
 | `scripts/enrich.py` | AppStream parsing, dnf fallbacks, holds, the search index (which is also the storefront), per-source versions, ODRS ratings, Flathub figures, upstream notes for git builds, caching, sanitizing |
 | `scripts/rpm_helper.py` | libdnf5 transactions with exact byte progress |
+| `scripts/dnf4_helper.py` | The same protocol on dnf 4, for RHEL and its rebuilds; `rpm_helper.py` hands over to it when libdnf5 will not import |
 | `scripts/ostree_helper.py` | rpm-ostree counterpart — atomic Fedora (layering, staged until reboot) |
 | `scripts/apt_helper.py` · `scripts/pacman_helper.py` | python-apt and pyalpm counterparts (Arch: official repos, no AUR) |
 | `scripts/pkg_backend.py` | Per-distro metadata backend (search, sizes, inventory, holds, changelogs); also which packages own a launchable desktop entry |

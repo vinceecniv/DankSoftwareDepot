@@ -1775,11 +1775,12 @@ Item {
     // daemon downloads into the world-readable dnf cache though: during the
     // download stage the growing .rpm files there give real per-package
     // bytes. Only fresh files count (-mmin -1) so leftovers from earlier
-    // runs don't masquerade as progress.
+    // runs don't masquerade as progress. dnf 4 (RHEL and its rebuilds)
+    // keeps its cache under /var/cache/dnf instead.
     Process {
         id: cachePollProcess
 
-        command: ["sh", "-c", "while true; do find /var/cache/libdnf5 -name '*.rpm' -mmin -1 -printf '%f\\t%s\\t%T@\\n' 2>/dev/null; echo ---; sleep 1; done"]
+        command: ["sh", "-c", "while true; do find /var/cache/libdnf5 /var/cache/dnf -name '*.rpm' -mmin -1 -printf '%f\\t%s\\t%T@\\n' 2>/dev/null; echo ---; sleep 1; done"]
 
         stdout: SplitParser {
             onRead: line => engine._onCachePollLine(line)

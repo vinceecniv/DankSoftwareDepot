@@ -468,8 +468,29 @@ def _installed_from(names):
             name = package.get_name()
             if name in names:
                 out[name] = package.get_from_repo_id()
+    except ImportError:
+        # dnf 4 (RHEL and its rebuilds) records the same, and says so through
+        # repoquery: no libdnf5 there to ask
+        return _installed_from_dnf4(names)
     except Exception:  # noqa: BLE001 - without it nothing is marked installed
         return {}
+    return out
+
+
+def _installed_from_dnf4(names):
+    import subprocess
+    out = {}
+    try:
+        res = subprocess.run(["dnf", "-Cq", "repoquery", "--installed",
+                              "--qf", "%{name}\t%{from_repo}"] + sorted(names),
+                             capture_output=True, text=True, timeout=30,
+                             env={**os.environ, "LC_ALL": "C"})
+    except (OSError, subprocess.SubprocessError):
+        return out
+    for line in res.stdout.splitlines():
+        name, _, repo = line.partition("\t")
+        if name in names and repo.strip():
+            out[name] = repo.strip()
     return out
 
 
@@ -534,7 +555,10 @@ def copr_search(query):
     hits = hits[:COPR_RESULT_LIMIT]
     # Which Coprs are already configured: an installable package from one of
     # them needs no repository added, and needs no warning either
-    enabled = {r["project"] for r in list_dnf_repos()[0] if r["project"]}
+    repos, error = list_dnf_repos()
+    if error:
+        repos, _ = list_repo_files()
+    enabled = {r["project"] for r in repos if r["project"]}
     # Installed is a fact about one build, not about a name: the row that says
     # so has to be the Copr the package actually came from
     origin = _installed_from({hit["name"] for hit in hits})

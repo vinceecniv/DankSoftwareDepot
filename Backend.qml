@@ -316,7 +316,9 @@ Item {
     // The distro package providing what the helper imports, for the hint.
     // The atomic answer is the tool itself: that helper drives a command
     // line, which every image has, rather than bindings it might not.
-    readonly property string packageHelperRequirement: backendId === "apt" ? "python3-apt" : (backendId === "pacman" ? "pyalpm" : (atomic ? "rpm-ostree" : "python3-libdnf5"))
+    // RHEL and its rebuilds have no libdnf5 at all; the helper hands over to
+    // dnf 4 there, whose bindings are python3-dnf (#27).
+    readonly property string packageHelperRequirement: backendId === "apt" ? "python3-apt" : (backendId === "pacman" ? "pyalpm" : (atomic ? "rpm-ostree" : (rhelFamily ? "python3-dnf" : "python3-libdnf5")))
 
     // A check asked for while one is running is a check with a *different*
     // answer, because the only thing that changes it is which backend this
@@ -778,6 +780,8 @@ Item {
     // its rebuilds, which name Fedora in ID_LIKE without being it, and would
     // be offered a search that cannot answer.
     property bool fedoraFamily: false
+    // RHEL, CentOS Stream, Alma, Rocky: dnf 4 rather than dnf5
+    property bool rhelFamily: false
     readonly property bool hasCopr: (backendId === "dnf" || atomic) && fedoraFamily
 
     // ── Launcher entry ──────────────────────────────────────────────────────
@@ -992,7 +996,8 @@ Item {
                 backend.backendId = "ostree";
             // RHEL and its rebuilds say ID_LIKE="rhel fedora", so naming
             // Fedora is not enough to be one
-            backend.fedoraFamily = /(^|\n)(ID|ID_LIKE)=.*fedora/im.test(os) && !/(^|\n)(ID|ID_LIKE)=.*(rhel|centos)/im.test(os);
+            backend.rhelFamily = /(^|\n)(ID|ID_LIKE)=.*(rhel|centos)/im.test(os);
+            backend.fedoraFamily = /(^|\n)(ID|ID_LIKE)=.*fedora/im.test(os) && !backend.rhelFamily;
         }
     }
 }

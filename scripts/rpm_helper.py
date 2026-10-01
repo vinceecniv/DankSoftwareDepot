@@ -50,9 +50,28 @@ import interp
 
 interp.ensure("libdnf5")
 
+def _hand_over_to_dnf4():
+    """RHEL, CentOS Stream and their rebuilds have dnf 4 and no libdnf5 to
+    install (#27). When dnf 4 is what this system has, its own helper answers
+    instead, in the same protocol; the caller never knows the difference."""
+    import os
+    import subprocess
+
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dnf4_helper.py")
+    candidates = [sys.executable] + [c for c in interp._candidates() if c != sys.executable]
+    for candidate in candidates:
+        try:
+            probe = subprocess.run([candidate, "-c", "import dnf"], capture_output=True, timeout=20)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if probe.returncode == 0:
+            os.execv(candidate, [candidate, script] + sys.argv[1:])
+
+
 try:
     import libdnf5
 except ImportError as exc:
+    _hand_over_to_dnf4()
     # Says which interpreter could not see it, because "not installed" is a
     # claim about the system and this is only ever a fact about one process
     emit({"event": "error",

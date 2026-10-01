@@ -3,11 +3,12 @@
 The QML layer never scrapes package-manager output. Every transaction runs
 through a small privileged helper that talks to the package manager's
 *library* and reports newline-delimited JSON (NDJSON) events on stdout.
-Three helpers implement the protocol today:
+These helpers implement the protocol today:
 
 | Helper | Library | Covers |
 |---|---|---|
 | `scripts/rpm_helper.py` | libdnf5 (python3-libdnf5) | rpm install / remove / upgrade / downgrade / plan |
+| `scripts/dnf4_helper.py` | dnf 4 (python3-dnf) | the same, on RHEL and its rebuilds, which have no libdnf5; `rpm_helper.py` hands over to it |
 | `scripts/ostree_helper.py` | rpm-ostree (command line) | atomic Fedora: layering, removal and whole-deployment upgrades |
 | `scripts/apt_helper.py` | python-apt (python3-apt) | deb install / remove / upgrade / downgrade / plan |
 | `scripts/pacman_helper.py` | pyalpm | pacman install / remove / upgrade / plan (official repos only, no AUR) |

@@ -30,8 +30,12 @@ and polkit prompts appear through the DMS agent.
 ## Status
 
 - **Beta** — actively developed, things may move around
-- **Fedora, Nobara, RHEL/CentOS** — the supported case: libdnf5 and Fedora
-  AppStream metadata
+- **Fedora, Nobara** — the supported case: libdnf5 and Fedora AppStream
+  metadata
+- **RHEL, CentOS Stream, AlmaLinux, Rocky** — the same, through dnf 4, which
+  is all they ship. Tested on CentOS Stream 10 and AlmaLinux 10. Package
+  changelogs are not shown there, because dnf 4 does not download them by
+  default
 - **Debian/Ubuntu, Arch, atomic Fedora** — implemented, experimental, and said
   so in a banner. Atomic runs through `rpm-ostree`, so everything lands in the
   *next* boot. On Arch, AUR updates are detected and installed through the DMS
@@ -219,6 +223,7 @@ English. Add a language by dropping a file next to the others.
 - `python3` and `flatpak`, optionally `fwupd`, optionally Homebrew
 - Package-manager bindings for your distro:
   - Fedora: `python3-libdnf5` (**not** part of a default install)
+  - RHEL, CentOS Stream, AlmaLinux, Rocky: `python3-dnf` (always installed)
   - Atomic Fedora: nothing extra — `rpm-ostree` is the image's own tool
   - Debian/Ubuntu: `python3-apt` (usually preinstalled)
   - Arch: `pyalpm`

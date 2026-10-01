@@ -3,6 +3,17 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **RHEL, CentOS Stream, AlmaLinux and Rocky can install and update system
+  packages.** They ship dnf 4 and have no python3-libdnf5, in the
+  distribution or in EPEL, so every system update failed and the banner
+  asked for a package that cannot be installed there. The plugin now uses
+  dnf 4 on those systems, with the same per-package progress, plan preview,
+  downgrades and security advisories. If the bindings are missing, the
+  banner names `python3-dnf`. Tested on CentOS Stream 10 and AlmaLinux 10.
+  Thanks to @kmf for the report (#27).
+
 ## 1.4.0 — 2026-10-01
 
 - **An AppImage is read, never run, until you install it.** To show a
