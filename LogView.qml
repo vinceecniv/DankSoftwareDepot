@@ -658,214 +658,224 @@ Item {
                         }
                     }
 
-                ColumnLayout {
-                    id: entryColumn
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.leftMargin: Theme.spacingS
-                    anchors.rightMargin: Theme.spacingS
-                    spacing: Theme.spacingXS
+                // The row grows to its new height over an animation while its content
+                // is already at full size; without this the opened part drew outside
+                // the row, over its neighbours. Inside the outline, so that stays whole.
+                Item {
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    clip: true
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacingM
+                    ColumnLayout {
+                        id: entryColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.topMargin: Theme.spacingS - 1
+                        anchors.leftMargin: Theme.spacingS - 1
+                        anchors.rightMargin: Theme.spacingS - 1
+                        spacing: Theme.spacingXS
 
-                        DankIcon {
-                            name: view.iconFor(entryRow.modelData.type)
-                            size: 20
-                            color: view.colorFor(entryRow.modelData.type)
-                        }
-
-                        ColumnLayout {
+                        RowLayout {
                             Layout.fillWidth: true
-                            spacing: 0
+                            spacing: Theme.spacingM
 
-                            StyledText {
-                                Layout.fillWidth: true
-                                text: view.entryTitle(entryRow.modelData)
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.weight: Font.Medium
-                                color: Theme.surfaceText
-                                elide: Text.ElideRight
+                            DankIcon {
+                                name: view.iconFor(entryRow.modelData.type)
+                                size: 20
+                                color: view.colorFor(entryRow.modelData.type)
                             }
 
-                            StyledText {
-                                text: view.formatWhen(entryRow.modelData.ts || 0)
-                                font.pixelSize: Theme.fontSizeSmall
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    text: view.entryTitle(entryRow.modelData)
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Medium
+                                    color: Theme.surfaceText
+                                    elide: Text.ElideRight
+                                }
+
+                                StyledText {
+                                    text: view.formatWhen(entryRow.modelData.ts || 0)
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.surfaceVariantText
+                                }
+                            }
+
+                            DankIcon {
+                                visible: entryRow.entryItems.length > 0
+                                name: entryRow.expanded ? "expand_less" : "expand_more"
+                                size: 18
                                 color: Theme.surfaceVariantText
                             }
                         }
 
-                        DankIcon {
-                            visible: entryRow.entryItems.length > 0
-                            name: entryRow.expanded ? "expand_less" : "expand_more"
-                            size: 18
-                            color: Theme.surfaceVariantText
-                        }
-                    }
+                        // Expanded details: one row per package
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.leftMargin: 32
+                            visible: entryRow.expanded
+                            spacing: 2
 
-                    // Expanded details: one row per package
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.leftMargin: 32
-                        visible: entryRow.expanded
-                        spacing: 2
+                            Repeater {
+                                model: entryRow.expanded ? entryRow.entryItems : []
 
-                        Repeater {
-                            model: entryRow.expanded ? entryRow.entryItems : []
+                                delegate: ColumnLayout {
+                                    id: itemRow
 
-                            delegate: ColumnLayout {
-                                id: itemRow
+                                    required property var modelData
+                                    // The tool's own words behind a failed row —
+                                    // kept out of sight until asked for
+                                    property bool showError: false
+                                    readonly property string rawError: modelData.error || ""
 
-                                required property var modelData
-                                // The tool's own words behind a failed row —
-                                // kept out of sight until asked for
-                                property bool showError: false
-                                readonly property string rawError: modelData.error || ""
-
-                                Layout.fillWidth: true
-                                spacing: 1
-
-                                RowLayout {
                                     Layout.fillWidth: true
-                                    spacing: Theme.spacingS
+                                    spacing: 1
 
-                                    DankIcon {
-                                        // Three outcomes, not two. A row that
-                                        // is neither done nor failed — a run
-                                        // torn down by the shell reloading
-                                        // leaves those — used to be drawn with
-                                        // the same green tick as a success,
-                                        // which is how an entry could show
-                                        // three ticks over a title saying two.
-                                        name: itemRow.modelData.status === "error" ? "error"
-                                            : (itemRow.modelData.status === "done" ? "check_circle" : "schedule")
-                                        size: 13
-                                        color: itemRow.modelData.status === "error" ? Theme.error
-                                            : (itemRow.modelData.status === "done" ? Theme.success : Theme.surfaceVariantText)
-                                    }
-
-                                    StyledText {
-                                        // Entries written before the log kept
-                                        // ids have only a display name. A name
-                                        // without spaces is a package name in
-                                        // practice, so those still lead
-                                        // somewhere; "GNU Image Manipulation
-                                        // Program" would lead nowhere and stays
-                                        // plain text.
-                                        readonly property bool linkable: (itemRow.modelData.id || "") !== "" || /^\S{2,}$/.test(itemRow.modelData.name || "")
-
-                                        text: itemRow.modelData.name || ""
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        wrapMode: Text.NoWrap
-                                        font.underline: linkable && nameArea.containsMouse
-                                        color: linkable && nameArea.containsMouse ? Theme.primary : Theme.surfaceText
-                                        elide: Text.ElideRight
-                                        Layout.maximumWidth: 260
-
-                                        MouseArea {
-                                            id: nameArea
-                                            anchors.fill: parent
-                                            anchors.margins: -2
-                                            enabled: parent.linkable
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: view.packageActivated(itemRow.modelData)
-                                        }
-                                    }
-
-                                    StyledText {
-                                        visible: (itemRow.modelData.from || "") !== "" || (itemRow.modelData.to || "") !== ""
-                                        text: {
-                                            const to = Ui.versionLabel(itemRow.modelData.to);
-                                            if ((itemRow.modelData.from || "") !== "" && to !== "")
-                                                return itemRow.modelData.from + " → " + to;
-                                            return to || itemRow.modelData.from || "";
-                                        }
-                                        font.pixelSize: Theme.fontSizeSmall
-                                        color: Theme.surfaceVariantText
-                                        // StyledText wraps by default, so a
-                                        // long version used to break at the
-                                        // arrow while the row still had room to
-                                        // its right. The fix for that was to
-                                        // fill the width and cap the fill at
-                                        // the text's natural size — but a cap
-                                        // has to be measured, and every way of
-                                        // measuring it came out a little short:
-                                        // "8.1.4087.64-1 → 8.1.4087.66-1" lost
-                                        // its arrow, "4.2.1" came out as "4…1".
-                                        //
-                                        // There is nothing to cap. A spacer
-                                        // further along this row already takes
-                                        // the slack, so this can simply be its
-                                        // own width and shrink — that is what
-                                        // minimumWidth 0 is for — on the day the
-                                        // row genuinely cannot fit it.
-                                        wrapMode: Text.NoWrap
-                                        elide: Text.ElideMiddle
-                                        Layout.minimumWidth: 0
-                                    }
-
-                                    StyledText {
-                                        visible: (itemRow.modelData.reason || "") !== ""
-                                        text: "· " + (itemRow.modelData.reason || "")
-                                        font.pixelSize: Theme.fontSizeSmall - 1
-                                        color: Theme.error
-                                        wrapMode: Text.NoWrap
-                                        elide: Text.ElideRight
-                                        Layout.maximumWidth: 260
-                                    }
-
-                                    Item {
+                                    RowLayout {
                                         Layout.fillWidth: true
-                                    }
+                                        spacing: Theme.spacingS
 
-                                    StyledText {
-                                        visible: itemRow.rawError !== ""
-                                        text: itemRow.showError ? Tr.t("Hide details") : Tr.t("Show details")
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        font.underline: rawToggleArea.containsMouse
-                                        color: Theme.error
+                                        DankIcon {
+                                            // Three outcomes, not two. A row that
+                                            // is neither done nor failed — a run
+                                            // torn down by the shell reloading
+                                            // leaves those — used to be drawn with
+                                            // the same green tick as a success,
+                                            // which is how an entry could show
+                                            // three ticks over a title saying two.
+                                            name: itemRow.modelData.status === "error" ? "error"
+                                                : (itemRow.modelData.status === "done" ? "check_circle" : "schedule")
+                                            size: 13
+                                            color: itemRow.modelData.status === "error" ? Theme.error
+                                                : (itemRow.modelData.status === "done" ? Theme.success : Theme.surfaceVariantText)
+                                        }
 
-                                        MouseArea {
-                                            id: rawToggleArea
-                                            anchors.fill: parent
-                                            anchors.margins: -4
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: itemRow.showError = !itemRow.showError
+                                        StyledText {
+                                            // Entries written before the log kept
+                                            // ids have only a display name. A name
+                                            // without spaces is a package name in
+                                            // practice, so those still lead
+                                            // somewhere; "GNU Image Manipulation
+                                            // Program" would lead nowhere and stays
+                                            // plain text.
+                                            readonly property bool linkable: (itemRow.modelData.id || "") !== "" || /^\S{2,}$/.test(itemRow.modelData.name || "")
+
+                                            text: itemRow.modelData.name || ""
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            wrapMode: Text.NoWrap
+                                            font.underline: linkable && nameArea.containsMouse
+                                            color: linkable && nameArea.containsMouse ? Theme.primary : Theme.surfaceText
+                                            elide: Text.ElideRight
+                                            Layout.maximumWidth: 260
+
+                                            MouseArea {
+                                                id: nameArea
+                                                anchors.fill: parent
+                                                anchors.margins: -2
+                                                enabled: parent.linkable
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: view.packageActivated(itemRow.modelData)
+                                            }
+                                        }
+
+                                        StyledText {
+                                            visible: (itemRow.modelData.from || "") !== "" || (itemRow.modelData.to || "") !== ""
+                                            text: {
+                                                const to = Ui.versionLabel(itemRow.modelData.to);
+                                                if ((itemRow.modelData.from || "") !== "" && to !== "")
+                                                    return itemRow.modelData.from + " → " + to;
+                                                return to || itemRow.modelData.from || "";
+                                            }
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.surfaceVariantText
+                                            // StyledText wraps by default, so a
+                                            // long version used to break at the
+                                            // arrow while the row still had room to
+                                            // its right. The fix for that was to
+                                            // fill the width and cap the fill at
+                                            // the text's natural size — but a cap
+                                            // has to be measured, and every way of
+                                            // measuring it came out a little short:
+                                            // "8.1.4087.64-1 → 8.1.4087.66-1" lost
+                                            // its arrow, "4.2.1" came out as "4…1".
+                                            //
+                                            // There is nothing to cap. A spacer
+                                            // further along this row already takes
+                                            // the slack, so this can simply be its
+                                            // own width and shrink — that is what
+                                            // minimumWidth 0 is for — on the day the
+                                            // row genuinely cannot fit it.
+                                            wrapMode: Text.NoWrap
+                                            elide: Text.ElideMiddle
+                                            Layout.minimumWidth: 0
+                                        }
+
+                                        StyledText {
+                                            visible: (itemRow.modelData.reason || "") !== ""
+                                            text: "· " + (itemRow.modelData.reason || "")
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: Theme.error
+                                            wrapMode: Text.NoWrap
+                                            elide: Text.ElideRight
+                                            Layout.maximumWidth: 260
+                                        }
+
+                                        Item {
+                                            Layout.fillWidth: true
+                                        }
+
+                                        StyledText {
+                                            visible: itemRow.rawError !== ""
+                                            text: itemRow.showError ? Tr.t("Hide details") : Tr.t("Show details")
+                                            font.pixelSize: Theme.fontSizeSmall - 2
+                                            font.underline: rawToggleArea.containsMouse
+                                            color: Theme.error
+
+                                            MouseArea {
+                                                id: rawToggleArea
+                                                anchors.fill: parent
+                                                anchors.margins: -4
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: itemRow.showError = !itemRow.showError
+                                            }
+                                        }
+
+                                        StyledText {
+                                            visible: (itemRow.modelData.source || "") !== ""
+                                            text: Tr.t(itemRow.modelData.source || "")
+                                            font.pixelSize: Theme.fontSizeSmall - 2
+                                            color: Theme.surfaceVariantText
                                         }
                                     }
 
-                                    StyledText {
-                                        visible: (itemRow.modelData.source || "") !== ""
-                                        text: Tr.t(itemRow.modelData.source || "")
-                                        font.pixelSize: Theme.fontSizeSmall - 2
-                                        color: Theme.surfaceVariantText
-                                    }
-                                }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.leftMargin: 21
+                                        Layout.bottomMargin: Theme.spacingXS
+                                        visible: itemRow.showError && itemRow.rawError !== ""
+                                        implicitHeight: rawErrorLabel.implicitHeight + Theme.spacingS * 2
+                                        radius: Theme.cornerRadius / 2
+                                        color: Theme.withAlpha(Theme.surfaceVariant, 0.5)
 
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.leftMargin: 21
-                                    Layout.bottomMargin: Theme.spacingXS
-                                    visible: itemRow.showError && itemRow.rawError !== ""
-                                    implicitHeight: rawErrorLabel.implicitHeight + Theme.spacingS * 2
-                                    radius: Theme.cornerRadius / 2
-                                    color: Theme.withAlpha(Theme.surfaceVariant, 0.5)
-
-                                    SelectableText {
-                                        id: rawErrorLabel
-                                        anchors.left: parent.left
-                                        anchors.right: parent.right
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        anchors.margins: Theme.spacingS
-                                        text: itemRow.rawError
-                                        font.family: Theme.monoFontFamily
-                                        font.pixelSize: Theme.fontSizeSmall - 1
-                                        color: Theme.surfaceVariantText
-                                        wrapMode: Text.Wrap
+                                        SelectableText {
+                                            id: rawErrorLabel
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.margins: Theme.spacingS
+                                            text: itemRow.rawError
+                                            font.family: Theme.monoFontFamily
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: Theme.surfaceVariantText
+                                            wrapMode: Text.Wrap
+                                        }
                                     }
                                 }
                             }

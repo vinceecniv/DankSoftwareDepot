@@ -366,168 +366,177 @@ Item {
                         }
                     }
 
-                ColumnLayout {
-                    id: deviceContent
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: Theme.spacingS
-                    spacing: Theme.spacingS
+                // The row grows to its new height over an animation while its content
+                // is already at full size; without this the opened part drew outside
+                // the row, over its neighbours. Inside the outline, so that stays whole.
+                Item {
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    clip: true
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.spacingM
+                    ColumnLayout {
+                        id: deviceContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: Theme.spacingS - 1
+                        spacing: Theme.spacingS
 
-                        DankIcon {
-                            name: view.deviceIcon(deviceRow.modelData)
-                            size: 22
-                            color: deviceRow.modelData.updatable ? Theme.primary : Theme.surfaceVariantText
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.spacingM
+
+                            DankIcon {
+                                name: view.deviceIcon(deviceRow.modelData)
+                                size: 22
+                                color: deviceRow.modelData.updatable ? Theme.primary : Theme.surfaceVariantText
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    text: deviceRow.modelData.name
+                                    font.pixelSize: Theme.fontSizeMedium
+                                    font.weight: Font.Medium
+                                    color: Theme.surfaceText
+                                    elide: Text.ElideRight
+                                }
+
+                                StyledText {
+                                    Layout.fillWidth: true
+                                    visible: text !== ""
+                                    text: {
+                                        const parts = [];
+                                        if (deviceRow.modelData.vendor)
+                                            parts.push(deviceRow.modelData.vendor);
+                                        if (deviceRow.modelData.version)
+                                            parts.push("firmware " + deviceRow.modelData.version);
+                                        return parts.join(" · ");
+                                    }
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.surfaceVariantText
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            Rectangle {
+                                visible: deviceRow.modelData.updatable
+                                Layout.preferredWidth: updatableChip.implicitWidth + 14
+                                Layout.preferredHeight: 18
+                                radius: 9
+                                color: Theme.withAlpha(Theme.success, 0.15)
+
+                                StyledText {
+                                    id: updatableChip
+                                    anchors.centerIn: parent
+                                    text: Tr.t("Updatable")
+                                    font.pixelSize: Theme.fontSizeSmall - 2
+                                    color: Theme.success
+                                }
+                            }
+
+                            DankActionButton {
+                                buttonSize: 26
+                                iconName: deviceRow.expanded ? "expand_less" : "expand_more"
+                                iconSize: 16
+                                iconColor: Theme.surfaceVariantText
+                                enabled: deviceRow.modelData.updatable
+                                opacity: deviceRow.modelData.updatable ? 1 : 0
+                                tooltipText: Tr.t("Firmware releases")
+                                onClicked: {
+                                    deviceRow.expanded = !deviceRow.expanded;
+                                    if (deviceRow.expanded)
+                                        view.loadReleases(deviceRow.modelData.deviceId);
+                                }
+                            }
                         }
 
                         ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: 0
+                            visible: deviceRow.expanded
+                            spacing: Theme.spacingS
 
-                            StyledText {
+                            Rectangle {
                                 Layout.fillWidth: true
-                                text: deviceRow.modelData.name
-                                font.pixelSize: Theme.fontSizeMedium
-                                font.weight: Font.Medium
-                                color: Theme.surfaceText
-                                elide: Text.ElideRight
+                                Layout.preferredHeight: 1
+                                color: Theme.withAlpha(Theme.outline, 0.15)
                             }
 
                             StyledText {
-                                Layout.fillWidth: true
-                                visible: text !== ""
-                                text: {
-                                    const parts = [];
-                                    if (deviceRow.modelData.vendor)
-                                        parts.push(deviceRow.modelData.vendor);
-                                    if (deviceRow.modelData.version)
-                                        parts.push("firmware " + deviceRow.modelData.version);
-                                    return parts.join(" · ");
-                                }
+                                visible: deviceRow.releases === "loading"
+                                text: Tr.t("Loading firmware releases…")
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.surfaceVariantText
-                                elide: Text.ElideRight
                             }
-                        }
-
-                        Rectangle {
-                            visible: deviceRow.modelData.updatable
-                            Layout.preferredWidth: updatableChip.implicitWidth + 14
-                            Layout.preferredHeight: 18
-                            radius: 9
-                            color: Theme.withAlpha(Theme.success, 0.15)
 
                             StyledText {
-                                id: updatableChip
-                                anchors.centerIn: parent
-                                text: Tr.t("Updatable")
-                                font.pixelSize: Theme.fontSizeSmall - 2
-                                color: Theme.success
+                                visible: Array.isArray(deviceRow.releases) && deviceRow.releases.length === 0
+                                text: Tr.t("No firmware releases published on LVFS for this device.")
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: Theme.surfaceVariantText
                             }
-                        }
 
-                        DankActionButton {
-                            buttonSize: 26
-                            iconName: deviceRow.expanded ? "expand_less" : "expand_more"
-                            iconSize: 16
-                            iconColor: Theme.surfaceVariantText
-                            enabled: deviceRow.modelData.updatable
-                            opacity: deviceRow.modelData.updatable ? 1 : 0
-                            tooltipText: Tr.t("Firmware releases")
-                            onClicked: {
-                                deviceRow.expanded = !deviceRow.expanded;
-                                if (deviceRow.expanded)
-                                    view.loadReleases(deviceRow.modelData.deviceId);
-                            }
-                        }
-                    }
+                            Repeater {
+                                model: Array.isArray(deviceRow.releases) ? deviceRow.releases : []
 
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        visible: deviceRow.expanded
-                        spacing: Theme.spacingS
+                                delegate: ColumnLayout {
+                                    id: releaseEntry
 
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 1
-                            color: Theme.withAlpha(Theme.outline, 0.15)
-                        }
+                                    required property var modelData
+                                    required property int index
 
-                        StyledText {
-                            visible: deviceRow.releases === "loading"
-                            text: Tr.t("Loading firmware releases…")
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceVariantText
-                        }
-
-                        StyledText {
-                            visible: Array.isArray(deviceRow.releases) && deviceRow.releases.length === 0
-                            text: Tr.t("No firmware releases published on LVFS for this device.")
-                            font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.surfaceVariantText
-                        }
-
-                        Repeater {
-                            model: Array.isArray(deviceRow.releases) ? deviceRow.releases : []
-
-                            delegate: ColumnLayout {
-                                id: releaseEntry
-
-                                required property var modelData
-                                required property int index
-
-                                Layout.fillWidth: true
-                                spacing: 2
-
-                                RowLayout {
                                     Layout.fillWidth: true
-                                    spacing: Theme.spacingS
+                                    spacing: 2
 
-                                    Rectangle {
-                                        Layout.preferredWidth: relVersion.implicitWidth + 14
-                                        Layout.preferredHeight: 18
-                                        radius: 9
-                                        color: Theme.withAlpha(Theme.primary, 0.12)
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: Theme.spacingS
+
+                                        Rectangle {
+                                            Layout.preferredWidth: relVersion.implicitWidth + 14
+                                            Layout.preferredHeight: 18
+                                            radius: 9
+                                            color: Theme.withAlpha(Theme.primary, 0.12)
+
+                                            StyledText {
+                                                id: relVersion
+                                                anchors.centerIn: parent
+                                                text: releaseEntry.modelData.version || "—"
+                                                font.pixelSize: Theme.fontSizeSmall - 2
+                                                font.weight: Font.Medium
+                                                color: Theme.primary
+                                            }
+                                        }
 
                                         StyledText {
-                                            id: relVersion
-                                            anchors.centerIn: parent
-                                            text: releaseEntry.modelData.version || "—"
-                                            font.pixelSize: Theme.fontSizeSmall - 2
-                                            font.weight: Font.Medium
-                                            color: Theme.primary
+                                            visible: releaseEntry.index === 0 && releaseEntry.modelData.version === deviceRow.modelData.version
+                                            text: Tr.t("installed")
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: Theme.success
+                                        }
+
+                                        StyledText {
+                                            Layout.fillWidth: true
+                                            visible: (releaseEntry.modelData.summary || "") !== ""
+                                            text: releaseEntry.modelData.summary
+                                            font.pixelSize: Theme.fontSizeSmall - 1
+                                            color: Theme.surfaceVariantText
+                                            elide: Text.ElideRight
                                         }
                                     }
 
-                                    StyledText {
-                                        visible: releaseEntry.index === 0 && releaseEntry.modelData.version === deviceRow.modelData.version
-                                        text: Tr.t("installed")
-                                        font.pixelSize: Theme.fontSizeSmall - 1
-                                        color: Theme.success
-                                    }
-
-                                    StyledText {
+                                    SelectableText {
                                         Layout.fillWidth: true
-                                        visible: (releaseEntry.modelData.summary || "") !== ""
-                                        text: releaseEntry.modelData.summary
-                                        font.pixelSize: Theme.fontSizeSmall - 1
-                                        color: Theme.surfaceVariantText
-                                        elide: Text.ElideRight
+                                        visible: (releaseEntry.modelData.notesHtml || "") !== ""
+                                        text: releaseEntry.modelData.notesHtml
+                                        textFormat: Text.RichText
+                                        font.pixelSize: Theme.fontSizeSmall
+                                        color: Theme.surfaceText
+                                        wrapMode: Text.WordWrap
                                     }
-                                }
-
-                                SelectableText {
-                                    Layout.fillWidth: true
-                                    visible: (releaseEntry.modelData.notesHtml || "") !== ""
-                                    text: releaseEntry.modelData.notesHtml
-                                    textFormat: Text.RichText
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.surfaceText
-                                    wrapMode: Text.WordWrap
                                 }
                             }
                         }
