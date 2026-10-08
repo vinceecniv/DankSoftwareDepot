@@ -3,7 +3,7 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 1.4.4 — 2026-10-08
 
 - **The update list can be scrolled during an update.** While packages were
   installing, the list rebuilt itself several times a second, so scrolling
