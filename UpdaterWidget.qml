@@ -157,8 +157,19 @@ PluginComponent {
         }
     }
 
+    // ── Holds outside the daemon's own list ─────────────────────────────────
+    // A hold is a name in DMS's ignored list. The daemon reads that list for
+    // the packages it reports, so a held rpm or Flatpak never reaches us; but
+    // DMS plugins, Homebrew formulae and AppImages are found by us, not by the
+    // daemon, and nothing removed the held ones. They stayed in their own
+    // section beside the Held line, counted in the badge, and Update all
+    // updated them (#30). Every list below is filtered here, once, so the
+    // count, the rows and the run all agree.
+    readonly property var heldNames: new Set(SettingsData.updaterIgnoredPackages || [])
+
     // ── Pending AppImage updates (GitHub releases via scripts/appimage.py) ──
-    property var appimageUpdates: []
+    property var _appimageFound: []
+    readonly property var appimageUpdates: _appimageFound.filter(u => !heldNames.has(u.id))
 
     Process {
         id: appimageCheckProcess
@@ -167,9 +178,9 @@ PluginComponent {
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    root.appimageUpdates = JSON.parse(text);
+                    root._appimageFound = JSON.parse(text);
                 } catch (e) {
-                    root.appimageUpdates = [];
+                    root._appimageFound = [];
                 }
             }
         }
@@ -185,7 +196,8 @@ PluginComponent {
     // costs a process start per check, so the answer to "is there a brew" is
     // remembered and the rest only runs when it is yes.
     property bool brewSupported: false
-    property var brewUpdates: []
+    property var _brewFound: []
+    readonly property var brewUpdates: _brewFound.filter(f => !heldNames.has(f.name))
     property var brewInstalled: []
 
     readonly property string brewScript: Qt.resolvedUrl("scripts/brew_helper.py").toString().replace("file://", "")
@@ -209,7 +221,7 @@ PluginComponent {
                     root.brewInstalled = data.installed || [];
                     // A pinned formula is brew's own word for held, and it
                     // means what held means here: leave this one alone
-                    root.brewUpdates = (data.outdated || []).filter(row => row.pinned !== true).map(row => ({
+                    root._brewFound = (data.outdated || []).filter(row => row.pinned !== true).map(row => ({
                         name: row.name,
                         displayName: row.displayName || row.name,
                         repo: "brew",
@@ -218,7 +230,7 @@ PluginComponent {
                     }));
                 } catch (e) {
                     root.brewSupported = false;
-                    root.brewUpdates = [];
+                    root._brewFound = [];
                     root.brewInstalled = [];
                 }
             }
@@ -250,6 +262,8 @@ PluginComponent {
             // is running the transaction, during the transaction, is the one
             // case the DMS packages get a separate final pass for.
             if (id === "" || id === "dankSoftwareDepot")
+                continue;
+            if (heldNames.has(id))
                 continue;
             const manifest = (PluginService.availablePlugins || {})[id] || {};
             out.push({

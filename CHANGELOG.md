@@ -3,6 +3,15 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **A held DMS plugin, Homebrew formula or AppImage stays held.** Holding
+  one put it in the Held line, but it also stayed in its own section, was
+  counted in the number of updates, and Update all updated it anyway. Held
+  rpm packages and Flatpaks were never affected, because DMS filters those
+  itself; the other three are found by the plugin, which now leaves out
+  whatever you have held. Thanks to @JDKamalakar for the report (#30).
+
 ## 1.4.2 — 2026-10-01
 
 - **Hovering no longer changes a row's or a button's shape.** Rows in every
