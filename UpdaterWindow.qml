@@ -2801,6 +2801,75 @@ FloatingWindow {
     // thing the heading no longer says.
     readonly property var sourceNamedCategories: ["2 · System packages", "4 · Firmware", "5 · Homebrew", "5 · DMS plugins"]
 
+    // What the list shows. categorySections is recomputed on every progress
+    // event of a run, because the run's rows are grouped by their state. It
+    // used to be the list's model, and a ListView handed a new array throws
+    // every delegate away and starts again at the top: during an update that
+    // happened several times a second, so a flick never finished and the
+    // list kept jumping back up (9092 rebuilds in one replayed run of 104
+    // packages). The rows read their progress live from the engine, so
+    // nothing needs rebuilding for that.
+    //
+    // The list's model is now a ListModel of category names, kept in step
+    // with inserts, moves and removals, so the view itself is never reset.
+    // Each category's rows sit in sectionByCategory, and a category whose
+    // contents did not change keeps the very same object — its rows stay
+    // built. Only the group a package has just left or entered rebuilds.
+    property var shownSections: []
+    property var sectionByCategory: ({})
+    property string _sectionsSignature: ""
+
+    ListModel {
+        id: sectionModel
+    }
+
+    function _groupSignature(group) {
+        return JSON.stringify([group.category, group.title, group.count, group.collapsed, group.repeatsHeading,
+            group.items.map(row => [row.key, row.failed === true, row.ignored === true,
+                (row.pkg && row.pkg.fromVersion) || "", (row.pkg && row.pkg.toVersion) || ""])]);
+    }
+
+    function _refreshSections() {
+        const next = categorySections;
+        const signatures = next.map(group => _groupSignature(group));
+        const signature = signatures.join("\n");
+        if (signature === _sectionsSignature)
+            return;
+        _sectionsSignature = signature;
+        const previous = sectionByCategory;
+        const byCategory = {};
+        next.forEach((group, i) => {
+            const kept = previous[group.category];
+            byCategory[group.category] = (kept && kept._signature === signatures[i]) ? kept : Object.assign({
+                _signature: signatures[i]
+            }, group);
+        });
+        sectionByCategory = byCategory;
+        shownSections = next.map(group => byCategory[group.category]);
+        const order = next.map(group => group.category);
+        for (let i = 0; i < order.length; i++) {
+            if (i < sectionModel.count && sectionModel.get(i).category === order[i])
+                continue;
+            let found = -1;
+            for (let k = i + 1; k < sectionModel.count; k++) {
+                if (sectionModel.get(k).category === order[i]) {
+                    found = k;
+                    break;
+                }
+            }
+            if (found >= 0)
+                sectionModel.move(found, i, 1);
+            else
+                sectionModel.insert(i, {
+                    category: order[i]
+                });
+        }
+        while (sectionModel.count > order.length)
+            sectionModel.remove(sectionModel.count - 1);
+    }
+
+    onCategorySectionsChanged: _refreshSections()
+
     readonly property var categorySections: {
         const counts = {};
         const sectionRepo = {};
@@ -2831,53 +2900,6 @@ FloatingWindow {
             groupMap[cat].items.push(row);
         }
         return groups;
-    }
-
-    readonly property var listModel: {
-        const counts = {};
-        // And only where the section really does hold one kind. The heading
-        // naming a source is a promise about its contents; this checks it
-        // rather than trusting it, so a row that ends up somewhere unexpected
-        // keeps its chip instead of being quietly relabelled by its
-        // neighbours.
-        const sectionRepo = {};
-        for (const row of visibleRows) {
-            const repo = (row.pkg && row.pkg.repo) || "system";
-            sectionRepo[row.category] = sectionRepo[row.category] === undefined ? repo : (sectionRepo[row.category] === repo ? repo : "*");
-        }
-        for (const row of visibleRows)
-            counts[row.category] = (counts[row.category] || 0) + 1;
-        const collapsible = ["6 · Held packages", "4 · Completed"];
-        const out = [];
-        let current = "";
-        let catIndex = 0;
-        for (const row of visibleRows) {
-            if (row.category !== current) {
-                current = row.category;
-                catIndex = 0;
-                out.push({
-                    type: "header",
-                    category: current,
-                    title: Tr.t(current.substring(4)),
-                    count: counts[current] || 0,
-                    collapsible: collapsible.indexOf(current) !== -1,
-                    collapsed: collapsible.indexOf(current) !== -1 && collapsedCats[current] === true
-                });
-            }
-            if (collapsible.indexOf(row.category) !== -1 && collapsedCats[row.category] === true)
-                continue;
-            const totalInCat = counts[row.category] || 1;
-            out.push(Object.assign({
-                type: "card",
-                repeatsHeading: sourceNamedCategories.indexOf(row.category) !== -1 && sectionRepo[row.category] !== "*",
-                sectionIndex: catIndex,
-                sectionTotal: totalInCat,
-                isSectionFirst: catIndex === 0,
-                isSectionLast: catIndex === totalInCat - 1
-            }, row));
-            catIndex++;
-        }
-        return out;
     }
 
     // Whether the footer has anything to offer. "Deferred" counts as busy:
@@ -4729,12 +4751,15 @@ FloatingWindow {
             // A category is set apart by the height of its heading, not by a
             // container around it
             spacing: 2
-            visible: win.currentTab === 0 && (win.categorySections.length > 0 || win.dashboardMode)
+            visible: win.currentTab === 0 && (win.shownSections.length > 0 || win.dashboardMode)
             opacity: visible ? 1.0 : 0.0
             x: visible ? 0 : win.tabEntryOffset(0)
             Behavior on opacity { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
             Behavior on x { NumberAnimation { duration: Theme.longDuration; easing.type: Easing.OutCubic } }
-            Component.onCompleted: Ui.softenScrollbar(cardsList)
+            Component.onCompleted: {
+                Ui.softenScrollbar(cardsList);
+                win._refreshSections();
+            }
             header: win.dashboardMode ? dashboardHeaderComponent : null
 
             Connections {
@@ -4754,7 +4779,12 @@ FloatingWindow {
                     contentY = maxY;
             }
 
-            model: win.categorySections
+            model: sectionModel
+            // Build every category, not only those on screen. There are a
+            // handful, and each one already builds all of its rows; with only
+            // some of them built the list guessed its own height from the
+            // ones it had, and the scrollbar grew and shrank while scrolling.
+            cacheBuffer: 100000
 
             // The heading of the category being scrolled through stays at the
             // top, as in Installed and Install. Each item is a whole category,
@@ -4763,7 +4793,7 @@ FloatingWindow {
                 id: updatesSticky
 
                 view: cardsList
-                rows: win.categorySections
+                rows: win.shownSections
                 headingOf: row => row || ""
                 barHeight: 48
 
@@ -4851,7 +4881,11 @@ FloatingWindow {
 
             delegate: Item {
                 id: catContainer
-                required property var modelData
+                required property string category
+                readonly property var modelData: win.sectionByCategory[category] || ({
+                        category: category,
+                        items: []
+                    })
 
                 width: cardsList.width
                 implicitHeight: catCol.implicitHeight

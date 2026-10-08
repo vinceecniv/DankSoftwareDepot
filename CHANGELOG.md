@@ -3,6 +3,19 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **The update list can be scrolled during an update.** While packages were
+  installing, the list rebuilt itself several times a second, so scrolling
+  barely worked and kept jumping back to the top, and the scrollbar changed
+  length as you scrolled. The list now only redraws the group a package
+  moves into or out of, keeps its place, and knows its full height.
+
+- **The spinning refresh icon looks sharp.** In the window's header it
+  turned jagged while spinning; in the bar and the popout it was slightly
+  soft even at rest. All four are now crisp at rest and smooth while they
+  turn.
+
 ## 1.4.3 — 2026-10-08
 
 - **The refresh icon turns at a calm, steady pace.** Since 1.2.0 it took its
