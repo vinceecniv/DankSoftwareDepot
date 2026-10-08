@@ -11,6 +11,10 @@ in-app when the plugin offers its own update.
   length as you scrolled. The list now only redraws the group a package
   moves into or out of, keeps its place, and knows its full height.
 
+- **The scrollbar shows while you scroll Installed, Install and the details
+  window.** Their smooth wheel scrolling never told the scrollbar, so it only
+  appeared with the pointer right next to it.
+
 - **The spinning refresh icon looks sharp.** In the window's header it
   turned jagged while spinning; in the bar and the popout it was slightly
   soft even at rest. All four are now crisp at rest and smooth while they

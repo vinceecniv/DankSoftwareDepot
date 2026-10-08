@@ -1447,6 +1447,7 @@ Item {
                     installedScrollAnim.from = installedList.contentY;
                     installedScrollAnim.to = newTarget;
                     installedScrollAnim.start();
+                    Ui.showScrollbar(installedList);
                     event.accepted = true;
                 }
             }

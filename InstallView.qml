@@ -1768,6 +1768,7 @@ Item {
                             listScrollAnim.from = resultsList.contentY;
                             listScrollAnim.to = newTarget;
                             listScrollAnim.start();
+                            Ui.showScrollbar(resultsList);
                             event.accepted = true;
                         }
                     }

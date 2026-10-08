@@ -835,6 +835,7 @@ Item {
                         bodyScrollAnim.from = body.contentY;
                         bodyScrollAnim.to = newTarget;
                         bodyScrollAnim.start();
+                        Ui.showScrollbar(body);
                         event.accepted = true;
                     }
                 }

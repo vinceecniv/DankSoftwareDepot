@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick
+import QtQuick.Controls
 import qs.Common
 import qs.Services
 
@@ -203,22 +204,57 @@ Item {
     // Make a DankListView/DankFlickable scrollbar semi-transparent. The bar
     // is attached as a child of the view; duck-type it and re-bind its
     // handle opacity.
-    function softenScrollbar(view) {
-        const kids = view.children || [];
-        for (let i = 0; i < kids.length; i++) {
-            const child = kids[i];
-            if (child && child.contentItem !== undefined && child.policy !== undefined && child.minimumSize !== undefined) {
-                const bar = child;
-                bar.contentItem.opacity = Qt.binding(() => bar.pressed ? 0.85 : 0.5);
-                return;
+    // The scrollbar of each view, found while it is still the view's child:
+    // DMS moves it to a host item once it has worked out where it goes
+    property var _scrollbars: new Map()
+
+    function _scrollbarOf(view) {
+        const known = _scrollbars.get(view);
+        if (known)
+            return known;
+        // The attached property names it wherever it has been moved to; the
+        // children are the fallback for a view that sets none
+        let bar = view.ScrollBar ? view.ScrollBar.vertical : null;
+        if (!bar) {
+            const kids = view.children || [];
+            for (let i = 0; i < kids.length; i++) {
+                const child = kids[i];
+                if (child && child.contentItem !== undefined && child.policy !== undefined && child.minimumSize !== undefined) {
+                    bar = child;
+                    break;
+                }
             }
         }
+        if (bar)
+            _scrollbars.set(view, bar);
+        return bar;
+    }
+
+    function softenScrollbar(view) {
+        const bar = _scrollbarOf(view);
+        if (bar)
+            bar.contentItem.opacity = Qt.binding(() => bar.pressed ? 0.85 : 0.5);
+    }
+
+    // DMS shows a list's scrollbar while the list moves, and its own wheel
+    // handler says so explicitly. The smooth wheels in Installed, Install and
+    // the details dialog replace that handler and animate contentY, which is
+    // not "moving" to Qt — so the scrollbar stayed hidden while scrolling and
+    // only appeared with the pointer next to it. They call this instead.
+    function showScrollbar(view) {
+        const bar = _scrollbarOf(view);
+        if (!bar || bar._scrollBarActive === undefined)
+            return;
+        bar._scrollBarActive = true;
+        if (bar.hideTimer)
+            bar.hideTimer.restart();
     }
 
     // Disable the built-in jumpy mouse wheel handler in DankFlickable / DankListView
     // so our smooth interpolated scroll handler controls the animation smoothly.
     function disableDefaultWheelHandler(view) {
         if (!view) return;
+        _scrollbarOf(view);
         const kids = view.children || [];
         for (let i = 0; i < kids.length; i++) {
             const child = kids[i];
