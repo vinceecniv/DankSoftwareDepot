@@ -82,20 +82,20 @@ Item {
                         }
 
                         SequentialAnimation on scale {
-                            running: element.stepActive
+                            running: element.stepActive && Ui.busyMotion
                             loops: Animation.Infinite
                             alwaysRunToEnd: true
 
                             NumberAnimation {
                                 from: 1
                                 to: 1.12
-                                duration: Theme.extraLongDuration
+                                duration: Ui.busyCycle * 0.7
                                 easing.type: Easing.InOutQuad
                             }
                             NumberAnimation {
                                 from: 1.12
                                 to: 1
-                                duration: Theme.extraLongDuration
+                                duration: Ui.busyCycle * 0.7
                                 easing.type: Easing.InOutQuad
                             }
                         }

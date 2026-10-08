@@ -3430,9 +3430,9 @@ FloatingWindow {
                             RotationAnimator on rotation {
                                 from: 0
                                 to: 360
-                                duration: Theme.extraLongDuration
+                                duration: Ui.busyCycle
                                 loops: Animation.Infinite
-                                running: SystemUpdateService.isChecking
+                                running: SystemUpdateService.isChecking && Ui.busyMotion
 
                                 onRunningChanged: {
                                     if (!running)

@@ -5,6 +5,13 @@ in-app when the plugin offers its own update.
 
 ## Unreleased
 
+- **The refresh icon turns at a calm, steady pace.** Since 1.2.0 it took its
+  speed from DMS's animation setting, so on a short setting it spun about
+  five times a second, and with animations off it restarted every frame. It
+  now turns once a second, as before 1.2.0, and so does the pulse of the
+  active step in a run. With animations off or reduced motion on in DMS,
+  neither moves at all.
+
 - **The Install tab's rows are spaced like every other list.** Its rows sat
   8 to 12px apart where Updates, Installed, Firmware and the log use 2px.
   Headings and the space between categories are as they were. Thanks to

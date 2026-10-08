@@ -68,6 +68,15 @@ Item {
     // this in the version's place (#26). The daemon passes it through as is.
     readonly property string develTarget: "latest-commit"
 
+    // A spinner or a pulse says "busy", and busy has a cadence of its own:
+    // it is not a transition, so it does not follow DMS's animation speed.
+    // Tied to it (from 1.2.0 on), a short setting spun the refresh icon five
+    // times a second and "Off" restarted it every frame. A fixed cycle, as
+    // before 1.2.0 — and none at all where motion is off or reduced, where
+    // the colour and the text already say that something is running.
+    readonly property int busyCycle: 1000
+    readonly property bool busyMotion: Theme.currentAnimationBaseDuration > 0 && SettingsData.reduceMotion !== true
+
     function versionLabel(version) {
         return version === develTarget ? Tr.t("latest commit") : (version || "");
     }
