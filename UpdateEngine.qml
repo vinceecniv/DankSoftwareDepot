@@ -351,6 +351,14 @@ Item {
     function _startPreview() {
         if (running || previewProcess.running)
             return;
+        // A replay's list is a recording of another moment; resolving its
+        // names against this machine answered for the few that happen to be
+        // pending here ("3 packages" under a list of 104), which describes
+        // neither the replay nor the machine
+        if (Backend.replaying) {
+            previewPlan = null;
+            return;
+        }
         const names = [];
         const held = new Set(heldKeys || []);
         for (const pkg of pendingUpdates || []) {
