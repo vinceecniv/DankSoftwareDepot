@@ -3,7 +3,7 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 1.4.3 — 2026-10-08
 
 - **The refresh icon turns at a calm, steady pace.** Since 1.2.0 it took its
   speed from DMS's animation setting, so on a short setting it spun about
