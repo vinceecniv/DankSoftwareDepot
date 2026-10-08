@@ -1742,7 +1742,9 @@ Item {
                     anchors.fill: parent
                     clip: true
                     boundsBehavior: Flickable.StopAtBounds
-                    spacing: Theme.spacingM
+                    // Rows 2px apart, as in every other list (#29). The space
+                    // between categories is the cards' own, below.
+                    spacing: 2
                     model: view.listModel
 
                     Component.onCompleted: {
@@ -1937,7 +1939,9 @@ Item {
                 property var rowData: ({})
 
                 width: resultsList.width
-                implicitHeight: cardCol.implicitHeight + Theme.spacingM * 2
+                // Space above and below, plus what the list's spacing gave
+                // between categories before it became the rows' 2px
+                implicitHeight: cardCol.implicitHeight + Theme.spacingM * 3 - 2
                 radius: Theme.cornerRadius
                 // No fill of its own: the rows inside are already containers,
                 // and a tinted box around a stack of tinted boxes is a third
@@ -1955,11 +1959,14 @@ Item {
                     // Space above and below, none at the sides: the heading
                     // and rows line up with the list's edge, as in Installed
                     anchors.topMargin: Theme.spacingM
-                    spacing: Theme.spacingS
+                    // Rows 2px apart, as in every other list (#29); the
+                    // heading keeps its distance through its own margin
+                    spacing: 2
 
                     // Category Title & Action Header
                     Item {
                         Layout.fillWidth: true
+                        Layout.bottomMargin: Theme.spacingS - 2
                         implicitHeight: 32
 
                         RowLayout {

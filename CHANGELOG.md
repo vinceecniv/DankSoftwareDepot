@@ -5,6 +5,11 @@ in-app when the plugin offers its own update.
 
 ## Unreleased
 
+- **The Install tab's rows are spaced like every other list.** Its rows sat
+  8 to 12px apart where Updates, Installed, Firmware and the log use 2px.
+  Headings and the space between categories are as they were. Thanks to
+  @apollo79 (#29).
+
 - **A held DMS plugin, Homebrew formula or AppImage stays held.** Holding
   one put it in the Held line, but it also stayed in its own section, was
   counted in the number of updates, and Update all updated it anyway. Held
