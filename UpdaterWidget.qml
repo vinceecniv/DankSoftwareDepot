@@ -1642,8 +1642,10 @@ PluginComponent {
             DankIcon {
                 id: hPillIcon
                 // Spins during a check: distance-field rendering survives
-                // rotation, the default pixel-grid hinting does not
-                smoothTransform: true
+                // rotation, the default pixel-grid hinting does not. Only
+                // while spinning, as DMS does it: at rest the native glyph
+                // is the sharper of the two
+                smoothTransform: SystemUpdateService.isChecking && Ui.busyMotion
                 name: root._pillIcon
                 color: root._pillColor
                 size: root.iconSize
@@ -1680,8 +1682,10 @@ PluginComponent {
             DankIcon {
                 id: vPillIcon
                 // Spins during a check: distance-field rendering survives
-                // rotation, the default pixel-grid hinting does not
-                smoothTransform: true
+                // rotation, the default pixel-grid hinting does not. Only
+                // while spinning, as DMS does it: at rest the native glyph
+                // is the sharper of the two
+                smoothTransform: SystemUpdateService.isChecking && Ui.busyMotion
                 name: root._pillIcon
                 color: root._pillColor
                 size: root.iconSize
@@ -1867,7 +1871,9 @@ PluginComponent {
                                     size: 20
                                     color: Theme.primary
                                     anchors.centerIn: parent
-                                    smoothTransform: true
+                                    // Distance-field only while turned: sharp at rest,
+                                    // and not jagged mid-turn
+                                    smoothTransform: headerRefreshBtn.isBusy || rotation !== 0
                                     rotation: (headerRefreshBtn.isBusy) ? 0 : (headerRefreshBtn.isHovered ? 180 : 0)
 
                                     Behavior on rotation {

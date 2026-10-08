@@ -3425,6 +3425,10 @@ FloatingWindow {
                             anchors.centerIn: parent
                             name: "refresh"
                             size: 20
+                            // The default glyph rendering snaps to the pixel
+                            // grid and turns jagged once rotated; while it
+                            // spins it is drawn as a distance field instead
+                            smoothTransform: SystemUpdateService.isChecking && Ui.busyMotion
                             color: (windowRefreshButton.isActive || windowRefreshButton.isHovered) ? Theme.primary : Theme.surfaceText
 
                             RotationAnimator on rotation {
