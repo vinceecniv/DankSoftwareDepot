@@ -125,7 +125,12 @@ Item {
                             vendor: dev.Vendor || "",
                             version: dev.Version || "",
                             plugin: dev.Plugin || "",
-                            updatable: flags.indexOf("updatable") !== -1
+                            // fwupd swaps "updatable" for "updatable-hidden"
+                            // while it will not install (a BIOS on battery
+                            // power); the device still supports updates
+                            updatable: flags.indexOf("updatable") !== -1 || flags.indexOf("updatable-hidden") !== -1,
+                            blocked: flags.indexOf("updatable-hidden") !== -1,
+                            needsPower: (dev.Problems || []).indexOf("require-ac-power") !== -1 || (dev.Problems || []).indexOf("system-power-too-low") !== -1
                         });
                     }
                 } catch (e) {
@@ -423,7 +428,7 @@ Item {
                             }
 
                             Rectangle {
-                                visible: deviceRow.modelData.updatable
+                                visible: deviceRow.modelData.updatable && !deviceRow.modelData.blocked
                                 Layout.preferredWidth: updatableChip.implicitWidth + 14
                                 Layout.preferredHeight: 18
                                 radius: 9
@@ -435,6 +440,22 @@ Item {
                                     text: Tr.t("Updatable")
                                     font.pixelSize: Theme.fontSizeSmall - 2
                                     color: Theme.success
+                                }
+                            }
+
+                            Rectangle {
+                                visible: deviceRow.modelData.blocked
+                                Layout.preferredWidth: blockedChip.implicitWidth + 14
+                                Layout.preferredHeight: 18
+                                radius: 9
+                                color: Theme.withAlpha(Theme.warning, 0.15)
+
+                                StyledText {
+                                    id: blockedChip
+                                    anchors.centerIn: parent
+                                    text: deviceRow.modelData.needsPower ? Tr.t("Needs power adapter") : Tr.t("Not updatable right now")
+                                    font.pixelSize: Theme.fontSizeSmall - 2
+                                    color: Theme.warning
                                 }
                             }
 

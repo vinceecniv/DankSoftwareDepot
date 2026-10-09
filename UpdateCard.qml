@@ -19,6 +19,7 @@ Rectangle {
     property bool engineBusy: false
     property bool held: false
     property string holdReason: ""
+    property string blockedReason: ""  // firmware: why fwupd will not install it now
     property bool isIgnored: false
     property bool canHold: false
     property bool active: false
@@ -474,6 +475,31 @@ Rectangle {
                         }
                     }
                 }
+            }
+        }
+
+        // ── An update fwupd will not install right now ──────────────────────
+        // A BIOS waits for the power adapter, and Update all leaves it out
+        // until then; without this line it looked like any other update and
+        // simply never went away.
+        RowLayout {
+            Layout.fillWidth: true
+            visible: card.blockedReason !== ""
+            spacing: Theme.spacingXS
+
+            DankIcon {
+                Layout.alignment: Qt.AlignTop
+                name: "power"
+                size: 14
+                color: Theme.warning
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                text: card.blockedReason
+                font.pixelSize: Theme.fontSizeSmall - 1
+                color: Theme.warning
+                wrapMode: Text.WordWrap
             }
         }
 

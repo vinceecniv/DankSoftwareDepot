@@ -3163,6 +3163,14 @@ FloatingWindow {
         }
     }
 
+    // A firmware section whose every update waits for the power adapter has
+    // nothing its button could install
+    function sectionUpdatable(category) {
+        if (category === "4 · Firmware")
+            return ((firmware ? firmware.installable : []) || []).length > 0;
+        return ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions"].includes(category);
+    }
+
     function sectionUpdate(category) {
         if (engine.running)
             return;
@@ -4803,7 +4811,7 @@ FloatingWindow {
                         anchors.fill: parent
 
                         property var rowData: updatesSticky.heading || ({})
-                        readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions", "4 · Firmware"].includes(rowData.category || "")
+                        readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && win.sectionUpdatable(rowData.category || "")
 
                         HoverHandler {
                             id: stickyHover
@@ -4891,7 +4899,7 @@ FloatingWindow {
                 implicitHeight: catCol.implicitHeight
                 clip: true
 
-                readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && ["1 · Applications", "2 · System packages", "3 · Runtimes & extensions", "4 · Firmware"].includes(modelData.category || "")
+                readonly property bool updatable: !win.engine.running && win.singleBusyKey === "" && win.sectionUpdatable(modelData.category || "")
 
                 ColumnLayout {
                     id: catCol
@@ -5007,6 +5015,7 @@ FloatingWindow {
                                 }
                                 itemState: win.engine.stateFor(modelData.pkg)
                                 errorDetail: win.engine.runErrorDetails && modelData.pkg ? win.engine.errorDetailFor(modelData.pkg) : ""
+                                blockedReason: (modelData.fwInfo && firmware) ? firmware.blockerText(modelData.fwInfo.blocker) : ""
                                 advisory: (win.widgetRoot && modelData.pkg) ? (win.widgetRoot.advisories[win.store.stripArch(modelData.pkg.name)] || null) : null
                                 store: win.store
                                 engineBusy: win.engine.running

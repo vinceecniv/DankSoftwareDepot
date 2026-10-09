@@ -568,7 +568,9 @@ Item {
         }
         _wantAppimage = appimageItems.length > 0;
         _appimageItems = appimageItems;
-        const firmwareItems = (options.firmware !== false && firmwareService && firmwareService.available) ? (firmwareService.updates || []) : [];
+        // Blocked firmware (on battery, lid shut) stays out: fwupdmgr skips it
+        // without an error, and the run would report it installed
+        const firmwareItems = (options.firmware !== false && firmwareService && firmwareService.available) ? (firmwareService.installable || []) : [];
         _wantFirmware = firmwareItems.length > 0;
         _firmwareItems = firmwareItems;
         // Plugins join a full run, like AppImages, and stay out of a run that

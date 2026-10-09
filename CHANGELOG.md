@@ -3,6 +3,18 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
+## Unreleased
+
+- **A BIOS update that needs the power adapter says so.** On battery
+  power fwupd will not install system firmware, and the card looked like
+  any other update — Update all then reported it installed while nothing
+  had happened. The card now asks you to plug in the power adapter, Update
+  all leaves it out until you have, and the card updates itself a few
+  seconds after you plug in. A laptop lid that is closed, a battery that is
+  too low or a device in use are named the same way, and the Firmware tab
+  marks such devices *Needs power adapter* instead of showing them as not
+  updatable.
+
 ## 1.4.4 — 2026-10-08
 
 - **The update list can be scrolled during an update.** While packages were
