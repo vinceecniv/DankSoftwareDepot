@@ -15,6 +15,10 @@ in-app when the plugin offers its own update.
   marks such devices *Needs power adapter* instead of showing them as not
   updatable.
 
+- **Update these updates only that section.** The button on System
+  packages and on Firmware also updated AppImages, DMS plugins and
+  Homebrew.
+
 ## 1.4.4 — 2026-10-08
 
 - **The update list can be scrolled during an update.** While packages were

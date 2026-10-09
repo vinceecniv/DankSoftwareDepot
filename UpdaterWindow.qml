@@ -3174,17 +3174,26 @@ FloatingWindow {
     function sectionUpdate(category) {
         if (engine.running)
             return;
+        // A section's button updates that section. AppImages, plugins and
+        // Homebrew join a run unless told otherwise, so both of these used to
+        // update all three along with what the button said
         if (category === "2 · System packages") {
             engine.start({
                 flatpak: false,
-                firmware: false
+                firmware: false,
+                appimage: false,
+                plugins: false,
+                brew: false
             });
             return;
         }
         if (category === "4 · Firmware") {
             engine.start({
                 dnf: false,
-                flatpak: false
+                flatpak: false,
+                appimage: false,
+                plugins: false,
+                brew: false
             });
             return;
         }
