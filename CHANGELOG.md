@@ -3,7 +3,7 @@
 Release notes per version. The section for the latest version is shown
 in-app when the plugin offers its own update.
 
-## Unreleased
+## 1.5.0 — 2026-10-09
 
 - **A BIOS update that needs the power adapter says so.** On battery
   power fwupd will not install system firmware, and the card looked like
