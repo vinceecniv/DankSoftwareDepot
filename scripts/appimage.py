@@ -478,6 +478,45 @@ def run_list():
     json.dump(records + scan_adhoc(records), sys.stdout)
 
 
+def _replaced_outside(record, st):
+    """Whether the file is no longer the build this record was written for.
+
+    The app's own updater, Gearlever or a manual copy can swap the file
+    without telling us, and then the stored tag describes a build that is
+    gone. Size is the strong signal; a mtime well past our own write catches
+    a same-size rebuild.
+    """
+    size = record.get("sizeBytes")
+    if size and st.st_size != size:
+        return True
+    installed = record.get("installedAt") or 0
+    return bool(installed) and int(st.st_mtime) > installed + 60
+
+
+def judge_update(record, release, st):
+    """Whether `release` is newer than the file behind `record`.
+
+    Returns (newer, changed): changed is True when the record was brought in
+    line with a file that was replaced outside this app, and wants saving.
+    """
+    managed = record.get("managed", True) and record.get("tag")
+    if managed and not _replaced_outside(record, st):
+        return bool(release["tag"]) and release["tag"] != record.get("tag"), False
+    changed = False
+    if managed:
+        record["sizeBytes"] = st.st_size
+        record["installedAt"] = int(st.st_mtime)
+        changed = True
+        if release["size"] and st.st_size == release["size"]:
+            # Byte for byte the size of the release asset: that build is here
+            record["tag"] = release["tag"]
+            return False, changed
+        # Some other build; its version is unknown, so its date has to do
+        record["tag"] = ""
+    newer = release["published"] > 0 and release["published"] > int(st.st_mtime) + 60
+    return newer, changed
+
+
 def run_check_updates():
     try:
         st = os.stat(UPDATES_CACHE)
@@ -489,6 +528,7 @@ def run_check_updates():
         pass
     updates = []
     records = load_records()
+    dirty = False
     for record in records + scan_adhoc(records):
         repo = record.get("repo")
         if not repo:
@@ -497,15 +537,12 @@ def run_check_updates():
             release = resolve_github_release(repo)
         except Exception:
             continue
-        if record.get("managed", True) and record.get("tag"):
-            newer = release["tag"] and release["tag"] != record.get("tag")
-        else:
-            # Unmanaged file: compare the release date against the file mtime
-            try:
-                mtime = int(os.stat(record["file"]).st_mtime)
-            except OSError:
-                continue
-            newer = release["published"] > 0 and release["published"] > mtime + 60
+        try:
+            st = os.stat(record["file"])
+        except OSError:
+            continue
+        newer, changed = judge_update(record, release, st)
+        dirty = dirty or changed
         if newer:
             updates.append({
                 "id": record["id"],
@@ -515,6 +552,8 @@ def run_check_updates():
                 "url": release["url"],
                 "size": release["size"],
             })
+    if dirty:
+        save_records(records)
     try:
         os.makedirs(CACHE_DIR, exist_ok=True)
         with open(UPDATES_CACHE, "w") as f:

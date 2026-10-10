@@ -60,6 +60,9 @@ jobs:
       - name: AppImages are read, never run
         run: python3 scripts/test_appimage_squashfs.py
 
+      - name: AppImage replaced outside the depot
+        run: python3 scripts/test_appimage_updates.py
+
       - name: The shell snippets run under dash, not just bash
         run: python3 scripts/test_shell_portability.py
 
